@@ -178,7 +178,7 @@ sub run {
 
 
   #initialize the StandAloneBlast Module
-
+  
   if ($self->analysis->parameters){
     my @params = $self->parse_params($self->analysis->parameters);
     my %param = @params;
@@ -220,7 +220,7 @@ sub run {
   $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
   
   my $program = $analysis->program || 'blastall';
-  
+  $analysis->program_file && $blast_obj->executable($analysis->program_file); 
   my $seq1 = $self->seq1 || $self->file;
   my $seq2 = $self->seq2;
   my $blast_report;
