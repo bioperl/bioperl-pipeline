@@ -14,6 +14,7 @@
     use Bio::Root::IO;
 
     unless (Bio::Root::IO->exists_exe('bsub') || Bio::Root::IO->exists_exe('qsub')){
+	warn "LSF or PBS not installed. Skipping test $Test::ntest to $NTESTS\n";
 	exit(0);
     }
     END {

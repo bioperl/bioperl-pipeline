@@ -23,6 +23,7 @@ use Bio::Root::IO;
           }
   }
   unless (Bio::Root::IO->exists_exe('genscan')){
+   warn "Genscan program not found. Skipping tests $Test::ntest to $NTESTS.\n";
    exit(0);
   }
 
