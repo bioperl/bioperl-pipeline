@@ -425,7 +425,7 @@ sub write_output {
     return () unless scalar(@output);    
     defined $self->analysis->output_handler || return;
     my @output_ids;
-    foreach my $ioh(@{$self->analysis->output_hander}) {
+    foreach my $ioh(@{$self->analysis->output_handler}) {
       push @output_ids, $ioh->write_output(-input=>\@inputs,-output=>\@output);
     }
 
