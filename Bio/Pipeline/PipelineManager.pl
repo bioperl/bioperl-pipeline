@@ -174,7 +174,7 @@ sub create_new_job{
             if ($action eq 'NOTHING') {
                print "Rule action : $action\n";
                my $new_job = $job->create_next_job($next_analysis);
-               my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
+               my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
                foreach my $input (@inputs) {
                  $new_job->add_input($input);
                }
@@ -182,14 +182,14 @@ sub create_new_job{
             }
 
             elsif ($action eq 'UPDATE') {
-               my @output_ids = $job->_output_ids;
+               my @output_ids = $job->output_ids;
                if (scalar(@output_ids) == 0) {  ## No outputs, so dont create any job 
                   print "No outputs from the previous job, so no job created\n";
                }
                else {
                   foreach my $output_id (@output_ids){
                      my $new_job = $job->create_next_job($next_analysis);
-                     my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
+                     my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
                      foreach my $input (@inputs) {
                        $new_job->add_input($input);
                      }
@@ -204,7 +204,7 @@ sub create_new_job{
             #waits for all the jobs of this analysis to finish before starting the new job
               if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
                   my $new_job = $job->create_next_job($next_analysis);
-                  my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
+                  my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
                   foreach my $input (@inputs) {
                      $new_job->add_input($input);
                   }
