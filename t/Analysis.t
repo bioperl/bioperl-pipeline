@@ -17,7 +17,6 @@
     
     ok $biopipe_test; 
 
-    $dbh = $biopipe_test->db_handle();
     my $dba = $biopipe_test->get_DBAdaptor();
     ok $dba;
     my $analysisAdaptor = $dba->get_AnalysisAdaptor;

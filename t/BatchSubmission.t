@@ -28,7 +28,7 @@
     my $jobAdaptor  = $dba->get_JobAdaptor;
     my @jobs = $jobAdaptor->fetch_all; 
 
-    my $job = @jobs[0];
+    my $job = $jobs[0];
     ok $job;
 
     $batchsubmitter->add_job($job);

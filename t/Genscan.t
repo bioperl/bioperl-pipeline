@@ -24,7 +24,7 @@ use Bio::Root::IO;
   
   
    # create and fill Bio::Seq object
-   my $seqfile = Bio::Root::IO->catfile("data","Genscan.FastA");
+   my $seqfile = Bio::Root::IO->catfile("t/data","Genscan.FastA");
    my $seq1 = Bio::Seq->new();
    my $seqstream = Bio::SeqIO->new(-file => $seqfile, -fmt => 'Fasta');
    $seq1 = $seqstream->next_seq();

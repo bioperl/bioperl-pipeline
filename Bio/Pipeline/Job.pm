@@ -685,9 +685,9 @@ sub input_object_file {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_input_object_file'} = $arg;
+	$self->{_input_object_file} = $arg;
     }
-    return $self->{'_input_object_file'};
+    return $self->{_input_object_file};
 }
 
 =head2 QUEUE_id
@@ -768,26 +768,6 @@ sub output_file {
 	$self->{_output_file} = $arg;
     }
     return $self->{_output_file};
-}
-
-
-=head2 input_object_file
-
-  Title   : intput_object_file
-  Usage   : my $file = $self->input_object_file
-  Function: Get/set method for the input object file
-  Returns : string
-  Args    : string
-
-=cut
-
-sub input_object_file {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-	$self->{_input_object_file} = $arg;
-    }
-    return $self->{_input_object_file};
 }
 
 =head2 status_file
