@@ -106,7 +106,7 @@ sub run {
     my $blastdir = $hash{'blastdir'}  || $self->throw("Need the location of the blast directory");
     $file = $blastdir."/blast_out.".time().rand(1000);
     delete $hash{'blastdir'};
-    system("cat $blastdir/* > $file");
+    system("echo $blastdir/* | xargs cat > $file");
     @params = %hash;
     push @params, ("scorefile"=>$file);
 
