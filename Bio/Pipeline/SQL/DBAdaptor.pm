@@ -242,6 +242,7 @@ sub get_InputAdaptor {
     $self->{_InputAdaptor} = Bio::Pipeline::SQL::InputAdaptor->new
       ( $self );
   }
+  return $self->{_Input_Adaptor};
 }
 
 =head2 get_AnalysisAdaptor
