@@ -28,6 +28,17 @@ sub _initialize {
 
 }
 
+=head2 padding
+
+  Title   : padding
+  Usage   : $self->padding()
+  Function: get/sets of the padding on each side of sequence 
+            to pad before passing to genewise 
+  Returns :  
+  Args    :
+
+=cut
+
 sub padding{
     my ($self,$arg) = @_;
     if($arg){
@@ -35,6 +46,17 @@ sub padding{
     }
     return $self->{'_padding'};
 }
+
+=head2 contig_ioh
+
+  Title   : contig_ioh
+  Usage   : $self->contig_ioh()
+  Function: get/set of the iohandler id for fetching the contig sequence 
+  Returns :
+  Args    :
+
+=cut
+
 sub contig_ioh {
     my ($self,$arg) = @_;
     if($arg){
@@ -43,6 +65,16 @@ sub contig_ioh {
     return $self->{'_contig_ioh'};
 }
 
+=head2 protein_ioh
+
+  Title   : protein_ioh
+  Usage   : $self->protein_ioh()
+  Function: get/set of the iohandler id for fetching the protein  sequence
+  Returns :
+  Args    :
+
+=cut
+
 sub protein_ioh {
     my ($self,$arg) = @_;
     if($arg){
@@ -50,6 +82,17 @@ sub protein_ioh {
     }
     return $self->{'_protein_ioh'};
 }
+
+=head2 dhid
+
+  Title   : dhid
+  Usage   : $self->dhid()
+  Function: get/set of the datahandler id for dynamic arguments
+  Returns :
+  Args    :
+
+=cut
+
 sub dhid {
     my ($self,$arg) = @_;
     if($arg){
@@ -58,13 +101,15 @@ sub dhid {
     return $self->{'_dhid'};
 }
 
-sub new_ioh {
-    my ($self,$ioh) = @_;
-    if($ioh) {
-        $self->{'_new_ioh'} = $ioh;
-    }
-    return $self->{'_new_ioh'};
-}
+=head2 contig_ioh
+
+  Title   : contig_ioh
+  Usage   : $self->contig_ioh()
+  Function: get/set of the iohandler id for fetching the contig sequence
+  Returns :
+  Args    :
+
+=cut
 
 sub datatypes {
     my ($self) = @_;
@@ -77,9 +122,25 @@ sub datatypes {
     return %dts;
 }
 
+=head2 run
+
+  Title   : run
+  Usage   : $self->run($next_anal,$input)
+  Function: creates the jobs for genewise 
+  Returns :
+  Args    : L<Bio::Pipeline::Analysis>, Hash reference
+
+=cut
+
 sub run {
-    my ($self,$next_anal,@output) = @_;
-    
+    my ($self,$next_anal,$input) = @_;
+
+    (ref($input) eq "HASH") || $self->throw("Expecting a hash reference");
+    keys %{$input} > 1 ? $self->throw("Expecting only one entry for setup_genewise"):{};
+
+    my ($key) = keys %{$input};
+    my @output = $input->{$key};
+ 
     #check the first is enuff?
     $#output >= 0 || return;
     $output[0]->isa("Bio::SeqFeatureI") || $self->throw("Need a SeqFeatureI object to setup_genewise");
@@ -87,8 +148,10 @@ sub run {
     my ($first_sub)= $sub[0];
     my $chr = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->chromosome;
     my $contig_id = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->internal_id;
+    my ($chr_name,$chr_start,$chr_end) = $first_sub->entire_seq->db_handle->get_StaticGoldenPathAdaptor->get_chr_start_end_of_contig($first_sub->entire_seq->display_id);
+
     my $contig_length = $first_sub->entire_seq->length;
-    
+    my $padding = $self->padding; 
     #shawn to fix--creating input for contig_start_end
     foreach my $output(@output){
         my @sub = $output->sub_SeqFeature;
@@ -104,6 +167,11 @@ sub run {
         if ($contig_end < ($contig_length - $padding)){
             $contig_end += $padding;
         }
+
+       #offset to change to chromosomal coordinates
+        $contig_start += $chr_start;
+        $contig_end   += $chr_start;
+
         my $protein_id   = $sub[0]->hseqname;
         my $strand       = $output->strand;
         
