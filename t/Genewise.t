@@ -29,12 +29,12 @@ ok(1);
       exit(0);
   }
 
- my $inputfilename = Bio::Root::IO->catfile("data","new_pep.fa");
+ my $inputfilename = Bio::Root::IO->catfile("t","data","new_pep.fa");
  my $seqstream1 = Bio::SeqIO->new(-file => $inputfilename, -format => 'Fasta');
  my $seq1 = Bio::Seq->new();
  $seq1 = $seqstream1->next_seq();
 
- my $inputfilename = Bio::Root::IO->catfile("data","new_dna.fa");
+ my $inputfilename = Bio::Root::IO->catfile("t","data","new_dna.fa");
  my $seqstream2 = Bio::SeqIO->new(-file => $inputfilename, -fmt => 'Fasta');
  my $seq2 = Bio::Seq->new();
  $seq2 = $seqstream2->next_seq();
