@@ -296,8 +296,8 @@ sub run {
   my $err;
   my $autoupdate = $AUTOUPDATE;
   my $rdb;
+  $self->make_filenames unless $self->filenames;
   my @inputs = $self->inputs;
-
 
   print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
 
@@ -306,12 +306,12 @@ sub run {
   if( ! open ( STDOUT, ">".$self->stdout_file )) {
 
     $self->set_status( "FAILED" );
-    return;
+	$self->throw("Cannot pipe STDOUT to stdout_file.");
   }
         
   if( ! open ( STDERR, ">".$self->stderr_file )) {
     $self->set_status( "FAILED" );
-    return;
+	$self->throw("Cannot pipe STDERR to stderr_file.");
   }
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );

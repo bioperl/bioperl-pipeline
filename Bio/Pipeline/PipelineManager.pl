@@ -120,10 +120,12 @@ while ($run) {
                 $job->run;
 	        }else{
                 $batchsubmitter->add_job($job);
-                $job->status('BATCHED');
+                $job->status('SUBMITTED');
+                $job->stage ('BATCHED');
                 $job->update;
-                $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
-                }
+
+                &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs < $BATCHSIZE);
+            }
         }
 	    elsif ($job->status eq 'COMPLETED'){
             foreach my $new_job (&create_new_job($job)){
@@ -137,7 +139,8 @@ while ($run) {
                     $batchsubmitter->add_job($job);
                     $new_job->status('BATCHED');
                     $new_job->update;
-                    $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
+
+                    &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs < $BATCHSIZE);
                 }
             }
             $job->remove;
@@ -145,7 +148,7 @@ while ($run) {
 	}
 
     #submit remaining jobs in batch.
-    $batchsubmitter->submit_batch if ($batchsubmitter->batched_jobs);
+    &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs);
 
     my $count = $jobAdaptor->job_count($RETRY);
     $run =  0 if ($once || !$count);
@@ -167,3 +170,21 @@ sub create_new_job{
     }    
     return @new_jobs;    
 }	
+
+sub submit_batch{
+	my ($batchsubmitter) = @_;
+
+    eval{
+        $batchsubmitter->submit_batch;
+    };
+    my $err = $@;
+    if ($err){
+        my $job_ids;
+        foreach my $failed_job($batchsubmitter->get_jobs){
+            $failed_job->set_status('FAILED');
+            $job_ids .= $failed_job->dbID." ";
+        }
+        print STDERR "Error submitting jobs with dbIDs $job_ids.\n$err\n Retrying........\n";
+    	$batchsubmitter->empty_batch;
+    } 
+}

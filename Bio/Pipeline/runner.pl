@@ -1,3 +1,4 @@
+#!/usr/bin/perl
 # Script for running an analysis on node or locally on a single machine
 # 
 # adapted from EnsEMBL::Pipeline runner.pl
@@ -8,26 +9,24 @@
 #
 #
 
-#!/usr/local/bin/perl
-
 
 use Bio::Pipeline::SQL::DBAdaptor;
 use Sys::Hostname;
 
-use Bio::Pipeline::PipeConf qw  (   DBHOST
-                                    DBNAME
-                                    DBUSER
-                                    DBPASS
-                                    NFSTMP_DIR
+use Bio::Pipeline::PipeConf qw  (DBHOST
+                                 DBNAME
+                                 DBUSER
+                                 DBPASS
+                                 NFSTMP_DIR
                                 );
 use Getopt::Long;
 
 
 #parameters for Bio::Pipeline::SQL::DBAdaptor
 
-my $host    = DBHOST;
-my $dbname  = DBNAME;
-my $dbuser  = DBUSER;
+my $host    = $DBHOST;
+my $dbname  = $DBNAME;
+my $dbuser  = $DBUSER;
 my $pass    = undef;
 my $port    = '3306';
 

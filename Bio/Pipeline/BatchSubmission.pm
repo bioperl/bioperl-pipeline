@@ -100,7 +100,7 @@ sub batched_jobs{
     return scalar(@{$self->{'_jobs'}});
 }
 
-sub _empty_batch{
+sub empty_batch{
     my ($self) = @_;
     @{$self->{'_jobs'}} = ();
 }
@@ -212,8 +212,10 @@ sub open_command_line{
 
 }
 
-sub run_batch{
+sub submit_batch{
 
-    #clear @$self->{'_job_ids'};
+  my ($self)= @_;
+  
+  $self->throw("Sorry, you cannot call this method from a generic BatchSumission Object");
 
 }
