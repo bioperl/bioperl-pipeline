@@ -81,7 +81,6 @@ use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Transformer;
 use Bio::Pipeline::Utils::SaxHandler;
-use XML::SimpleObject;
 use ExtUtils::MakeMaker;
 
 use vars qw(@ISA %global);
@@ -654,33 +653,25 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
 my @rule_objs = ();
 print "Doing Rules\n";
-foreach my $rule ($pipeline_flow_setup->children('rule')) {
- if(ref($rule)) {
-   my $current;
-#   if (defined $rule->child('current_analysis_id')) {
-
-       #should be optional?
-       my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL', '', 'current');
-       $current = $self->_get_analysis(\@analysis_objs, $anal_id);
-#     if (!defined($current)) {
-#       print "current analysis not found for rule\n";
-#     }
-   
-#   }
-
-
-   my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL', '', 'next');
-   my $next = $self->_get_analysis(\@analysis_objs, $next_anal_id);
-   if (!defined($next)) {
-     print "next analysis not found for rule\n";
-   }
-   my $action = &verify($rule, 'action', 'OPTIONAL');
-  
-   my $rule_obj = Bio::Pipeline::Rule->new(-current=> $current,
-                                           -next => $next,
-                                           -action => $action);
-   push @rule_objs, $rule_obj;
- }
+foreach my $rule_group ($pipeline_flow_setup->children('rule_group')) {
+ foreach my $rule($rule_group->children('rule')){
+   if(ref($rule)) {
+     my $current;
+     my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL', '', 'current');
+     $current = $self->_get_analysis(\@analysis_objs, $anal_id);
+     my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL', '', 'next');
+     my $next = $self->_get_analysis(\@analysis_objs, $next_anal_id);
+     if (!defined($next)) {
+       print "next analysis not found for rule\n";
+     }
+     my $action = &verify($rule, 'action', 'OPTIONAL');
+     my $rule_obj = Bio::Pipeline::Rule->new(-current=> $current,
+                                             -next => $next,
+                                             -rule_group_id=>$rule_group->id,
+                                             -action => $action);
+      push @rule_objs, $rule_obj;
+    }
+  }
 }
 
 
