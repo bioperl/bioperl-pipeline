@@ -172,7 +172,7 @@ sub analysis{
   return $self->{'_analysis'};
 }
 sub parse_params {
-    my ($self,$string) = @_;
+    my ($self,$string,$dash) = @_;
     $string = " $string"; #add one space for first param
     my @param_str = split(/\s-/,$string);
     shift @param_str;
@@ -180,7 +180,13 @@ sub parse_params {
     my @params;
     foreach my $p(@param_str){
       my ($tag,$value) = $p=~/(\S+)\s+(\S+)/;
-      push @params, ($tag,$value);
+      if($dash){
+        push @params, ("-".$tag,$value);
+      }
+      else {
+        push @params, ($tag,$value);
+      }
+
     }
     return @params;
 }
