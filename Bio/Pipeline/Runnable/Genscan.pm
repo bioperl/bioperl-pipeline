@@ -1,7 +1,10 @@
-#Cared for by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
+# Pipeline Runnable for Genscan Bio::Pipeline::Runnable::Genscan
 #
-# Copyright Balamurugan Kumarasamy
-#
+# Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genscan
+# originally written by Michele Clamp  <michele@sanger.ac.uk>
+# Written in BioPipe by Fugu student intern Low Yik Jin
+# Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+# Written in BioPipe by Fugu student intern Low Yik Jin
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
@@ -39,9 +42,12 @@ OUTPUT DATATYPES
 
 The runnable currently returns an array of Bio::Tools::Prediction::Gene objects
 
-=head1 CONTACT
+=head1 AUTHOR
 
-Describe contact details here
+Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genscan
+originally written by Michele Clamp  <michele@sanger.ac.uk>
+Written in BioPipe by Fugu student intern Low Yik Jin
+Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
 =head1 APPENDIX
 

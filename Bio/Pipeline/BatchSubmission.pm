@@ -1,6 +1,9 @@
-# BioPerl runnable for Bio::Pipeline::BatchSubmission 
-
-# Written by FuguI team (fugui@fugu-sg.org)
+# Pipeline module for Bio::Pipeline::BatchSubmission 
+#
+# Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::BatchSubmission
+# originally written by Laura Clarke <lec@sanger.ac.uk>
+#
+# Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
@@ -44,9 +47,16 @@ actual command to be issued as well as the pre-execution command to use as
 test, parameters to be passed onto the submission system, the queue to send 
 the job to, and the name of the job.
 
+=head1 AUTHOR
+
+Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::BatchSubmission
+originally written by Laura Clarke <lec@sanger.ac.uk>
+
+Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+
 =head1 CONTACT
 
-FuguI team Singapore: fugui@fugu-sg.org
+Fugu Informatics team: fugui@fugu-sg.org
 
 =head1 APPENDIX
 

@@ -1,5 +1,7 @@
 # BioPerl runnable for Bio::Pipeline::BatchSubmission::PBS
-
+#
+# Based on the Bio::Pipeline::BatchSubmission:LSF module
+#
 # Written by FuguI team (fugui@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #

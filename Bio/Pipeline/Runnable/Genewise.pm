@@ -1,7 +1,9 @@
-# Cared for by FUGU  <fugui@worf.fugu-sg.org>
+# Pipeline Runnable for Genewise Bio::Pipeline::Runnable::Genewise
 #
-# Copyright Student Intern 
-#
+# Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genewise
+# originally written by Michele Clamp  <michele@sanger.ac.uk>
+# Written in BioPipe by Fugu student intern Low Yik Jin
+# Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
@@ -40,9 +42,12 @@ the bugs and their resolution. Bug reports can be submitted via email
   bioperl-bugs@bio.perl.org
   http://bio.perl.org/bioperl-bugs/
 
-=head1 AUTHOR -Student Intern 
+=head1 AUTHOR 
 
-Email <fugui@worf.fugu-sg.org>
+Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genewise
+originally written by Michele Clamp <michele@sanger.ac.uk>
+
+Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
 Describe contact details here
 

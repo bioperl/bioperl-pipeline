@@ -1,8 +1,10 @@
 #
 # BioPerl module for Bio::Pipeline::Rule
 #
-# Cared for by FuguI Team <fugui@fugu-sg.org>
+# Based on Ensembl pipeline module Bio::EnsEMBL::Pipeline::Rule
+# originally written by Arne Stabenau <stabenau@ebi.ac.uk>
 #
+# Cared for by Fugu Informatics Team <fuguteam@fugu-sg.org>
 #
 # You may distribute this module under the same terms as perl itself
 #
@@ -82,9 +84,12 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR - FuguI Team
+=head1 AUTHOR 
 
-Email fugui@fugu-sg.org
+Based on Ensembl pipeline module Bio::EnsEMBL::Pipeline::Rule
+originally written by Arne Stabenau <stabenau@ebi.ac.uk>
+
+Cared for by Fugu Informatics Team <fuguteam@fugu-sg.org>
 
 =head1 APPENDIX
 

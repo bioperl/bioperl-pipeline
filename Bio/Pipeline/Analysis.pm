@@ -1,7 +1,10 @@
 #
 # BioPerl module for Bio::Pipeline::Analysis
+# 
+# Based on the EnsEMBL module Bio::EnsEMBL::Analysis
+# originally written by Michele Clamp <michele@sanger.ac.uk>
 #
-# Cared for by FuguI Team <fugui@fugu-sg.org>
+# Cared for by Fugu Informatics Team <fuguteam@fugu-sg.org>
 #
 #
 # You may distribute this module under the same terms as perl itself
@@ -62,9 +65,14 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR - FuguI Team 
+=head1 AUTHOR  
 
-Email fugui@fugu-sg.org
+Based on Ensembl module Bio::EnsEMBL::Analysis originally written 
+by Michele Clamp <michele@sanger.ac.uk>
+
+Cared for by the Fugu Informatics Team 
+
+Email fuguteam@fugu-sg.org
 
 =head1 APPENDIX
 

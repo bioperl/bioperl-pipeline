@@ -1,7 +1,9 @@
-# Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+# Pipeline module for Bio::Pipeline::Runnable::Blast
 #
-# Copyright Shawn Hoon
-#
+# Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Blast
+# originally written by Michele Clamp  <michele@sanger.ac.uk>
+# Written in BioPipe by Shawn Hoon <shawnh@fugu-sg.org>
+# Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
@@ -53,9 +55,13 @@ The runnable currently returns the following output types:
   1) A SearchIO object for the blastall and blastpgp runs
   2) An AlignIO object for the bl2seq runs
 
-=head1 CONTACT
+=head1 AUTHOR
 
-Describe contact details here
+Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Blast
+originally written by Michele Clamp  <michele@sanger.ac.uk>
+Written in BioPipe by Shawn Hoon <shawnh@fugu-sg.org>
+Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+You may distribute this module under the same terms as perl itself
 
 =head1 APPENDIX
 

@@ -1,6 +1,9 @@
-# Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+# Pipeline module for RepeatMasker Bio::Pipeline::Runnable::RepeatMasker
 #
-# Copyright Shawn Hoon
+# Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::RepeatMasker
+# originally written by Michele Clamp <michele@sanger.ac.uk> 
+# Written in BioPipe by Shawn Hoon <shawnh@fugu-sg.org>
+# Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 #
 # You may distribute this module under the same terms as perl itself
 #
@@ -31,9 +34,12 @@ You probably need to do the following:
 
 3. Write the functionality inside the run routine calling the appropriate binary wrapper
 
-=head1 CONTACT
+=head1 AUTHOR
 
-shawnh@fugu-sg.org
+Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::RepeatMasker
+originally written by Michele Clamp <michele@sanger.ac.uk>
+Written in BioPipe by Shawn Hoon <shawnh@fugu-sg.org>
+Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
 =head1 APPENDIX
 

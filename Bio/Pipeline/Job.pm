@@ -1,13 +1,16 @@
-#
 # BioPerl module for Bio::Pipeline::Job
 #
-# Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+# Based on the EnsEMBL Pipeline module Bio::EnsEMBL::Pipeline::Job
+# originally written by Michele Clamp <michele@sanger.ac.uk>
+#
+# Cared for by Fugu Informatics Team <fuguteam@fugu-sg.org> 
 #
 #
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
 #
+
 =head1 NAME
 
 Bio::Pipeline::Job
@@ -44,9 +47,13 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR - Shawn Hoon
+=head1 AUTHOR  
 
-Email shawnh@fugu-sg.org
+Based on the EnsEMBL Pipeline module Bio::EnsEMBL::Pipeline::Job
+originally written by Michele Clamp <michele@sanger.ac.uk>
+
+Cared for by Fugu Informatics Team <fuguteam@fugu-sg.org>
+
 
 =head1 APPENDIX
 

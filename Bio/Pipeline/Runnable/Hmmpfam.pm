@@ -1,7 +1,10 @@
-#Cared for by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
+# Pipeline module for Hmmpfam Bio::Pipeline::Runnable::Hmmpfam
 #
-# Copyright Balamurugan Kumarasamy
-#
+# Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Hmmpfam
+# originally written by Emmanuel Mongin <mongin@ebi.ac.uk>
+# Written in BioPipe by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
+# Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
@@ -20,9 +23,12 @@ Bio::Pipeline::Runnable::Hmmpfam
 
 =head1 DESCRIPTION
 Runnable for Hmmpfam
-=head1 CONTACT
 
-savikalpa@fugu-sg.org
+=head1 AUTHOR
+Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Hmm
+originally written by Emmanuel Mongin <mongin@ebi.ac.uk>
+Written in BioPipe by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
+Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
 =head1 APPENDIX
 

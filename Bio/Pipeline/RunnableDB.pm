@@ -1,5 +1,9 @@
 #
 # BioPerl module for Bio::Pipeline::RunnableDB
+# 
+# Based on Bio::EnsEMBL::Pipeline::RunnableDB originally written 
+# by Michele Clamp <michele@sanger.ac.uk> but almost entirely rewritten
+# because peforming different function in BioPipe
 #
 # Cared for by FuguI Team <fugui@fugu-sg.org>
 #

@@ -1,6 +1,10 @@
 # BioPerl runnable for Bio::Pipeline::BatchSubmission::LSF
-
-# Written by FuguI team (fugui@fugu-sg.org)
+# 
+# Based on the EnsEMBL module 
+# Bio::EnsEMBL::Pipeline::BatchSubmission::LSF
+# originally written by Laura Clarke <lec@sanger.ac.uk>
+#
+# Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code

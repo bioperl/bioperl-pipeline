@@ -1,9 +1,9 @@
-#
 # Interface for running programs
 #
-# Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+# Based on Bio::EnsEMBL::Pipeline::RunnableI originally written
+# by Michele Clamp <michele@sanger.ac.uk>
 #
-# 
+# Cared for by Fugu Informatics team <fuguteam@fugu-sg.org>
 #
 # You may distribute this module under the same terms as perl itself
 #
@@ -45,10 +45,12 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bio.perl.org/bioperl-bugs/
 
-=head1 AUTHOR - Shawn Hoon 
+=head1 AUTHOR  
 
-Email: shawnh@fugu-sg.org 
+Based on Bio::EnsEMBL::Pipeline::RunnableI originally written
+by Michele Clamp <michele@sanger.ac.uk>
 
+Cared for by Fugu Informatics team <fuguteam@fugu-sg.org>
 
 =head1 APPENDIX
 
