@@ -65,7 +65,7 @@ sub new {
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
       $gff_source,$gff_feature,$runnable,$parameters,$created,
-      $logic_name,$output_handler,$node_group ) = 
+      $logic_name,$output_handler,$new_input_handler, $node_group ) = 
 
 	  $self->_rearrange([qw(ID
 	  			ADAPTOR
@@ -81,8 +81,9 @@ sub new {
 				PARAMETERS
 				CREATED
 				LOGIC_NAME
-        OUTPUT_HANDLER
-        NODE_GROUP
+                                OUTPUT_HANDLER
+                                NEW_INPUT_HANDLER
+                                NODE_GROUP
 				)],@args);
 
   $self->dbID           ($id);
@@ -100,6 +101,7 @@ sub new {
   $self->created        ($created);
   $self->logic_name     ($logic_name);
   $self->output_handler ($output_handler);
+  $self->new_input_handler ($new_input_handler);
   $self->node_group     ($node_group);
 
   return $self; # success - we hope!
@@ -604,6 +606,30 @@ sub output_handler{
 
     return $self->{_output_handler};
 }
+
+
+=head2 new_input_handler
+
+  Title   : new_input_handler
+  Usage   : $self->new_input_handler
+  Function: Get/set method for the new_input_handler, the IOhandler used
+            to fetch the dynamically generated inputs for this analysis from previous analysis
+  Returns : String
+  Args    : String
+
+=cut
+
+
+sub new_input_handler{
+    my ($self, $arg ) = @_;
+
+    if (defined $arg ) {
+        $self->{_new_input_handler} = $arg;
+    }
+
+    return $self->{_new_input_handler};
+}
+
 
 =head2 node_group
 
