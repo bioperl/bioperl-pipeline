@@ -183,15 +183,15 @@ is to allow inputs from different database sources.
       
        The pipeline is loaded up using this XML file.
        A new database will be automtically created maybe created for you. 
-       This is done using the Xml2Db.pl script found in bioperl-pipeline/scripts/Xml2Db.pl
+       This is done using the PipelineManager script found in bioperl-pipeline/scripts.
        Using the script:
 
         ******************************
-        *Xml2DB.pl
+        * PipelineManager
         ******************************
-        This script configures and creates a pipeline based on xml definitions.
+        This script configures and runs a pipeline based on xml definitions.
 
-         Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+         Usage: PipelineManager -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -xml pipeline_setup.xml
 
           Default values in ()
             -dbhost host (mysql)
@@ -201,15 +201,10 @@ is to allow inputs from different database sources.
             -schema The path to the bioperl-pipeline schema.
                     Needed if you want to create a new db.
                     (../sql/schema.sql)
-            -p      the pipeline setup xml file (required)
+            -xml    the pipeline setup xml file (required)
 
-        
-
-        Load the pipeline by cd-ing to the xml directory at bioperl-pipeline/xml
-
-        perl Xml2DB.pl -dbname mydbname -host myshost -p template/file_blast_pipeline.xml
-
-        Once this is done you are ready to run the pipeline.
+        Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in 
+	the Bio/Pipeline/PipeConf.pm file, for ease of use.
 
   </LOADING THE PIPELINE>
 
@@ -223,8 +218,8 @@ is to allow inputs from different database sources.
 
     perl PipelineManager.pl -dbname mydbname -dbuser root -dbhost pulse
 
-    you may use the -l option to run it in local mode without submitting to the nodes yet.
-    This will be a good test before submitting, and is recommened for first time use.
+    you may use the -local option to run it in local mode without submitting to the nodes yet.
+    This will be a good test before submitting, and is recommended for debugging.
 
   </RUNNING THE PIPELINE>
 
