@@ -22,6 +22,10 @@ Current use case for filtering the blast hits to be passed to genewise
 for gene building. We only want the maximum coverage for a hit so as
 to build the longest possible gene.
 
+Also allow for number of overlapping similarity features as a parameter.
+
+Logic adapted from module written previously by Jer-Ming Chia
+
 =head1 FEEDBACK
 
 =head2 Mailing Lists
@@ -72,9 +76,44 @@ sub _initialize {
     my ($self,@args) = @_;
     $self->SUPER::_initialize(@args);
 
-    my ($threshold) = $self->_rearrange([qw(THRESHOLD)],@args);
+    my ($evalue,$threshold,$cluster_size) = $self->_rearrange([qw(EVALUE THRESHOLD CLUSTER_SIZE)],@args);
+    $threshold||=85; 
+    $self->threshold($threshold);
+    $self->cluster_size($cluster_size) if $cluster_size;
+    $evalue && $self->evalue($evalue);
+}
 
-    $threshold && $self->threshold($threshold);
+sub cluster_size {
+  my ($self,$val) = @_;
+  if($val){
+    $self->{'_cluster_size'} = $val;
+  }
+  return $self->{'_cluster_size'};
+}
+
+sub evalue {
+  my ($self,$val) = @_;
+  if($val){
+    $self->{'_evalue'} = $val;
+  }
+  return $self->{'_evalue'};
+}
+
+sub _group_to_hits {
+  my ($self,@hsps) = @_;
+  my %hash;
+  foreach my $hsp (@hsps){
+    if (!$hash{$hsp->hseqname}){
+      my $hit = Bio::SeqFeature::Generic->new();
+      $hit->add_sub_SeqFeature($hsp,'EXPAND');
+      $hit->strand($hsp->strand);
+      $hash{$hsp->hseqname} = $hit;
+    }
+    else {
+      $hash{$hsp->hseqname}->add_sub_SeqFeature($hsp,'EXPAND');
+    }
+  }
+  return values %hash;
 }
 
 =head2 run 
@@ -91,29 +130,10 @@ sub run {
     my ($self,$input) = @_;
 
     (ref($input) eq "ARRAY") || $self->throw("Expecting an array reference");
-    return $self->_select_hits(@$input);
+    my @hits = $self->_group_to_hits(@$input);
 
-=head
+    return $self->_select_hits(@hits);
 
-    foreach my
-    foreach my $key(keys %{$input}){
-      if (ref($input->{$key}) eq "ARRAY"){
-       my @hits = @{$input->{$key}};
-       if (scalar(@hits) == 0) {
-           return $input; 
-       }
-       my $junk = $self->_select_hits(@{$input->{$key}});
- 	#$input->($key) = ();
-        #push @{$input->{$key}}, @{$self->_select_hits(@{$input->{$key}})};
-        $input->{$key} = $self->_select_hits(@{$input->{$key}});
-      }
-      else {
-        $input->{$key} =  $self->_select_hits($input->{$key});
-      }
-    }
-      
-    return $input;
-=cut
 }
 
 =head2 _set_coverage 
@@ -151,7 +171,8 @@ sub _set_coverage {
 sub _select_hits{
 
   my ($self,@hits) = @_;
-  
+  my $initial = $#hits+1; 
+  return unless $#hits >=0; 
   @hits = $self->_set_coverage(@hits);
 
   @hits= sort { $a->strand <=> $b->strand
@@ -174,20 +195,29 @@ sub _select_hits{
 
   foreach my $hit(@hits){
       if ($hit->overlaps($hit_cluster,'strong')){
+          my ($a_unique,$common,$b_unique) = $hit->overlap_extent($hit_cluster);
           $hit_cluster->add_sub_SeqFeature($hit,'EXPAND');
-          $hit_cluster->{'_sub_seqfeature_coverage'} += $hit->{'_sub_seqfeature_coverage'};
-
+          $hit_cluster->{'_sub_seqfeature_coverage'} += $a_unique;
       }
       else{
           $hit_cluster = Bio::SeqFeature::Generic->new();
           $hit_cluster->{'_sub_seqfeature_coverage'} += $hit->{'_sub_seqfeature_coverage'};
           $hit_cluster->add_sub_SeqFeature($hit,'EXPAND');
           $hit_cluster->strand($hit->strand);
-
           push (@clusters,$hit_cluster);
        }
   }
 
+  #prune clusters by number of members
+ if($self->cluster_size){
+  my @new_clusters ;
+  foreach my $c(@clusters){
+    my $size = scalar($c->sub_SeqFeature);
+    next if $self->cluster_size> $size;
+    push @new_clusters, $c;
+  }
+  @clusters = @new_clusters;
+ }
 
 #Prune the features of each cluster to only include those that gives added coverage
 
@@ -235,8 +265,6 @@ LONG:       foreach my $longest_hit ($longest_hit->sub_SeqFeature){
       }
       push (@clusters,$new_cluster) unless (scalar($new_cluster->sub_SeqFeature) == 0);
   }
-
-  my @features;
 
   return \@selected_hits;
 }
