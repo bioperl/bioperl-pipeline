@@ -146,15 +146,23 @@ sub run {
   my $program_file = $self->analysis->program_file;
   $factory->executable($program_file) if $program_file;
 
-  my @genes;
+  my $searchio;
   eval {
-    @genes = $factory->predict_protein_features($seq);
+    $searchio = $factory->predict_protein_features($seq);
   };
 	$self->throw("Problems running predict_protein_featuers due to $@") if $@;
+  my @feat;
+  while(my $result = $searchio->next_result){
+    while(my $hit = $result->next_hit){
+      while(my $hsp = $hit->next_hsp){
+        push @feat,$hsp;
+      }
+    }
+  }
 
-  $self->output(\@genes);
+  $self->output(\@feat);
   
-  return \@genes;
+  return \@feat;
 
 }
 
