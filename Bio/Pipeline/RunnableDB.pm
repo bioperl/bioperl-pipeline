@@ -166,13 +166,7 @@ sub rule_group_id {
   }
   return $self->{'_rule_group_id'};
 }
-sub rule_group_id { 
-  my ($self,$id) = @_;
-  if($id){
-    $self->{'_rule_group_id'} = $id;
-  }
-  return $self->{'_rule_group_id'};
-}
+
 =head2 add_input_obj
 
     Title   :   add_input_obj
