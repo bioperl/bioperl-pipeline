@@ -110,15 +110,6 @@ sub padding{
     return $self->{'_padding'};
 }
 
-=head2 contig_ioh
-
-  Title   : contig_ioh
-  Usage   : $self->contig_ioh()
-  Function: get/set of the iohandler id for fetching the contig sequence 
-  Returns :
-  Args    :
-
-=cut
 
 sub slice_ioh {
     my ($self,$arg) = @_;
