@@ -18,10 +18,10 @@ Bio::Pipeline::Runnable::Genewise
 
 =head1 DESCRIPTION
 
-This package is based on Genewise.
-Genewise takes a query protein sequence and a target genomic region 
-and predicts genes on the genomic region. 
-The resulting output is parsed to produce a set of Bio::SeqFeatures. 
+This package is based on Genewise.  Genewise takes a query protein
+sequence and a target genomic region and predicts genes on the genomic
+region.  The resulting output is parsed to produce a set of
+Bio::SeqFeatures.
 
 =head1 FEEDBACK
 
@@ -37,7 +37,7 @@ of the Bioperl mailing lists.  Your participation is much appreciated.
 
 Report bugs to the Bioperl bug tracking system to help us keep track
 the bugs and their resolution. Bug reports can be submitted via email
-    or the web:
+or the web:
 
   bioperl-bugs@bio.perl.org
   http://bio.perl.org/bioperl-bugs/
@@ -45,9 +45,9 @@ the bugs and their resolution. Bug reports can be submitted via email
 =head1 AUTHOR 
 
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genewise
-originally written by Michele Clamp <michele@sanger.ac.uk>
+originally written by Michele Clamp, michele@sanger.ac.uk.
 
-Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
 
 Describe contact details here
 
@@ -131,11 +131,11 @@ sub target_dna {
 
 =head2 run
 
-    Title   :  run
-    Usage   :   $obj->run()
-    Function:   Runs Genewise and creates array seqfeatures
-    Returns :   none
-    Args    :   none
+  Title   :  run
+  Usage   :   $obj->run()
+  Function:   Runs Genewise and creates array seqfeatures
+  Returns :   none
+  Args    :   none
 
 =cut
 
@@ -174,11 +174,11 @@ sub run {
 
 =head2 output
 
-Title   :   output
-Usage   :   $self->output($seq)
-Function:   Get/set method for output
-Returns :   A Bio::Seqfeature::Gene:GeneStructure object 
-Args    :   A Bio::Seqfeature::Gene:GeneStructure object 
+  Title   :   output
+  Usage   :   $self->output($seq)
+  Function:   Get/set method for output
+  Returns :   A Bio::Seqfeature::Gene:GeneStructure object
+  Args    :   A Bio::Seqfeature::Gene:GeneStructure object
 
 =cut
 

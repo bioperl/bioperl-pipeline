@@ -11,10 +11,11 @@ Bio::Pipeline::SQL::DBAdaptor
 
 =head1 SYNOPSIS
 
+  use Bio::Pipeline::SQL::DBAdaptor;
   $DBAdaptor = Bio::Pipeline::SQL::DBAdaptor->new(-dbname =>"my_db",
                                                   -user   =>"root",
                                                   -host   =>"localhost",
-                                                  -driver =>"mysql"):
+                                                  -driver =>"mysql");
   my $jobadaptor - $DBAdaptor->get_JobAdaptor;
   my $ioadaptor - $DBAdaptor->get_IOHandlerAdaptor;
 

@@ -15,13 +15,13 @@ Bio::Pipeline::Utils::Iterator
 
 =head1 SYNOPSIS
 
-use Bio::Pipeline::Utils::Iterator;
-use Bio::AlignIO;
+  use Bio::Pipeline::Utils::Iterator;
+  use Bio::AlignIO;
 
-my $itr = Bio::Pipeline::Utils::Iterator->new();
-my $aio = Bio::AlignIO->new(-file=>$ARGV[0],-format=>"phylip");
+  my $itr = Bio::Pipeline::Utils::Iterator->new();
+  my $aio = Bio::AlignIO->new(-file=>$ARGV[0],-format=>"phylip");
 
-my $obj = $itr->run($aio); #$obj is a array ref of Bio::SimpleAlign
+  my $obj = $itr->run($aio); #$obj is a array ref of Bio::SimpleAlign
 
 
 =head1 DESCRIPTION

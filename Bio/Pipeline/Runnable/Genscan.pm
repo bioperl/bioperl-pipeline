@@ -44,10 +44,10 @@ The runnable currently returns an array of Bio::Tools::Prediction::Gene objects
 
 =head1 AUTHOR
 
-Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genscan
-originally written by Michele Clamp  <michele@sanger.ac.uk>
-Written in BioPipe by Fugu student intern Low Yik Jin
-Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genscan.
+Originally written by Michele Clamp, michele@sanger.ac.uk.
+Written in BioPipe by Fugu student intern Low Yik Jin.
+Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
 
 =head1 APPENDIX
 

@@ -6,7 +6,7 @@
 #
 # POD documentation - main docs before the code
 
-=pod 
+=pod
 
 =head1 NAME
 
@@ -16,9 +16,9 @@ Bio::Pipeline::Runnable::Promoterwise
 
 =head1 DESCRIPTION
 
-This package is based on Promoterwise.
-Promoterwise takes in two fasta files.
-The resulting output is parsed to produce a set of Bio::SeqFeatures. 
+This package is based on Promoterwise.  Promoterwise takes in two
+fasta files.  The resulting output is parsed to produce a set of
+Bio::SeqFeatures.
 
 =head1 FEEDBACK
 
@@ -128,10 +128,13 @@ sub run {
     my ($self) = @_;
      #check seq
     my $analysis = $self->analysis;
-    $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
-    my $seq1 = $self->subject_dna() || $self->throw("Subject dna sequence required for Promoterwise\n");
-    my $seq2 = $self->target_dna() || $self->throw("Target dna sequence required for Promoterwise\n");
-    #run promoterwise       
+    $self->throw("Analysis not set")
+        unless $analysis->isa("Bio::Pipeline::Analysis");
+    my $seq1 = $self->subject_dna() ||
+        $self->throw("Subject dna sequence required for Promoterwise\n");
+    my $seq2 = $self->target_dna() ||
+        $self->throw("Target dna sequence required for Promoterwise\n");
+    #run promoterwise
     my @params = $self->parse_params($self->analysis->analysis_parameters);
     my $factory = Bio::Tools::Run::Promoterwise->new(@params);
     $factory->executable($analysis->program_file) if $analysis->program_file;
@@ -143,21 +146,22 @@ sub run {
     $self->output(\@promoters);
     return \@promoters;
  }
-  
+
 =head2 output
 
-Title   :   output
-Usage   :   $self->output($seq)
-Function:   Get/set method for output
-Returns :   An array of Bio::SeqFeature objects
-Args    :   An array ref to an array of Bio::SeqFeature objects
+  Title   :   output
+  Usage   :   $self->output($seq)
+  Function:   Get/set method for output
+  Returns :   An array of Bio::SeqFeature objects
+  Args    :   An array ref to an array of Bio::SeqFeature objects
 
 =cut
 
 sub output{
     my ($self,$promoter) = @_;
     if(defined $promoter){
-      (ref($promoter) eq "ARRAY") || $self->throw("Output must be an array reference.");
+      (ref($promoter) eq "ARRAY") ||
+          $self->throw("Output must be an array reference.");
       $self->{'_promoter'} = $promoter;
     }
     return @{$self->{'_promoter'}};

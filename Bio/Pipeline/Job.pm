@@ -47,12 +47,12 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR  
+=head1 AUTHOR
 
 Based on the EnsEMBL Pipeline module Bio::EnsEMBL::Pipeline::Job
-originally written by Michele Clamp <michele@sanger.ac.uk>
+originally written by Michele Clamp, michele@sanger.ac.uk
 
-Cared for by Fugu Informatics Team <fuguteam@fugu-sg.org>
+Cared for by Fugu Informatics Team, fuguteam@fugu-sg.org
 
 
 =head1 APPENDIX
@@ -426,7 +426,7 @@ sub set_stage{
 
   Title   : make_filenames
   Usage   : $job->make_filenames();
-  
+  Function:
   Returns :
   Args    : 
 

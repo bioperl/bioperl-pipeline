@@ -9,24 +9,24 @@
 #
 # POD documentation - main docs before the code
 
-=pod 
 
 =head1 NAME
 
-Bio::Pipeline::DataType 
+Bio::Pipeline::DataType
 
 =head1 SYNOPSIS
 
-    my $obj    = new Bio::Pipeline::DataType
-    ('-objecttype'              => "Bio::SeqI",
-     '-name'                    => "-sequence",
-     '-reftype'                 => "ARRAY",
-     );
-         or
-     my $range = Bio::Range;
-     my $obj = new Bio::Pipeline::DataType();
-     my $dt = $obj->create_from_input($range);
+  use Bio::Pipeline::DataType;
+  my $obj    = new Bio::Pipeline::DataType
+      ('-objecttype'              => "Bio::SeqI",
+       '-name'                    => "-sequence",
+       '-reftype'                 => "ARRAY",
+      );
+   #  or
 
+   # $range->isa('Bio::RangeI');
+   my $obj = new Bio::Pipeline::DataType();
+   my $dt = $obj->create_from_input($range);
 
 =head1 DESCRIPTION
 
@@ -153,7 +153,7 @@ sub create_from_input {
   }
   return $datatype;
 }
- 
+
 =head2 match 
 
   Title   : match 
@@ -166,8 +166,9 @@ sub create_from_input {
 
 sub match {
     my ($self,$data_type) = @_;
-    $data_type->isa("Bio::Pipeline::DataType") || $self->throw("Need a Bio::Pipeline::DataType to check");
-    
+    $data_type->isa("Bio::Pipeline::DataType") ||
+        $self->throw("Need a Bio::Pipeline::DataType to check");
+
     my $obj_type = $self->object_type;
     my $name = $self->name;
     my $ref_type = $self->ref_type;
@@ -177,8 +178,10 @@ sub match {
     my $q_name = $data_type->name();
 
     my $class = $data_type->object_type;
-    #if (($obj_type eq $q_obj_type) && ($name eq $q_name ) &&($ref_type eq $q_ref_type)){
-    if (($obj_type eq $q_obj_type) &&($ref_type eq $q_ref_type)){#don't require name to match for now
+    #if (($obj_type eq $q_obj_type) && ($name eq $q_name )
+    #&&($ref_type eq $q_ref_type)){
+    if (($obj_type eq $q_obj_type) &&($ref_type eq $q_ref_type))
+        {#don't require name to match for now
         return 1;
     }
     else {

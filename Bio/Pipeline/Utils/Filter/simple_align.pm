@@ -8,23 +8,22 @@
 
 =head1 NAME
 
-Bio::Pipeline::Utils::Filter::feature_coverage
+Bio::Pipeline::Utils::Filter::feature_coverage - A simple filter that
+filters a list of objects, according to one of it's attributes
 
 =head1 SYNOPSIS
 
-  A simple filter that filters a list of objects, according to one of it's attributes.
-
-  For example, to filter a list of HSPs according to evalue,
-  
-  my $fc = Bio::Pipeline::Utils::Filter::feature_filter->new(-threshold=>0.001,
-                                                       -condition => '<',
-                                                       -tag => 'evalue');
+  # to filter a list of HSPs according to evalue,
+  my $fc = Bio::Pipeline::Utils::Filter::feature_filter->
+     new(-threshold=>0.001,
+         -condition => '<',
+         -tag => 'evalue');
   my $filtered = $fc->run(\@hsps);
 
 =head1 DESCRIPTION
 
 A generic filter for filtering of objects according to one of it's
-attributest/tags.  
+attributest/tags.
 
 =head1 FEEDBACK
 
@@ -52,7 +51,7 @@ Email jerm@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. 
+The rest of the documentation details each of the object methods.
 Internal methods are usually preceded with a _
 
 =cut

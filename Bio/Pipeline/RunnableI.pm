@@ -48,9 +48,9 @@ or the web:
 =head1 AUTHOR  
 
 Based on Bio::EnsEMBL::Pipeline::RunnableI originally written
-by Michele Clamp <michele@sanger.ac.uk>
+by Michele Clamp, michele@sanger.ac.uk
 
-Cared for by Fugu Informatics team <fuguteam@fugu-sg.org>
+Cared for by Fugu Informatics team, fuguteam@fugu-sg.org
 
 =head1 APPENDIX
 
@@ -77,59 +77,60 @@ use Bio::SeqIO;
 
 =head1 ABSTRACT METHODS
 
-These methods need to be implemented in any
-module which implements L<Bio::Pipeline::RunnableI>.
+These methods need to be implemented in any module which implements
+L<Bio::Pipeline::RunnableI>.
 
-This methods will be used by RunnableDB so they MUST be
-implemeted to work properly.
+This methods will be used by RunnableDB so they MUST be implemeted to
+work properly.
 
-=head2 datatypes
+=head2 datatypes()
 
   my %datatype = $self->datatypes();
 
-  Returns a hash of datatypes that describes the parameters
-  keyed by the runnable routines that is called to set them.
-  For example if there is a $runnable->seq function which takes
-  in a Bio::Seq object, then one of the entries in the hash will
-  be 
+Returns a hash of datatypes that describes the parameters keyed by the
+runnable routines that is called to set them.  For example if there is
+a $runnable-E<gt>seq function which takes in a Bio::Seq object, then
+one of the entries in the hash will be
+
   $datatype{seq}=Bio::Pipeline::DataType=>(-object_type=>'Bio::Seq',
                                            -name=>'sequence',
                                            -reftype=>'SCALAR);
 
-  This is used by RunnableDB to match the inputs provided with the inputs
-  required by the runnable and calling the set methods accordingly. 
+This is used by RunnableDB to match the inputs provided with the
+inputs required by the runnable and calling the set methods
+accordingly.
 
-=head2 params
+=head2 params()
 
   $self->params("-C 10 -W 3")
 
-  This is a get/set method to allow any string of parameters to be
-  passed into the runnable without needing a explicit get/set method
+This is a get/set method to allow any string of parameters to be
+passed into the runnable without needing a explicit get/set method
 
-=head2 parse_results
+=head2 parse_results()
 
   $self->parse_results()
 
-  This is called by the runnable itself to parse the results from
-  the program output
+This is called by the runnable itself to parse the results from the
+program output
 
-=head2 parse_params
+=head2 parse_params()
 
   $self->parse_params()
 
-  This is a utility used to parse a string of the form "-p blastp -e 0.01"
-  into an array of tag/value elements to be passed into the bioperl run functions.
+This is a utility used to parse a string of the form "-p blastp -e
+0.01" into an array of tag/value elements to be passed into the
+bioperl run functions.
 
-=head2 run
+=head2 run()
 
     $self->run();
 
-Actually runs the analysis programs.  If the
-analysis has fails, it should throw an
-exception.  It should also remove any temporary
-files created (before throwing the exception!).
+Actually runs the analysis programs.  If the analysis has fails, it
+should throw an exception.  It should also remove any temporary files
+created (before throwing the exception!).
 
-=head2 output
+=head2 output()
 
     @output = $self->output();
 
@@ -151,7 +152,8 @@ Return a list of objects created by the analysis
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($result_dir,$infile_suffix,$infile_dir,$program) = $self->_rearrange([qw(RESULT_DIR INFILE_SUFFIX INFILE_DIR PROGRAM)],@args);
+  my ($result_dir,$infile_suffix,$infile_dir,$program) =
+      $self->_rearrange([qw(RESULT_DIR INFILE_SUFFIX INFILE_DIR PROGRAM)],@args);
   $self->result_dir($result_dir) if $result_dir;
   $self->infile_suffix($infile_suffix) if $infile_suffix;
   $self->infile_dir($infile_dir) if $infile_dir;

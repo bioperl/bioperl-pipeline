@@ -7,16 +7,22 @@
 
 =head1 NAME
 
-Bio::Pipeline::Method 
+Bio::Pipeline::Method
 
 =head1 SYNOPSIS
+
+  use Bio::Pipeline::Method;
   my $data_handler = Bio::Pipeline::Method->new(-dbid=>1,
-                                                   -method=>"fetch_by_dbID,                                                   -argument=>\@arguments,
-                                                   -rank=>1);
-=head1 DESCRIPTION 
-Methods specifiy the adaptor methods and the correspoding arguments needed by a IO to fetch or store output. 
-The rank represents the order in which they are called by IOHandler methods
-fetch_input, write_output
+                                                -method=>"fetch_by_dbID",
+                                                -argument=>\@arguments,
+                                                -rank=>1);
+
+=head1 DESCRIPTION
+
+Methods specifiy the adaptor methods and the correspoding arguments
+needed by a IO to fetch or store output.  The rank represents the
+order in which they are called by IOHandler methods fetch_input,
+write_output
 
 =head1 FEEDBACK
 
@@ -44,8 +50,8 @@ Email fugui@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal metho ds are usually preceded with a _
 
 =cut
 

@@ -24,99 +24,73 @@ Bio::Pipeline::InputCreate::setup_initial
 
 =head1 DESCRIPTION
 
-The setup initial analysis takes in an array of ids and iohandler ids and creates
-inputs and jobs. Each input to the analysis is an array of input ids. Each array
-of input ids are associated with a given IOHandler. It has two modes of operation.
-It may either create one input per job or multiple inputs per job.
+The setup initial analysis takes in an array of ids and iohandler ids
+and creates inputs and jobs. Each input to the analysis is an array of
+input ids. Each array of input ids are associated with a given
+IOHandler. It has two modes of operation.  It may either create one
+input per job or multiple inputs per job.
 
 For example in an xml snippet:
 
-1   <analysis id="1">
+  1   <analysis id="1">
+  2      <data_monger>
+  3        <initial/>
+  4       <input>
+  5          <name>gene1</name>
+  6          <iohandler>1</iohandler>
+  7        </input>
+  8        <input>
+  9          <name>gene2</name>
+  10          <iohandler>2</iohandler>
+  11       </input>
+  12        <input_create>
+  13           <module>setup_initial</module>
+  14          <rank>1</rank>
+  15           <argument>
+  16                <tag>group</tag>
+  17               <value>1</value>
+  18           </argument>
+  19           <argument>
+  20                <tag>gene2</tag>
+  21                <value>4</value>
+  22            </argument>
+  23           <argument>
+  24                <tag>gene1</tag>
+  25                <value>3</value>
+  26            </argument>
+  27         </input_create>
+  28     </data_monger>
+  29     <input_iohandler id="1"/>
+  30     <input_iohandler id="2"/>
+  31   </analysis>
 
-2      <data_monger>
+This specifies that there are two inputs (line 4-11) to the
+InputCreate job that uses the setup_initial module. Each input has its
+own iohandler which would return an array of input ids (line 6 and
+line 10). For example in this case gene1 may belong to genes from a
+human database and gene2 may belong to gene from a fugu database.
 
-3        <initial/>
+Within the input_create arguments (line 12-27), we next specify how to
+map the input ids to its corresponding iohandler. In other words,
+given the gene input ids, how does one fetch the actual gene object?
+So for this case, input ids from gene1 are fetched using iohandler_id
+3 (line 25) and input ids from gene2 are fetched using iohandler_id 4
+(line 21)
 
-4       <input>
-
-5          <name>gene1</name>
-
-6          <iohandler>1</iohandler>
-
-7        </input>
-
-8        <input>
-
-9          <name>gene2</name>
-
-10          <iohandler>2</iohandler>
-
-11       </input>
-
-12        <input_create>
-
-13           <module>setup_initial</module>
-
-14          <rank>1</rank>
-
-15           <argument>
-
-16                <tag>group</tag>
-
-17               <value>1</value>
-
-18           </argument>
-
-19           <argument>
-
-20                <tag>gene2</tag>
-
-21                <value>4</value>
-
-22            </argument>
-
-23           <argument>
-
-24                <tag>gene1</tag>
-
-25                <value>3</value>
-
-26            </argument>
-
-27         </input_create>
-
-28     </data_monger>
-
-29     <input_iohandler id="1"/>
-
-30     <input_iohandler id="2"/>
-
-31   </analysis>
-
-This specifies that there are two inputs (line 4-11) to the InputCreate job that 
-uses the setup_initial module. Each input has its own iohandler which would return
-an array of input ids (line 6 and line 10). For example in this case gene1 may belong 
-to genes from a human database and gene2 may belong to gene from a fugu database.
-
-Within the input_create arguments (line 12-27), we next specify how to map the input
-ids to its corresponding iohandler. In other words, given the gene input ids, how does
-one fetch the actual gene object? So for this case, input ids from gene1 are fetched using
-iohandler_id 3 (line 25) and input ids from gene2 are fetched using iohandler_id 4 (line 21)
-
-We also specify that the inputs are grouped (line 15-18) meaning that each pair of inputs
-ids (assuming that the number of input ids are equal for gene1 and gene2) are passed to one
-job. So what you get:
+We also specify that the inputs are grouped (line 15-18) meaning that
+each pair of inputs ids (assuming that the number of input ids are
+equal for gene1 and gene2) are passed to one job. So what you get:
 
   gene1_id-> fetched using iohandler id 3 ----> a single job of the next analysis
   gene2_id-> fetched using iohandler id 4
 
-  If the group argument is not specified, the jobs are created as such:
+If the group argument is not specified, the jobs are created as such:
 
   gene1_id-> fetched using iohandler id 3 ---->  a job of the next analysis
   gene2_id-> fetched using iohandler id 4 ---->  a job of the next analysis
 
-Currently it is assumed that the inputs are mapped based on object type to the inputs of 
-the  runnables
+Currently it is assumed that the inputs are mapped based on object
+type to the inputs of the runnables.
 
 =head1 FEEDBACK
 

@@ -45,7 +45,7 @@ Bio::Pipeline::IOHandler input/output object for pipeline
                                      -job_id=>1);
   my $input = $io_db->fetch_input($in); #$input is an array of ref ensembl contigs
 
-  rint $input->seq;
+  print $input->seq;
 
   #alternatively you can use any modules to read, here we are reading from a database
   #of fasta formatted files
@@ -98,8 +98,8 @@ Bio::Pipeline::IOHandler input/output object for pipeline
 =head1 DESCRIPTION
 
 The input/output handler for reading input and writing output.
-IOHandler object represents a  series of method calls that are 
-needed to fetch a particular input or store outputs. 
+IOHandler object represents a series of method calls that are needed
+to fetch a particular input or store outputs.
 
 It represents the following snippet of code in the database:
 
@@ -108,8 +108,8 @@ It represents the following snippet of code in the database:
   my $gene = $db->get_GeneAdaptor->fetch_by_dbID(1);
 
 Methods are represented by DataHandler objects which in term have
-argument objects. Datahandlers are rank in the order that they
-are cascaded, likewise for arguments.
+argument objects. Datahandlers are rank in the order that they are
+cascaded, likewise for arguments.
 
 =head1 FEEDBACK
 
@@ -119,8 +119,8 @@ User feedback is an integral part of the evolution of this and other
 Bioperl modules. Send your comments and suggestions preferably to one
 of the Bioperl mailing lists.  Your participation is much appreciated.
 
-  bioperl-l@bioperl.org          - General discussion
-  http://bio.perl.org/MailList.html             - About the mailing lists
+  bioperl-l@bioperl.org                     - General discussion
+  http://bio.perl.org/MailList.html         - About the mailing lists
 
 =head2 Reporting Bugs
 
@@ -133,12 +133,12 @@ or the web:
 
 =head1 AUTHOR - Shawn Hoon
 
-Email shawnh@fugu-sg.org 
+Email shawnh@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal metho ds are usually preceded with a _
 
 =cut
 
@@ -238,15 +238,18 @@ sub new_ioh_db {
             module      -a string of the form Bio::XXX  that specifies the stream adaptor module
             file_path   -a directory path for stream adaptor which have files as input names
             file_suffix -the file extenstion to append to a file input name
-            datahandlers - array ref of L<Bio::Pipeline::DataHandler> 
+            datahandlers - array ref of L<Bio::Pipeline::DataHandler>
 
-***Note file paths and file suffix***
-File paths and file_suffix are optional parameters. They are used in conjunction with input names when 
-fetching using streamadaptors where file paths are inputs. When an iohandler->fetch_input is called, 
-the special argument tag INPUT is replaced with the input_name specified in the input table. 
-If the file_path and file_suffix arguments are present, the input_name is modifled to the following:
+Note on file paths and file suffix
 
-/file_path/input_name.file_suffix
+File paths and file_suffix are optional parameters. They are used in
+conjunction with input names when fetching using streamadaptors where
+file paths are inputs. When an iohandler-E<gt>fetch_input is called,
+the special argument tag INPUT is replaced with the input_name
+specified in the input table.  If the file_path and file_suffix
+arguments are present, the input_name is modified to the following:
+
+  /file_path/input_name.file_suffix
 
 =cut
 

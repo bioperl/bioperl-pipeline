@@ -26,16 +26,17 @@ Bio::Pipeline::Rule
 
 =head1 DESCRIPTION
 
-This object represents the conditional logic for workflow in the pipeline.
-Each Rule dictates for a given analysis what the next analysis will be.
-It also specifies any action to be taken before going to the next job.
-Usually this involves setting up of inputs for the next analysis.
+This object represents the conditional logic for workflow in the
+pipeline.  Each Rule dictates for a given analysis what the next
+analysis will be.  It also specifies any action to be taken before
+going to the next job.  Usually this involves setting up of inputs for
+the next analysis.
 
-Each job runs a certain analysis on a specfic input.
-When the job finishes, it looks up the rule for its analysis (current)
-and see what the next analysis to do will be. If there is one,
-depending on what the action will be, it will create the next
-job with the same input but for the next analysis.
+Each job runs a certain analysis on a specfic input.  When the job
+finishes, it looks up the rule for its analysis (current) and see what
+the next analysis to do will be. If there is one, depending on what
+the action will be, it will create the next job with the same input
+but for the next analysis.
 
   $job->current
 
@@ -50,17 +51,17 @@ the analysis dbID for the next analysis
 Specifies the preprocessing to be doing before next
 analysis is to be carried out.
 
-Action
--------------------------
-COPY_ID        copy the input id from the current 
-               analysis for the next analysis 
-               the new iohandler for the input is looked up
-               in the iohandler_map table
-NOTHING        Do nothing, tells the job to go quietly
-COPY_INPUT     copy this input means to copy the input_id along
-               with the iohandler for the input
-WAITFORALL     Wait for all jobs of this analysis to finish before
-               executing the rule.
+  Action
+  -------------------------
+  COPY_ID        copy the input id from the current 
+                 analysis for the next analysis 
+                 the new iohandler for the input is looked up
+                 in the iohandler_map table
+  NOTHING        Do nothing, tells the job to go quietly
+  COPY_INPUT     copy this input means to copy the input_id along
+                 with the iohandler for the input
+  WAITFORALL     Wait for all jobs of this analysis to finish before
+                 executing the rule.
 
 
 
@@ -84,17 +85,17 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR 
+=head1 AUTHOR
 
 Based on Ensembl pipeline module Bio::EnsEMBL::Pipeline::Rule
-originally written by Arne Stabenau <stabenau@ebi.ac.uk>
+originally written by Arne Stabenau, stabenau@ebi.ac.uk
 
-Cared for by Fugu Informatics Team <fuguteam@fugu-sg.org>
+Cared for by Fugu Informatics Team, fuguteam@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal metho ds are usually preceded with a _
 
 =cut
 

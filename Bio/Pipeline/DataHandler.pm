@@ -8,20 +8,21 @@
 
 =head1 NAME
 
-Bio::Pipeline::DataHandler 
+Bio::Pipeline::DataHandler
 
 =head1 SYNOPSIS
 
+  use Bio::Pipeline::DataHandler;
   my $data_handler = Bio::Pipeline::DataHandler->new(-dbid=>1,
-                                                   -method=>"fetch_by_dbID,
-                                                   -argument=>\@arguments,
-                                                   -rank=>1);
+                                                     -method=>"fetch_by_dbID",
+                                                     -argument=>\@arguments,
+                                                     -rank=>1);
 
-=head1 DESCRIPTION 
+=head1 DESCRIPTION
 
-DataHandlers specifiy the adaptor methods and the correspoding 
-arguments needed by a IO to fetch or store output. 
-The rank represents the order in which they are called by IOHandler methods
+DataHandlers specifiy the adaptor methods and the correspoding
+arguments needed by a IO to fetch or store output.  The rank
+represents the order in which they are called by IOHandler methods
 fetch_input, write_output
 
 =head1 FEEDBACK

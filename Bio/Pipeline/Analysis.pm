@@ -42,8 +42,9 @@ Bio::Pipeline::Analysis
 
 =head1 DESCRIPTION
 
-This is the object representation of an analysis in the pipeline. Each analysis
-will have a runnable which is in turn an interface to the wrapper modules or scripts.
+This is the object representation of an analysis in the pipeline. Each
+analysis will have a runnable which is in turn an interface to the
+wrapper modules or scripts.
 
 =head1 FEEDBACK
 
@@ -65,19 +66,19 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR  
+=head1 AUTHOR
 
-Based on Ensembl module Bio::EnsEMBL::Analysis originally written 
-by Michele Clamp <michele@sanger.ac.uk>
+Based on Ensembl module Bio::EnsEMBL::Analysis originally written by
+Michele Clamp, michele@sanger.ac.uk.
 
-Cared for by the Fugu Informatics Team 
+Cared for by the Fugu Informatics Team
 
 Email fuguteam@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal metho ds are usually preceded with a _
 
 =cut
 

@@ -23,45 +23,55 @@ Bio::Pipeline::Runnable::Blast
 =head1 DESCRIPTION
 
 This is the pipeline wrapper for ncbi blast that makes use of
-Bio::Tools::Run::StandAloneBlast module. It thus allows one to run
-the following programs:
+Bio::Tools::Run::StandAloneBlast module. It thus allows one to run the
+following programs:
 
   1. blastall
   2. psiblast(blastpgp)
   3. bl2seq
 
 
-
 Note:
 
-  parameters are set in the parameters column inside the biopipeline
-  analysis table in the following form "-p blastn -e 0.0001"
-  For more detailed explanation of the parameters look go to
-  Bio::Tools::Run::StandAloneBlast or do a blastall|blastpgp - .|bl2seq on the command line
+Parameters are set in the parameters column inside the biopipeline
+analysis table in the following form "-p blastn -e 0.0001" For more
+detailed explanation of the parameters look go to
+Bio::Tools::Run::StandAloneBlast or do a blastall|blastpgp - .|bl2seq
+on the command line
 
-  The database for blastall is set using $self->analysis->db_file which
-  is in turn set by runnable db where db_file is obtained from the analysis
-  table. It is imperative this is present for the blast to function.
+The database for blastall is set using
+$self-E<gt>analysis-E<gt>db_file which is in turn set by runnable db
+where db_file is obtained from the analysis table. It is imperative
+this is present for the blast to function.
 
 
-INPUT DATATYPES
+=head2 INPUT DATATYPES
 
 The runnable currently accepts any Bio::Seq compliant objects
 
-OUTPUT DATATYPES
+=head2 OUTPUT DATATYPES
 
 The runnable currently returns the following output types:
 
-  1) A SearchIO object for the blastall and blastpgp runs
-  2) An AlignIO object for the bl2seq runs
+=over 2
+
+=item 1
+
+A SearchIO object for the blastall and blastpgp runs
+
+=item 2
+
+An AlignIO object for the bl2seq runs
+
+=back
 
 =head1 AUTHOR
 
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Blast
-originally written by Michele Clamp  <michele@sanger.ac.uk>
-Written in BioPipe by Shawn Hoon <shawnh@fugu-sg.org>
-Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
-You may distribute this module under the same terms as perl itself
+originally written by Michele Clamp, michele@sanger.ac.uk.
+Written in BioPipe by Shawn Hoon, shawnh@fugu-sg.org.
+Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
+
 
 =head1 APPENDIX
 
@@ -92,13 +102,14 @@ use Bio::AlignIO;
  Args    : -return_type => Hit or Hsp
            -formatdb    => boolean to run formatdb
            -formatdb_alphabet => dna or aa
- 
+
 =cut
 
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($return_type,$formatdb, $formatdb_alphabet) = $self->_rearrange([qw(RETURN_TYPE FORMATDB FORMATDB_ALPHABET)],@args);
+  my ($return_type,$formatdb, $formatdb_alphabet) = 
+      $self->_rearrange([qw(RETURN_TYPE FORMATDB FORMATDB_ALPHABET)],@args);
   $return_type && $self->return_type($return_type);
   $formatdb && $self->formatdb($formatdb);
   $formatdb_alphabet && $self->formatdb_alphabet($formatdb_alphabet);
@@ -245,7 +256,8 @@ sub run {
   }
 
   # the binary parameters
-  my @params = $self->parse_params($analysis->analysis_parameters) if $analysis->analysis_parameters;
+  my @params = $self->parse_params($analysis->analysis_parameters)
+      if $analysis->analysis_parameters;
   push @params, ('output'=>$result_dir) if $result_dir;
   $blast_obj = Bio::Tools::Run::StandAloneBlast->new(@params);
 
@@ -253,7 +265,8 @@ sub run {
   my $program = $analysis->program || 'blastall';
 
   #pass the path to the executable if program_file is set.
-  $analysis->program_file && $blast_obj->executable($analysis->program,$analysis->program_file,1);
+  $analysis->program_file && 
+      $blast_obj->executable($analysis->program,$analysis->program_file,1);
 
   my $seq1 = $self->seq1;
   my $seq2 = $self->seq2;

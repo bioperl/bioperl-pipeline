@@ -15,21 +15,19 @@ Bio::Pipeline::XMLImporter
 
 =head1 SYNOPSIS
 
-use Bio::Pipeline::XMLImporter;
-
-my $importer = Bio::Pipeline::XMLImporter->new (
-                                                -dbhost=>$DBHOST,
-                                                -dbname=>$DBNAME,
-                                                -dbuser=>$DBUSER,
-                                                -dbpass=>$DBPASS,
-                                                -schema=>$SCHEMA,
-                                                -xml   =>$XML); 
-
-my $loaded = $importer->run($XMLFORCE);
+  use Bio::Pipeline::XMLImporter;
+  my $importer = Bio::Pipeline::XMLImporter->new (
+                                                  -dbhost=>$DBHOST,
+                                                  -dbname=>$DBNAME,
+                                                  -dbuser=>$DBUSER,
+                                                  -dbpass=>$DBPASS,
+                                                  -schema=>$SCHEMA,
+                                                  -xml   =>$XML);
+  my $loaded = $importer->run($XMLFORCE);
 
 =head1 DESCRIPTION
 
-Module for importing pipeline configuration in xml to biopipe
+Module for importing pipeline configuration in xml to biopipe.
 
 =head1 FEEDBACK
 
@@ -39,8 +37,8 @@ User feedback is an integral part of the evolution of this and other
 Bioperl modules. Send your comments and suggestions preferably to one
 of the Bioperl mailing lists.  Your participation is much appreciated.
 
-  bioperl-l@bioperl.org          - General discussion
-  http://bio.perl.org/MailList.html             - About the mailing lists
+  bioperl-l@bioperl.org                     - General discussion
+  http://bio.perl.org/MailList.html         - About the mailing lists
 
 =head2 Reporting Bugs
 
@@ -57,8 +55,8 @@ Email shawnh@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal metho ds are usually preceded with a _
 
 =cut
 
@@ -888,12 +886,12 @@ sub _search_array_by{
 
 =head2 _autoload_methods
 
-This subroutine is usually invoked at the very beginning line of constructor,
-to set subroutine names for getter and setters.
+This subroutine is usually invoked at the very beginning line of
+constructor, to set subroutine names for getter and setters.
 
 SYNOPSIS
 
-sub new{
+  sub new{
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
 
@@ -905,7 +903,7 @@ sub new{
     $self->dbhost($dbhost);
 
     return $self;
-}
+  }
 
 =cut
 

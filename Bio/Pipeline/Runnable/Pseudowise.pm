@@ -16,10 +16,10 @@ Bio::Pipeline::Runnable::Pseudowise
 
 =head1 DESCRIPTION
 
-This package is based on Pseudowise.
-Pseudowise takes a query protein sequence, corresponding cdna sequence and a target genomic region 
-and predicts pseudogenes on the genomic region. 
-The resulting output is parsed to produce a set of Bio::SeqFeatures. 
+This package is based on Pseudowise.  Pseudowise takes a query protein
+sequence, corresponding cdna sequence and a target genomic region and
+predicts pseudogenes on the genomic region.  The resulting output is
+parsed to produce a set of Bio::SeqFeatures.
 
 =head1 FEEDBACK
 
@@ -154,14 +154,14 @@ sub run {
     $self->output(\@genes);
     return \@genes;
  }
-  
+
 =head2 output
 
-Title   :   output
-Usage   :   $self->output($seq)
-Function:   Get/set method for output
-Returns :   An array of Bio::SeqFeature objects
-Args    :   An array ref to an array of Bio::SeqFeature objects
+  Title   :   output
+  Usage   :   $self->output($seq)
+  Function:   Get/set method for output
+  Returns :   An array of Bio::SeqFeature objects
+  Args    :   An array ref to an array of Bio::SeqFeature objects
 
 =cut
 

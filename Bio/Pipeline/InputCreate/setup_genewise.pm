@@ -14,20 +14,21 @@ Bio::Pipeline::Input::setup_genewise
 
 =head1 SYNOPSIS
 
-  my $inc = Bio::Pipeline::Input::setup_genewise->new(-contig_ioh=>$cioh,
-                                                   -protein_ioh=>$pioh,
-                                                   -dh_ioh     =>$dh_ioh,
-                                                   -padding => 1000);
+  my $inc = Bio::Pipeline::Input::setup_genewise->
+      new(-contig_ioh=>$cioh,
+          -protein_ioh=>$pioh,
+          -dh_ioh     =>$dh_ioh,
+          -padding => 1000);
   $inc->run;
 
 =head1 DESCRIPTION
 
-This module setsup genewise jobs. It is really meant to work with ensembl
-objects for it takes in DnaPepAlignFeatures, group them by the hseqname and
-creates one genewise job per hit. Each job will consist of two inputs, a target
-dna and a peptide query. The target dna is a slice and its defined as the
-range of the peptide hit + padding on either side.
-  
+This module setsup genewise jobs. It is really meant to work with
+ensembl objects for it takes in DnaPepAlignFeatures, group them by the
+hseqname and creates one genewise job per hit. Each job will consist
+of two inputs, a target dna and a peptide query. The target dna is a
+slice and its defined as the range of the peptide hit + padding on
+either side.
 
 =head1 FEEDBACK
 
@@ -37,8 +38,8 @@ User feedback is an integral part of the evolution of this and other
 Bioperl modules. Send your comments and suggestions preferably to one
 of the Bioperl mailing lists.  Your participation is much appreciated.
 
-  bioperl-l@bioperl.org          - General discussion
-  http://bio.perl.org/MailList.html             - About the mailing lists
+  bioperl-l@bioperl.org                        - General discussion
+  http://bio.perl.org/MailList.html            - About the mailing lists
 
 =head2 Reporting Bugs
 
@@ -55,8 +56,8 @@ Email shawnh@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal metho ds are usually preceded with a _
 
 =cut
 

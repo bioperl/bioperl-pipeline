@@ -8,17 +8,16 @@
 #
 # =pod
 #
-# =head1 NAME
-#
-# Bio::Pipeline::Runnable::MSA
-#
+=head1 NAME
+
+Bio::Pipeline::Runnable::MSA - The pipeline wrapper for running
+Multiple Sequence Alignment programs, now supportes ClustalW and
+TCoffee
+
 
 =head1 SYNOPSIS
 
-  The pipeline wrapper for running Multiple Sequence Alignment program
-  Now supported for ClustalW and TCoffee
-
-  For running a multiple alignments on an array of seq objects:
+  # For running a multiple alignments on an array of seq objects:
 
   my $runnable = Bio::Pipeline::Runnable::MSA->new();
   my $analysis = new Bio::Pipeline::Analysis
@@ -53,7 +52,7 @@
   $runnable->run;
   my $output = $runnable->output; #Returns a SimpleAlign object
 
-  OR do a profile alignment with a single sequence and an alignment object
+  # OR do a profile alignment with a single sequence and an alignment object
 
   my $align = $runnnable->output;
   $runnable->align($align);

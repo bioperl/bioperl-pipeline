@@ -19,12 +19,11 @@ Bio::Pipeline::RunnableDB
 
 =head1 SYNOPSIS
 
-  use Bio::Pipeline::RunnableDB
+  use Bio::Pipeline::RunnableDB;
 
   my $rdb = Bio::Pipeline::RunnableDB->new ( -analysis   => $self->analysis,
-                                             -inputs     => \@inputs,
+                                             -inputs     => \@inputs
                                            );
-
   $rdb->fetch_input;
   $rdb->run;
   $rdb->write_output;

@@ -38,21 +38,22 @@ module. It thus allows one to run the following programs:
 
 Note:
 
-  parameters are set in the parameters column inside the biopipeline
-  analysis table in the following form " -E 0.0001 -S"
-  For more detailed explanation of the parameters look go to
-  Bio::Tools::Run::Alignment::StandAloneFasta or do a 'man fasta3'
+parameters are set in the parameters column inside the biopipeline
+analysis table in the following form " -E 0.0001 -S" For more detailed
+explanation of the parameters look go to
+Bio::Tools::Run::Alignment::StandAloneFasta or do a 'man fasta3'
 
-  The database for Fasta is set using $self->analysis->db_file which
-  is in turn set by runnable db where db_file is obtained from the analysis
-  table. It is imperative this is present for the fasta to function.
+The database for Fasta is set using $self-E<gt>analysis-E<gt>db_file
+which is in turn set by runnable db where db_file is obtained from the
+analysis table. It is imperative this is present for the fasta to
+function.
 
 
-INPUT DATATYPES
+=head2 INPUT DATATYPES
 
 The runnable currently accepts any Bio::Seq compliant objects
 
-OUTPUT DATATYPES
+=head2 OUTPUT DATATYPES
 
 The runnable currently returns the following output types:
 
@@ -61,10 +62,9 @@ The runnable currently returns the following output types:
 =head1 AUTHOR
 
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Fasta
-originally written by Michele Clamp  <michele@sanger.ac.uk>
-Written in BioPipe by Jason Stajich <jason@bioperl.org>
-Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
-You may distribute this module under the same terms as perl itself
+originally written by Michele Clamp, michele@sanger.ac.uk.
+Written in BioPipe by Jason Stajich, jason@bioperl.org.
+Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
 
 =head1 APPENDIX
 

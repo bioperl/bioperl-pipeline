@@ -25,21 +25,33 @@
 
 =head1 DESCRIPTION
 
-Bare Bones Runnable for writing you own runnable quickly. 
-You probably need to do the following:
+Bare Bones Runnable for writing you own runnable quickly.  You
+probably need to do the following:
 
-1. Naturally, replace all cases of RunnableSkeleton with the name of your runnable
+=over 3
 
-2. Create get/set methods for your specified datatypes
+=item 1.
 
-3. Write the functionality inside the run routine calling the appropriate binary wrapper
+Naturally, replace all cases of RunnableSkeleton with the name of your
+runnable
+
+=item 2.
+
+Create get/set methods for your specified datatypes
+
+=item 3.
+
+Write the functionality inside the run routine calling the appropriate
+binary wrapper
+
+=back
 
 =head1 AUTHOR
 
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Sim4
-originally written by Michele Clamp <michele@sanger.ac.uk>
-Written in BioPipe by Shawn Hoon <shawnh@fugu-sg.org>
-Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+Originally written by Michele Clamp, michele@sanger.ac.uk.
+Written in BioPipe by Shawn Hoon, shawnh@fugu-sg.org.
+Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
 
 =head1 APPENDIX
 

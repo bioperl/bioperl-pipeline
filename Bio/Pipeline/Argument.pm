@@ -8,11 +8,11 @@
 
 =head1 NAME
 
-Bio::Pipeline::Argument 
+Bio::Pipeline::Argument
 
 =head1 SYNOPSIS
 
-    use Bio::Pipeline::Argument
+    use Bio::Pipeline::Argument;
     my $arg = new Bio::Pipeline::Argument(-dbID => $argument_id,
                                           -rank => $rank,
                                           -value=> $value,
@@ -22,8 +22,8 @@ Bio::Pipeline::Argument
 
 =head1 DESCRIPTION 
 
-An encapsulation of the arguments to be passed to each datahandler method using
-a tag value system.
+An encapsulation of the arguments to be passed to each datahandler
+method using a tag value system.
 
 =head1 FEEDBACK
 
@@ -51,8 +51,8 @@ Email fugui@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal metho ds are usually preceded with a _
 
 =cut
 
