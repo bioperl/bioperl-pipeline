@@ -1,10 +1,9 @@
-# perl module for Bio::EnsEMBL::Pipeline::DBSQL::TransformerAdaptor
+# perl module for Bio::Pipeline::SQL::TransformerAdaptor
 #
-# Creator: Arne Stabenau <stabenau@ebi.ac.uk>
-# Date of creation: 05.09.2000
-# Last modified : 05.09.2000 by Arne Stabenau
+# Creator: Fugu Team <fuguteam@fugu-sg.org>
+# Date of creation: 19.02.2003
 #
-# Copyright EMBL-EBI 2000
+# Copyright IMCB 2003
 #
 # You may distribute this module under the same terms as perl itself
 
@@ -16,8 +15,7 @@ Bio::EnsEMBL::Pipeline::DBSQL::TransformerAdaptor
 
 =head1 SYNOPSIS
 
-  $analysisAdaptor = $dbobj->getTransformerAdaptor;
-  $analysisAdaptor = $analysisobj->getTransformerAdaptor;
+  $transformerAdaptor = $dbobj->getTransformerAdaptor;
 
 
 =head1 DESCRIPTION
@@ -55,15 +53,33 @@ use strict;
 =head2 store
 
   Title   : store
-  Usage   : $transformer->store
-  Function: Stores a transformer object into the db. 
-  Returns : dbIDs 
+  Usage   : 
+    my ($transformer1, $transformer2);
+    $transformer->store[$transformer1, $transformer2]);
+    (
+  Function: Stores a array of transformer objects into the db. 
+  Returns : None (dbIDs of transformers would be stored inside of transformers.)
   Args    : L<Bio::Pipeline::Transformer>
 
 =cut
 
 sub store {
+    my ($self, $transformer) = @_;
+
+    $self->throw("A ref of array of object wanted in TransformerAdaptor::store")
+        unless(ref($transformer) eq 'ARRAY');
+
+    foreach(@{$transformer}){
+        $self->_store_single($_);
+    }
+}
+
+sub _store_single {
     my ($self,$transformer) = @_;
+
+    $self->throw("A Bio::Pipeline::Transformer needed")
+        unless ($transformer-isa('Bio::Pipeline::Transformer'));
+        
     if (!defined ($transformer->dbID)) {
     	my $sth = $self->prepare( q{
 	                               INSERT INTO transformer 
