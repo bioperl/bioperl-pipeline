@@ -107,24 +107,19 @@ and run PipelineManager.pl to start the pipeline.
 
 
 -->
-
-
 <pipeline_setup>
   <database_setup>
    <!--access biosql database using biosql dbadaptor module --> 
     <dbadaptor id="1">
-      <dbname>protein_analysis</dbname>
+      <dbname>protein_db</dbname>
       <driver>mysql</driver>
       <host>mysql</host>
       <user>root</user>
-      <password></password>
       <module>Bio::DB::BioSQL::DBAdaptor</module>
     </dbadaptor>
-
   </database_setup>
 
   <iohandler_setup>
-
     <!-- Create Input method used to return the bioentry_ids  for initializing the pipeline with inputs -->
     <iohandler id="1">
       <adaptor_id>1</adaptor_id>
@@ -189,22 +184,22 @@ and run PipelineManager.pl to start the pipeline.
         </argument>
       </method>
     </iohandler>
-
   </iohandler_setup>
 
   <!-- Data Monger analysis for setting up the inputs for first analysis-->
   <pipeline_flow_setup>
      <analysis id="1">
       <data_monger>
+        <initial/>
         <input>
-          <name>Ensembl_ids</name>
+          <name>protein_ids</name>
           <iohandler>1</iohandler>
         </input>
         <input_create>
            <module>setup_initial</module>
            <rank>1</rank>
            <argument>
-                <tag>Ensembl_ids</tag>
+                <tag>protein_ids</tag>
                 <value>2</value>
             </argument>
          </input_create>
@@ -215,9 +210,10 @@ and run PipelineManager.pl to start the pipeline.
     <!--Analysis 1 Tmhmm --> 
     <analysis id="2">
       <logic_name>Tmhmm</logic_name>
-      <runnable>Bio::Pipeline::Runnable::Tmhmm</runnable>
-      <program>tmhmm</program>
-      <analysis_parameters>-PROGRAM /usr/users/pipeline/programs/TMHMM2.0b/bin/tmhmm</analysis_parameters>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <program>Tmhmm</program>
+      <program_file>/usr/users/pipeline/programs/TMHMM2.0b/bin/tmhmm</program_file>
+      <runnable_parameters>-program Tmhmm</runnable_parameters>
       <!-- Specify which iohandler to use fetch the sequence -->
       <input_iohandler id="2"/>
       <!-- Specify which iohandler to use to store the protein features --> 
@@ -227,9 +223,10 @@ and run PipelineManager.pl to start the pipeline.
     <!--Analysis 2 Seg --> 
     <analysis id="3">
       <logic_name>Seg</logic_name>
-      <runnable>Bio::Pipeline::Runnable::Seg</runnable>
-      <program>tmhmm</program>
-      <!--<parameters>-PROGRAM /usr/users/pipeline/programs/seg_dir/seg</parameters>-->
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <program>Seg</program>
+      <program_file>/usr/users/pipeline/programs/seg_dir/seg</program_file>
+      <runnable_parameters>-program Seg</runnable_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
@@ -237,11 +234,12 @@ and run PipelineManager.pl to start the pipeline.
     <!--Analysis 3 Prints -->
     <analysis id="4">
       <logic_name>Prints</logic_name>
-      <runnable>Bio::Pipeline::Runnable::Prints</runnable>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
       <db>prints35_0.pval_blos62</db>
       <db_file>/data0/prints35_0.pval_blos62</db_file>
-      <program>prints</program>
-      <analysis_parameters>-DB /data0/prints35_0.pval_blos62</analysis_parameters>
+      <program>Prints</program>
+      <program_file>/usr/users/pipeline/programs/Prints</program_file>
+      <runnable_parameters>-program Prints</runnable_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
@@ -249,11 +247,12 @@ and run PipelineManager.pl to start the pipeline.
     <!--Analysis 4 Profile -->
     <analysis id="5">
       <logic_name>Profile</logic_name>
-      <runnable>Bio::Pipeline::Runnable::Profile</runnable>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
       <db>prosite.dat</db>
       <db_file>/data0/prosite_17.16.dat</db_file>
-      <program>profile</program>
-     <analysis_parameters>-PROGRAM /usr/users/pipeline/programs/pfscan</analysis_parameters>
+      <program>Profile</program>
+      <program_file>/usr/users/pipeline/programs/pfscan</program_file>
+      <runnable_parameters>-program Profile</runnable_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
@@ -261,8 +260,10 @@ and run PipelineManager.pl to start the pipeline.
     <!--Analysis 5 Signalp --> 
     <analysis id="6">
       <logic_name>Signalp</logic_name>
-      <runnable>Bio::Pipeline::Runnable::Signalp</runnable>
-      <program>signalp</program>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <program>SignalP</program>
+      <program_file>/usr/users/pipeline/programs/signalp_2.0/signalp</program_file>
+      <runnable_parameters>-program Signalp</runnable_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
@@ -270,17 +271,15 @@ and run PipelineManager.pl to start the pipeline.
     <!--Analysis 6 Hmmpfam -->
     <analysis id="7">
       <logic_name>Hmmpfam</logic_name>
-      <runnable>Bio::Pipeline::Runnable::Hmmpfam</runnable>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
       <db>Pfam_ls_7.4</db>
       <db_file>/data0/Pfam_ls_7.4</db_file>
       <program>hmmpfam</program>
-      <analysis_parameters>-DB /data0/Pfam_ls_7.4</analysis_parameters>
+      <program_file>/usr/local/bin/hmmpfam</program_file>
+      <runnable_parameters>-program Hmmpfam</runnable_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
-    
-    
-
     <!-- Rules that specify the order of analysis to be executed -->
 
     <!-- Once analysis 1 is finished, copy input id from previous analysis, do the appropriate 
@@ -324,3 +323,4 @@ and run PipelineManager.pl to start the pipeline.
  </job_setup>
 
 </pipeline_setup>
+
