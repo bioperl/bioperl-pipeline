@@ -224,6 +224,46 @@ sub fetch_input {
   return $obj;
 }
 
+#method used to fetch input ids, used to handle array of inputs fetched
+#may be hacky but will do for now. shawn
+
+sub fetch_input_ids {
+    my ($self,$param) = @_;
+
+    my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
+    my $obj;
+    #create the handler fetcher differently depending on whether its a DB or a Stream
+    if($self->adaptor_type eq "DB"){
+        $obj = $self->dbadaptor;
+    }
+    else {
+        my $constructor = shift @datahandlers;
+        my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
+        my @args = $self->_format_input_arguments($param,@arguments);
+        $obj = $self->_create_obj($self->stream_module,$constructor,@args);
+    }
+
+    #now call the cascade of datahandler methods
+    my $tmp = $obj;
+    for (my $i = 0; $i < $#datahandlers; $i++){
+        my $dh = $datahandlers[$i];
+        my @arguments = sort {$a->rank <=> $b->rank} @{$dh->argument};
+        my @args = $self->_format_input_arguments($param,@arguments);
+        my $tmp1 = $dh->method;
+        $obj= $obj->$tmp1(@args);
+    }
+    
+    #now get the ids
+    my $last = $datahandlers[$#datahandlers]->method;
+    my @ids = $obj->$last($param);
+
+    #destroy handle only if its a dbhandle
+    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
+
+  return \@ids;
+}
+
+
 sub _format_input_arguments {
   my ($self,$input_name,@arguments) = @_;
   my @args;
@@ -364,9 +404,9 @@ These methods let you get at and set the member variables
 =cut
  
 sub dbadaptor {
-    my ($self,$adaptor) = @_;
-    if (defined $adaptor) {
-        $self->{'_dbadaptor'} = $adaptor;
+    my ($self) = @_;
+    if(!$self->{'_dbadaptor'}){
+        $self->{'_dbadaptor'} = $self->_fetch_dbadaptor;
     }
     return $self->{'_dbadaptor'};
 }

@@ -4,7 +4,6 @@
 #
 # Creator: Arne Stabenau <stabenau@ebi.ac.uk>
 # Date of creation: 05.09.2000
-# Last modified : 15.06.2001 by Simon Potter
 #
 # rewritten for bioperl-pipeline <jerm@fugu-sg.org>
 #
@@ -87,10 +86,11 @@ my $db = Bio::Pipeline::SQL::DBAdaptor->new(
 
 $QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
 
-my $ruleAdaptor = $db->get_RuleAdaptor;
-my $jobAdaptor  = $db->get_JobAdaptor;
-my $inputAdaptor  = $db->get_InputAdaptor;
+my $ruleAdaptor     = $db->get_RuleAdaptor;
+my $jobAdaptor      = $db->get_JobAdaptor;
+my $inputAdaptor    = $db->get_InputAdaptor;
 my $analysisAdaptor = $db->get_AnalysisAdaptor;
+my $iohAdaptor      = $db->get_IOHandlerAdaptor;
 
 $QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
 
@@ -156,13 +156,13 @@ while ($run) {
 
     foreach my $job(@jobs){
         
-	#check whether output of job needed for downstream analysis
+	      #check whether output of job needed for downstream analysis
         my $job_depend = $ruleAdaptor->check_dependency_by_job($job,@rules);
         $job->dependency($job_depend);
         
         if (($job->status eq 'NEW')   || ( ($job->status eq 'FAILED') && ($job->retry_count < $RETRY) )){ 
             $submitted = 1;
-
+            
             if ($job->status eq 'FAILED'){
                 my $retry_count = $job->retry_count;
                 $retry_count++;
@@ -227,20 +227,30 @@ sub create_new_job {
     my @rules       = $ruleAdaptor->fetch_all;
     my @new_jobs;
     my $action;
- print STDERR "The rule ".scalar(@rules)." rules\n";  #added by bala on 2/8/2002   
- foreach my $rule (@rules){
+    foreach my $rule (@rules){
         if ($rule->current->dbID == $job->analysis->dbID){
             my $next_analysis = $analysisAdaptor->fetch_by_dbID($rule->next->dbID);
             $action = $rule->action;
-            if ($action eq 'NOTHING') {
+            if ($action eq 'COPY_ID') {
                my $new_job = $job->create_next_job($next_analysis);
-               my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
+               my @inputs = $inputAdaptor->copy_inputs_map_ioh($job,$new_job);
+
                foreach my $input (@inputs) {
                  $new_job->add_input($input);
                }
                push (@new_jobs,$new_job);
             }
-
+            elsif ($action eq 'COPY_INPUT') {
+                my $new_job = $job->create_next_job($next_analysis);
+                my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID,$new_job->dbID);
+                foreach my $input (@inputs) {
+                 $new_job->add_input($input);
+                }
+                push (@new_jobs,$new_job);
+            }
+            elsif ($action eq 'CREATE_INPUT'){
+              die("Not Implemented yet");   
+            }
             elsif ($action eq 'UPDATE') {
                my @output_ids = $job->output_ids;
                if (scalar(@output_ids) == 0) {  ## No outputs, so dont create any job 
@@ -306,7 +316,6 @@ sub _update_inputs {
    my ($old_job, $new_job) = @_;
    my @inputs = ();
    my @job_ids = $jobAdaptor->fetch_completed_jobids_by_analysisId_and_processId($old_job->analysis->dbID, $old_job->process_id);   
-   #push (@job_ids, $old_job->dbID); 
    my @output_ids = $jobAdaptor->fetch_output_ids(@job_ids);
    foreach my $output_id (@output_ids){
       my $input = $inputAdaptor->create_new_input($output_id, $new_job->dbID);

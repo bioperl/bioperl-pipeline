@@ -120,7 +120,6 @@ sub fetch_new_input_by_dbID {
 
     my ($name,$job_id) = $sth->fetchrow_array;
     $job_id || $self->throw("No Job associated for input with id $id");
-    #my $job = $self->db->get_JobAdaptor->fetch_by_dbID($job_id);
 
     $sth = $self->prepare("SELECT analysis_id
                               FROM job 
@@ -129,18 +128,9 @@ sub fetch_new_input_by_dbID {
     $sth->execute();
 
     my ($analysis_id) = $sth->fetchrow_array;
+    
 
-    $sth = $self->prepare("SELECT iohandler_id
-                              FROM new_input_ioh
-                              WHERE analysis_id = '$analysis_id'"
-                              );
-    $sth->execute();
-
-    my ($iohandler_id) = $sth->fetchrow_array;
-    $iohandler_id || $self->throw("No input handler for input with id $id");
-
-
-    my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
+    my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_new_input_ioh($analysis_id);
 
     my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
@@ -163,6 +153,21 @@ sub create_new_input {
 
     my $id = $sth->{'mysql_insertid'};
     return $self->fetch_new_input_by_dbID($id);
+}
+
+sub copy_inputs_map_ioh {
+    my ($self,$job,$new_job) = @_;
+    my @inputs;
+    $job || $self->throw("Need the prev job");
+    $new_job || $self->throw("Need the new job");
+
+    foreach my $input($job->inputs){
+      my $map_ioh = $self->db->get_IOHandlerAdaptor->get_mapped_ioh($new_job->analysis->dbID,$input->input_handler->dbID);
+      my $in      = Bio::Pipeline::Input->new(-name => $input->name,-input_handler => $map_ioh,-job_id => $new_job->dbID); 
+      push @inputs, $in;
+      $self->store_fixed_input($in);
+    }
+    return @inputs;
 }
 
 sub copy_fixed_inputs {

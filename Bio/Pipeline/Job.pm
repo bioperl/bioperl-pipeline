@@ -64,7 +64,7 @@ sub new {
     my ($adaptor,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids,$dependency ) 
 	= $self->_rearrange([qw(ADAPTOR
             				ID
-                                        PROCESS_ID
+                    PROCESS_ID
 			            	QUEUE_ID
 			            	INPUTS
 			            	ANALYSIS
@@ -74,13 +74,13 @@ sub new {
             				RETRY_COUNT
             				STATUS
             				STAGE
-                                        OUTPUT_IDS
+                    OUTPUT_IDS
 		        	      DEPENDENCY
               )],@args);
 
 				
-    $dbID    = -1 unless defined($dbID);
-    $queueid = -1 unless defined($queueid);
+    $dbID    = undef unless defined($dbID);
+    $queueid = undef unless defined($queueid);
 
     $analysis   || $self->throw("Can't create a job object without an analysis object");
     $analysis->isa("Bio::Pipeline::Analysis") ||

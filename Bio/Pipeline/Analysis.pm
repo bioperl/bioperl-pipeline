@@ -65,7 +65,7 @@ sub new {
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
       $gff_source,$gff_feature,$runnable,$parameters,$created,
-      $logic_name,$output_handler,$new_input_handler, $node_group ) = 
+      $logic_name,$iohandler, $node_group ) = 
 
 	  $self->_rearrange([qw(ID
 	  			ADAPTOR
@@ -81,9 +81,8 @@ sub new {
 				PARAMETERS
 				CREATED
 				LOGIC_NAME
-                                OUTPUT_HANDLER
-                                NEW_INPUT_HANDLER
-                                NODE_GROUP
+        IOHANDLER
+        NODE_GROUP
 				)],@args);
 
   $self->dbID           ($id);
@@ -100,8 +99,7 @@ sub new {
   $self->parameters     ($parameters);
   $self->created        ($created);
   $self->logic_name     ($logic_name);
-  $self->output_handler ($output_handler);
-  $self->new_input_handler ($new_input_handler);
+  $self->iohandler ($iohandler);
   $self->node_group     ($node_group);
 
   return $self; # success - we hope!
@@ -139,6 +137,14 @@ sub exists_program{
         return 1;
     }
     return 0;
+}
+
+sub iohandler {
+    my ($self, $ioh) = @_;
+    if($ioh) {
+        $self->{'_iohandler'} = $ioh;
+    }
+    return $self->{'_iohandler'};
 }
 
 =head2 exists_db_file
@@ -218,7 +224,8 @@ sub set_program_version_if_needed {
    my ($self) = @_;
    if (!$self->program_version) {
     my $program = $self->program;
-    my $string = `$program -- `; 
+#    my $string = `$program -- `; 
+    my $string;
     $string = $string || `$program -v `;
     $string =~ /([\d.]+)/;
     if($1){
@@ -598,36 +605,21 @@ sub logic_name {
 
 
 sub output_handler{
-    my ($self, $arg ) = @_;
-
-    if (defined $arg ) {
-        $self->{_output_handler} = $arg;
+    my ($self) = @_;
+    #search from list of iohandlers, cache if found
+    if($self->{_output_handler}){
+        return $self->{_output_handler};
     }
-
-    return $self->{_output_handler};
-}
-
-
-=head2 new_input_handler
-
-  Title   : new_input_handler
-  Usage   : $self->new_input_handler
-  Function: Get/set method for the new_input_handler, the IOhandler used
-            to fetch the dynamically generated inputs for this analysis from previous analysis
-  Returns : String
-  Args    : String
-
-=cut
-
-
-sub new_input_handler{
-    my ($self, $arg ) = @_;
-
-    if (defined $arg ) {
-        $self->{_new_input_handler} = $arg;
+    else {
+        my @ioh = @{$self->iohandler};
+        foreach my $io (@ioh) {
+            if ($io->type eq "OUTPUT"){
+                $self->{_output_handler} = $io;
+                return $self->{_output_handler};
+            }
+        }
+        return undef;
     }
-
-    return $self->{_new_input_handler};
 }
 
 

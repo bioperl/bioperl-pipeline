@@ -345,6 +345,57 @@ sub fetch_inputhandler_dbID_by_analysis{
 
     return @dbIDs;
 }
+sub store_map_ioh {
+    my ($self,$anal_id,$prev_ioh_id,$map_ioh_id) = @_;
+    my $query = "INSERT INTO iohandler_map
+                 SET analysis_id =?,
+                     prev_iohandler_id=?,
+                     map_iohandler_id=?";
+    my $sth = $self->prepare($query);
+    $sth->execute ($anal_id,$prev_ioh_id,$map_ioh_id);
+    my $id = $sth->{'mysql_insert_id'};
+    return $id;
+}
+
+sub get_mapped_ioh {
+    my ($self,$anal_id,$prev_ioh_id) = @_;
+
+    my $query = "SELECT map_iohandler_id 
+                 FROM iohandler_map 
+                 WHERE analysis_id = ? 
+                 AND   prev_iohandler_id = ?";
+    my $sth = $self->prepare($query);
+    $sth->execute($anal_id,$prev_ioh_id);
+
+    my $map_ioh = $sth->fetchrow_array;
+
+    $map_ioh || $self->throw("No mapped ioh found");
+
+    my $ioh = $self->fetch_by_dbID($map_ioh);
+    $ioh || $self->throw("Unable to retrieve IOHandler of dbID $map_ioh");
+
+    return $ioh;
+}
+
+sub fetch_new_input_ioh {
+    my ($self,$analysis_id) = @_;
+    my $sth = $self->prepare("SELECT iohandler_id 
+                              FROM   analysis_iohandler ai, iohandler ioh
+                              WHERE  ai.analysis_id=? 
+                              AND ioh.iohandler_id = ai.iohandler_id
+                              AND ioh.type=?");
+    $sth->execute($analysis_id,"NEW_INPUT");
+    my $ioh_id = $sth->fetchrow_array();
+    $ioh_id || $self->throw("Analysis $analysis_id has no new_input iohandler");
+    my $ioh = $self->fetch_by_dbID($ioh_id);
+
+    $ioh || $self->throw("No IOHandler for new input found");
+
+    return $ioh;
+}
+
+
+
 
 1;
 

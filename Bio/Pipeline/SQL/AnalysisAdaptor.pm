@@ -91,21 +91,18 @@ sub fetch_by_dbID {
   my $node_group = $self->db->get_NodeGroupAdaptor->fetch_by_dbID($node_group_id);
   
 
-  my $query = " SELECT  io.iohandler_id 
-                FROM    iohandler io, analysis_io_handler ai
-                WHERE   ai.iohandler_id = io.iohandler_id 
-                        and ai.analysis_id = $id
-                        and io.type = 'OUTPUT'";
+  my $query = " SELECT  ai.iohandler_id 
+                FROM    analysis_iohandler ai
+                WHERE   ai.analysis_id = $id";
+                        
   $sth = $self->prepare($query);                  
   $sth->execute ();
 
-  my @results = @{$sth->fetchall_arrayref};
-
-  $self->throw ("Analyses must have one and only one output handler. This analysis has ".scalar(@results)." output handlers")
-  unless (scalar(@results)== 1);
-
-  my $output_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($results[0][0]);
-
+  my @ioh;
+  while (my ($ioid) = $sth->fetchrow_array){
+      push @ioh, $self->db->get_IOHandlerAdaptor->fetch_by_dbID($ioid);
+  }
+    
   my $anal = new Bio::Pipeline::Analysis (  -ID             => $analysis_id,
                                             -ADAPTOR        => $self,
                                             -DB             => $db,
@@ -120,13 +117,42 @@ sub fetch_by_dbID {
                                             -PARAMETERS     => $parameters,
                                             -CREATED        => $created,
                                             -LOGIC_NAME     => $logic_name,
-                                            -OUTPUT_HANDLER => $output_handler,
+                                            -IOHANDLER      =>\@ioh,
                                             -NODE_GROUP     => $node_group);
 
 
   return $anal;
 }
 
+=head2 fetch_create_input_id_ioh
+
+  Title   : fetch_create_input_id_ioh
+  Usage   : my $analysis = $adaptor->fetch_create_input_id_ioh
+  Function: fetches the input create method which retrieves an array of input ids for 
+            the next analysis 
+  Returns : throws exception when something goes wrong.
+            undef if the id is not in the db.
+  Args    : L<Bio::Pipeline::Analysis>
+
+=cut
+
+sub fetch_create_input_id_ioh{
+  my ($self,$analysis) = @_;
+  
+  my $query = "SELECT iohandler_id
+               FROM analysis_iohandler ai, iohandler ioh
+               WHERE ai.analysis_id=? AND ioh.type=?";
+  my $sth = $self->prepare($query);
+  $sth->execute($analysis->dbID,'INPUT_CREATION');
+  my ($io_id) = $sth->fetchrow_array;
+  if($io_id){
+    my $ioh = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($io_id) || $self->throw("Unable to fetch iohandler $io_id");
+    return $ioh;
+  }
+  return undef;
+  
+}
+  
 sub fetch_all {
     my ($self) = @_;
     my @analysis;
@@ -242,28 +268,27 @@ sub store {
       }
 
      my $output_handler = $analysis->output_handler;
-     my $new_input_handler = $analysis->new_input_handler;
+     my @ioh = @{$analysis->iohandler};
 
-     if (defined ($output_handler)) {
-         ##the name of the table is changed.....
-         my $sth = $self->prepare( q{
-            INSERT INTO analysis_io_handler
-                SET
-                analysis_id = ?,
-                iohandler_id = ? } ); 
-         $sth->execute
-            ( $analysis->dbID, $output_handler->dbID);
+     foreach my $ioh (@ioh){
+         my $sth = $self->prepare("INSERT INTO analysis_iohandler 
+                                   SET analysis_id = ?,
+                                       iohandler_id = ?");
+         $sth->execute($analysis->dbID,$ioh->dbID);
      }
 
+
+=head
      if (defined ($new_input_handler)) {
          my $sth = $self->prepare( q{
-            INSERT INTO new_input_ioh
+            INSERT INTO IOHandler 
                 SET
                 analysis_id = ?,
                 iohandler_id = ? } );
          $sth->execute
             ( $analysis->dbID, $new_input_handler->dbID);
      }
+=cut
       
      
       return $analysis->dbID;

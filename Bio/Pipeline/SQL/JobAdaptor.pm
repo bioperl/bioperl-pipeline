@@ -718,7 +718,7 @@ sub create_and_store_jobs_by_IOhandler{
     my @job_objs;
      my $sth2;
     eval{
-      $sth2 = $self->prepare( " select analysis_id from analysis_io_handler  where iohandler_id = $input_iohandler_id ");
+      $sth2 = $self->prepare( " select analysis_id from analysis_iohandler  where iohandler_id = $input_iohandler_id ");
       $sth2->execute();
     };
 
