@@ -27,7 +27,7 @@ $DBHOST ||= "mysql";
 $DBNAME ||= "test_XML";
 $DBUSER ||= "root";
 $DBPASS ||="";
-$SCHEMA = $SCHEMA || "/usr/users/shawnh/src/biosql-schema/sql/biopipelinedb-mysql.sql";
+$SCHEMA = $SCHEMA || "/usr/users/kiran/src/biosql-schema/sql/biopipelinedb-mysql.sql";
 
 my $USAGE =<<END;
 ******************************
@@ -274,9 +274,9 @@ foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis'))
    push @analysis_objs, $analysis_obj;
  }
 
-my @rule_objs;
+my @rule_objs = ();
 foreach my $rule ($xso2->child('pipeline_flow_setup')->children('rule')) {
-
+ if(ref($rule)) {
    my $current = _get_analysis($rule->child('current_analysis_id')->value);
    if (!defined($current)) {
      #$self->throw("current analysis not found for rule\n");
@@ -293,6 +293,7 @@ foreach my $rule ($xso2->child('pipeline_flow_setup')->children('rule')) {
                                            -next => $next,
                                            -action => $action);
    push @rule_objs, $rule_obj;
+ }
 }
 
 
