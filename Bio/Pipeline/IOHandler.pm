@@ -59,14 +59,14 @@ use Bio::Root::Root;
 
 =head1 Constructors
 
-=head2 new
+=head2 new_ioh_db
 
-  Title   : new
+  Title   : new_ioh_db
   Usage   : my $io = Bio::Pipeline::IOHandler->new(-dbadaptor=>$dbadaptor,
                                             -dataadaptor=>$datahandler,
                                             -dataadaptormethod=>$datahandler_method);
  
-  Function: generates a new Bio::Pipeline::IOHandler
+  Function: generates a new Bio::Pipeline::IOHandler for DB connections
   Returns : a new IOHandler object 
   Args    : dbadaptor to database #note dbadaptor and biodbadaptor are mutally exclusive
             biodbadaptor external biodb adaptor
@@ -75,11 +75,11 @@ use Bio::Root::Root;
             dataadaptormethod the method to fetch the object (example fetch_by_dbID)
 =cut
 
-sub new {
+sub new_ioh_db {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
   my ($dbID,$dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
-      $dbadaptor_user,$dbadaptor_pass,$dbadaptor_module,
+      $dbadaptor_user,$dbadaptor_pass,$dbadaptor_module,$dbadaptor_port,
       $datahandlers) = $self->_rearrange([ qw( DBID
                                                 DBADAPTOR_DBNAME
                                                 DBADAPTOR_DRIVER
@@ -87,13 +87,15 @@ sub new {
                                                 DBADAPTOR_USER
                                                 DBADAPTOR_PASS
                                                 DBADAPTOR_MODULE
+                                                DBADAPTOR_PORT
                                                 DATAHANDLERS)],@args);
 
-  $dbadaptor_dbname || $self->throw("Need a dbadaptor name");
-  $dbadaptor_driver || "mysql";
-  $dbadaptor_user   || "root";
-  $dbadaptor_host   || "localhost";
-  $dbadaptor_pass   || "";
+  $dbadaptor_dbname ||= $self->throw("Need a dbadaptor name");
+  $dbadaptor_driver ||= "mysql";
+  $dbadaptor_user   ||= "root";
+  $dbadaptor_host   ||= "localhost";
+  $dbadaptor_pass   ||= "";
+  $dbadaptor_port   ||= "";
   $dbadaptor_module || $self->throw("Need a module for db adaptor");
   $datahandlers     || $self->throw("Need datahandlers in IOHandler constructor");
 
@@ -103,13 +105,43 @@ sub new {
   $self->dbadaptor_host($dbadaptor_host);
   $self->dbadaptor_user($dbadaptor_user);
   $self->dbadaptor_pass($dbadaptor_pass);
+  $self->dbadaptor_port($dbadaptor_port);
   $self->dbadaptor_module($dbadaptor_module);
-
+  $self->type("DB");
   @{$self->{'_datahandlers'}} = @{$datahandlers}; 
   
   return $self;
 }    
 
+
+=head2 new_ioh_stream
+
+  Title   : new_ioh_stream
+  Usage   : my $io = Bio::Pipeline::IOHandler->new(-dbadaptor=>$dbadaptor,
+                                            -dataadaptor=>$datahandler,
+                                            -dataadaptormethod=>$datahandler_method);
+  Function: generates a new Bio::Pipeline::IOHandler for streams(files or remote fetching) 
+  Returns : a new IOHandler object 
+  Args    : module a string of the form Bio::XXX 
+            datahandlers array of L<Bio::Pipeline::DataHandler> 
+=cut
+
+sub new_ioh_stream{
+    my ($class,@args) = @_;
+    my $self = $class->SUPER::new(@args);
+    my ($module,$datahandlers) = $self->_rearrange([qw(MODULE
+                                                       DATAHANDLERS)],@args);
+
+    $module  || $self->throw("Need a stream module");
+
+    $self->stream_module($module);
+
+    $self->type("STREAM");
+    @{$self->{'_datahandlers'}} = @{$datahandlers};
+
+    return $self;
+} 
+                                                    
 =head1 Fetch/Write methods 
 These methods calls adaptors to fetch and write inputs and outputs to database
 =cut
@@ -160,39 +192,57 @@ sub fetch_input {
     #                   -rank => 4)
     #                   
     #   
-  
-  
-    my $obj = $self->_fetch_dbadaptor();
+    my $obj; 
+    #create the handler fetcher differently depending on whether its a DB or a Stream
+    if($self->type eq "DB"){
+        $obj = $self->_fetch_dbadaptor();
+    }
+    else {
+        my $constructor = shift @datahandlers;
+        my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
+        my @args = $self->_format_input_arguments($input_name,@arguments);
+        $obj = $self->_create_obj($self->stream_module,$constructor,@args);
+    }
+
+    #now call the cascade of datahandler methods
     my $tmp = $obj;
     foreach my $datahandler (@datahandlers) {
         my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
-        my @args;
-        for (my $i = 0; $i <=$#arguments; $i++){
-            if ($arguments[$i]->value eq 'INPUT') {
-                if ($arguments[$i]->tag){
-                    push @args, ($arguments[$i]->tag => $input_name);
-                }
-                else {
-                  push @args, $input_name;
-                }
-            }
-            else {
-                if($arguments[$i]->tag){
-                    push @args, ($arguments[$i]->tag => $arguments[$i]->value);
-                }
-                else {
-                  push @args, $arguments[$i]->value;
-                }
-            }
-        }
+        my @args = $self->_format_input_arguments($input_name,@arguments);
         my $tmp1 = $datahandler->method;
         $obj = $obj->$tmp1(@args);
     }
-    #destroy handle
-    $tmp->DESTROY;
+    #destroy handle only if its a dbhandle
+    if($self->type eq "DB") {$tmp->DESTROY};
 
   return $obj;
 }
+
+sub _format_input_arguments {
+  my ($self,$input_name,@arguments) = @_;
+  my @args;
+  for (my $i = 0; $i <=$#arguments; $i++){
+    if ($arguments[$i]->value eq 'INPUT') {
+      if ($arguments[$i]->tag){
+        push @args, ($arguments[$i]->tag => $input_name);
+      }
+      else {
+        push @args, $input_name;
+      }
+    }
+    else {
+      if($arguments[$i]->tag){
+        push @args, ($arguments[$i]->tag => $arguments[$i]->value);
+      }
+      else {
+        push @args, $arguments[$i]->value;
+      }
+    }
+  }
+  return @args;
+}
+
+
 
 =head2 write_output
 
@@ -222,60 +272,54 @@ sub write_output {
 
     my @output_ids;
     my $output_flag = 0;
+    
     foreach my $datahandler (@datahandlers) {
         my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
         my @args;
         my $tmp1 = $datahandler->method;
-        for (my $i = 0; $i <=$#arguments; $i++){
-            if ($arguments[$i]->value eq 'OUTPUT'){
-                if (ref($object) eq "ARRAY"){
-                  if($arguments[$i]->tag){
-                      push @args, $arguments[$i]->tag;
-                      push @args, @{$object};
-                  }
-                  else {
-                    push @args, @{$object};
-                  }
-                }
-                else {
-                    if($arguments[$i]->tag){
-                        push @args,($arguments[$i]->tag=>$object);
-                    }
-                    else {
-                      push @args, $object;
-                    }
-                }
-
-                $output_flag++;
-            }
-            elsif($arguments[$i]->value eq 'INPUT_ID'){
-                #for now only pass the id of the first input. shawn
-                if($arguments[$i]->tag){
-                    push @args,($arguments[$i]->tag => $input->[0]->name);
-                }
-                else {
-                  push @args,$input->[0]->name;
-                }
-            }
-            else {
-                if($arguments[$i]->tag){
-                    push @args,($arguments[$i]->tag => $arguments[$i]->value);
-                }
-                else {
-                  push @args, $arguments[$i]->value;
-                }
-            }
-        }
-        if($output_flag) {
-            @output_ids = $obj->$tmp1(@args);
-        }
-        else{
-          $obj = $obj->$tmp1(@args);
-        }
+        @args = $self->_format_output_args ($input,$object,@arguments);
+        @output_ids = $obj->$tmp1(@args);
+        $obj = $output_ids[0];
     }
 
   return @output_ids;
 }
+
+sub _format_output_args {
+    my ($self,$input,$object,@arguments) = @_;
+    my @args;
+    my $value;
+    for (my $i = 0; $i <=$#arguments; $i++){
+      if ($arguments[$i]->value eq 'OUTPUT'){
+        $value = $object
+      }
+      elsif($arguments[$i]->value eq 'INPUT_ID'){
+        $value = $input->[0]->name;
+      }
+      else {
+        $value = $arguments[$i]->value;
+      }
+      if($arguments[$i]->tag){
+        if(ref($value) eq "ARRAY"){
+          push @args, $arguments[$i]->tag;
+          push @args, @{$value};
+        }
+        else {
+          push @args, ($arguments[$i]->tag => $value);
+        }
+      } 
+      else {
+        if(ref($value) eq "ARRAY"){
+          push @args, @{$value};
+        }
+        else {
+          push @args, $value;
+        }
+      }
+    }
+    return @args;
+}
+
 
 =head1 Member variable access
 
@@ -346,6 +390,13 @@ sub dbadaptor_pass {
   }
   return $self->{'_dbadaptor_pass'};
 }
+sub dbadaptor_port{
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_dbadaptor_port'} = $value;
+  }
+  return $self->{'_dbadaptor_port'};
+}
 sub dbadaptor_module {
   my ($self,$value) = @_;
   if ($value){
@@ -360,6 +411,21 @@ sub dbadaptor_host {
   }
   return $self->{'_dbadaptor_host'};
 }
+sub stream_module{
+    my ($self,$value) = @_;
+    if($value) {
+        $self->{'_filemodule'} = $value;
+    }
+    return $self->{'_filemodule'};
+}
+
+sub type {
+    my ($self,$value) = @_;
+    if($value) {
+        $self->{'_dbtype'} = $value;
+    }
+    return $self->{'_dbtype'};
+}
 
 sub _fetch_dbadaptor {
     my ($self,) = @_;
@@ -369,6 +435,7 @@ sub _fetch_dbadaptor {
     my $user   = $self->dbadaptor_user();
     my $pass   = $self->dbadaptor_pass();
     my $module = $self->dbadaptor_module();
+    my $port   = $self->dbadaptor_port();
 
     if($module =~/::/)  {
          $module =~ s/::/\//g;
@@ -376,10 +443,44 @@ sub _fetch_dbadaptor {
          $module =~s/\//::/g;
     }
     
-    my $db_adaptor = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass);
+    my $db_adaptor = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass,-port=>$port);
 
     return $db_adaptor;
 }
+
+sub _create_obj {
+    my ($self,$module,$method,@args) = @_;
+    $module || $self->throw("Need an object to create object");
+    $method || $self->throw("Need a method call");
+
+    if($module=~/::/){
+        $module =~ s/::/\//g;
+        require "${module}.pm";
+        $module =~s/\//::/g;
+    }
+    my $obj = "${module}"->new(@args);
+
+    return $obj;
+}
+    
+
+sub _fetch_fileadaptor {
+    my ($self) = @_;
+    my $filename = $self->filename;
+    my $filemodule = $self->filemodule;
+    $filename || $self->throw("No filename specified. You probably wanna use _fetch_dbadaptor");
+    $filemodule || $self->throw("No file module specified. You probably wanna use _fetch_dbadaptor");
+
+    if($filemodule=~/::/){
+        $filemodule =~ s/::/\//g;
+        require "${filemodule}.pm";
+        $filemodule =~ s/\//::/g;
+    }
+    my $f_adaptor = "${filemodule}"->new(-filename=>$filename);
+    $f_adaptor->make_index;
+    return $f_adaptor;
+}
+
 
 =head2 dbID
 
