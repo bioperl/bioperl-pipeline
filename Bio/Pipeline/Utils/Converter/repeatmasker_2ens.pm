@@ -30,7 +30,8 @@ sub convert{
     my @pairs = @{$arg};
     my @ens_repeatfeatures;
     
-    my $analysis = $self->ens_dbadaptor->get_AnalysisAdaptor->fetch_by_logic_name('RepeatMask');
+    $self->analysis || $self-throw("an analysis is needed");
+    my $analysis = $self->analysis;
     
     foreach my $pair (@pairs){
         my $feature1 = $pair->feature1;
@@ -43,8 +44,21 @@ sub convert{
             -source_tag => $feature1->source_tag,
         );
         $ens_repeatfeature->analysis($analysis);
-        $ens_repeatfeature->hstart($feature2->start);
-        $ens_repeatfeature->hend($feature2->end);
+
+        my ($h_start, $h_end);
+
+        if($feature1->strand == 1){
+            $h_start = $feature2->start;
+            $h_end = $feature2->end;
+        }elsif($feature1->strand == -1){
+            $h_start = $feature2->end;
+            $h_end = $feature2->start;
+        }else{
+            $self->throw("strand cannot be outside of (1, -1)");
+        }
+        
+        $ens_repeatfeature->hstart($h_start);
+        $ens_repeatfeature->hend($h_end);
 
         my $repeat_name = $feature2->seq_id;
         my $repeat_class = $feature1->primary_tag;

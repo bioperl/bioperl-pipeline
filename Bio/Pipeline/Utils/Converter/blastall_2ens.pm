@@ -1,4 +1,4 @@
-
+:
 package Bio::Pipeline::Converter::blastall_2ens;
 
 use vars qw(@ISA);
@@ -6,6 +6,13 @@ use vars qw(@ISA);
 use strict;
 use Bio::SeqFeatureIO;
 use Bio::Pipeline::Converter::_2ens;
+use Bio::EnsEMBL::DnaPepAlignFeature;
+use Bio::EnsEMBL::DnaDnaAlignFeature;
+use Bio::Pipeline::Converter::blastall_utils;
+use Bio::EnsEMBL::Analysis;
+use Bio::EnsEMBL::RawContig;
+use Bio::EnsEMBL::SeqFeature;
+use Bio::EnsEMBL::FeaturePair;
 
 @ISA = qw(Bio::Pipeline::Converter::_2ens);
 
@@ -72,33 +79,43 @@ sub _hsp_2ens{
     my ($self, $hsp) = @_;
     my $program = $self->program; 
     my $align_feature;
-    my $analysis = $self->ens_dbadaptor->get_AnalysisAdaptor->fetch_by_logic_name('repeatmasker');
-    if($self->program =~ /blastn/i){
-        my $feature1 = $hsp->feature1;
-        my $feature2 = $hsp->feature2;
-        
-        $align_feature = Bio::EnsEMBL::DnaDnaAlignFeature->new(
-            -seqname => $feature1->seq_id,
-            -start => $feature1->start,
-            -end => $feature1->end,
-            -strand => $feature1->strand,
-            -hstart => $feature2->start,
-            -hend => $feature2->end,
-            -analysis =>$analysis 
-        );    
-    }elsif($self->program =~ /blastx/i){
-        my $feature1 = $hsp->feature1;
-        my $feature2 = $hsp->feature2;
+    
+    $self->analysis || $self->throw("an analysis is needed");
+    my $analysis = $self->analysis;
+    
+    # create cigar string. Ensembl BaseAlignFeature needs it.
+    # Since the HSP object does not have cigar string. 
+    # So we need to parse it from query and hit string.
+    my $blastall_utils = new Bio::Pipeline::Converter::blastall_utils;
+    my ($align_coordinates_ref, $cigar_string) = $blastall_utils->split_HSP($hsp);
+    
+    my $ens_feature1 = $self->_similarity_2_ens_seqFeature($hsp->feature1, $analysis);
+    my $ens_feature2 = $self->_similarity_2_ens_seqFeature($hsp->feature2, $analysis);
+    
+    my $ens_featurePair = new Bio::EnsEMBL::FeaturePair(
+        -feature1 => $ens_feature1,
+        -feature2 => $ens_feature2
+    );
+    
+    my @args = (
+#        -features => [$ens_featurePair]
+        -feature1 => $ens_feature1,
+        -feature2 => $ens_feature2,
+        -cigar_string => $cigar_string
+    );
 
-        $align_feature = Bio::EnsEMBL::DnaDnaAlignFeature->new(
-            -seqname => $feature1->seq_id,
-            -start => $feature1->start,
-            -end => $feature1->end,
-            -strand => $feature1->strand,
-            -hstart => $feature2->start,
-            -hend => $feature2->end,
-            -analysis =>$analysis 
-        ); 
+    my $contig = new Bio::EnsEMBL::RawContig(
+        $self->contig_dbID()
+    );
+
+    if($self->program =~ /blastn/i){
+        
+        $align_feature = new Bio::EnsEMBL::DnaDnaAlignFeature( @args );    
+        $align_feature->attach_seq($contig);
+    }elsif($self->program =~ /blastx/i){
+
+        $align_feature = Bio::EnsEMBL::DnaPepAlignFeature->new( @args );
+        $align_feature->attach_seq($contig);
     }else{
         
         $self->throw("$program is not supported yet'");
@@ -107,5 +124,42 @@ sub _hsp_2ens{
     return $align_feature;
 }
 
+=head2 _generic_2_ens_seqFeature
+
+convert from Bio::SeqFeature::Generic to Bio::EnsEMBL::SeqFeature
+
+=cut 
+
+sub _generic_2_ens_seqFeature{
+    my ($self, $generic, $ens_analysis) = @_;
+    unless($generic->isa('Bio::SeqFeature::Generic')){
+        $self->throw("A Bio::SeqFeature::Generic object is needed as the first argument");
+    }
+    
+    unless($ens_analysis->isa('Bio::EnsEMBL::Analysis')){
+        $self->throw("A Bio::EnsEMBL::Analysis object is needed as the second argument");
+    }
+    my $ens_seqFeature = new Bio::EnsEMBL::SeqFeature(
+        -analysis => $ens_analysis,
+        -seqname => $generic->seq_id,
+        -start => $generic->start,
+        -end => $generic->end,
+        -strand => $generic->strand,
+        -source_tag => $generic->source_tag,
+        -primary_tag => $generic->primary_tag
+    );
+    
+    # Bio::EnsEMBL::SeqFeature has a special requirement on frame.
+    # The value must be one of (0, 1, 2).
+    # $ens_seqFeature->frame($generic->frame);
+    return $ens_seqFeature;
+}
+    
+sub _similarity_2_ens_seqFeature{
+    my ($self, $similarity, $ens_analysis) = @_;
+    my $ens_seqFeature = $self->_generic_2_ens_seqFeature($similarity, $ens_analysis);
+    # What are the field that Similarity has, but not Generic?
+    return $ens_seqFeature; 
+}
 1;
 
