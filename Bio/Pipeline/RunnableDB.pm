@@ -236,7 +236,9 @@ sub output {
 
     if(defined (@r) && scalar(@r)){
       foreach my $r ($self->runnable){
-	      push(@{$self->{'_output'}}, $r->output);
+        if (defined $r->output){
+  	      push(@{$self->{'_output'}}, $r->output);
+        }
       }
     }
     return @{$self->{'_output'}};
@@ -375,14 +377,8 @@ sub runnable {
         my $runnable = "${arg}"->new();
 	      $self->{'_runnable'}=$runnable;
 
-=jerm
-        if ($runnable->isa("Bio::Pipeline::RunnableI")) {
-        } else {
-	        $self->throw("[$runnable] is not a Bio::Pipeline::RunnableI");
-        }
-=cut
-     }
-  
+	}
+    print STDERR $self->{'_runnable'}; 
     return $self->{'_runnable'};  
 }
 
@@ -434,31 +430,10 @@ sub write_output {
 
     my $db=$self->dbobj();
     my @output = $self->output();
- 
+
+    return 0 unless scalar(@output);    
     $self->analysis->output_handler->write_output(\@output);
-=head 
-    foreach my $f (@features) {
-	$f->analysis($self->analysis);
-    }
 
-    my $contig;
-    eval 
-    {
-      $contig = $db->get_Contig($self->input_id);
-    };
-
-    if ($@) 
-    {
-	print STDERR "Contig not found, skipping writing output to db: $@\n";
-    }
-    elsif (@features) 
-    {
-	print STDERR "Writing features to database\n";
-
-        my $feat_adp=Bio::DBSQL::FeatureAdaptor->new($db);
-	$feat_adp->store($contig, @features);
-    }
-=cut
     return 1;
 }
 

@@ -97,7 +97,7 @@ my $run = 1;
 my $submitted;
 while ($run) {
     
-    my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db);
+    my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db,-queue=>$QUEUE);
     my @jobs = $jobAdaptor->fetch_all;
     print STDERR "Fetched ".scalar(@jobs)." jobs\n";
     $submitted = 0;

@@ -337,7 +337,7 @@ sub update {
 		 $job->stderr_file,
 		 $job->input_object_file,
 		 $job->retry_count,
-		 $job->QUEUE_ID,
+		 $job->queue_id,
 		 $job->stage,
 		 $job->status,
 		 $job->dbID );
@@ -365,7 +365,7 @@ sub update_completed_job {
   my $query = " INSERT INTO completed_jobs
                      VALUES (".$job->dbID.",".
                             $job->analysis->dbID.",".
-                            $job->QUEUE_ID.",".
+                            $job->queue_id.",".
                             "'".$job->stdout_file."',".
                             "'".$job->stderr_file."',".
                             "'".$job->input_object_file."',".

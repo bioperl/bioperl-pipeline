@@ -90,7 +90,7 @@ sub new {
     $self->stderr_file      ($stderr);
     $self->input_object_file($obj_file);
     $self->retry_count      ($retry_count);
-    $self->QUEUE_ID         ($queueid);
+    $self->queue_id         ($queueid);
     $self->status           ($status);
     $self->stage            ($stage);
 
@@ -301,10 +301,8 @@ sub run {
 
   print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
 
-
   local *STDOUT;
   local *STDERR;
-
   if( ! open ( STDOUT, ">".$self->stdout_file )) {
 
     $self->set_status( "FAILED" );
@@ -315,11 +313,10 @@ sub run {
     $self->set_status( "FAILED" );
     return;
   }
-  
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
   }
-  
+ 
   eval {
     $rdb = Bio::Pipeline::RunnableDB->new ( 
                         -dbobj      => $self->adaptor->db,
@@ -567,11 +564,11 @@ sub create_queuelogfile {
     system( "mkdir $dir" );
   }
 
-  my $stub = $self->QUEUE_id.".";
+  my $stub = $self->queue_id.".";
   $stub .= time().".".int(rand(1000));
 
-  $self->QUEUE_out($dir.$stub.".out");
-  $self->QUEUE_err($dir.$stub.".err");
+  $self->queue_out($dir.$stub.".out");
+  $self->queue_err($dir.$stub.".err");
 }
 
 
@@ -667,21 +664,21 @@ sub input_object_file {
 
 =cut
 
-sub QUEUE_ID{
+sub queue_id{
   my ($self, $arg) = @_;
   (defined $arg) &&
     ( $self->{'_queueid'} = $arg );
   $self->{'_queueid'};
 }
 
-sub QUEUE_out {
+sub queue_out{
   my ($self, $arg) = @_;
   (defined $arg) &&
     ( $self->{'_queueout'} = $arg );
   $self->{'_queueout'};
 }
 
-sub QUEUE_err {
+sub queue_err{
   my ($self, $arg) = @_;
   (defined $arg) &&
     ( $self->{'_queueerr'} = $arg );
