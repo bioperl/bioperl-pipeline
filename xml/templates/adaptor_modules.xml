@@ -1,0 +1,379 @@
+<adaptors>
+<module type="dbadaptor" name="Bio::DB::BioSQL::DBAdaptor">
+        <method>new</method>
+        <method>dbname</method>
+        <method>driver</method>
+        <method>username</method>
+        <method>host</method>
+        <method>prepare</method>
+        <method>get_PrimarySeqAdaptor</method>
+        <method>get_SeqAdaptor</method>
+        <method>get_BioDatabaseAdaptor</method>
+        <method>get_SeqFeatureKeyAdaptor</method>
+        <method>get_OntologyTermAdaptor</method>
+        <method>get_SeqFeatureSourceAdaptor</method>
+        <method>get_SeqLocationAdaptor</method>
+        <method>get_SeqFeatureAdaptor</method>
+        <method>get_CommentAdaptor</method>
+        <method>get_ReferenceAdaptor</method>
+        <method>get_DBLinkAdaptor</method>
+        <method>get_DBXrefAdaptor</method>
+        <method>get_SpeciesAdaptor</method>
+        <method>get_dbNames</method>
+        <method>DESTROY</method>
+</module>
+
+
+<module type="dbadaptor" name="DBAdaptor">
+        <method>new</method>
+        <method>get_Update_Obj</method>
+        <method>get_CloneAdaptor</method>
+        <method>release_number</method>
+        <method>dbname</method>
+        <method>username</method>
+        <method>host</method>
+        <method>password</method>
+        <method>get_Feature_Obj</method>
+        <method>feature_Obj</method>
+        <method>get_MetaContainer</method>
+        <method>get_Protfeat_Adaptor</method>
+        <method>get_Protein_Adaptor</method>
+        <method>get_all_chr_ids</method>
+        <method>get_all_fpcctg_ids</method>
+        <method>get_object_by_wildcard</method>
+        <method>write_Clone</method>
+        <method>write_Contig</method>
+        <method>write_Chromosome</method>
+        <method>mapdb</method>
+        <method>mapdbname</method>
+        <method>write_Species</method>
+        <method>prepare</method>
+        <method>add_ExternalFeatureFactory</method>
+        <method>add_DASFeatureFactory</method>
+        <method>DESTROY</method>
+        <method>get_Gene</method>
+        <method>get_Gene_by_Transcript_id</method>
+        <method>get_Gene_by_DBLink</method>
+        <method>get_Gene_array</method>
+        <method>get_Gene_array_supporting</method>
+        <method>get_Virtual_Contig_by_Transcript_id</method>
+        <method>get_Transcript_in_VC_coordinates</method>
+        <method>get_donor_locator</method>
+        <method>get_last_update_offset</method>
+        <method>get_last_update</method>
+        <method>get_now_offset</method>
+        <method>get_offset</method>
+        <method>get_Protein_annseq</method>
+        <method>get_Transcript</method>
+        <method>get_Translation</method>
+        <method>get_Exon</method>
+        <method>get_all_Gene_id</method>
+        <method>get_all_Transcript_id</method>
+        <method>delete_Exon</method>
+        <method>delete_Supporting_Evidence</method>
+        <method>delete_Features</method>
+        <method>delete_Gene</method>
+        <method>geneid_to_cloneid</method>
+        <method>write_Gene</method>
+        <method>write_all_Protein_features</method>
+        <method>write_Protein_feature</method>
+        <method>write_Feature</method>
+        <method>write_supporting_evidence</method>
+        <method>get_supporting_evidence</method>
+        <method>write_Analysis</method>
+        <method>exists_Homol_Feature</method>
+        <method>get_Analysis</method>
+        <method>exists_Analysis</method>
+        <method>write_Transcript</method>
+        <method>write_Translation</method>
+        <method>write_Exon</method>
+        <method>get_Clone</method>
+        <method>list_embl_version_by_Clone</method>
+        <method>get_Clone_by_version</method>
+        <method>get_Contig</method>
+        <method>get_Contig_by_internal_id</method>
+        <method>get_Contig_by_international_id</method>
+        <method>get_Contigs_by_Chromosome</method>
+        <method>get_all_Clone_id</method>
+        <method>get_all_Contig_id</method>
+        <method>perl_only_sequences</method>
+        <method>perl_only_contigs</method>
+        <method>delete_Clone</method>
+        <method>cloneid_to_geneid</method>
+        <method>gene_Obj</method>
+        <method>get_GeneAdaptor</method>
+        <method>get_LiteAdaptor</method>
+        <method>get_ExonAdaptor</method>
+        <method>get_TranscriptAdaptor</method>
+        <method>get_TranslationAdaptor</method>
+        <method>get_FeatureAdaptor</method>
+        <method>get_RawContigAdaptor</method>
+        <method>get_AnalysisAdaptor</method>
+        <method>get_DBEntryAdaptor</method>
+        <method>get_StaticGoldenPathAdaptor</method>
+        <method>list_supported_assemblies</method>
+        <method>get_KaryotypeBandAdaptor</method>
+        <method>get_ChromosomeAdaptor</method>
+        <method>get_FamilyAdaptor</method>
+        <method>find_GenomeHits</method>
+        <method>deleteObj</method>
+        <method>diff_fh</method>
+        <method>diffdump</method>
+        <method>get_PredictionFeature_as_Transcript</method>
+        <method>extension_tables</method>
+        <method>static_golden_path_type</method>
+        <method>create_tables</method>
+        <method>dnadb</method>
+        <method>list_ExternalAdaptors</method>
+        <method>add_ExternalAdaptor</method>
+        <method>get_ExternalAdaptor</method>
+        <method>remove_ExternalAdaptor</method>
+        <method>get_CrossMatchDBAdaptor</method>
+        <method>get_ComparaDBAdaptor</method>
+        <method>get_SyntenyAdaptor</method>
+        <method>get_SyntenyAdaptor</method>
+        <method>get_AssemblyContigAdaptor</method>
+</module>
+
+
+
+
+
+<module type="dbadaptor" name="Bio::GFD::SQL::DBAdaptor">
+        <method>new</method>
+        <method>prepare</method>
+        <method>AUTOLOAD</method>
+        <method>DESTROY</method>
+        <method>dbname</method>
+        <method>username</method>
+        <method>host</method>
+</module>
+
+<module type="streamadaptor" name="Bio::DB::GFF">
+        <method>new</method>
+        <method>types</method>
+        <method>classes</method>
+        <method>segment</method>
+        <method>abs_segment</method>
+        <method>setup_segment_args</method>
+        <method>features</method>
+        <method>get_seq_stream</method>
+        <method>get_feature_by_name</method>
+        <method>get_feature_by_target</method>
+        <method>get_feature_by_attribute</method>
+        <method>get_feature_by_id</method>
+        <method>get_feature_by_gid</method>
+        <method>absolute</method>
+        <method>strict_bounds_checking</method>
+        <method>get_Seq_by_id</method>
+        <method>get_Seq_by_accession</method>
+        <method>get_Stream_by_name</method>
+        <method>get_Stream_by_id</method>
+        <method>get_Stream_by_group</method>
+        <method>all_seqfeatures</method>
+        <method>initialize</method>
+        <method>load_gff</method>
+        <method>load_fasta</method>
+        <method>load_sequence_string</method>
+        <method>setup_argv</method>
+        <method>lock_on_load</method>
+        <method>meta</method>
+        <method>default_meta_values</method>
+        <method>error</method>
+        <method>debug</method>
+        <method>automerge</method>
+        <method>attributes</method>
+        <method>fast_queries</method>
+        <method>add_aggregator</method>
+        <method>aggregators</method>
+        <method>clear_aggregators</method>
+        <method>abscoords</method>
+        <method>default_aggregators</method>
+        <method>do_load_gff</method>
+        <method>load_sequence</method>
+        <method>insert_sequence_chunk</method>
+        <method>dna_chunk_size</method>
+        <method>insert_sequence</method>
+        <method>refclass</method>
+        <method>default_class</method>
+        <method>setup_load</method>
+        <method>finish_load</method>
+        <method>load_gff_line</method>
+        <method>do_initialize</method>
+        <method>dna</method>
+        <method>features_in_range</method>
+        <method>get_dna</method>
+        <method>get_features</method>
+        <method>overlapping_features</method>
+        <method>contained_features</method>
+        <method>contained_in</method>
+        <method>get_abscoords</method>
+        <method>get_types</method>
+        <method>make_feature</method>
+        <method>make_aggregated_feature</method>
+        <method>parse_types</method>
+        <method>make_match_sub</method>
+        <method>make_object</method>
+        <method>do_attributes</method>
+        <method>get_features_iterator</method>
+        <method>new</method>
+        <method>next_seq</method>
+</module>
+
+<module type="streamadaptor" name="Bio::DB::Fasta">
+        <method>make_my_id</method>
+        <method>new</method>
+        <method>newFh</method>
+        <method>index_dir</method>
+        <method>get_Seq_by_id</method>
+        <method>index_file</method>
+        <method>dbmargs</method>
+        <method>index_name</method>
+        <method>calculate_offsets</method>
+        <method>get_all_ids</method>
+        <method>offset</method>
+        <method>length</method>
+        <method>linelen</method>
+        <method>headerlen</method>
+        <method>alphabet</method>
+        <method>path</method>
+        <method>header_offset</method>
+        <method>file</method>
+        <method>fileno2path</method>
+        <method>path2fileno</method>
+        <method>subseq</method>
+        <method>fh</method>
+        <method>header</method>
+        <method>caloffset</method>
+        <method>fhcache</method>
+        <method>get_PrimarySeq_stream</method>
+        <method>TIEHASH</method>
+        <method>FETCH</method>
+        <method>STORE</method>
+        <method>DELETE</method>
+        <method>CLEAR</method>
+        <method>EXISTS</method>
+        <method>FIRSTKEY</method>
+        <method>NEXTKEY</method>
+        <method>DESTROY</method>
+        <method>new</method>
+        <method>seq</method>
+        <method>subseq</method>
+        <method>display_id</method>
+        <method>accession_number</method>
+        <method>primary_id</method>
+        <method>can_call_new</method>
+        <method>alphabet</method>
+        <method>revcom</method>
+        <method>length</method>
+        <method>desc</method>
+        <method>new</method>
+        <method>next_seq</method>
+        <method>TIEHANDLE</method>
+        <method>READLINE</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::DB::EMBL">
+        <method>new</method>
+        <method>get_Stream_by_acc</method>
+</module>
+
+<module type="streamadaptor" name="Bio::DB::SwissProt">
+        <method>new</method>
+        <method>get_Stream_by_batch</method>
+        <method>get_request</method>
+        <method>postprocess_data</method>
+        <method>default_format</method>
+        <method>servertype</method>
+        <method>hostlocation</method>
+        <method>location_url</method>
+        <method>request_format</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::DB::GenBank">
+        <method>get_params</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::DB::GenPept">
+        <method>new</method>
+        <method>get_params</method>
+        <method>default_format</method>
+        <method>request_format</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::DB::RefSeq">
+        <method>new</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::DB::XEMBL">
+        <method>new</method>
+        <method>get_Seq_by_id</method>
+        <method>get_Stream_by_batch</method>
+        <method>get_Seq_by_acc</method>
+        <method>get_Seq_by_version</method>
+</module>
+
+<module type="streamadaptor" name="Bio::DB::GDB">
+        <method>new</method>
+        <method>ua</method>
+        <method>get_params</method>
+        <method>get_info</method>
+        <method>get_request</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::DB::BioFetch">
+        <method>new</method>
+        <method>new_from_registry</method>
+        <method>get_Seq_by_version</method>
+        <method>get_request</method>
+        <method>default_format</method>
+        <method>default_db</method>
+        <method>db</method>
+        <method>postprocess_data</method>
+        <method>request_format</method>
+        <method>get_Stream_by_acc</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::DB::Registry">
+        <method>new</method>
+        <method>get_database</method>
+        <method>services</method>
+</module>
+
+<module type="streamadaptor" name="Bio::Index::Fasta">
+        <method>id_parser</method>
+        <method>default_id_parser</method>
+</module>
+
+
+<module type="streamadaptor" name="Bio::Index::EMBL">
+</module>
+
+
+<module type="streamadaptor" name="Bio::Index::GenBank">
+</module>
+
+
+<module type="streamadaptor" name="Bio::Index::SwissPfam">
+        <method>fetch</method>
+</module>
+
+<module type="streamadaptor" name="Bio::Index::Swissprot">
+</module>
+
+<module type="streamadaptor" name="Bio::Index::Blast">
+        <method>new</method>
+        <method>fetch_report</method>
+        <method>id_parser</method>
+        <method>default_id_parser</method>
+</module>
+
+
+</adaptors>
