@@ -83,14 +83,14 @@ sub analysis_status {
         my %stage;
         foreach my $stage (qw(READING RUNNING WRITING BATCHED)){
             my $count = $self->dbobj->get_JobAdaptor->get_job_count(
-                -status=>[$status], -stage=>[$stage], -analysis_id=>dbid);
+                -status=>[$status], -stage=>[$stage], -analysis_id=>$dbid);
             push @counts, $count;
             $stage{$stage} = $count;
         }
         $status{$status} = \%stage;
         my $total = 0;
-        foreach(@counts) $total += $_;
-        if($total == 0 && $staus eq 'NEW'){
+        foreach(@counts){ $total += $_; }
+        if($total == 0 && $status eq 'NEW'){
             $total = $self->dbobj->get_JobAdaptor->get_job_count(
                 -status=>['NEW'], -analysis_id=>$dbid);
         }

@@ -2,7 +2,9 @@
 use strict;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Getopt::Long;
+use ExtUtils::MakeMaker;
 use Data::ShowTable;
+use Bio::Pipeline::Monitor;
 use Bio::Pipeline::PipeConf qw(DBI_DRIVER DBHOST DBNAME DBUSER DBPASS);
 
 &GetOptions(
@@ -32,7 +34,7 @@ my $monitor = Bio::Pipeline::Monitor->new(
 );
 
 # fetch all analysis
-my @analysis = $monitor->all_analysis;
+my @analysis = @{$monitor->all_analysis};
 my @analysis_id_logicname = map{[$_->dbID, $_->logic_name]} @analysis;
 
 ANALYSIS:
@@ -40,7 +42,7 @@ while(1){
     ShowData('Simple', ['id', 'logicname'], ['char', 'char'], [[100, 100]],
         @analysis_id_logicname);
 
-    my $analysis_id = promopt("Select an analysis to get vie job status [1-".
+    my $analysis_id = prompt("Select an analysis to get vie job status [1-".
         @analysis_id_logicname."]", "1");
     my $analysis_logic = $analysis_id_logicname[$analysis_id-1]->[1];
 
@@ -48,4 +50,19 @@ while(1){
     
 #    ShowData('Simple', 
 #        [
+}
+
+use vars qw($row);
+sub ShowData {
+    my ($mode, $title, $types, $width, @data) = @_;
+    local $row;
+    my $rowSub = sub { &ShowRow($_[0], \$row, \@data); };
+    ShowTable {
+        show_mode => $mode,
+        max_width => '',
+        titles => $title,
+        types => $types,
+        widths => $width,
+        row_sub => $rowSub
+    };
 }
