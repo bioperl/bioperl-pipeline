@@ -20,20 +20,17 @@ CREATE TABLE job (
   KEY (analysis_id)
 );
 
-INSERT INTO job VALUES (1,'process1',3,0,'','','','NEW','','',2);
-INSERT INTO job VALUES (2,'process1',3,0,'','','','NEW','','',2);
 
 
 CREATE TABLE iohandler (
    iohandler_id         int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
-   dbadaptor_id         int(10) DEFAULT '0' NOT NULL,
+   adaptor_id           int(10) DEFAULT '0' NOT NULL,
    type                 enum ('INPUT','OUTPUT') NOT NULL,
+   adaptor_type         enum('DB','STREAM') DEFAULT 'DB' NOT NULL,
 
    PRIMARY KEY (iohandler_id),
-   KEY dbadaptor (dbadaptor_id)
+   KEY adaptor (adaptor_id)
 );
-INSERT INTO iohandler VALUES (1,2,'INPUT');
-INSERT INTO iohandler VALUES (2,2,'OUTPUT');
 
 # note-  the column type is meant for differentiating the input adaptors from the output adaptors
 #        each analysis should only have ONE output adaptor.
@@ -42,23 +39,29 @@ CREATE TABLE datahandler(
     datahandler_id     int(10) unsigned NOT NULL auto_increment,
     iohandler_id        int(10) DEFAULT '0' NOT NULL,
     method              varchar(60) DEFAULT '' NOT NULL,
-    argument            varchar(40) DEFAULT '' ,
     rank                int(10) DEFAULT 1 NOT NULL,
 
     PRIMARY KEY (datahandler_id),
     KEY iohandler (iohandler_id)
 );
-INSERT INTO datahandler VALUES (1,1,'get_PrimarySeqAdaptor','',1);
-INSERT INTO datahandler VALUES (2,1,'fetch_by_dbID','1',2);
-INSERT INTO datahandler VALUES (3,2,'get_SeqFeatureAdaptor','',1);
-INSERT INTO datahandler VALUES (4,2,'store','OUTPUT',2);
 
+CREATE TABLE argument (
+  argument_id     int(10) unsigned NOT NULL auto_increment,
+  datahandler_id  int(10) unsigned NOT NULL ,
+  tag             varchar(40) DEFAULT '',
+  value           varchar(40) DEFAULT '',
+  rank            int(10) DEFAULT 1 NOT NULL,
+  type            enum('SCALAR','ARRAY') DEFAULT 'SCALAR' NOT NULL,
+
+  PRIMARY KEY (argument_id)
+);
 
 CREATE TABLE dbadaptor (
    dbadaptor_id   int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
    dbname         varchar(40) DEFAULT '' NOT NULL,
    driver         varchar (40) DEFAULT '' NOT NULL,
    host           varchar (40) DEFAULT '',
+   port           int(10) unsigned  DEFAULT '',
    user           varchar (40) DEFAULT '',
    pass           varchar (40) DEFAULT '',
    module         varchar (100) DEFAULT '',
@@ -66,28 +69,40 @@ CREATE TABLE dbadaptor (
    PRIMARY KEY (dbadaptor_id)
 );
 
-INSERT INTO dbadaptor VALUES (2,'bioperl_db','mysql','localhost','root','','SQL::DBAdaptor');
+CREATE TABLE streamadaptor (
+  streamadaptor_id  int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
+  module          varchar(40) DEFAULT '' NOT NULL,
+
+  PRIMARY KEY (streamadaptor_id)
+);
 
 #modified input table to reflect only Fixed Inputs (Inputs that are filled up before the pipeline run
 # and are different from the inputs generated during pipeline run
 
+#caters for multiple inputs across diffferent analysis using different iohandlers
 CREATE TABLE input (
    input_id         int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
    name             varchar(40) DEFAULT '' NOT NULL,
-   analysis_id      int(10) unsigned NOT NULL,
+   job_id           int(10) unsigned NOT NULL,
    iohandler_id     int(10) unsigned NOT NULL,
-   process_id       int(10) unsigned NOT NULL,
 
    PRIMARY KEY (input_id),
    KEY iohandler (iohandler_id),
-   KEY job (process_id)
+   KEY job (job_id)
 
 );
 
-INSERT INTO input VALUES (1,'input1',3,1,'process1');
+
+CREATE TABLE output (
+  job_id           int(10) unsigned DEFAULT '0' NOT NULL,
+  output_name             varchar(40) DEFAULT '' NOT NULL,
+  PRIMARY KEY (job_id, output_name)
+);
+
 
 # created new table to reflect the inputs generated (as outputs of an analysis)- currently an analysis can generate
 # outputs as inputs only for the next analysis  
+
 CREATE TABLE new_input (
   input_id         int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   job_id           int(10) unsigned DEFAULT '0' NOT NULL,
@@ -108,7 +123,6 @@ CREATE TABLE new_input_ioh (
 
 );
 
-INSERT INTO new_input_ioh VALUES (3,1);
 
 # Replaced Rule_goal and Rule_condition tables with rule table
 # Different actions and their behavior
@@ -128,7 +142,6 @@ CREATE TABLE rule (
   PRIMARY KEY (rule_id)
 );
 
-INSERT INTO rule VALUES (1,3,4,'WAITFORALL_AND_UPDATE');
 
 CREATE TABLE analysis (
   analysis_id      int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
@@ -144,12 +157,10 @@ CREATE TABLE analysis (
   parameters       varchar(80),
   gff_source       varchar(40),
   gff_feature      varchar(40),
+  node_group_id    int(10) unsigned DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (analysis_id)
 );
-
-INSERT INTO analysis VALUES (3,'0000-00-00 00:00:00','test','Bio::Pipeline::Runnable::TestRunnable','','','','','','','','','');
-INSERT INTO analysis VALUES (4,'0000-00-00 00:00:00','test1','Bio::Pipeline::Runnable::TestRunnable','','','','','','','','','');
 
 
 #changed the name to analysis_output_handler, inputs are handled in a different way as they
@@ -162,12 +173,10 @@ CREATE TABLE analysis_output_handler(
 
 );
 
-INSERT INTO analysis_output_handler VALUES (3,2);
-INSERT INTO analysis_output_handler VALUES (4,2);
-
 
 CREATE TABLE completed_jobs (
   completed_job_id      int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
+  process_id         varchar(100) DEFAULT 'NEW' NOT NULL,
   analysis_id           int(10) unsigned DEFAULT '0',
   queue_id              int(10) unsigned DEFAULT '0',
   stdout_file           varchar(100) DEFAULT '' NOT NULL,
@@ -179,3 +188,23 @@ CREATE TABLE completed_jobs (
   PRIMARY KEY (completed_job_id),
   KEY analysis (analysis_id)
 );
+
+#Added tables for node groups for use in Analysis-based allocation of jobs
+
+CREATE TABLE node (
+  node_id               int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
+  node_name             varchar(40) DEFAULT '' NOT NULL,
+  group_id              int(10) unsigned DEFAULT '0' NOT NULL,
+
+  PRIMARY KEY (node_id,group_id)
+);
+
+CREATE TABLE node_group (
+  node_group_id         int(10) unsigned NOT NULL auto_increment,
+  name                  varchar(40) NOT NULL,
+  description           varchar(255) NOT NULL,
+
+  PRIMARY KEY (node_group_id),
+  KEY (name)
+);
+
