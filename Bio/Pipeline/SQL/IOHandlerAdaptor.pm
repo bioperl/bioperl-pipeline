@@ -170,7 +170,6 @@ sub fetch_by_dbID {
     }
 
 
-    $iohandler->adaptor($self);
                                     
     return $iohandler;
 }
