@@ -56,6 +56,7 @@ use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::NodeAdaptor;
 use Bio::Pipeline::SQL::NodeGroupAdaptor;
 use Bio::Pipeline::SQL::DataMongerAdaptor;
+use Bio::Pipeline::SQL::ConverterAdaptor;
 
 use Bio::Root::Root;
 
@@ -171,6 +172,29 @@ sub prepare {
       $self->throw("Database object has lost its database handle! getting otta here!");
    }
    return $self->_db_handle->prepare($string);
+}
+
+=head2 get_ConverterAdaptor
+
+ Title   : get_ConverterAdaptor
+ Usage   : $db->get_ConverterAdaptor
+ Function: The Adaptor for Converter objects in this db
+ Example :
+ Returns : Bio::Pipeline::SQL::ConverterAdaptor
+ Args    : nothing
+
+=cut
+
+
+sub get_ConverterAdaptor {
+  my ($self) = @_;
+
+  if( ! defined $self->{_ConverterAdaptor} ) {
+    $self->{_ConverterAdaptor} = Bio::Pipeline::SQL::ConverterAdaptor->new
+      ( $self );
+  }
+
+  return $self->{_ConverterAdaptor};
 }
 
 =head2 get_JobAdaptor
