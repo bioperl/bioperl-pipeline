@@ -133,20 +133,17 @@ sub remove {
 
 sub fetch_all {
   my $self = shift;
-  my %rules;
-  my ($rule );
-  my @queryResult;
-
+  my @rules;
   my $sth = $self->prepare( q {
-    SELECT rule_id, current, next, action
+    SELECT rule_id 
       FROM rule } );
   $sth->execute;
 
-  while( @queryResult = $sth->fetchrow_array ) {
-    $rule = $self->fetch_by_dbID($queryResult[0]);
-    $rules{$queryResult[0]} = $rule;
+  while( my($queryResult) = $sth->fetchrow_array ) {
+    my $rule = $self->fetch_by_dbID($queryResult);
+    push @rules, $rule;
   }
-  return values %rules;
+  return @rules;
 }
 
 =head2 fetch_by_dbID
@@ -167,7 +164,7 @@ sub fetch_by_dbID {
   my $queryResult;
 
   my $sth = $self->prepare( q {
-    SELECT rule_id
+    SELECT rule_id,current,next,action
       FROM rule 
       WHERE rule_id = ? } );
   $sth->execute( $dbID  );
