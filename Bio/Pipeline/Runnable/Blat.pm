@@ -66,7 +66,7 @@ use Bio::SeqIO;
 use Bio::Root::Root;
 use Bio::Pipeline::DataType;
 use Bio::Pipeline::RunnableI;
-use Bio::Tools::Run::Blat;
+use Bio::Tools::Run::Alignment::Blat;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
 
@@ -140,19 +140,25 @@ sub run {
   my $db_file = $self->analysis->db_file;
   my @params = $self->parse_params($self->analysis->analysis_parameters);
   push @params, ("DB"=> $db_file);
-  $factory = Bio::Tools::Run::Blat->new(@params);
+  $factory = Bio::Tools::Run::Alignment::Blat->new(@params);
   my $program_file = $self->analysis->program_file;
   $factory->executable($program_file) if $program_file;
 
-  my @genes;
-  eval {
-    @genes = $factory->align($seq);
-  };
+  my @hsp;
+  my $searchio = eval{ $factory->align($seq)};
+
 	$self->throw("Problems running Blat::Tools::Run::Blat->align due to $@") if $@;
 
-  $self->output(\@genes);
+  while(my $result = $searchio->next_result){
+    while(my $hit = $result->next_hit){
+      while(my $hsp = $hit->next_hsp){
+        push @hsp,$hsp;
+      }
+    }
+  }
+  $self->output(\@hsp);
   
-  return \@genes;
+  return \@hsp;
 
 }
 
