@@ -23,6 +23,8 @@ use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
+use Bio::Pipeline::Filter;
+use Bio::Pipeline::Converter;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 
@@ -151,28 +153,50 @@ my $iohandler_setup = $pipeline_setup->child('iohandler_setup') || goto PIPELINE
 
 foreach my $iohandler ($iohandler_setup->children('iohandler')) {
     $iohandler || next;
-
+   my %iohandler_attrs = $iohandler->attributes;
+   
   my $ioid = $iohandler->attribute("id");
   my @datahandler_objs;
 
-  my $adaptor_type = &verify ($iohandler,'adaptor_type','REQUIRED','DB');
+#  my $adaptor_type = &verify ($iohandler,'adaptor_type','REQUIRED','DB');
 
-  my $adaptor_id = &verify($iohandler,'adaptor_id','REQUIRED');
+#  my $adaptor_id = &verify($iohandler,'adaptor_id','REQUIRED');
 
-  my $iotype     = &verify($iohandler,'iohandler_type','REQUIRED');
+my %adaptor_attrs;
+if(defined($iohandler->child('adaptor'))){
+    my $adaptor = $iohandler->child('adaptor');
+    %adaptor_attrs = $adaptor->attributes;
+}
+
+my $adaptor_type;
+if(defined($iohandler->child('adaptor_type') )){
+    $adaptor_type = $iohandler->child('adaptor_type')->value ;
+}elsif(exists $adaptor_attrs{'type'}){
+    $adaptor_type = $adaptor_attrs{'type'};
+}else{
+    $adaptor_type = "DB";
+}
+
+my $adaptor_id;
+if(defined $iohandler->child('adaptor_id') ){
+    $adaptor_id = $iohandler->child('adaptor_id')->value;
+}elsif(exists $adaptor_attrs{'id'}){
+    $adaptor_id = $adaptor_attrs{'id'};
+}
+  my $iotype     = &verify($iohandler,'iohandler_type','REQUIRED', '', 'type');
   
   my @method = $iohandler->children('method');
 
   foreach my $method (@method) {
-    my $name = &verify($method,'name','REQUIRED');
-    my $rank = &verify($method,'rank','REQUIRED',1);
+    my $name = &verify($method,'name','REQUIRED', '', 'name');
+    my $rank = &verify($method,'rank','REQUIRED',1, 'rank');
 
     my @arg_objs;
     my @arg=$method->children('argument');
     
     foreach my $argument (@arg) {
       if(ref($argument)){ #overcome bug in SimpleObj
-        my $tag = &verify($argument,'tag','OPTIONAL');
+        my $tag = &verify($argument,'tag','OPTIONAL', '', 'tag');
         my $value = &verify($argument,'value','REQUIRED');
         my $rank  = &verify($argument,'rank','OPTIONAL',1);
         my $type  = &verify($argument,'type','OPTIONAL',"SCALAR");
@@ -511,18 +535,18 @@ foreach my $rule ($pipeline_flow_setup->children('rule')) {
    if (defined $rule->child('current_analysis_id')) {
 
        #should be optional?
-       my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL');
+       my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL', '', 'current');
        $current = _get_analysis($anal_id);
      if (!defined($current)) {
        print "current analysis not found for rule\n";
      }
    }
-   my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL');
+   my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL', '', 'next');
    my $next = _get_analysis($next_anal_id);
    if (!defined($next)) {
      print "next analysis not found for rule\n";
    }
-   my $action = $rule->child('action')->value;
+   my $action = &verify($rule, 'action', 'OPTIONAL');
   
    my $rule_obj = Bio::Pipeline::Rule->new(-current=> $current,
                                            -next => $next,
@@ -612,20 +636,23 @@ print STDERR "Loading of pipeline $DBNAME completed\n";
 ####################################################################
 
 sub verify {
-    my ($obj, $child,$required,$default) = @_;
-        
+    my ($obj, $child,$required,$default, $attr_name) = @_;
+    my %obj_attrs = $obj->attributes;
+    $attr_name = $child unless(defined $attr_name); 
+    
     if(defined $obj->child($child)){
         if(defined $obj->child($child)->value){
             return $obj->child($child)->value;
         }
-        else {
-            if($required =~/REQUIRED/){
-              defined $default && return $default;
-              die($obj->name . " is missing a value");
-            }
-        }
-    }
-    else {
+#        else {
+#            if($required =~/REQUIRED/){
+#              defined $default && return $default;
+#              die($obj->name . " is missing a value");
+#            }
+#        }
+    }elsif(defined $attr_name && exists $obj_attrs{$attr_name}){
+        return $obj_attrs{$attr_name};
+    }else {
         if($required =~/REQUIRED/){
           defined $default && return $default;
           die($obj->name. " ".$obj->attribute('id'). " is missing a $child");
