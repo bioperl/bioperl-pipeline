@@ -5,11 +5,12 @@
 BEGIN {
     use lib 't';
     use Test;
-    plan tests => 8;
+    $NUMTESTS=8;
+    plan tests=> 8;
 }
 
 END {
-     foreach( $Test::ntest..NUMTESTS) {
+     foreach( $Test::ntest..$NUMTESTS) {
       skip('Blast or env variables not installed correctly',1);
      }
     unlink <t/data/phylip_dir/*>;
