@@ -1,9 +1,9 @@
 #
 # Object for storing sequence analysis details
 #
-# Cared for by Michele Clamp  <michele@sanger.ac.uk>
+# Cared for by Shawn Hoon  <shawnh@fugu-sg.org>
 #
-# Copyright Michele Clamp
+# Copyright Shawn Hoon
 #
 # You may distribute this module under the same terms as perl itself
 #
@@ -13,11 +13,11 @@
 
 =head1 NAME
 
-Bio::EnsEMBL::Pipeline::Status - small object storing job status tags
+Bio::Pipeline::Status - small object storing job status tags
 
 =head1 SYNOPSIS
 
-    my $obj    = new Bio::EnsEMBL::Pipeline::Status
+    my $obj    = new Bio::Pipeline::Status
     ('-jobid'              => $jobid,
      '-status'             => $status,
      '-created'            => $created,
@@ -29,7 +29,6 @@ Stores the status of a job at a certain time
 
 =head1 CONTACT
 
-ensembl-dev@ebi.ac.uk
 
 =head1 APPENDIX
 
@@ -40,7 +39,7 @@ methods. Internal methods are usually preceded with a _
 
 # Let the code begin...
 
-package Bio::EnsEMBL::Pipeline::Status;
+package Bio::Pipeline::Status;
 
 use vars qw(@ISA);
 use strict;

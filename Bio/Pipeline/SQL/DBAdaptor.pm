@@ -2,7 +2,7 @@
 # Object for storing the connection to the analysis database
 #
 # Written by Simon Potter <scp@sanger.ac.uk>
-# Based on Michele Clamp's Bio::EnsEMBL::Pipeline::DBSQL::Obj
+# Based on Michele Clamp's Bio::Pipeline::SQL::Obj
 #
 # Copyright GRL/EBI
 #
@@ -15,12 +15,12 @@
 
 =head1 NAME
 
-Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor -
+Bio::Pipeline::SQL::DBAdaptor -
 adapter class for EnsEMBL Pipeline DB
 
 =head1 SYNOPSIS
 
-    my $dbobj = new Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
+    my $dbobj = new Bio::Pipeline::SQL::DBAdaptor;
     $dbobj->do_funky_db_stuff;
 
 =head1 DESCRIPTION
@@ -41,25 +41,26 @@ Internal methods are usually preceded with a _
 
 # Let the code begin...
 
-package Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
+package Bio::Pipeline::SQL::DBAdaptor;
 
 
 use vars qw(@ISA);
 use strict;
 use DBI;
 
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
-use Bio::EnsEMBL::Pipeline::DB::ObjI;
-use Bio::EnsEMBL::Pipeline::DBSQL::RuleAdaptor;
-use Bio::EnsEMBL::DBSQL::AnalysisAdaptor;
-use Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor;
-use Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer;
-
-use Bio::Root::RootI;
+use Bio::DB::SQL::DBAdaptor;
+use Bio::Pipeline::SQL::IOAdaptor;
+use Bio::Pipeline::SQL::RuleAdaptor;
+=head
+use Bio::Pipeline::SQL::AnalysisAdaptor;
+use Bio::Pipeline::SQL::JobAdaptor;
+use Bio::Pipeline::SQL::StateInfoContainer;
+=cut
+use Bio::Root::Root;
 
 # Inherits from the base bioperl object
 
-@ISA = qw(Bio::EnsEMBL::DBSQL::DBAdaptor);
+@ISA = qw(Bio::DB::SQL::DBAdaptor);
 
 
 # sub new {
@@ -68,7 +69,7 @@ use Bio::Root::RootI;
     # return $self;
 # }
 
-# new() inherited from Bio::EnsEMBL::DBSQL::BaseAdaptor
+# new() inherited from Bio::DB::SQL::DBAdaptor;
 
 
 =head2 get_JobAdaptor
@@ -77,30 +78,44 @@ use Bio::Root::RootI;
  Usage   : $db->get_JobAdaptor
  Function: The Adaptor for Job objects in this db
  Example :
- Returns : Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor
+ Returns : Bio::Pipeline::SQL::JobAdaptor
  Args    : nothing
 
 
-=cut
 
 sub get_JobAdaptor {
   my ($self) = @_;
 
   if( ! defined $self->{_JobAdaptor} ) {
-    $self->{_JobAdaptor} = Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor->new
+    $self->{_JobAdaptor} = Bio::Pipeline::SQL::JobAdaptor->new
       ( $self );
   }
 
   return $self->{_JobAdaptor};
 }
 
+=cut
+=head2 get_input_dba_adaptor
 
-# DECRUFTME - do we need this?
+ Title   : get_input_dba_adaptor
+ Usage   : $db->get_input_dba_adaptor
+ Function: The Adaptor for getting input adaptor objects in this db
+ Example :
+ Returns : Bio::Pipeline::SQL::InputDBAAdaptor
+ Args    : nothing
 
-sub get_OldAnalysis {
-        my ($self,$id) = @_;
 
-        return $self->SUPER::get_Analysis($id);
+=cut
+
+sub get_input_dba_adaptor{
+  my ($self) = @_;
+
+  if( ! defined $self->{_InputDBAdaptor} ) {
+    $self->{_InputDBAdaptor} = Bio::Pipeline::SQL::InputDBAAdaptor->new
+      ( $self );
+  }
+
+  return $self->{_InputDBAdaptor};
 }
 
 
@@ -110,23 +125,23 @@ sub get_OldAnalysis {
  Usage   : $db->get_AnalysisAdaptor
  Function: The Adaptor for Analysis objects in this db
  Example :
- Returns : Bio::EnsEMBL::Pipeline::DBSQL::AnalysisAdaptor
+ Returns : Bio::Pipeline::SQL::AnalysisAdaptor
  Args    : nothing
 
-=cut
 
 sub get_AnalysisAdaptor {
   my ($self) = @_;
 
   if( ! defined $self->{_AnalysisAdaptor} ) {
-    require Bio::EnsEMBL::DBSQL::AnalysisAdaptor;
-    $self->{_AnalysisAdaptor} = Bio::EnsEMBL::DBSQL::AnalysisAdaptor->new
+    require Bio::Pipeline::SQL::AnalysisAdaptor;
+    $self->{_AnalysisAdaptor} = Bio::Pipeline::SQL::AnalysisAdaptor->new
       ( $self );
   }
 
   return $self->{_AnalysisAdaptor};
 }
 
+=cut
 
 =head2 get_RuleAdaptor
 
@@ -134,7 +149,7 @@ sub get_AnalysisAdaptor {
  Usage   : $db->get_RuleAdaptor
  Function: The Adaptor for Rule objects in this db
  Example :
- Returns : Bio::EnsEMBL::Pipeline::DBSQL::RuleAdaptor
+ Returns : Bio::Pipeline::SQL::RuleAdaptor
  Args    : nothing
 
 =cut
@@ -143,7 +158,7 @@ sub get_RuleAdaptor {
   my ($self) = @_;
 
   if( ! defined $self->{_RuleAdaptor} ) {
-    $self->{_RuleAdaptor} = Bio::EnsEMBL::Pipeline::DBSQL::RuleAdaptor->new
+    $self->{_RuleAdaptor} = Bio::Pipeline::SQL::RuleAdaptor->new
       ( $self );
   }
 
@@ -157,65 +172,22 @@ sub get_RuleAdaptor {
  Usage   : $db->get_StateInfoContainer
  Function:
  Example :
- Returns : Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer
+ Returns : Bio::Pipeline::SQL::StateInfoContainer
  Args    : nothing
 
-=cut
 
 sub get_StateInfoContainer {
   my ($self) = @_;
 
   if( ! defined $self->{_StateInfoContainer} ) {
-    $self->{_StateInfoContainer} = Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer->new
+    $self->{_StateInfoContainer} = Bio::Pipeline::SQL::StateInfoContainer->new
       ( $self );
   }
 
   return $self->{_StateInfoContainer};
 }
 
-
-# CHECKME - this is probably old hat as well...
-
-sub _parseJob {
-    my ($self,$row) = @_;
-
-    $self->throw("No row object input") unless defined($row);
-
-    my $jobid             = $row->{id};
-    my $input_id          = $row->{input_id};
-    my $analysis_id       = $row->{analysis};
-    my $LSF_id            = $row->{LSF_id};
-    my $machine           = $row->{machine};
-    my $object            = $row->{object};
-    my $queue             = $row->{queue};
-    my $stdout            = $row->{stdout_file};
-    my $stderr            = $row->{stderr_file};
-    my $input_object_file = $row->{input_object_file};
-    my $output_file       = $row->{output_file};
-    my $status_file       = $row->{status_file};
-
-    my $analysis          = $self->get_Analysis($analysis_id);
-
-       $analysis->id($analysis_id);
-
-    my $job = new Bio::EnsEMBL::Pipeline::DBSQL::Job(-id       => $jobid,
-						     -input_id => $input_id,
-						     -analysis => $analysis,
-						     -LSF_id   => $LSF_id,
-						     -machine  => $machine,
-						     -object   => $object,
-						     -queue    => $queue,
-						     -dbobj    => $self,
-						     -stdout   => $stdout,
-						     -stderr   => $stderr,
-						     -input_object_file => $input_object_file,
-						     -output_file => $output_file,
-                                                     -status_file => $status_file,
-						     );
-
-    return $job;
-}
-
+=cut
 
 sub delete_Job {
     my ($self,$id) = @_;

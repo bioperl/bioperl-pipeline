@@ -1,10 +1,10 @@
-# Perl module for Bio::EnsEMBL::Pipeline::Rule
+# Perl module for Bio::Pipeline::Rule
 #
-# Creator: Arne Stabenau <stabenau@ebi.ac.uk>
-# Date of creation: 10.09.2000
-# Last modified : 10.09.2000 by Arne Stabenau
+# Creator: Shawn Hoon <shawnh@fugu-sg.org>
+# Date of creation: 04.04.2002 
+# Last modified : 04.04.2002 by Shawn Hoon
 #
-# Copyright EMBL-EBI 2000
+# 
 #
 # You may distribute this module under the same terms as perl itself
 
@@ -12,7 +12,7 @@
 
 =head1 NAME
 
-Bio::EnsEMBL::Pipeline::Rule
+Bio::Pipeline::Rule
 
 =head1 SYNOPSIS
 
@@ -21,9 +21,6 @@ Bio::EnsEMBL::Pipeline::Rule
 
 
 =head1 CONTACT
-
-    Contact Arne Stabenau on implemetation/design detail: stabenau@ebi.ac.uk
-    Contact Ewan Birney on EnsEMBL in general: birney@sanger.ac.uk
 
 =head1 APPENDIX
 
@@ -35,7 +32,7 @@ The rest of the documentation details each of the object methods. Internal metho
 # Let the code begin...
 
 
-package Bio::EnsEMBL::Pipeline::Rule;
+package Bio::Pipeline::Rule;
 use vars qw(@ISA);
 use Bio::Root::RootI;
 use strict;
@@ -48,8 +45,8 @@ use strict;
   Title   : new
   Usage   : ...Rule->new($analysis);
   Function: Constructor for Rule object
-  Returns : Bio::EnsEMBL::Pipeline::Rule
-  Args    : A Bio::EnsEMBL::Analysis object. Conditions are added later,
+  Returns : Bio::Pipeline::Rule
+  Args    : A Bio::Analysis object. Conditions are added later,
             adaptor and dbid only used from the adaptor.
 
 =cut
@@ -61,11 +58,11 @@ sub new {
 
   my ( $goal, $adaptor, $dbID ) =
     $self->_rearrange( [ qw ( GOAL
-			      ADAPTOR
-			      DBID
-			     ) ], @args );
+                  			      ADAPTOR
+                  			      DBID
+            			     ) ], @args );
   $self->throw( "Wrong parameter" ) unless
-    $goal->isa( "Bio::EnsEMBL::Analysis" );
+    $goal->isa( "Bio::Pipeline::Analysis" );
   $self->dbID( $dbID );
   $self->goalAnalysis( $goal );
   $self->adaptor( $adaptor );
@@ -119,8 +116,8 @@ sub list_conditions {
   Title   : goalAnalysis
   Usage   : $self->goalAnalysis($anal);
   Function: Get/set method for the goal analysis object of this rule.
-  Returns : Bio::EnsEMBL::Analysis
-  Args    : Bio::EnsEMBL::Analysis
+  Returns : Bio::Analysis
+  Args    : Bio::Analysis
 
 =cut
 
