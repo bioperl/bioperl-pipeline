@@ -138,11 +138,11 @@ B) The Family Clustering Pipeline
   Using the script:
 
   ******************************
-  *Xml2DB.pl
+  * PipelineManager
   ******************************
-  This script configures and creates a pipeline based on xml definitions.
+  This script configures and runs a pipeline based on xml definitions.
 
-    Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+    Usage: PipelineManager -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -xml pipeline_setup.xml
 
     Default values in ()
     -dbhost host (mysql)
@@ -152,24 +152,14 @@ B) The Family Clustering Pipeline
     -schema The path to the bioperl-pipeline schema.
         Needed if you want to create a new db.
         (../sql/schema.sql)
-    -p      the pipeline setup xml file (required)
+    -xml    pipeline setup xml file (required)
 
-    For this case you will choose -p templates/protein_family.xml
+    In this case you will choose -xml templates/protein_family_clustering.xml
 
-  Once this is done you are ready to run the pipeline.
+    The -dbhost, -dbname, -dbuser, and -dbpass parameters can be set in advance
+    in PipeConf.pm for ease of use.
 
-   <Running the Pipeline>
-
-    Go to bioperl-pipeline/Bio/Pipeline
-
-    Edit PipeConf.pm accordingly for your environment variables.
-
-    run the pipeline by doing:
-
-    perl PipelineManager.pl -dbname Name_of_pipeline_database -dbuser root -dbhost pulse
-
-    you may use the -l option to run it in local mode without job submission
-
+    You may use the -local option to run it in local mode without job submission.
 
   <CONFIGURATION>
 
@@ -406,7 +396,7 @@ B) The Family Clustering Pipeline
       <db>family</db>
       <db_file>/data0/shawn_tmp/fugu.fa</db_file>
       <program>blastall</program>
-      <program>/usr/local/bin/blastall</program>
+      <program_file>/usr/local/bin/blastall</program_file>
       <analysis_parameters>-p blastp -e 0.00001</analysis_parameters>
       <runnable_parameters>-return_type hit</runnable_parameters>
       <output_iohandler id="1"/>
