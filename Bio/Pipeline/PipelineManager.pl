@@ -22,6 +22,9 @@ use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::BatchSubmission;
 
+use Bio::Pipeline::InputCreate::setup_genewise;
+
+
 ############################################
 #Pipeline Setup
 ############################################
@@ -215,6 +218,7 @@ while ($run) {
         my $nbr_left = $FETCH_JOB_SIZE - (scalar(@incomplete_jobs));
         push @incomplete_jobs, $jobAdaptor->fetch_jobs(-number =>$nbr_left ,-status=>['FAILED']);
     }
+    print STDERR "Fetched ".scalar(@incomplete_jobs)." incomplete jobs\n";
 
     $submitted = 0;
 
@@ -249,35 +253,41 @@ while ($run) {
 
     #fetch completed jobs for creating new jobs
     my @completed_jobs = $jobAdaptor->fetch_jobs(-number =>$FETCH_JOB_SIZE,-status=>['COMPLETED']);
-    print STDERR "Fetched ".scalar(@incomplete_jobs)." incomplete jobs\n";
     print STDERR "Fetched ".scalar(@completed_jobs)." completed jobs\n";
 
     foreach my $job(@completed_jobs) {
 
-            my ($new_jobs) = &create_new_job($job);
-            if(scalar(@{$new_jobs})){
-              print STDERR "Creating ".scalar(@{$new_jobs})." jobs\n";
-            }
-            foreach my $new_job (@{$new_jobs}){
+      my ($new_jobs) = &create_new_job($job);
+      if(scalar(@{$new_jobs})){
+        print STDERR "Creating ".scalar(@{$new_jobs})." jobs\n";
+      }
+      foreach my $new_job (@{$new_jobs}){
 
-                if ($local){
-                    $new_job->status('SUBMITTED');
-                    $new_job->make_filenames unless $job->filenames;
-                    $new_job->update;
-                    eval {
-                      $new_job->run;
-                    }
-	            }else{
-                    $batchsubmitter->add_job($new_job);
-                    $new_job->status('SUBMITTED');
-                    $new_job->stage('BATCHED');
-                    $new_job->update;
-
-                    &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
-                }
-            }
-            $job->remove;
-    }
+        if ($local){
+          $new_job->status('SUBMITTED');
+          $new_job->make_filenames unless $job->filenames;
+          $new_job->update;
+          eval {
+            $new_job->run;
+          }
+	      }
+        else{
+          $batchsubmitter->add_job($new_job);
+          $new_job->status('SUBMITTED');
+          $new_job->stage('BATCHED');
+          $new_job->update;
+          &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
+        }
+     }
+     eval{
+			   $job->adaptor->update_completed_job($job);
+	 	 };
+     my $err;
+     if($err = $@){
+		  print STDERR ("Error updating completed job\n$err");
+     }
+      $job->remove;
+   }
 
     #submit remaining jobs in batch.
     &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs);
@@ -392,7 +402,7 @@ sub create_new_job {
                   $new_job->status('NEW');
                   $new_job->update;
                   my @fixed_inputs = _create_input($next_analysis);
-                  ################  we are not copying the fixed inputs of the previous jobs for now for this option ####################
+################  we are not copying the fixed inputs of the previous jobs for now for this option ####################
                   #now copy outputs of all jobs of previous analysis as inputs for this job
                   my @new_inputs = _update_inputs($job, $new_job);
                   my @inputs = (@fixed_inputs, @new_inputs);

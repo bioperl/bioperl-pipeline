@@ -401,21 +401,11 @@ sub run {
      $self->adaptor->store_outputs($self, @output_ids) unless (scalar(@output_ids) == 0);
      $self->output_ids(@output_ids) unless (scalar(@output_ids) == 0);
  }
- ##############
  
- 
- $self->stage('UPDATING');
+  $self->stage('UPDATING');
   $self->status( "COMPLETED" );
   $self->update;
 
-    print "debugjob\n"; 
-  eval{
-   $self->adaptor->update_completed_job($self);
-  };
-  if($err = $@){
-      print STDERR ("Error updating completed job\n$err");
-  }
-  
   return 1;
 }
 
