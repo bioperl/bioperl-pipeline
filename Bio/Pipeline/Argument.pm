@@ -95,7 +95,7 @@ sub new {
                                                      DHID
                                                      TYPE)],@args);
 
-  $value|| $self->throw("Argument needs a value tag.");
+  defined $value || $self->throw("Argument needs a value tag.");
   $type  = $type || 'SCALAR';
   $rank = $rank || 1;
   $dbID && $self->dbID($dbID);
