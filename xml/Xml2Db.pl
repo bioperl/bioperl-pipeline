@@ -202,6 +202,7 @@ print "Doing Pipeline Flow Setup\n";
 
 foreach my $node_group ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('node_group')) {
 
+  if (ref($node_group)){
     my $nodegroup_id = $node_group->attribute("id");
     my @node_objs;
     my $node_id = 1;
@@ -222,43 +223,131 @@ foreach my $node_group ($xso1->child('pipeline_setup')->child('pipeline_flow_set
                                                    -description => $group_desc,
                                                    -nodes => \@node_objs); 
     push @nodegroup_objs, $nodegroup_obj;
+  }
 }
+
+my @pipeline_converter_objs;
+print "Doing Converters..\n";
+foreach my $converter ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('converter')) {
+   
+  if (ref($converter)) {
+     my $converter_obj = Bio::Pipeline::Converter->new(-dbID => $converter->attribute('id'),
+                                                     -module => $converter->child('module')->value,
+                                                     -method => $converter->child('method')->value);
+     push @pipeline_converter_objs, $converter_obj;
+  }
+}
+
 
 my @analysis_objs;
 print "Doing Analysis..\n";
 foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('analysis')) {
 
-    my $analysis_obj = Bio::Pipeline::Analysis->new(-id => $analysis->attribute('id'),
+    my $analysis_obj;
+    my $datamonger = $analysis->child('data_monger');
+    if (defined $datamonger) {
+        my @datamonger_iohs;
+        $analysis_obj = Bio::Pipeline::Analysis->new(-id => $analysis->attribute('id'),
+                                                   -runnable => 'Bio::Pipeline::Runnable::DataMonger',
+                                                   -logic_name => 'DataMonger',
+                                                   -program => 'DataMonger');
+        
+        my @initial_input_objs; 
+        my $input_present_flag = 0;
+    	foreach my $input ($datamonger->children('input')){
+         if (ref ($input)) {
+           $input_present_flag = 1;
+           my $name = $input->child('name')->value;
+           my $input_iohandler_id = $input->child('iohandler')->value;
+           my $input_iohandler_obj = _get_iohandler($input_iohandler_id);
+           push @datamonger_iohs, $input_iohandler_obj;
+           my $initial_input_obj = Bio::Pipeline::Input->new(-name => $name,
+                                                             -tag => 'input',
+                                                             -job_id => 1,
+                                                             -input_handler => $input_iohandler_obj);
+           push @initial_input_objs, $initial_input_obj;
+         }
+        }
+        if ($input_present_flag) {
+          _create_initial_input_and_job($analysis_obj,@initial_input_objs); 
+        }
+
+
+
+        my $datamonger_obj = Bio::Pipeline::Runnable::DataMonger->new();
+    	foreach my $filter ($datamonger->children('filter')){
+         if (ref ($filter)) {
+           my $module = $filter->child('module')->value;
+           my $rank = $filter->child('rank')->value;
+           my @arguments = ();      
+           foreach my $argument ($filter->children('argument')){
+           	my $tag = $argument->child('tag')->value;
+           	my $value = $argument->child('value')->value;
+                my $argument = Bio::Pipeline::Argument->new(-tag => $tag, -value => $value);
+                push @arguments, $argument;
+           }
+           my $filter = Bio::Pipeline::Filter->new(-module => $module, -rank => $rank);
+           $filter->arguments(\@arguments);
+           $datamonger_obj->add_filter($filter);
+         }
+ 
+        }
+
+        foreach my $input_create ($datamonger->children('input_create')){
+         if(ref ($input_create)) {
+           my $module = $input_create->child('module')->value;
+           my $rank = $input_create->child('rank')->value;
+           my @arguments = ();
+           my @arguments_hash;
+           foreach my $argument ($input_create->children('argument')){
+                my $tag = $argument->child('tag')->value;
+                my $value = $argument->child('value')->value;
+                push @arguments_hash, $tag;
+                push @arguments_hash, $value;
+                my $argument = Bio::Pipeline::Argument->new(-tag => $tag, -value => $value);
+                push @arguments, $argument;
+           }
+           my $input_create = Bio::Pipeline::InputCreate->new(-module => $module, -rank => $rank, @arguments_hash);
+           $input_create->arguments(\@arguments);
+           $datamonger_obj->add_input_create($input_create);
+         }
+        }
+        $analysis_obj->data_monger($datamonger_obj);
+        $analysis_obj->iohandler(\@datamonger_iohs);
+        #push @analysis_objs, $analysis_obj;
+        #next;
+     } else {
+
+    	$analysis_obj = Bio::Pipeline::Analysis->new(-id => $analysis->attribute('id'),
                                                 -runnable => $analysis->child('runnable')->value);
-    my $program = $analysis->child('program');
-    my $output_handler_id = $analysis->child('output_iohandler_id');
-    my $new_input_handler_id = $analysis->child('new_input_iohandler_id');
+    	my $program = $analysis->child('program');
 
-    my $program_file = $analysis->child('program_file');
-    my $db = $analysis->child('db');
-    my $db_file = $analysis->child('db_file');
-    my $parameters = $analysis->child('parameters');
-    my $nodegroup_id = $analysis->child('nodegroup_id');
-    my $logic_name = $analysis->child('logic_name');
+    	my $program_file = $analysis->child('program_file');
+    	my $db = $analysis->child('db');
+    	my $db_file = $analysis->child('db_file');
+    	my $parameters = $analysis->child('parameters');
+    	my $logic_name = $analysis->child('logic_name');
 
-   if(defined($logic_name)){
-       $analysis_obj->logic_name($logic_name->value);
-   }
-   if (defined($program)){
-      $analysis_obj->program($program->value)
-   }
-   if (defined($program_file)){
-      $analysis_obj->program_file($program_file->value)
-   }
-   if (defined($db)){
-      $analysis_obj->db($db->value)
-   }
-   if (defined($db_file)){
-      $analysis_obj->db_file($db_file->value)
-   }
-   if (defined($parameters)){
-      $analysis_obj->parameters($parameters->value)
-   }
+   	if(defined($logic_name)){
+       		$analysis_obj->logic_name($logic_name->value);
+   	}
+   	if (defined($program)){
+      		$analysis_obj->program($program->value)
+   	}
+   	if (defined($program_file)){
+      		$analysis_obj->program_file($program_file->value)
+   	}
+   	if (defined($db)){
+      		$analysis_obj->db($db->value)
+   	}
+   	if (defined($db_file)){
+      		$analysis_obj->db_file($db_file->value)
+   	}
+   	if (defined($parameters)){
+      		$analysis_obj->parameters($parameters->value)
+   	}
+    }
+   my $nodegroup_id = $analysis->child('nodegroup_id');
    if (defined($nodegroup_id)){
       my $node_group = _get_nodegroup($nodegroup_id->value);
       if (!defined($node_group)) {
@@ -267,54 +356,53 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
       $analysis_obj->node_group($node_group);
    }
    my @ioh;
-   if (defined($output_handler_id)){
-      my $output_handler = _get_iohandler($output_handler_id->value);
-      if (!defined($output_handler)) {
-        print "output iohandler for analysis not found\n";
-      }
-      push @ioh, $output_handler;
-   }
-   foreach my $input_handler_id ($analysis->child('input_iohandler_id')) {
-     if (defined($input_handler_id)){
-         my $input_handler = _get_iohandler($input_handler_id->value);
-         if(!defined($input_handler)){
-            print "input iohandler for analysis not found\n";
+
+   foreach my $input_iohandler ($analysis->child('input_iohandler')) {
+     if (defined($input_iohandler)){
+         my $input_iohandler_obj = _get_iohandler($input_iohandler->attribute("id"));
+         if(!defined($input_iohandler_obj)){
+            print "input iohandler for analysis $analysis->dbID not found\n";
+         } else {
+            my @converter_objs;
+            foreach my $converter ($input_iohandler->child('converter')) {
+              my $converter_obj = _get_converter($converter->attribute("id")); 
+              if(defined($converter_obj)){
+                 $converter_obj->rank($converter->attribute("rank"));
+                 push @converter_objs, $converter_obj;
+              } else {
+                 print "converter for analysis  not found\n";
+              }
+            }
+            $input_iohandler_obj->converters(\@converter_objs);
+            $input_iohandler_obj->type('INPUT');;
+            push @ioh, $input_iohandler_obj;
          }
-         push @ioh, $input_handler;
      }
    }
-   if (defined($new_input_handler_id)){
-      my $new_input_handler = _get_iohandler($new_input_handler_id->value);
-      if (!defined($new_input_handler)) {
-        print "new input iohandler for analysis not found\n";
-      }
-      push @ioh, $new_input_handler;
-      
-   #   $analysis_obj->new_input_handler($new_input_handler);
-   }
-   $analysis_obj->iohandler(\@ioh);
 
-   
-    foreach my $create_input ($analysis->children('create_input_setup')){
-        if (ref($create_input)){
-          my $ids_iohandler_id = $create_input->child('fetch_input_ids_iohandler_id');
-          my $input_iohandler_id = $create_input->child('fetch_input_iohandler_id');
-          if ($ids_iohandler_id && $input_iohandler_id){
-    		  my $input_iohandler = _get_iohandler($input_iohandler_id->value);
-	          if (!defined($input_iohandler)) {
-        	     print "input iohandler for analysis not found\n";
-      	       	  }
-                  push @ioh, $input_iohandler;
-                  my $ids_iohandler = _get_iohandler($ids_iohandler_id->value);
-                  if (!defined($ids_iohandler)) {
-                     print "fetch input ids iohandler for analysis not found\n";
-                  }
-                  push @ioh, $ids_iohandler;
-      		  #store to iohandler_map table
-                  $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$ids_iohandler_id->value,$input_iohandler_id->value);
-          }
-        }
+   foreach my $output_iohandler ($analysis->child('output_iohandler')) {
+     if (defined($output_iohandler)){
+         my $output_iohandler_obj = _get_iohandler($output_iohandler->attribute("id"));
+         if(!defined($output_iohandler_obj)){
+            print "output iohandler for analysis $analysis->dbID not found\n";
+         } else {
+            my @converter_objs;
+            foreach my $converter ($output_iohandler->child('converter')) {
+              my $converter_obj = _get_converter($converter->attribute("id"));
+              if(defined($converter_obj)){
+                 $converter_obj->rank($converter->attribute("rank"));
+                 push @converter_objs, $converter_obj;
+              } else {
+                 print "converter for analysis  not found\n";
+              }
+            }
+            $output_iohandler_obj->converters(\@converter_objs);
+            $output_iohandler_obj->type('OUTPUT');
+            push @ioh, $output_iohandler_obj;
+         }
+     }
    }
+
     foreach my $map ($analysis->children('input_iohandler_mapping')){
         if (ref($map)){
           my $prev_iohandler_id = $map->child('prev_analysis_iohandler_id');
@@ -330,6 +418,34 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
           }
         }
    }
+
+   foreach my $new_input_iohandler ($analysis->child('new_input_iohandler')) {
+     if (defined($new_input_iohandler)){
+         my $new_input_iohandler_obj = _get_iohandler($new_input_iohandler->attribute("id"));
+         if(!defined($new_input_iohandler_obj)){
+            print "new_input iohandler for analysis $analysis->dbID not found\n";
+         } else {
+            my @converter_objs;
+            foreach my $converter ($new_input_iohandler->child('converter')) {
+              my $converter_obj = _get_converter($converter->attribute("id"));
+              if(defined($converter_obj)){
+                 $converter_obj->rank($converter->attribute("rank"));
+                 push @converter_objs, $converter_obj;
+              } else {
+                 print "converter for analysis  not found\n";
+              }
+            }
+            $new_input_iohandler_obj->converters(\@converter_objs);
+            $new_input_iohandler_obj->type('NEW_INPUT');
+            push @ioh, $new_input_iohandler_obj;
+         }
+     }
+   }
+
+
+   $analysis_obj->iohandler(\@ioh);
+
+   
 
    push @analysis_objs, $analysis_obj;
  }
@@ -414,6 +530,9 @@ foreach my $job ($xso1->child('pipeline_setup')->child('job_setup')->children('j
 ###############################################################################################
 
 
+foreach my $converter (@pipeline_converter_objs) {
+  $dba->get_ConverterAdaptor->store($converter);
+}
 foreach my $analysis (@analysis_objs) {
   $dba->get_AnalysisAdaptor->store($analysis);
 }
@@ -429,6 +548,26 @@ print STDERR "Loading of pipeline $DBNAME completed\n";
 ####################################################################
 #Utility Methods
 ####################################################################
+
+sub _create_initial_input_and_job {
+  my ($analysis_obj, @initial_input_objs)= @_;
+  my $job_obj = Bio::Pipeline::Job->new(-analysis => $analysis_obj,
+                                         -retry_count => 3,
+                                         -adaptor => $dba->get_JobAdaptor,
+                                         -inputs => \@initial_input_objs);
+  $dba->get_JobAdaptor->store($job_obj);
+}
+
+sub _get_converter {
+  my ($id) = @_;
+
+  foreach my $converter(@pipeline_converter_objs) {
+    if ($converter->dbID == $id) {
+      return $converter;
+    }
+  }
+  return undef;
+}
 
 sub _get_analysis {
   my ($id) = @_;
