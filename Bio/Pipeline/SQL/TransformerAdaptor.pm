@@ -202,15 +202,11 @@ sub fetch_by_dbID{
     my @new_arguments = ();
     my @methods = @{$methods_ref};
     my $first_method = shift @methods;
-    if($first_method->name eq 'new'){
-       @new_arguments = @{$self->_format_transformer_new_arguments($first_method->arguments)};
-    }
 
     my @new_params = ();
     push @new_params, -dbID => $transformer_id;
     push @new_params, -module => $module;
     push @new_params, -method => $methods_ref;
-    push @new_params, @new_arguments;
     
 	my $transformer = Bio::Pipeline::Transformer->new(@new_params);
 
