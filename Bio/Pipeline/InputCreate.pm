@@ -61,6 +61,9 @@ package Bio::Pipeline::InputCreate;
 use vars qw(@ISA);
 use strict;
 use Bio::Root::Root;
+use Bio::Pipeline::Input;
+use Bio::Pipeline::Job;
+
 
 @ISA = qw(Bio::Root::Root);
 
@@ -154,10 +157,11 @@ END
 =cut
 
 sub create_input {
-    my ($self,$name,$ioh) = @_;
+    my ($self,$name,$ioh,$tag) = @_;
     $name || $self->throw("Need an input name to create input");
-
+    
     my $input_obj = Bio::Pipeline::Input->new(-name => $name,
+                                              -tag  => $tag,
                                               -input_handler => $ioh);
 
     return $input_obj;
