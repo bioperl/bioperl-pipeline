@@ -103,16 +103,17 @@ sub fetch_by_dbID {
     $sth->execute();
 
     my @datahandlers;
-    my $arg_sth= $self->prepare("SELECT argument_id, name,rank,type FROM argument WHERE datahandler_id=?");
+    my $arg_sth= $self->prepare("SELECT argument_id, tag,value,rank,type FROM argument WHERE datahandler_id=?");
     
     while (my ($datahandler_id, $method,  $rank) = $sth->fetchrow_array){
         $arg_sth->execute($datahandler_id);
         my @args;
-        while(my ($argument_id,$name,$rank,$type) = $arg_sth->fetchrow_array){
-          if($argument_id && $name && $rank && $type){
+        while(my ($argument_id,$tag,$value,$rank,$type) = $arg_sth->fetchrow_array){
+          if($argument_id && $value && $rank && $type){
             my $arg = new Bio::Pipeline::Argument(-dbID => $argument_id,
-                                                -rank => $rank,
-                                                -name => $name,
+                                               -rank => $rank,
+                                                -value => $value,
+                                                -tag  =>$tag,
                                                 -type => $type);
             push @args, $arg;
           }
