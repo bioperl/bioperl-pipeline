@@ -59,7 +59,6 @@ or die ($USAGE);
 $HELP && die($USAGE);
 $DATASETUP || die($USAGE);
 
-print "\nmy report; $DBHOST|$DBNAME\n";
 my $importer = Bio::Pipeline::XMLImporter->new(
     -dbhost => $DBHOST,
     -dbname => $DBNAME,
