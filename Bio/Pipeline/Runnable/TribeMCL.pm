@@ -73,7 +73,7 @@ Args    :
 sub datatypes {
   
   my ($self) = @_;
-  my $dt = Bio::Pipeline::DataType->new('-object_type'=>'',
+  my $dt = Bio::Pipeline::DataType->new('-object_type'=>'ARRAY',
                                         '-name'=>'sequence',
                                         '-reftype'=>'ARRAY');
                                           
@@ -129,7 +129,7 @@ sub run {
   eval {
       @clusters = $factory->run($protein);
   };
-  $self->output(\@clusters);
+  $self->output(@clusters);
   return \@clusters;
 
 }
