@@ -90,6 +90,14 @@ sub _hsp_2ens{
     my $ens_feature1 = $self->_similarity_2_ens_seqFeature($hsp->feature1, $analysis);
     my $ens_feature2 = $self->_similarity_2_ens_seqFeature($hsp->feature2, $analysis);
     
+    $ens_feature1->p_value($hsp->evalue);
+    $ens_feature1->score($hsp->score);
+    $ens_feature1->percent_id($hsp->percent_identity);
+
+    $ens_feature2->p_value($hsp->evalue);
+    $ens_feature2->score($hsp->score);
+    $ens_feature2->percent_id($hsp->percent_identity);
+    
     my $ens_featurePair = new Bio::EnsEMBL::FeaturePair(
         -feature1 => $ens_feature1,
         -feature2 => $ens_feature2
@@ -146,6 +154,7 @@ sub _generic_2_ens_seqFeature{
         -source_tag => $generic->source_tag,
         -primary_tag => $generic->primary_tag
     );
+    $ens_seqFeature->score($generic->score);
     
     # Bio::EnsEMBL::SeqFeature has a special requirement on frame.
     # The value must be one of (0, 1, 2).

@@ -22,12 +22,12 @@ my $dba = $biopipe_test->get_DBAdaptor();
 my $ca = new Bio::Pipeline::SQL::ConverterAdaptor($dba);
 
 my $converter = $ca->fetch_by_dbID("1");
-&_check_converter($converter, 1, "repeatmasker_2ens");
+&_check_converter($converter, 1, "repeatmasker_2ens:");
 
 
 $converter = new Bio::Pipeline::Converter(
 	-dbid => 10,
-	-module => "blastall_2ens"
+	-module => "HSPToEnsEMBLConverter"
 );
 
 my @converter_methods;
@@ -49,7 +49,7 @@ ok 1;
 # $converter = $ca->fetch_by_dbID(10);
 
 
-ok $converter->module, "blastall_2ens";
+ok $converter->module, "HSPToEnsEMBLConverter";
 
 #my @methods = @{$converter->method}; 
 #ok scalar(@methods), 3;

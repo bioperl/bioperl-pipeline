@@ -1,5 +1,5 @@
 # THIS data are same in debut.converter.xml
-INSERT INTO converters VALUES (1, 'repeatmasker_2ens');
+INSERT INTO converters VALUES (1, 'FeaturePairToEnsEMBLConverter');
 
 #INSERT INTO converters VALUES (2, 'Bio::BioToEns::Beacon');
 
