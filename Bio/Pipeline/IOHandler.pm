@@ -269,7 +269,18 @@ sub write_output {
     # input datahandlers. please see above
     
     my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
-    my $obj = $self->_fetch_dbadaptor();
+    my $obj;
+    if($self->adaptor_type eq "DB"){
+        $obj = $self->_fetch_dbadaptor();
+    }
+    else {
+        my $constructor = shift @datahandlers;
+        my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
+        my @args = $self->_format_output_args($input,$object,@arguments);
+        $obj = $self->_create_obj($self->stream_module,$constructor,@args);
+    }
+
+#    my $obj = $self->_fetch_dbadaptor();
 
 
     # safety check ? Maybe this check should be made before the runnable is even ran

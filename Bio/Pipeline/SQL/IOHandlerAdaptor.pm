@@ -298,25 +298,27 @@ sub store {
       $sth->execute;
       my $datahandler_id = ($sth->fetchrow_array)[0];
       $datahandler->dbID($datahandler_id);
-     
-      foreach my $argument (@{$datahandler->argument}) {
-         $sth = $self->prepare( qq{
-           INSERT INTO argument 
-           SET datahandler_id = ?,
-               tag = ?,
-               value = ?,
-               type = ?,
-               rank = ? } );
-        $sth->execute($datahandler->dbID,$argument->tag,$argument->value,$argument->type,$argument->rank);
+    
+      if($datahandler->argument){
+        foreach my $argument (@{$datahandler->argument}) {
+           $sth = $self->prepare( qq{
+             INSERT INTO argument 
+             SET datahandler_id = ?,
+                 tag = ?,
+                 value = ?,
+                 type = ?,
+                 rank = ? } );
+            $sth->execute($datahandler->dbID,$argument->tag,$argument->value,$argument->type,$argument->rank);
 
-        $sth = $self->prepare( q{
-          SELECT last_insert_id()
-        } );
-        $sth->execute;
-        my $argument_id = ($sth->fetchrow_array)[0];
-        $argument->dbID($argument_id);
+            $sth = $self->prepare( q{
+                                     SELECT last_insert_id()
+                                    } );
+            $sth->execute;
+            my $argument_id = ($sth->fetchrow_array)[0];
+            $argument->dbID($argument_id);
+         }
       }
-  }
+ }
 
 
     

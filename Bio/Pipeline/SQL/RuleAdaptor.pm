@@ -66,11 +66,11 @@ use strict;
 sub store {
   my ( $self, $rule ) = @_;
 
-  if (defined ($rule->dbID)) {
+  if (!defined ($rule->dbID)) {
     my $sth = $self->prepare( qq{
       INSERT INTO rule
-         SET current = ?
-             next= ?
+         SET current = ?,
+             next= ?,
              action= ? } );
     $sth->execute($rule->current->dbID, $rule->next->dbID, $rule->action);
   
