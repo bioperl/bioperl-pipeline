@@ -61,7 +61,7 @@ CREATE TABLE input_create (
 CREATE TABLE iohandler (
    iohandler_id         int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
    adaptor_id           int(10) DEFAULT '0' NOT NULL,
-   type                 enum ('INPUT','CREATE_INPUT','OUTPUT','NEW_INPUT') NOT NULL,
+   type                 enum ('INPUT','OUTPUT') NOT NULL,
    adaptor_type         enum('DB','STREAM') DEFAULT 'DB' NOT NULL,
 
    PRIMARY KEY (iohandler_id),
@@ -114,6 +114,8 @@ CREATE TABLE dbadaptor (
 CREATE TABLE streamadaptor (
   streamadaptor_id  int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   module          varchar(40) DEFAULT '' NOT NULL,
+  file_path        mediumtext DEFAULT '',
+  file_suffix     varchar(40) DEFAULT '',
 
   PRIMARY KEY (streamadaptor_id)
 );
@@ -293,9 +295,9 @@ CREATE TABLE node_group (
 #fetch_seq and fetch_repeatmasked_seq
 
 CREATE TABLE iohandler_map(
- prev_iohandler_id             int(10) NOT NULL,
+ prev_iohandler_id             int(10) DEFAULT '',
  analysis_id                   int(10) NOT NULL,
  map_iohandler_id              int(10) NOT NULL,
 
- PRIMARY KEY (prev_iohandler_id,analysis_id)
+ PRIMARY KEY (analysis_id,map_iohandler_id)
 );
