@@ -1,0 +1,326 @@
+<!--
+PROTEIN_ANALYSIS_PIPELINE
+This is a generic protein anlysis pipeline that works with the BioSQL Database.
+It is proof of concept that the bioperl-pipeline is able to handle carry out analysis of 
+such scale. It also shows the flexibility of the pipeline allowing us to read and write
+from different database schemas. 
+
+The pipeline takes a protein sequence and runs a series of protein analysis on it.The current 
+status of this pipeline is as follows:
+
+1) TMHMM           (implemented)
+2) SEG             (implemented)
+3) FingerPrintScan (implemented)
+4) PFScan          (implemented)
+5) SIGNALP         (implemented)
+6) PFAM            (implemented)
+
+Organization of this file
+
+<pipeline_setup>
+  <database_setup>
+  <iohandler_setup>
+  <pipeline_flow_setup>
+  <job_setup>(optional)
+</pipeline_setup>
+
+<database_setup>
+This specifies the databases that the pipeline connects to and the
+adaptor modules that intefaces with them.
+
+<iohandler_setup>
+This specifies the method calls that will be used by the pipeline
+to access the databases. These methods are contained in the modules
+specified by the database setup section above.
+
+<pipeline_flow_setup>
+This specifies the analysis and rules of the pipeline. Analysis
+refer to the runnables that will be used in this pipeline while the 
+rules specify the order in which these analysis are to be run, including
+any specific pre-processing actions that are to be carried out.
+
+<job_setup>
+This is an optional part that allows specific inputs to be inserted.
+A much easier method would be to use the input_create option which 
+takes in an iohandler that returns an array of ids and setup up the input and job
+tables.
+
+*********************************
+Using this file
+*********************************
+You will need to modify this file before loading up the pipeline.
+
+A) 
+You have to load your protein sequences into a BioSQL database to be able to run this pipeline.
+
+This can be done in 2 steps:
+     1) create a BioSQL database
+        - use the create_mysql_db.pl script in biosql-schema
+    
+     2) load your sequences (ie in fasta format) into the database
+        - use load_seqdatabase.pl script in bioperl-db
+
+
+B)
+
+The following setup has to be done to get the  pipeline working properly 
+
+1) First ensure that the following parameters for database_setup are appropriate
+   for your mysql database setup. 
+
+      <dbname>protein_analysis</dbname>
+      <driver>mysql</driver>
+      <host>mysql</host>
+      <user>root</user>
+      <password></password>
+      <module>Bio::DB::BioSQL::DBAdaptor</module>
+   
+   In this xml file there is only 1 dbadaptor(reading and writng to the same database)
+   
+2) Next there are 6 protein  analysis in this pipeline. You will need to change
+   the xml file accordingly
+   
+   Thus replace
+      <db_file>/data0/prints35_0.pval_blos62</db_file>
+   with the full path to your db file.
+
+3) Next you can load up the pipeline using the xml file with the Xml2Db.pl script
+
+
+Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+
+Default values in ()
+-dbhost host (mysql)
+-dbname name of pipeline database (test_XML)
+-dbuser user name (root)
+-dbpass db password()
+-schema The path to the bioperl-pipeline schema.
+        Needed if you want to create a new db.
+        (/usr/users/kiran/src/bioperl-pipeline/t/data/schema.sql)
+-p      the pipeline setup xml file (required)
+
+To run this script, you will need XML::SimpleObject available at http://www.cpan.org
+
+
+You are now ready to run. Go to the bioperl-pipeline/Bio/Pipeline/
+and run PipelineManager.pl to start the pipeline.
+
+
+-->
+
+
+<pipeline_setup>
+  <database_setup>
+   <!--access biosql database using biosql dbadaptor module --> 
+    <dbadaptor id="1">
+      <dbname>protein_analysis</dbname>
+      <driver>mysql</driver>
+      <host>mysql</host>
+      <user>root</user>
+      <password></password>
+      <module>Bio::DB::BioSQL::DBAdaptor</module>
+    </dbadaptor>
+
+  </database_setup>
+
+  <iohandler_setup>
+
+    <!-- Create Input method used to return the bioentry_ids  for initializing the pipeline with inputs -->
+    <iohandler id="1">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+     <method>
+        <name>get_BioDatabaseAdaptor</name>
+        <rank>1</rank>
+     </method>
+     <method>
+        <name>list_bioentry_ids</name>
+        <rank>2</rank>
+        <argument>
+          <value>1</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+     </method>
+    </iohandler>
+   
+    <!-- Fetch the sequence object --> 
+    <iohandler id="2">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_SeqAdaptor</name>
+        <rank>1</rank>
+     </method>
+     <method>
+        <name>fetch_by_dbID</name>
+        <rank>2</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+     </method>
+    </iohandler>
+    
+    <!-- Store protein features -->
+    <iohandler id="3">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>get_SeqFeatureAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>store_feature_array</name>
+        <rank>2</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <value>OUTPUT</value>
+          <type>ARRAY</type>
+          <rank>2</rank>
+        </argument>
+      </method>
+    </iohandler>
+
+  </iohandler_setup>
+
+  <!-- Data Monger analysis for setting up the inputs for first analysis-->
+  <pipeline_flow_setup>
+     <analysis id="1">
+      <data_monger>
+        <input>
+          <name>Ensembl_ids</name>
+          <iohandler>1</iohandler>
+        </input>
+        <input_create>
+           <module>setup_initial</module>
+           <rank>1</rank>
+           <argument>
+                <tag>Ensembl_ids</tag>
+                <value>2</value>
+            </argument>
+         </input_create>
+      </data_monger>
+      <input_iohandler id="1"/>
+    </analysis>
+    
+    <!--Analysis 1 Tmhmm --> 
+    <analysis id="2">
+      <logic_name>Tmhmm</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Tmhmm</runnable>
+      <program>tmhmm</program>
+      <parameters>-PROGRAM /usr/users/pipeline/programs/TMHMM2.0b/bin/tmhmm</parameters>
+      <!-- Specify which iohandler to use fetch the sequence -->
+      <input_iohandler id="2"/>
+      <!-- Specify which iohandler to use to store the protein features --> 
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 2 Seg --> 
+    <analysis id="3">
+      <logic_name>Seg</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Seg</runnable>
+      <program>tmhmm</program>
+      <!--<parameters>-PROGRAM /usr/users/pipeline/programs/seg_dir/seg</parameters>-->
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 3 Prints -->
+    <analysis id="4">
+      <logic_name>Prints</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Prints</runnable>
+      <db>prints35_0.pval_blos62</db>
+      <db_file>/data0/prints35_0.pval_blos62</db_file>
+      <program>prints</program>
+      <parameters>-DB /data0/prints35_0.pval_blos62</parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 4 Profile -->
+    <analysis id="5">
+      <logic_name>Profile</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Profile</runnable>
+      <db>prosite.dat</db>
+      <db_file>/data0/prosite_17.16.dat</db_file>
+      <program>profile</program>
+     <parameters>-PROGRAM /usr/users/pipeline/programs/pfscan</parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+   
+    <!--Analysis 5 Signalp --> 
+    <analysis id="6">
+      <logic_name>Signalp</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Signalp</runnable>
+      <program>signalp</program>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 6 Hmmpfam -->
+    <analysis id="7">
+      <logic_name>Hmmpfam</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Hmmpfam</runnable>
+      <db>Pfam_ls_7.4</db>
+      <db_file>/data0/Pfam_ls_7.4</db_file>
+      <program>hmmpfam</program>
+      <parameters>-DB /data0/Pfam_ls_7.4</parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    
+
+    <!-- Rules that specify the order of analysis to be executed -->
+
+    <!-- Once analysis 1 is finished, copy input id from previous analysis, do the appropriate 
+         iohandler mapping and create job for analysis 2 -->
+    
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+     <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+     <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>3</current_analysis_id>
+     <next_analysis_id>4</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>4</current_analysis_id>
+     <next_analysis_id>5</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>5</current_analysis_id>
+     <next_analysis_id>6</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>6</current_analysis_id>
+     <next_analysis_id>7</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+
+
+  </pipeline_flow_setup>
+
+  <job_setup>
+ </job_setup>
+
+</pipeline_setup>
