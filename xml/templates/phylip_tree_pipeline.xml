@@ -421,9 +421,9 @@ both to database or files depending on one's specification.
     <analysis id="2">
       <logic_name>Clustalw</logic_name>
       <runnable>Bio::Pipeline::Runnable::MSA</runnable>
-      <program>align</program>
+      <program>clustalw</program>
       <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
-      <runnable_parameters>-program Clustalw -infile_dir t/data/phylip_dir/</runnable_parameters>
+      <runnable_parameters>-program Clustalw -align_type align -infile_dir t/data/phylip_dir/</runnable_parameters>
       <output_iohandler id="1"/>
     </analysis>
 
@@ -432,7 +432,7 @@ both to database or files depending on one's specification.
       <runnable>Bio::Pipeline::Runnable::MSA</runnable>
       <program>align</program>
       <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
-      <runnable_parameters>-program TCoffee -infile_dir t/data/phylip_dir/</runnable_parameters>
+      <runnable_parameters>-program TCoffee -align_type align -infile_dir t/data/phylip_dir/</runnable_parameters>
       <output_iohandler id="1"/>
     </analysis>
 -->
