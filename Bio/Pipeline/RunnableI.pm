@@ -136,6 +136,25 @@ Return a list of objects created by the analysis
 =cut
 
 
+=head2 new
+
+ Title   :   new
+ Usage   :   $self->new()
+ Function:
+ Returns :
+ Args    :
+
+=cut
+
+sub new {
+  my ($class, @args) = @_;
+  my $self = $class->SUPER::new(@args);
+  my ($result_dir) = $self->_rearrange([qw(RESULT_DIR)],@args);
+  $result_dir && $self->result_dir($result_dir);
+  return $self;
+
+}
+
 sub datatypes {
   my ($self) = @_;
   $self->throw_not_implemented();
@@ -165,6 +184,7 @@ sub output {
   }
   return $self->{'_output'} ;
 }
+
 sub analysis{
   my ($self, $analysis) = @_;
   if($analysis) {
@@ -172,6 +192,14 @@ sub analysis{
   }
   return $self->{'_analysis'};
 }
+sub result_dir{
+  my ($self, $result_dir) = @_;
+  if($result_dir) {
+      $self->{'_result_dir'} = $result_dir;
+  }
+  return $self->{'_result_dir'};
+}
+
 sub parse_params {
     my ($self,$string,$dash) = @_;
     $string = " $string"; #add one space for first param
