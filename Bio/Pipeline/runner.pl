@@ -30,7 +30,6 @@ my $dbuser  = $DBUSER;
 my $pass    = undef;
 my $port    = '3306';
 
-my (@job_ids) = @ARGV;
 
 GetOptions(
     'host=s'    => \$host,
@@ -39,8 +38,10 @@ GetOptions(
     'dbuser=s'  => \$dbuser,
     'pass=s'    => \$pass,
     'check!'    => \$check,
+    'action=s'  => \$action,
 )
 or die ("Couldn't get options");
+my (@job_ids) = @ARGV;
 
 if( defined $check ) {
   my $host = hostname();
@@ -85,8 +86,8 @@ print STDERR "Fetching job " . $job_id . "\n";
 
 foreach my $job_id (@job_ids){
 
-    my $job         = $job_adaptor->fetch_by_dbID($job_id);
-
+#    my $job         = $job_adaptor->fetch_by_dbID($job_id);
+    my $job = &create_new_job($job_id,$action);
 
     if( !defined $job) {
         print STDERR ( "Couldnt recreate job $job_id\n" );
@@ -108,3 +109,20 @@ foreach my $job_id (@job_ids){
     print STDERR "Leaving runnabledb.pl\n";
 }
 $db->{'_db_handle'}->disconnect();
+
+#recreating job in runner.pl. Here we need to differentiate the way we add the inputs
+#for now logic only for WAITFORALL_AND_UPDATE, need to pass in a array ref of inputs
+#from new_input table 
+
+sub create_new_job{
+    my ($job_id,$action) = @_;
+    my $job = $job_adaptor->fetch_by_dbID($job_id);
+    my @rules       = $job_adaptor->db->get_RuleAdaptor->fetch_all;
+    if ($action eq 'WAITFORALL_AND_UPDATE'){
+      my @inputs = $job->inputs;
+      $job->flush_inputs();
+      $job->add_input(\@inputs);
+    }
+    return $job;
+}
+
