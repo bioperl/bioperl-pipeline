@@ -78,8 +78,8 @@ sub fetch_by_dbID {
     $self->db->get_AnalysisAdaptor->
       fetch_by_dbID( $hashref->{analysis_id} );
 
-  # getting the inputs for the particular job
-  my @inputs;
+  # getting th
+  my @inputs=() ;
   my $query = "SELECT input_id
                FROM input
                WHERE job_id = $id";
@@ -89,7 +89,7 @@ sub fetch_by_dbID {
   while (my ($input_id) = $sth->fetchrow_array){
       my $input = $self->db->get_InputAdaptor->
                          fetch_by_dbID($input_id);
-      push (@inputs,$input);
+      push @inputs,$input;
   }
 
   $job = Bio::Pipeline::Job->new

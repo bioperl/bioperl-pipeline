@@ -516,12 +516,14 @@ sub runInQUEUE {
   my $err;
   my $autoupdate = $AUTOUPDATE;
   my $rdb;
+
+  my @inputs = $self->inputs;
   
   eval {
     $rdb = Bio::Pipeline::RunnableDB->new ( 
                         -dbobj      => $self->adaptor->db,
                         -analysis   => $self->analysis,
-                        -inputs     => \$self->inputs,
+                        -inputs     => \@inputs,
                         );
   };                      
   if ($err = $@) {

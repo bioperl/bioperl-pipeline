@@ -270,8 +270,8 @@ sub run {
 
     my $runnable = $self->runnable; 
     $self->throw("Runnable module not set") unless ($runnable);
-    $self->throw("Inputs not fetched") unless ($self->inputs());
-    $runnable->inputs($self->inputs());
+    $self->throw("Inputs not fetched") unless ($self->input_objs());
+    $runnable->inputs($self->input_objs());
     $runnable->run();
 }
 
@@ -288,8 +288,8 @@ sub run {
 sub runnable {
     my ($self,$arg) = @_;
 
-    if (!defined($self->{'_runnables'})) {
-       $self->{'_runnable'} = [];
+    if (!defined($self->{'_runnable'})) {
+       $self->{'_runnable'} = ();
     }
   
     if (defined($arg)) {
@@ -300,12 +300,14 @@ sub runnable {
         $arg =~ s/\//\::/g;
 
         my $runnable = "${arg}"->new();
-
-        if ($runnable->isa("Bio::Pipeline::RunnableI")) {
 	        $self->{'_runnable'}=$runnable;
+
+=jerm
+        if ($runnable->isa("Bio::Pipeline::RunnableI")) {
         } else {
 	        $self->throw("[$runnable] is not a Bio::Pipeline::RunnableI");
         }
+=cut
      }
   
     return $self->{'_runnable'};  
@@ -467,7 +469,7 @@ sub verify_input_types{
 sub fetch_input {
     my($self) = @_;
 
-    my @inputs = $self->inputs;
+    my @inputs = $self->input_objs;
 
 }
 
