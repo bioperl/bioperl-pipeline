@@ -78,7 +78,7 @@ use strict;
 @ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
 BEGIN {
-    %VALID_STATUS = ('NEW'=>1,'FAILED'=>1,'SUBMITTED'=>1,'COMPLETED'=>1);
+    %VALID_STATUS = ('NEW'=>1,'FAILED'=>1,'SUBMITTED'=>1,'COMPLETED'=>1,'WAITFORALL'=>1);
     %VALID_STAGE  = ('READING'=>1,'WRITING'=>1,'RUNNING'=>1);
 }
 
@@ -421,6 +421,19 @@ sub get_job_count{
     return $count;
 }
 
+sub get_completed_job_count {
+    my ($self,@args) = @_;
+    my $query = "SELECT count(*) FROM completed_jobs";
+    $query.=$self->_make_query_conditional(-table=>"completed_jobs",@args);
+
+    my $sth = $self->prepare($query);
+    $sth->execute;
+
+    my ($count) = $sth->fetchrow_array;
+    return $count;
+}
+
+
 
 ###############################
 #Store/Remove/Update methods
@@ -453,11 +466,12 @@ sub store {
        status,time) 
        VALUES ( ?, ?, ?, ?, ?, now() ) } );
 
+   my $status = $job->status || "NEW";
    $sth->execute( $job->analysis->dbID,
                   $job->stdout_file,
                   $job->stderr_file,
                   $job->input_object_file,
-                  'NEW');
+                  $status);
 
    $sth = $self->prepare( "SELECT LAST_INSERT_ID()" );
    $sth->execute;
