@@ -165,9 +165,9 @@ sub fetch_create_input_id_ioh{
     return $ioh;
   }
   return undef;
-  
+
 }
-  
+
 sub fetch_all {
     my ($self) = @_;
     my @analysis;
@@ -177,7 +177,7 @@ sub fetch_all {
         push @analysis, $self->fetch_by_dbID($id);
     }
     return @analysis;
-    
+
 }
 
 
@@ -223,7 +223,7 @@ sub store {
 		runnable = ?,
 		gff_source = ?,
 		gff_feature = ? } );
-	
+
 	$sth->execute
 	    ( $analysis->logic_name,
 	      $analysis->db,
@@ -304,7 +304,7 @@ sub store {
     	     }
      }
 
-=head
+#=head
      if (defined ($new_input_handler)) {
          my $sth = $self->prepare( q{
             INSERT INTO IOHandler 
@@ -314,9 +314,8 @@ sub store {
          $sth->execute
             ( $analysis->dbID, $new_input_handler->dbID);
      }
-=cut
-      
-     
+#=cut
+
       return $analysis->dbID;
 }
 
