@@ -314,4 +314,25 @@ sub dbadaptor {
   return $self->{'_dbadaptor'};
 }
 
+sub parse_params {
+    my ($self,$string,$dash) = @_;
+    $string = " $string"; #add one space for first param
+    my @param_str = split(/\s-/,$string);
+    shift @param_str;
+    #parse the parameters
+    my @params;
+    foreach my $p(@param_str){
+      my ($tag,$value) = $p=~/(\S+)\s+(.*)/;
+      if($dash){
+        push @params, ("-".$tag,$value);
+      }
+      else {
+        push @params, ($tag,$value);
+      }
+
+    }
+    return @params;
+}
+
+
 1;
