@@ -225,6 +225,37 @@ sub fetch_jobs{
     return @jobs;
 }
 
+
+sub job_exists {
+  my $self = shift;
+  my $analysis = shift;
+
+  my $analysis_id = $analysis->dbID;
+
+  my $query = " SELECT count(*)
+                FROM job
+                WHERE analysis_id = $analysis_id " ;
+  my $sth = $self->prepare($query);
+  $sth->execute();
+  my ($job_count) = $sth->fetchrow_array ;
+
+  $query = " SELECT count(*)
+                FROM completed_jobs
+                WHERE analysis_id = $analysis_id " ;
+  $sth = $self->prepare($query);
+  $sth->execute();
+  my ($completed_job_count) = $sth->fetchrow_array ;
+
+  if ($job_count || $completed_job_count) {
+     return 1;
+  }
+  else {
+     return 0;
+  }
+}
+
+
+
 =head2 fetch_by_analysisId_and_processId_
 
   Title   : fetch_by_analysisId_and_processId
