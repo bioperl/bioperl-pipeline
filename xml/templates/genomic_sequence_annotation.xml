@@ -59,8 +59,51 @@ A much easier method would be to use the input_create option which
 takes in an iohandler that returns an array of ids and setup up the input and job
 tables.
 
+*********************************
 Using this file
-This file is fed into the Xml2Db.pl script
+*********************************
+You will need to modify this file before loading up the pipeline.
+
+A) 
+If you want to run the analysis using your own sequences, you can create your 
+own ensembl database and load up the sequences using the load_scaffolds.pl script found
+in the ensembl-pipeline scripts directory. For more information, refer to the 
+ensembl-pipeline documentation.  You will then need to change <dbname>ens_test</dbname>
+to your ensembl database name in this xml file.
+
+B)
+To try it out with the ensembl database provided  in genome_annotated ens.sql
+file, load up that database doing :
+
+  mysql -u root < ens.sql
+
+which will create a database ens_test 
+
+next do the following to setup your pipeline.
+
+
+1) First ensure that the following parameters for database_setup are appropriate
+   for your mysql database setup. 
+
+      <dbname>ens_test</dbname>
+      <driver>mysql</driver>
+      <host>localhost</host>
+      <user>root</user>
+      <password></password>
+      <module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
+   In this xml file are 2 dbadaptors so you might need to modify them both.
+
+2) Next there are 6 blast analysis in this pipeline. You will need to change
+   the paths to the proper db_file. You may either point to db.fa 
+   found where you untared genome_annotate.tar or any set of protein fasta
+   files that you want to blast against.
+
+  Thus replace
+      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
+  with the full path to your db file.
+
+3) Next you can load up the pipeline using the xml file with the Xml2Db.pl script
+
 
 Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
 
@@ -74,6 +117,14 @@ Default values in ()
         (/usr/users/kiran/src/bioperl-pipeline/t/data/schema.sql)
 -p      the pipeline setup xml file (required)
 
+To run this script, you will need XML::SimpleObject available at http://www.cpan.org
+
+
+
+You are now ready to run. Go to the bioperl-pipeline/Bio/Pipeline/
+and run PipelineManager.pl to start the pipeline.
+
+
 -->
 
 
@@ -83,7 +134,7 @@ Default values in ()
     <dbadaptor id="1">
       <dbname>ens_test</dbname>
       <driver>mysql</driver>
-      <host>mysql</host>
+      <host>localhost</host>
       <user>root</user>
       <password></password>
       <module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
@@ -93,7 +144,7 @@ Default values in ()
     <dbadaptor id="2">
       <dbname>ens_test</dbname>
       <driver>mysql</driver>
-      <host>mysql</host>
+      <host>localhost</host>
       <user>root</user>
       <password></password>
       <module>Bio::BioToEns::Beacon</module>
@@ -214,7 +265,7 @@ Default values in ()
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>swissprot</db>
-      <db_file>/usr/users/shawnh/test/genome_annotate/db.fa</db_file>
+      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
@@ -235,7 +286,7 @@ Default values in ()
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>trembl</db>
-      <db_file>/usr/users/shawnh/test/genome_annotate/db.fa</db_file>
+      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
@@ -256,7 +307,7 @@ Default values in ()
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>ensembl_hum_pep</db>
-      <db_file>/usr/users/shawnh/test/genome_annotate/db.fa</db_file>
+      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
@@ -277,7 +328,7 @@ Default values in ()
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>ensembl_mus_pep</db>
-      <db_file>/usr/users/shawnh/test/genome_annotate/db.fa</db_file>
+      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
@@ -298,7 +349,7 @@ Default values in ()
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>ensembl_hum_genscan</db>
-      <db_file>/usr/users/shawnh/test/genome_annotate/db.fa</db_file>
+      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
@@ -319,7 +370,7 @@ Default values in ()
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>Fugu_Pep</db>
-      <db_file>/usr/users/shawnh/test/genome_annotate/db.fa</db_file>
+      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
