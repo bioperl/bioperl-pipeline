@@ -7,6 +7,73 @@
 # 
 # You may distribute this code under the same terms as perl itself
 
+=head1 NAME
+
+Bio::Pipeline::Manager
+
+=head1 SYNOPSIS
+
+  use Bio::Pipeline::Manager;
+my $manager = Bio::Pipeline::Manager->new(
+    -driver     => $DBI_DRIVER,
+    -host       => $DBHOST,
+    -dbname     => $DBNAME,
+    -user       => $DBUSER,
+    -pass       => $DBPASS,
+    -flush      => $FLUSH,
+    -batchsize  => $BATCHSIZE,
+    -local      => $LOCAL,
+    -queue      => $QUEUE,
+    -retry      => $RETRY,
+    -verbose    => $VERBOSE,
+    -jobnbr     => $NUMBER,
+    -nfstmp_dir => $NFSTMP_DIR,
+    -fetch_job_size => $FETCH_JOB_SIZE,
+    -sleep      => $SLEEP,
+    -batchsize  => $BATCHSIZE,
+    -input_limit    => $INPUT_LIMIT
+);
+
+  $manager->check_lock;
+  $manager->create_lock;
+  $manager->test_analysis;
+  $manager->run;
+
+=head1 DESCRIPTION
+
+This is a module containing method calls that implement the pipeline control logic.
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR
+
+Email fugui@fugu-sg.org
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
+
+=cut
+
+
 package Bio::Pipeline::Manager;
 
 use strict;
@@ -21,23 +88,44 @@ use Bio::Pipeline::Input;         # used in _create_new_job
 
 use Bio::Root::Root;
 
-use vars qw(@ISA);
+use vars qw(@ISA @autoload_methods);
 @ISA = qw(Bio::Root::Root);
 
+BEGIN {
+  @autoload_methods = qw( host dbname user db ruleAdaptor jobAdaptor inputAdaptor 
+                        analysisAdaptor iohAdaptor nfstmp_dir lock_dir queue 
+                        batchsize usenodes fetch_job_size retry sleep 
+                        wait_for_all_percent timeout flush local resume verbose 
+                        number input_limit pipeline_time pipeline_state);
+}
 
 =head2 new
 
-my $manager = Bio::Pipeline::Manager->(
-    -host => 'mysql',
-    -dbname => 'pipeline_db',
-    -user => 'root',
-    -pass => ''
+  Title   : new
+  Usage   : my $manager = Bio::Pipeline::Manager->new(
+    -driver     => $DBI_DRIVER,
+    -host       => $DBHOST,
+    -dbname     => $DBNAME,
+    -user       => $DBUSER,
+    -pass       => $DBPASS,
+    -flush      => $FLUSH,
+    -batchsize  => $BATCHSIZE,
+    -local      => $LOCAL,
+    -queue      => $QUEUE,
+    -retry      => $RETRY,
+    -verbose    => $VERBOSE,
+    -jobnbr     => $NUMBER,
+    -nfstmp_dir => $NFSTMP_DIR,
+    -fetch_job_size => $FETCH_JOB_SIZE,
+    -sleep      => $SLEEP,
+    -batchsize  => $BATCHSIZE,
+    -input_limit    => $INPUT_LIMIT
 );
+  Function: Constructor for the Manager 
+  Returns : L<Bio::Pipeline::Manager>
+  Args    : 
 
-The 4 tags are the same as the ones in Bio::Pipeline::SQL::DBAdaptor, 
-so that you can pass them through directly.
-
-=cut 
+=cut
 
 sub new{
     my ($class, @args) = @_;
@@ -54,9 +142,11 @@ sub new{
     $self->host($host);
     $self->dbname($dbname);
     $self->user($user);
+
     # The following line is neat, since consistent arguments 
     # between this module and Bio::Pipeline::SQL::DBAdaptor.
-    my $db = Bio::Pipeline::SQL::DBAdaptor->new(@args);
+    my $db = Bio::Pipeline::SQL::DBAdaptor->new(@args) || $self->throw("Couldn't connect to Biopipe database");
+
     $self->db($db);
     $self->ruleAdaptor($db->get_RuleAdaptor);
     $self->jobAdaptor($db->get_JobAdaptor);
@@ -86,38 +176,6 @@ sub new{
     return $self;
 }
 
-our @autoload_methods = qw(
-    host
-    dbname
-    user
-    
-    db
-    ruleAdaptor 
-    jobAdaptor 
-    inputAdaptor 
-    analysisAdaptor 
-    iohAdaptor
-
-    nfstmp_dir
-    lock_dir
-    queue
-    batchsize
-    usenodes
-    fetch_job_size
-    retry
-    sleep
-    wait_for_all_percent
-    timeout
-    flush
-    local
-    resume
-    verbose
-    number
-    input_limit
-    
-    pipeline_time
-    pipeline_state
-);
 
 sub AUTOLOAD{
     return if our $AUTOLOAD =~ /::DESTROY$/;
@@ -146,22 +204,16 @@ sub AUTOLOAD{
 sub test_analysis{
     my ($self) = @_;
     my $dbname = $self->dbname;
-    print "///////////////Starting Pipeline//////////////////////\n";
-    print "Fetching Analysis From Pipeline $dbname\n";
 
     my @analysis = $self->analysisAdaptor->fetch_all;
     print scalar(@analysis)." analysis found.\nRunning test and setup..\n\n//////////// Analysis Test ////////////\n";
 
     foreach my $anal (@analysis) {
         print STDERR "Checking Analysis ".$anal->dbID. " ".$anal->logic_name;
-#       $anal->test_and_setup($verbose);
+       $anal->test_and_setup($self->verbose);
         print STDERR " ok\n";
     }
-
-    print "\n///////////////Tests Completed////////////////////////\n\n";
 }
-
-
 
 sub run{
     my ($self) = @_;
@@ -185,7 +237,6 @@ sub run{
     my $submitted;
     my $total_jobs;
     my $nbr_ran;
-    
     
     while ($run) {
         
@@ -311,16 +362,9 @@ sub run{
     }
 
     print "Nothing left to run.\n\n///////////////Shutting Down Pipeline//////////////////////\n";
+    return 1;
 
 } # End of run
-
-sub DESTROY{
-    my ($self) = @_;
-    print STDERR "Removing Lock File...\n";
-    $self->remove_lock(); 
-    print "Done\n///////////////////////////////////////////////////////////\n";
-}
-
 
 ############################
 #Utiltiy methods
@@ -679,7 +723,7 @@ sub create_lock {
     my %db;
     my $dir = $self->lock_dir;
   
-    mkdir $dir, 0777 or die "Can't make lock directory";
+    mkdir $dir, 0777 or $self->throw("Can't make lock directory $dir");
 
     dbmopen %db, "$dir/db", 0666;
     $db{'subhost'} = $self->host;
@@ -687,17 +731,21 @@ sub create_lock {
     $db{'started'} = time();
     $db{'user'}    = getlogin();
     dbmclose %db;
+    return $dir;
 }
 
 # remove 'lock' file
 sub remove_lock{
     my ($self) = @_;
+
+    print STDERR "Removing Lock File...\n";
     my $dir = $self->lock_dir;
     unlink "$dir/db.pag";
     unlink "$dir/db.dir";
     unlink "$dir/db.db";
     unlink "$dir/db";
     rmdir $dir;
+    print "Done\n///////////////////////////////////////////////////////////\n";
 }
 
 sub check_lock{
