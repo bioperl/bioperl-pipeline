@@ -10,6 +10,10 @@
 
     use BiopipeTestDB;
     use Bio::Pipeline::SQL::DBAdaptor; 
+    use Bio::Pipeline::IOHandler;
+    use Bio::Pipeline::DataHandler;
+    use Bio::Pipeline::Analysis;
+
 
 
 
