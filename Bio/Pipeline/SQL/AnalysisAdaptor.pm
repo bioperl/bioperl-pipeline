@@ -77,14 +77,14 @@ sub fetch_by_dbID {
             db,db_version,db_file,
             runnable,
             gff_source,gff_feature,
-            created, parameters,node_group_id
+            created, analysis_parameters,runnable_parameters,node_group_id
     FROM    analysis 
     WHERE   analysis_id = ?});
 
   $sth->execute( $id );
   my ($analysis_id,$logic_name,$program,$program_version,$program_file,$data_monger_id,
       $db,$db_version,$db_file,$runnable,$gff_source,$gff_feature,$created,
-      $parameters,$node_group_id) = $sth->fetchrow_array;
+      $analysis_parameters,$runnable_parameters,$node_group_id) = $sth->fetchrow_array;
 
   if( ! defined $analysis_id) {
     return undef;
@@ -108,7 +108,7 @@ sub fetch_by_dbID {
   foreach my $ioh(@iohs) {
      my $iohid = $ioh->dbID;
      my $converters_ref = $self->fetch_converters_by_iohandler($id, $iohid);
-     $ioh->converters($converters_ref);
+     $ioh->converters($converters_ref) if ref $converters_ref;
   }
 
   $query = " SELECT  prev_iohandler_id, map_iohandler_id
@@ -137,7 +137,8 @@ sub fetch_by_dbID {
                                             -GFF_SOURCE     => $gff_source,
                                             -GFF_FEATURE    => $gff_feature,
                                             -RUNNABLE       => $runnable,
-                                            -PARAMETERS     => $parameters,
+                                            -ANALYSIS_PARAMETERS     => $analysis_parameters,
+                                            -RUNNABLE_PARAMETERS =>$runnable_parameters,
                                             -DATA_MONGER_ID => $data_monger_id,
                                             -CREATED        => $created,
                                             -LOGIC_NAME     => $logic_name,
@@ -163,9 +164,9 @@ sub fetch_converters_by_iohandler {
      my @converters;
      while (my ($converter_id,$rank) = $sth->fetchrow_array){
         if (defined $converter_id){
-               my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id);
-               
-               push @converters, $converter;
+          my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id);
+
+          push @converters, $converter;
         }
      }
      return \@converters;
@@ -328,7 +329,8 @@ sub store {
 		program = ?,
 		program_version = ?,
 		program_file = ?,
-		parameters = ?,
+		analysis_parameters = ?,
+    runnable_parameters=?,
 		runnable = ?,
 		gff_source = ?,
 		gff_feature = ? } );
@@ -341,7 +343,8 @@ sub store {
 	      $analysis->program,
 	      $analysis->program_version,
 	      $analysis->program_file,
-	      $analysis->parameters,
+	      $analysis->analysis_parameters,
+	      $analysis->runnable_parameters,
 	      $analysis->runnable,
 	      $analysis->gff_source,
 	      $analysis->gff_feature
@@ -362,7 +365,8 @@ sub store {
                 program = ?,
                 program_version = ?,
                 program_file = ?,
-                parameters = ?,
+                analysis_parameters = ?,
+                runnable_parameters = ?,
                 runnable = ?,
                 gff_source = ?,
                 gff_feature = ? } );
@@ -376,7 +380,8 @@ sub store {
               $analysis->program,
               $analysis->program_version,
               $analysis->program_file,
-              $analysis->parameters,
+              $analysis->analysis_parameters,
+              $analysis->runnable_parameters,
               $analysis->runnable,
               $analysis->gff_source,
               $analysis->gff_feature
@@ -396,8 +401,9 @@ sub store {
       }
 
      my $output_handler = $analysis->output_handler;
-     
      $self->_store_analysis_iohandler($analysis);
+
+     my @ioh = @{$analysis->iohandler};
 
      if (defined ($analysis->io_map)) {
 	     my %iomap = %{$analysis->io_map};
@@ -412,19 +418,9 @@ sub store {
     	     }
      }
 
-     #     if (defined ($new_input_handler)) {
-         #   my $sth = $self->prepare( q{
-             #            INSERT INTO IOHandler 
-             #  SET
-             #   analysis_id = ?,
-             #   iohandler_id = ? } );
-             # $sth->execute
-             #( $analysis->dbID, $new_input_handler->dbID);
-             #}
 	$self->{'_cache'}->{$analysis->dbID} = $analysis;
       return $analysis->dbID;
 }
-
 sub _store_analysis_iohandler{
     my ($self, $analysis) = @_;
     my @iohs = @{$analysis->iohandler};
@@ -434,14 +430,14 @@ sub _store_analysis_iohandler{
         if(defined $converters_ref){
             foreach my $converter (@{$converters_ref}){
                 next unless defined $converter;
-                my $sql = 
-                    "INSERT INTO analysis_iohandler 
+                my $sql =
+                    "INSERT INTO analysis_iohandler
                     SET analysis_id = ?, iohandler_id = ?, converter_id = ?,converter_rank = ?";
                 my $sth = $self->prepare($sql);
                 $sth->execute($analysis->dbID, $ioh->dbID, $converter->dbID, $converter->rank);
             }
         }else{
-            my $sql = 
+            my $sql =
                 "INSERT INTO analysis_iohandler
                 SET analysis_id = ?, iohandler_id = ?";
             my $sth = $self->prepare($sql);
@@ -449,6 +445,7 @@ sub _store_analysis_iohandler{
         }
     }
 }
+
 sub update_logic_name {
     my ($self,$dbID,$program) = @_;
     ($dbID && $program) || $self->throw("Need both a dbID and a program");
