@@ -4,4 +4,93 @@ Ans: -Start by creating a DB for the pipeline, e.g genscan_pipe (follow the sche
      -Update the DB in the PipeConf.pm
      -Populate the DB Tables(see Populating the Tables in INSTALL for more Info) 
 
-  
+
+2.  What are the methods that i have to insert in the datahandler table?
+
+Ans: -The methods in the datahandler table is used to get the input for the runnable and store the output of the runnable?  
+      If the input object is in a database, we will be instantiating a new dbadaptor and use its method to retrieve the data 
+      from the database.The data will be the input to the runnable. The output of the runnable(an object) has to be stored in
+      the database.Hence the methods that do this has to be specified.
+
+      example:
+      +----------------+--------------+---------------------------+------+
+      | datahandler_id | iohandler_id | method                    | rank |
+      +----------------+--------------+---------------------------+------+
+      |              1 |            1 | get_Contig_by_internal_id |    1 |
+      |              2 |            1 | perl_primary_seq          |    2 |
+      |              3 |            2 | get_ScoreAdaptor          |    1 |
+      |              4 |            2 | store_by_PID              |    2 |
+      +----------------+--------------+---------------------------+------+
+    
+    The method get_Contig_by_internal_id gets the contig from the database from its internal id.Than the perl_primary_seq is called 
+    upon the contig to obtain a Seq object from the contig.The output from the runnable(genscan) a seqfeature object will have to be 
+    stored back to the database(or other database).Hence the adaptor for the database will obtain the scoreAdaptor via get_ScoreAdaptor 
+    method  and the score Adaptor will store the output into the database by the store_by_PID method.
+     
+
+3.  What should be inserted in the field 'name' in the argument table?
+
+Ans: -The argument table is for the arguments required by the methods in the datahandler table.
+    
+    example:
+     +-------------+----------------+--------+------+--------+
+     | argument_id | datahandler_id | name   | rank | type   |
+     +-------------+----------------+--------+------+--------+
+     |           1 |              1 | INPUT  |    1 | SCALAR |
+     |           2 |              4 | OUTPUT |    1 | SCALAR |
+     +-------------+----------------+--------+------+--------+
+    
+    Since only two methods take arguments(in this case) there are only 2 entries in the arguments table.In the field 'name',there 
+    entries 'INPUT' and 'OUTPUT'.The method with corresponding datahandler_id's 1 and 4 are the methods that retrieve the input and 
+    store the output respectively.
+    
+
+4.  When I create the database for the pipleine should I manually create the tables?
+
+Ans: -No. users can copy the biopipelinedb-mysql.sql scheme when they create a new database.Hence they dont have to manually 
+      create tables.
+     steps:
+     - go to the directory where the schema file is then type these commands( assuming the dbname is testdb)
+     - mysql> use testdb;
+       Database changed
+       mysql> source biopipelinedb-mysql.sql;
+
+      
+5.  In the input table, there is a field called name. Whats that?
+Ans: -When we fetch an input from the database based on certain fields,that field will be the name in the input directory.
+      If the method get_Contig_by_internal_id is used,then the internal_id will be the name in this case. The name of every single 
+      entry has to be populated into the input table before running the pipeline.    
+
+
+6.  There are 2 dbnames, one in the analysis table and the other in the dbadaptor table.Are they the same?
+Ans: -No.The db in the analysis table is for analysis like Blast where it requires a database to blast against.The dbname in the
+      dbadaptor table is the database(s) where the input is retrieved or stored.
+
+
+7.  The pipeline ran well the first time but didnt the second time.What could have gone wrong?
+Ans:- There could be many reasons for this. The most probable reason could be that you failed to empty the output and job tables after
+      running the pipeline the first time. You might get a message like this:
+      
+      Tests Completed. Starting Pipeline
+      Fetched 0 jobs
+      Waking up and run again!
+      
+    - The two tables have to be reset everytime the pipeline is run.  
+      
+
+8.  The pipeline is not running.All the tables are populated correctly.What went wrong?
+Ans
+    Tests Completed. Starting Pipeline
+    Fetched 2 jobs
+    opening bsub command line:
+    bsub -o /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.out -e /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.err -q  /usr/users/savikalpa/src/bioperl-pipeline//Bio/Pipeline/runner.pl 1 2
+    couldn't submit jobs 1 2 to LSF.
+    Waking up and run again!
+    Fetched 2 jobs
+    opening bsub command line:
+
+9.  There are many tables that i left empty.Dont we need to put anything in them?
+
+10. What about the output of the pipeline?
+
+11. 
