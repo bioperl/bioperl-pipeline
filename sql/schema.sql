@@ -199,6 +199,7 @@ CREATE TABLE analysis (
   analysis_parameters       mediumtext,
   gff_source       varchar(40),
   gff_feature      varchar(40),
+  queue             varchar(40),
   node_group_id    int(10) unsigned DEFAULT '0' NOT NULL,
 
   PRIMARY KEY (analysis_id)
