@@ -375,6 +375,7 @@ sub infile_suffix {
 
 sub parse_params {
     my ($self,$string,$dash) = @_;
+    return unless $string;
     $string = " $string"; #add one space for first param
     my @param_str = split(/\s-/,$string);
     shift @param_str;
