@@ -212,7 +212,7 @@ sub new {
 
 sub test_and_setup {
   my ($self,$verbose) = @_;
-  if($self->data_monger_id){
+  if($self->runnable eq 'Bio::Pipeline::Runnable::DataMonger'){
       $self->warn ("Skipping test for DataMonger");
       return;
   }
