@@ -197,6 +197,7 @@ sub run{
                                               -dbname => $DBNAME,
                                               -user   => $DBUSER,
                                               -pass   => $DBPASS);
+        $self->dba($dba);
     }
 
 ##############################################
