@@ -28,13 +28,13 @@ use Bio::Root::IO;
   }
 
    # create and fill Bio::Seq object
-   my $seqfile = Bio::Root::IO->catfile("t/data","Genscan.FastA");
+   my $seqfile = Bio::Root::IO->catfile("data","Genscan.FastA");
    my $seq1 = Bio::Seq->new();
    my $seqstream = Bio::SeqIO->new(-file => $seqfile, -fmt => 'Fasta');
    $seq1 = $seqstream->next_seq();
 
    # create a analysis object (with just enough arguments for now that the runnable needs)
-   my $parameters = '-MATRIX t/data/HumanIso.smat';
+   my $parameters = '-MATRIX data/HumanIso.smat';
    my $analysis = Bio::Pipeline::Analysis->new(-parameters => $parameters);
    
    # create Bio:Pipeline::Runnable::Genscan object
