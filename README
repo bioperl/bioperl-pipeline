@@ -1,0 +1,16 @@
+The Bioperl pipeline framework is a flexible workflow system that complements the 
+Bioperl package by providing job management facilities for high throughput 
+sequence analysis. It also known as Biopipe. This system is heavily inspired by 
+the EnsEMBL Pipeline system.
+
+For complete installation instructions on Biopipe and all the associated components
+please see http://www.biopipe.org/bioperl-pipeline-install.html.
+
+For installation instructions on the package itself please see the accompanying
+INSTALL file.
+
+For articles on Biopipe and HOWTO documents on specific aspects of Biopipe please 
+see http://www.biopipe.org/bioperl-pipeline-docs.html.
+
+Questions about Biopipe can be directed to bioperl-pipeline@bioperl.org, join this
+group at www.biopipe.org.
