@@ -80,7 +80,7 @@ sub _store_single {
     my ($self,$transformer) = @_;
 
     $self->throw("A Bio::Pipeline::Transformer needed")
-        unless ($transformer-isa('Bio::Pipeline::Transformer'));
+        unless ($transformer->isa('Bio::Pipeline::Transformer'));
         
     if (!defined ($transformer->dbID)) {
     	my $sth = $self->prepare( q{
@@ -101,9 +101,10 @@ sub _store_single {
         $sth->execute($transformer->dbID,$transformer->module) || $self->throw("Unable to insert into transformer table");
     }
    if($transformer->method) {
-  	 foreach my $transformer_method (@{$transformer->method}) {
+         my @methods = $transformer->method;
+  	 foreach my $transformer_method (@methods) {
 	    $self->_store_transformer_method($transformer_method, $transformer->dbID);
-	   }
+	 }
    }
    return $transformer->dbID; 
 }
