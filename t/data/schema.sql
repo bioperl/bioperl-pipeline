@@ -52,7 +52,7 @@ CREATE TABLE filter_argument (
 
 
 CREATE TABLE filter (
-  filter_id int(10) unsigned DEFAULT '0' NOT NULL ,
+  filter_id int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   data_monger_id int(10) unsigned DEFAULT '0' NOT NULL ,
   module varchar(40) DEFAULT '',
   rank            int(10) DEFAULT 1 NOT NULL,
@@ -61,12 +61,12 @@ CREATE TABLE filter (
 );
 
 CREATE TABLE input_create (
-  input_create_id  int(10) unsigned DEFAULT '0' NOT NULL ,
+  input_create_id  int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   data_monger_id int(10) unsigned DEFAULT '0' NOT NULL ,
   module varchar(40) DEFAULT '' NOT NULL,
   rank            int(10) DEFAULT 1 NOT NULL,
   
-  PRIMARY KEY(data_monger_id,module,rank)
+  PRIMARY KEY(input_create_id)
 );
   
 CREATE TABLE iohandler (
@@ -132,7 +132,7 @@ CREATE TABLE input (
    name             varchar(40) DEFAULT '' NOT NULL,
    tag              varchar(40) DEFAULT '',
    job_id           int(10) unsigned NOT NULL,
-   iohandler_id     int(10) unsigned NOT NULL,
+   iohandler_id     int(10) unsigned ,
 
    PRIMARY KEY (input_id),
    KEY iohandler (iohandler_id),
@@ -209,13 +209,14 @@ CREATE TABLE analysis_iohandler(
   analysis_id               int(10) NOT NULL,
   iohandler_id              int(10) NOT NULL,
   converter_id              int(10) ,
-  rank                      int(2) ,
-  PRIMARY KEY (analysis_id,iohandler_id)
+  converter_rank                      int(2) ,
+  #PRIMARY KEY (analysis_id,iohandler_id,converter_id)
+  UNIQUE (analysis_id,iohandler_id,converter_id)
 
 );
 
 CREATE TABLE converter (
-  converter_id		int(10) NOT NULL,
+  converter_id		int(10) unsigned DEFAULT'0' NOT NULL auto_increment,
   module		varchar(255) NOT NULL,
   method                varchar(255) NOT NULL,
 
