@@ -107,5 +107,5 @@ INSERT INTO rule VALUES (1,1,2,'WAITFORALL_AND_UPDATE');
 # Dumping data for table 'streamadaptor'
 #
 
-INSERT INTO streamadaptor VALUES (1,'Bio::SeqIO');
+INSERT INTO streamadaptor VALUES (1,'Bio::SeqIO','','');
 
