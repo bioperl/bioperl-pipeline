@@ -78,7 +78,7 @@ use strict;
 @ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
 BEGIN {
-    %VALID_STATUS = ('NEW'=>1,'FAILED'=>1,'SUBMITTED'=>1,'COMPLETED'=>1,'WAITFORALL'=>1);
+    %VALID_STATUS = ('NEW'=>1,'FAILED'=>1,'SUBMITTED'=>1,'COMPLETED'=>1,'WAITFORALL'=>1,'KILLED'=>1);
     %VALID_STAGE  = ('READING'=>1,'WRITING'=>1,'RUNNING'=>1,'BATCHED'=>1);
 }
 
@@ -319,6 +319,28 @@ sub list_job_ids {
     return @job_id;
 }
 
+
+sub list_queue_ids {
+    my ($self,@args)  = @_;
+
+    my @jobs;
+    #prepare the query
+
+    my $query =" SELECT queue_id
+                 FROM job";
+    $query.= $self->_make_query_conditional(-table=>'job',@args);
+    #Get the jobs
+    my $sth = $self->prepare($query);
+    $sth->execute;
+
+    my @job_id;
+ 
+    while (my ($job_id) = $sth->fetchrow_array){
+
+      push @job_id,$job_id;
+    }
+    return @job_id;
+}
 
 =head2 list_completed_job_ids
 
@@ -640,6 +662,29 @@ sub update {
   };if ($@) { $self->throw("ATTEMPT TO UPDATE JOB FAILED.\n.$@");}
 }
 
+=head2 update_killed_job
+
+  Title   : update_killed_job;
+  Usage   : $job->update_killed_job; 
+  Function: Given a set of job queue ids, it updates their status as KILLED
+            Usually called during a pipeline termination procedure
+  Returns : 
+  Args    : A list of queue ids
+
+=cut
+
+sub update_killed_job {
+  my ($self,@queue_ids) = @_;
+  $self->throw("No queue ids provided") unless $#queue_ids >=0;
+  my $query = "UPDATE job set STATUS='KILLED'  WHERE queue_id IN (".join(',',@queue_ids).")";
+  my $sth = $self->prepare($query);
+  eval {
+    $sth->execute();
+  }; 
+  if($@) {
+    $self->throw("Couldn't update killed jobs status");;
+  }
+}
 
 =head2 update_completed_job
 
@@ -657,23 +702,14 @@ sub update_completed_job {
   my $job = shift;
 
   $self->throw("Can't update a completed job that has no dbID!") unless (defined $job->dbID);
-  my $query = " INSERT INTO completed_jobs
-                     VALUES (".$job->dbID.",'".
-                            $job->process_id."',".
-                            $job->analysis->dbID.",\"".
-                            $job->rule_group_id."\",".
-                            $job->queue_id.",'".
-                            $job->hostname."',".
-                            "'".$job->stdout_file."',".
-                            "'".$job->stderr_file."',".
-                            "'".$job->input_object_file."',".
-                            "now(),".
-                            $job->retry_count.")";
+  my $query = " INSERT INTO completed_jobs VALUES(?,?,?,?,?,?,?,?,?,?,?)";
+  
   my $sth = $self->prepare($query);
 #  $self->warn($query);
 
   eval { 
-      $sth->execute;
+      $sth->execute($job->dbID,$job->process_id,$job->analysis->dbID,$job->rule_group_id,$job->queue_id,$job->hostname,$job->stdout_file,
+                    $job->stderr_file,$job->input_object_file,'now()',$job->retry_count);
   };if ($@) { $self->throw("ATTEMPT TO UPDATE COMLETED JOB FAILED.\n.$@");}
 
   return 1;
@@ -895,7 +931,7 @@ sub _make_query_conditional {
 
           foreach my $st(@{$stage}){
               $VALID_STAGE{$st} || $self->throw("Invalid stage $st requested");
-              $query .= " OR ($status='$st')";
+              $query .= " OR (status='$st')";
           }
           $query .= " )";
         }
@@ -919,4 +955,30 @@ sub _make_query_conditional {
     return $query;
 
 }
+
+=head2 get_job_statistics
+
+  Title   : get_job_statistics
+  Usage   : my $query = $adaptor->get_job_statistics()
+  Function: Used to check state of jobs in the pipeline, returns a hash keyed by status and stage
+  Returns : 
+  Args    : 
+
+=cut
+
+sub get_job_statistics{
+  my ($self) = @_;
+  my %job_hash;
+  foreach my $status(keys %VALID_STATUS){
+    my $total = 0;
+    foreach my $stage(keys %VALID_STAGE){
+      my $count =  $self->get_job_count(-status=>[$status],-stage=>[$stage]);
+      $job_hash{$status}{$stage} = $count;
+      $total+=$count; 
+    }
+    $job_hash{$status}{'TOTAL'} = $total;
+  }
+  return \%job_hash;
+}
+  
 1;

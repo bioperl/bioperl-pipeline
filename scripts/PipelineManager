@@ -17,12 +17,14 @@ use strict;
 use Getopt::Long;
 use Bio::Pipeline::Manager;
 use Bio::Pipeline::XMLImporter;
-use vars qw($XMLFORCE $XML $SCHEMA $FLUSH $LOCAL $VERBOSE $NOTEST $NORUN);
+use ExtUtils::MakeMaker;
+
+use vars qw($XMLFORCE $XML $SCHEMA $FLUSH $LOCAL $VERBOSE $NOTEST $NORUN %SIG);
 
 # defaults: command line options override pipeConf variables,
 
 use Bio::Pipeline::PipeConf qw (DBI_DRIVER
-				DBHOST 
+                        				DBHOST 
                                 DBNAME
                                 DBUSER
                                 DBPASS
@@ -39,7 +41,12 @@ $| = 1; #flush all print statements
 my $INPUT_LIMIT = undef;
 my $HELP = undef;
 my $NUMBER=undef;
-my $VERBOSE = 0;
+my $VERBOSE = 2;
+
+$SIG{INT} = \&pause;
+$SIG{QUIT} = \&quit;
+$SIG{KILL} = \&quit;
+
 
 my $USAGE =<<END;
 ************************************
@@ -89,7 +96,7 @@ GetOptions(
     'local'       => \$LOCAL,
     'queue=s'     => \$QUEUE,
     'retry=i'     => \$RETRY,
-    'verbose'     => \$VERBOSE,
+    'verbose=i'     => \$VERBOSE,
     'jobnbr=s'    => \$NUMBER,
     'notest'     => \$NOTEST,
     'norun'     => \$NORUN,
@@ -104,6 +111,8 @@ $DBUSER ||="root";
 $DBPASS ||=undef;
 $DBNAME || die("Need a biopipe database name\n$USAGE");
 $SCHEMA ||= "../sql/schema.sql";
+*MAIN::VERBOSE=\$Bio::Pipeline::PipeConf::PipeConf{VERBOSE};
+$MAIN::VERBOSE= $VERBOSE;
 
 #############################################################
 #Load the XML template first
@@ -124,9 +133,9 @@ my $loaded = $importer->run($XMLFORCE);
 	   exit(0);
 	}
 }
-
+my $manager;
 if(!$NORUN){
-my $manager = Bio::Pipeline::Manager->new(
+$manager = Bio::Pipeline::Manager->new(
     -driver	=> $DBI_DRIVER,
     -host       => $DBHOST,
     -dbname     => $DBNAME,
@@ -154,4 +163,33 @@ $manager->remove_lock if $ok;
 }
 else {
 	print "PipelineManager exited\n";
+}
+
+sub pause {
+  my $confirm = prompt ("[PAUSE] You have requested to quit the pipeline [y/n]?","n");
+  if ($confirm =~ /N|n/){
+    return;
+  }
+  else {
+    
+   my $confirm = prompt ("[SHUTDOWN] Proceed with shutdown procedure [y/n]?","y");
+   if ($confirm =~/N|n/){
+    $manager->remove_lock if $manager;
+	  print "PipelineManager exited\n";
+    exit(0);
+   }
+   print "Starting Shutdown procedure\n";
+   my ($killed,$writing)= $manager->shutdown();
+   if($writing > 0){
+     print "$killed jobs killed.\n $writing jobs are in writing stage and are not killed\n";
+     print "The pipeline will wait for these jobs to be completed before exiting.\n";
+   }
+   else {
+    print "$killed jobs killed.\n PipelineManger exited";
+    $manager->remove_lock if $manager;
+    exit(0);
+   }
+  
+
+  }
 }
