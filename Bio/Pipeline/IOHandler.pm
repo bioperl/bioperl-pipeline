@@ -583,10 +583,12 @@ sub _format_output_args {
                 push @args, ($arguments[$i]->tag => @{$value});
             }
             else {
-                my @array;
-                push @array, $value;
-                push @args, ($arguments[$i]->tag => @array);
-            }
+#                my @array;
+#                push @array, $value;
+#                push @args, ($arguments[$i]->tag => @array);
+# Change is based on the discuss.
+		push @args, ($arguments[$i]->tag => $value); 
+           }
         }
         else {
             push @args, ($arguments[$i]->tag => $value);
@@ -860,7 +862,7 @@ sub _load_dbadaptor {
 
   Title    : _load_obj
   Function : loads an object
-  Example  : $io->_load_obj('Bio::DB::Fasta","new");
+  Example  : $io->_load_obj("Bio::DB::Fasta","new");
   Returns  : the object
   Args     :
 
