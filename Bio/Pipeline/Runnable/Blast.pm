@@ -220,8 +220,11 @@ sub run {
   $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
   
   my $program = $analysis->program || 'blastall';
-  $analysis->program_file && $blast_obj->executable($analysis->program_file); 
-  my $seq1 = $self->seq1 || $self->file;
+
+  #pass the path to the executable if program_file is set.
+  $analysis->program_file && $blast_obj->executable($analysis->program,$analysis->program_file,1); 
+
+  my $seq1 = $self->seq1;
   my $seq2 = $self->seq2;
   my $blast_report;
 
