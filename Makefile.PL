@@ -1,4 +1,4 @@
-## --Makefile.PL for Bioperl core module distribution--##
+## --Makefile.PL for Bioperl-pipeline distribution--##
 ## ----------------------------------------------------##
 ## $Id$
 ##----------------------------------------------------
@@ -16,15 +16,14 @@
 %packages = (
 	     'IO::String'               => '0.0/IO handle to read or write to a string/GenBank+GenPept sequence retrieval, Variation code/Bio::DB::*,Bio::Variation::*,Bio::Tools::Blast::Run::Webblast, Bio::Index::Blast',
 	     'File::Temp'               => '0.0/Temporary File creation/Bio::Root::IO uses if present/Bio::DB::WebDBSeqI, Bio::Seq::LargePrimarySeq',
-	     'DBD::mysql'               => '0.0/Mysql driver/loading and querying of Mysql-based GFF feature databases/Bio::DB::GFF',
-# rare function let's not scare people
+	     'DBD::mysql'               => '0.0/Mysql driver/loading',
 	     );
 
 sub check_package {
     my ($name,$str) = @_;
     my ($ver,$desc,$expl,$module) = split( /\// , $str);
     if( !eval "require($name)") {
-	print "External Module $name, $desc,\n is not installed on this computer.\n  The $module in Bioperl needs it for $expl\n\n";
+	print "External Module $name, $desc,\n is not installed on this computer.\n  The $module in bioperl-pipeline needs it for $expl\n\n";
 	return 1;
     }
 
@@ -75,25 +74,6 @@ $NAME     = 'Bio';
 $DISTNAME = "bioperl";
 $VERSION  = "1.00";
 
-if( $do_autoload_finesse == 1 ) {
-    fatal("Autoload finessing does not work at the moment!");
-}
-
-
-
-@BACKUP_FILES = qw(./Seq.pm.bak);
-
-#
-# This does an inplace edit on Seq.pm
-#
-
-if( $do_autoload_finesse ) {
-
-    print "Bioperl module installation\nPreparing modules for AUTOLOADing...";
-    `perl -p -i.bak -e 's/#__END__/__END__/' Seq.pm`;
-    print "done.\n\n";
-}
-
 $error = 0;
 print "\n";
 foreach $name ( keys %packages ) {
@@ -108,8 +88,8 @@ if( $error == 1 ) {
 Warning:
 
    There are some external packages and perl modules, listed above, which 
-   bioperl uses. This only effects the functionality which is listed above:
-   the rest of bioperl will work fine.
+   bioperl-pipeline uses. This only effects the functionality which is listed above:
+the rest of bioperl will work fine.
 
    The installation of these external packages is very simple. You
    can read more about bioperl external dependencies at
