@@ -470,7 +470,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
            my $input_iohandler_id = &verify($input,'iohandler','OPTIONAL','0');
 
            my $tag = &verify($input,'tag','OPTIONAL','input');
-           my $input_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $input_iohandler_id) if $input_iohandler_id;
+           my $input_iohandler_obj = $self->_get_iohandler($input_iohandler_id,@iohandler_objs) if $input_iohandler_id;
 
            push @datamonger_iohs, $input_iohandler_obj if $input_iohandler_obj;
 
@@ -561,7 +561,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
    foreach my $input_iohandler ($analysis->child('input_iohandler')) {
      if (defined($input_iohandler)){
-         my $input_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $input_iohandler->attribute("id"));
+         my $input_iohandler_obj = $self->_get_iohandler($input_iohandler->attribute("id"),@iohandler_objs);
          if(!defined($input_iohandler_obj)){
             print "input iohandler for analysis $analysis->dbID not found\n";
          } else {
@@ -584,7 +584,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
    }
    foreach my $output_iohandler ($analysis->child('output_iohandler')) {
      if (defined($output_iohandler)){
-         my $output_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $output_iohandler->attribute("id"));
+         my $output_iohandler_obj = $self->_get_iohandler($output_iohandler->attribute("id"),@iohandler_objs);
          if(!defined($output_iohandler_obj)){
             print "output iohandler for analysis $analysis->dbID not found\n";
          } else {
@@ -611,7 +611,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
           my $prev_iohandler_id = $map->child('prev_analysis_iohandler_id');
           my $current_iohandler_id = $map->child('current_analysis_iohandler_id');
           if ($current_iohandler_id){
-                  my $current_iohandler = $self->_get_iohandler(\@iohandler_objs, &set_global($current_iohandler_id->value));
+                  my $current_iohandler = $self->_get_iohandler( &set_global($current_iohandler_id->value),@iohandler_objs);
                   if (!defined($current_iohandler)) {
                      print "current input iohandler for analysis not found\n";
                   }
@@ -625,7 +625,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
    foreach my $new_input_iohandler ($analysis->child('new_input_iohandler')) {
      if (defined($new_input_iohandler)){
-         my $new_input_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $new_input_iohandler->attribute("id"));
+         my $new_input_iohandler_obj = $self->_get_iohandler($new_input_iohandler->attribute("id"),@iohandler_objs);
          if(!defined($new_input_iohandler_obj)){
             print "new_input iohandler for analysis $analysis->dbID not found\n";
          } else {
@@ -712,7 +712,7 @@ foreach my $job ($job_setup->children('job')) {
    my @input_objs;
    foreach my $input ($job->children('fixed_input')) {
 
-     my $input_iohandler = $self->_get_iohandler(\@iohandler_objs, &set_global($input->child('input_iohandler_id')->value));
+     my $input_iohandler = $self->_get_iohandler(&set_global($input->child('input_iohandler_id')->value),@iohandler_objs );
      if (!defined($input_iohandler)) {
        #$self->throw("Iohandler for input not found\n");
        print "Iohandler for input not found\n";
@@ -799,7 +799,7 @@ sub set_global {
   my ($string) = @_;
   while($string=~/\$(\w+)/){
     my $var = $global{$1};
-    die("variable \$$1 doesn't exist. Pls check that you have it defined in the <global> tag.") unless $var;    
+    warn("variable \$$1 doesn't exist. Pls check that you have it defined in the <global> tag.") if (!defined $var);    
     $string=~s/\$$1/$var/;
   }
   return $string;
@@ -849,11 +849,14 @@ sub _get_analysis {
 }
 
 sub _get_iohandler {
-    my ($self, $iohandler_objs, $id) = @_;
+    my ($self,$id, @iohandler_objs) = @_;
 
-    foreach my $iohandler(@{$iohandler_objs}) {
+    foreach my $iohandler(@iohandler_objs) {
         if ($iohandler->dbID == $id) {
-            return $iohandler;
+            my $new;
+            %{$new} = %{$iohandler};
+            bless $new, ref $iohandler;
+            return $new;
         }
     }
     return undef;
@@ -861,7 +864,6 @@ sub _get_iohandler {
 
 sub _get_nodegroup {
     my ($self, $nodegroup_objs, $id) = @_;
-
     foreach my $nodegroup(@{$nodegroup_objs}) {
         if ($nodegroup->id == $id) {
             return $nodegroup;
@@ -872,10 +874,12 @@ sub _get_nodegroup {
 
 sub _search_array_by{
     my ($self, $array, $field, $value) = @_;
-    print ref $array . "\n";
     foreach(@{$array}){
         if($_->$field == $value){
-            return $_;
+            my $new;
+            %{$new} = %{$_};
+            bless $new, ref $_;
+            return $new;
         }
     }
     return undef;
