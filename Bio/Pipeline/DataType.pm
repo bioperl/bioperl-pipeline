@@ -127,6 +127,7 @@ sub create_from_input {
 sub match {
     my ($self,$data_type) = @_;
     $data_type->isa("Bio::Pipeline::DataType") || $self->throw("Need a Bio::Pipeline::DataType to check");
+    
     my $obj_type = $self->object_type;
     my $name = $self->name;
     my $ref_type = $self->ref_type;
@@ -134,6 +135,8 @@ sub match {
     my $q_obj_type = $data_type->object_type();
     my $q_ref_type = $data_type->ref_type();
     my $q_name = $data_type->name();
+
+    my $class = $data_type->object_type;
     #if (($obj_type eq $q_obj_type) && ($name eq $q_name ) &&($ref_type eq $q_ref_type)){
     if (($obj_type eq $q_obj_type) &&($ref_type eq $q_ref_type)){#don't require name to match for now
         return 1;

@@ -89,7 +89,7 @@ sub fetch_by_dbID {
   while (my ($input_id) = $sth->fetchrow_array){
       my $input = $self->db->get_InputAdaptor->
                          fetch_by_dbID($input_id);
-      push @inputs,$input;
+      push (@inputs,$input);
   }
 
   #getting the output adaptor

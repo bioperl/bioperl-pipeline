@@ -46,6 +46,8 @@ use vars qw (%PipeConf);
     BINDIR     => '',
     DATADIR    => '',
 
+    # Batch Management system module
+    BATCH_MOD   =>  'LSF',
     # farm queue
     QUEUE      => '', 
     # farm nodes to use, default all
@@ -55,7 +57,7 @@ use vars qw (%PipeConf);
     # true->update InputIdAnalysis via Job
     AUTOUPDATE => 1,    
 
-    # no of jobs to send to LSF together
+    # no of jobs to send to Batch Management system at one go
     BATCHSIZE  => 1,        
     BSUB_OPT   => '-C0',
 

@@ -29,11 +29,9 @@ my $host    = DBHOST;
 my $dbname  = DBNAME;
 my $dbuser  = DBUSER;
 my $pass    = undef;
-
 my $port    = '3306';
-my $pass    = undef;
 
-my ($job_id) = @ARGV;
+my (@job_ids) = @ARGV;
 
 GetOptions(
     'host=s'    => \$host,
@@ -86,26 +84,28 @@ my $job_adaptor = $db->get_JobAdaptor();
 
 print STDERR "Fetching job " . $job_id . "\n";
 
-my $job         = $job_adaptor->fetch_by_dbID($job_id);
+foreach my $job_id (@job_ids){
+
+    my $job         = $job_adaptor->fetch_by_dbID($job_id);
 
 
-if( !defined $job) {
-    print STDERR ( "Couldnt recreate job $job_id\n" );
+    if( !defined $job) {
+        print STDERR ( "Couldnt recreate job $job_id\n" );
+    }
+
+    print STDERR "Running job $job_id\n";
+    print STDERR "Runnable is " . $job->analysis->runnable. "\n";
+
+    eval {
+        $job->run;
+    };
+    $pants = $@;
+
+    if ($pants) {
+        print STDERR "Job $job_id failed: [$pants]";
+    }
+
+    print STDERR "Finished job $job_id\n";
+    print STDERR "Leaving runnabledb.pl\n";
 }
-
-  print STDERR "Running job $job_id\n";
-  print STDERR "Runnable is " . $job->analysis->runnable. "\n";
-
-  eval {
-    $job->runLocally;
-  };
-  $pants = $@;
-
-  if ($pants) {
-    print STDERR "Job $job_id failed: [$pants]";
-  }
-
-  print STDERR "Finished job $job_id\n";
-  print STDERR "Leaving runnabledb.pl\n";
-
 $db->{'_db_handle'}->disconnect();

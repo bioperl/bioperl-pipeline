@@ -14,7 +14,6 @@
 use strict;
 use Getopt::Long;
 
-use Bio::Pipeline::SQL::RuleAdaptor;;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
@@ -91,19 +90,23 @@ $QUEUE_params->{'jobname'}   = $JOBNAME if defined $JOBNAME;
 #have failed with a retry count less than the variable set in PipeConf.
 my @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
 
+my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db);
+
 while (@jobs) {
     
     foreach my $job(@jobs){
-        $job->set_status('SUBMITTED');
-        $job->make_filenames unless $job->filenames;
         if ($local){
-            $job->runLocally;
+            $job->set_status('SUBMITTED');
+            $job->make_filenames unless $job->filenames;
+            $job->run;
         }else{
-            $job->run_BatchRemote($QUEUE_params);
+            $batchsubmitter->add_job($job);
+            $job->set_status('BATCHED');
+            $batchsubmitter->submit_batch unless $batchsubmitter->batched_jobs < $BATCHSIZE;
         }
     }	    
 
-    #Bio::EnsEMBL::Pipeline::Job->flush_runs($jobAdaptor, $QUEUE_params);
+    $batchsubmitter->submit_batch;
     
     exit 0 if $once;
     sleep($SLEEP);

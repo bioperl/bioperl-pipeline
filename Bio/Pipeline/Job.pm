@@ -427,10 +427,16 @@ sub batch_runRemote {
 
 =cut
 
-sub runLocally {
-  my $self = shift;
+sub run {
 
-  print STDERR "Running locally " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
+  my $self = shift;
+  my $err;
+  my $autoupdate = $AUTOUPDATE;
+  my $rdb;
+  my @inputs = $self->inputs;
+
+
+  print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
 =jerm
   local *STDOUT;
   local *STDERR;
@@ -446,98 +452,10 @@ sub runLocally {
     return;
   }
 =cut
-  print STDERR "Running inQUEUE\n"; 
-  $self->runInQUEUE();
-}
-
-sub batch_remotely{
-  my $self = shift;
-  my $queue = shift;
-  my $useDB = shift;
-
-  local *SUB;
-  local *FILE;
 
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
   }
-
-  my $db = $self->adaptor->db;
-  my $host = $db->host;
-  my $username = $db->username;
-  my $dbname = $db->dbname;
-  my $cmd;
-
-  # runner.pl: first look in same directory as Job.pm
-  # if it's not here use file defined in PipeConf.pm
-  # otherwise fail
-
-  my $runner = __FILE__;
-  $runner =~ s:/[^/]*$:/runner.pl:; 	
-
-  unless (-x $runner) {
-    $runner = $RUNNER || undef;
-    $self->throw("runner undefined - needs to be set in PipeConf.pm\n") unless defined $runner;
-  }
-
-  $cmd = "bsub -q ".$queue." -o ".$self->stdout_file.
-#    " -q acarichunky " .
-#    " -R osf1 ".
-    " -e ".$self->stderr_file." -E \"$runner -check\" ";
-
-
-  if( ! defined $useDB ) {
-    $useDB = 1;
-  }
-
-  if( $self->retry_count > 0 ) {
-    for ( $self->stdout_file, $self->stderr_file ) {
-      open( FILE, ">".$_ ); close( FILE );
-    }
-  }
-
-  if( $useDB ) {
-    # find out db details from adaptor
-    # generate the queue call
-    $cmd .= $runner." -host $host -dbuser $username -dbname $dbname ".$self->dbID;
-    
-  } else {
-    # make the object
-    # call its get input method..
-    # freeze it
-    $self->throw( "useDB=0 not implemented yet." );
-  }
-  print STDERR "$cmd\n";
-  open (SUB,"$cmd 2>&1 |");
-  
-  while (<SUB>) {
-    if (/Job <(\d+)>/) {
-      $self->QUEUE_id($1);
-      # print (STDERR $_);
-    }
-  }
-  close(SUB);
-
-  if( $self->QUEUE_id == -1 ) {
-    print STDERR ( "Couldnt submit ".$self->dbID." to QUEUE" );
-  } else {
-    $self->retry_count( $self->retry_count + 1 );
-    $self->set_status( "SUBMITTED" );
-  }
-
-  $self->adaptor->update( $self );
-}
-
-# question, when to submit the success report to the db?
-# we have to parse the output of QUEUE anyway....
-
-sub runInQUEUE {
-  my $self = shift;
-  my $err;
-  my $autoupdate = $AUTOUPDATE;
-  my $rdb;
-
-  my @inputs = $self->inputs;
   
   eval {
     $rdb = Bio::Pipeline::RunnableDB->new ( 
@@ -585,28 +503,15 @@ sub runInQUEUE {
       die "Problems for runnableDB writing output for  [$err]" ;
   }
   if ($autoupdate) {
-    eval {
-      my $sic = $self->adaptor->db->get_StateInfoContainer;
-      $sic->store_inputId_analysis(
-        $self->input_id,
-        $self->analysis
-      );
-    };
-    if ($err = $@) {
-      print STDERR "Error updating successful job ".$self->dbID ."[$err]\n";
-    }
-    else {
-      print STDERR "Updated successful job ".$self->dbID."\n";
-      eval {
-        $self->remove;
-      };
-      if ($err = $@) {
-         print STDERR "Error deleting job ".$self->dbID." [$err]\n";
+      if ($self->{'_status'} = 'COMPLETED'){
+        eval {
+            $self->set_stage("EXITING");
+            $self->update_complete_job; 
+        };
+        if ($err = $@) {
+         print STDERR "Error updating completed job".$self->dbID." [$err]\n";
+        }
       }
-      else {
-         print STDERR "Deleted job ".$self->dbID."\n";
-      }
-    }
   }
 }
 
@@ -665,6 +570,8 @@ sub set_status {
     $self->warn("No database connection.  Can't set status to $arg");
     return;
   }
+
+  $self->{'_status'} = $arg;
   
   return $self->adaptor->set_status( $self, $arg );
 }
