@@ -81,9 +81,10 @@ if($create =~/^[yY]/){
     else {
       my $str;
       $str .= defined $DBHOST ? "-h $DBHOST " : "";
-      $str .= defined $DBPASS ? "-p$DBPASS" : "";
+      $str .= defined $DBPASS ? "-p$DBPASS " : "";
       $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
       print STDERR "Dropping Databases\n";      
+      print STDERR "mysqladmin $str drop $DBNAME";
       system("mysqladmin $str drop $DBNAME > /dev/null ");
       print STDERR "Creating $DBNAME\n   ";
       system("mysqladmin $str create $DBNAME ");
