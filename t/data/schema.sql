@@ -215,15 +215,36 @@ CREATE TABLE analysis_iohandler(
 
 );
 
-CREATE TABLE converter (
-  converter_id		int(10) unsigned DEFAULT'0' NOT NULL auto_increment,
-  module		varchar(255) NOT NULL,
-  method                varchar(255) NOT NULL,
-  rank			int,
-  argument		varchar(255),
+# 
+CREATE TABLE converters (
+	converter_id		int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
+  	module			varchar(255)	 NOT NULL,
 
-  PRIMARY KEY (converter_id)
+  	PRIMARY KEY (converter_id)
 );
+
+# converter_id is the foreign key to converters table.
+
+CREATE TABLE converter_methods(
+	converter_method_id	INT(10) UNSIGNED DEFAULT '0' NOT NULL AUTO_INCREMENT,
+	converter_id 		INT(10) UNSIGNED NOT NULL,
+	method			VARCHAR(40) NOT NULL,
+	rank			INT(2) NOT NULL,
+
+	PRIMARY KEY(converter_method_id)
+);
+
+# converter_method_id is the foreign key to converter_methods table.
+
+CREATE TABLE converter_arguments(
+	converter_argument_id 	int(10) unsigned DEFAULT '0' NOT NULL AUTO_INCREMENT,
+	converter_method_id 	INT(10) UNSIGNED NOT NULL,
+	tag 			VARCHAR(40) NOT NULL,
+	value 			VARCHAR(40),
+
+	PRIMARY KEY(converter_argument_id)
+);
+
 
 CREATE TABLE completed_jobs (
   completed_job_id      int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
