@@ -65,7 +65,7 @@ sub new {
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
       $gff_source,$gff_feature,$runnable,$parameters,$created,
-      $logic_name,$output_handler ) = 
+      $logic_name,$output_handler,$node_group ) = 
 
 	  $self->_rearrange([qw(ID
 	  			ADAPTOR
@@ -81,7 +81,8 @@ sub new {
 				PARAMETERS
 				CREATED
 				LOGIC_NAME
-                OUTPUT_HANDLER
+        OUTPUT_HANDLER
+        NODE_GROUP
 				)],@args);
 
   $self->dbID           ($id);
@@ -99,6 +100,7 @@ sub new {
   $self->created        ($created);
   $self->logic_name     ($logic_name);
   $self->output_handler ($output_handler);
+  $self->node_group     ($node_group);
 
   return $self; # success - we hope!
 }
@@ -433,6 +435,28 @@ sub output_handler{
 
     return $self->{_output_handler};
 }
+
+=head2 node_group
+
+  Title   : node_group
+  Usage   : $self->node_group
+  Function: Get/set method for the node_group that the analysis jobs belong to
+  Returns : String
+  Args    : String
+
+=cut
+
+
+sub node_group{
+    my ($self, $arg ) = @_;
+
+    if (defined $arg ) {
+        $self->{_node_group} = $arg;
+    }
+
+    return $self->{_node_group};
+}
+
 
 1;
 

@@ -53,6 +53,8 @@ use Bio::Pipeline::SQL::RuleAdaptor;
 use Bio::Pipeline::SQL::BaseAdaptor;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::JobAdaptor;
+use Bio::Pipeline::SQL::NodeAdaptor;
+use Bio::Pipeline::SQL::NodeGroupAdaptor;
 use Bio::Root::Root;
 
 # Inherits from the base bioperl object
@@ -273,6 +275,48 @@ sub delete_Job {
 
     $self->get_JobAdaptor->fetch_by_dbID($id)->remove
      or $self->warn("Can't recreate job with ID $id");
+}
+
+=head2 get_NodeAdaptor
+ Title   : get_NodeAdaptor
+ Usage   : $db->get_NodeAdaptor
+ Function: The Adaptor for Node objects in this db
+ Example :
+ Returns : Bio::Pipeline::SQL::NodeAdaptor
+ Args    : nothing
+
+=cut
+
+sub get_NodeAdaptor {
+  my ($self) = @_;
+
+  if( ! defined $self->{_NodeAdaptor} ) {
+    $self->{_NodeAdaptor} = Bio::Pipeline::SQL::NodeAdaptor->new
+      ( $self );
+  }
+
+  return $self->{_NodeAdaptor};
+}
+
+=head2 get_NodeGroupAdaptor
+ Title   : get_NodeGroupAdaptor
+ Usage   : $db->get_NodeGroupAdaptor
+ Function: The Adaptor for NodeGroup objects in this db
+ Example :
+ Returns : Bio::Pipeline::SQL::NodeGroupAdaptor
+ Args    : nothing
+
+=cut
+
+sub get_NodeGroupAdaptor {
+  my ($self) = @_;
+
+  if( ! defined $self->{_NodeGroupAdaptor} ) {
+    $self->{_NodeGroupAdaptor} = Bio::Pipeline::SQL::NodeGroupAdaptor->new
+      ( $self );
+  }
+
+  return $self->{_NodeGroupAdaptor};
 }
 
 

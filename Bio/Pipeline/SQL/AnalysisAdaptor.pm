@@ -75,18 +75,21 @@ sub fetch_by_dbID {
             db,db_version,db_file,
             runnable,
             gff_source,gff_feature,
-            created, parameters
+            created, parameters,node_group_id
     FROM    analysis 
     WHERE   analysis_id = ?});
 
   $sth->execute( $id );
   my ($analysis_id,$logic_name,$program,$program_version,$program_file,
       $db,$db_version,$db_file,$runnable,$gff_source,$gff_feature,$created,
-      $parameters) = $sth->fetchrow_array;
+      $parameters,$node_group_id) = $sth->fetchrow_array;
 
   if( ! defined $analysis_id) {
     return undef;
   }
+
+  my $node_group - $self->db->get_NodeGroupAdaptor->fetch_by_dbID($node_group_id);
+  
 
   my $query = " SELECT  io.iohandler_id 
                 FROM    iohandler io, analysis_iohandler ai
@@ -117,7 +120,8 @@ sub fetch_by_dbID {
                                             -PARAMETERS     => $parameters,
                                             -CREATED        => $created,
                                             -LOGIC_NAME     => $logic_name,
-                                            -OUTPUT_HANDLER => $output_handler );
+                                            -OUTPUT_HANDLER => $output_handler,
+                                            -NODE_GROUP     => $node_group);
 
 
   return $anal;
