@@ -797,9 +797,9 @@ sub verify {
 
 sub set_global {
   my ($string) = @_;
-  if($string=~/\$(\w+)/){
+  while($string=~/\$(\w+)/){
     my $var = $global{$1};
-    $string=~s/\$$1/$var/g;
+    $string=~s/\$$1/$var/;
   }
   return $string;
 }
