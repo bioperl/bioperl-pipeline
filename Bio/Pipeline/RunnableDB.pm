@@ -81,14 +81,13 @@ sub new {
     $self->analysis($analysis);
     $self->runnable($analysis->runnable);
 
-    @{$self->{'_input_objs'}}=[];
-    @{$self->{'_data_types'}}=[];
+    $self->{'_input_objs'}=[];
+    $self->{'_data_types'}=[];
 
     foreach my $input (@{$inputs}){
         my $input_obj = $input->fetch;
         my $datatype =  Bio::Pipeline::DataType->create_from_input($input_obj);
         $self->add_input_obj($input_obj);
-        $self->add_data_type($datatype);
     }
 
     return $self;
@@ -137,42 +136,6 @@ sub dbobj {
         $self->{'_dbobj'} = $value;
     }
     return $self->{'_dbobj'};
-}
-
-=head2 add_data_type
-
-    Title   :   add_data_type
-    Usage   :   
-    Function:   
-    Returns :   
-    Args    :   
-
-=cut
-
-sub add_data_type{
-    my ($self,$data_type) = @_;
-
-    $self->throw ("$data_type must be a Bio::Pipeline::DataType") unless $data_type->isa("Bio::Pipeline::DataType");
-
-    push (@{$self->{'_data_types'}},$data_type);
-
-}
-
-=head2 data_types
-
-    Title   :   data_types
-    Usage   :   
-    Function:   
-    Returns :   
-    Args    :   
-
-=cut
-
-sub data_types{
-    my ($self) = @_;
-
-    return @{$self->{'_data_types'}};
-
 }
 
 
@@ -249,10 +212,76 @@ sub output {
 
     if(defined (@r) && scalar(@r)){
       foreach my $r ($self->runnable){
-	push(@{$self->{'_output'}}, $r->output);
+	      push(@{$self->{'_output'}}, $r->output);
       }
     }
     return @{$self->{'_output'}};
+}
+
+=head2 setup_runnable_inputs
+
+    Title   :   setup_runnable_inputs
+    Usage   :   $self->setup_runnable_inputs()
+    Function:   Checks the inputs with the runnable data types and set the runnable inputs 
+    Returns :   None 
+    Args    :   None 
+
+=cut
+
+sub setup_runnable_inputs {
+    my ($self) = @_;
+    my $runnable = $self->runnable;
+    my %r_datatypes = $runnable->datatypes;
+    my @inputs = $self->input_objs;
+
+    my %match_datatype={};
+  
+    DT: foreach my $r_key (keys %r_datatypes){
+        foreach my $in_obj(@inputs){
+            next if exists $match_datatype{$in_obj};
+            if ($self->match_data_type($in_obj,$r_datatypes{$r_key})) {
+                $match_datatype{$in_obj}=1;
+                #set runnables inputs
+                $self->runnable->$r_key($in_obj);
+                next DT;
+            }
+        }
+        $self->throw("Job's inputs datatypes do not match runnable ".$self->runnable." datatypes.");
+    }
+}
+
+=head2 match_data_type
+
+    Title   :   match_data_type
+    Usage   :   $self->match_data_type()
+    Function:   checks an input whether it matches a data type object. It is handles inherited objects as matching 
+                the parent.The input can be of type inherited from the type of the runnable but not the other
+                way around 
+    Returns :   None 
+    Args    :   None 
+
+=cut
+
+sub match_data_type {
+    my ($self,$input,$run_dt) = @_;
+    my $in_dt = Bio::Pipeline::DataType->create_from_input($input);
+    $run_dt->isa("Bio::Pipeline::DataType") || $self->throw("Need a Bio::Pipeline::DataType to check");
+
+    #have to do this check cuz the isa call will barf it its not an valid object
+    if ((ref($input) ne "SCALAR") && (ref($input) ne "ARRAY") && (ref($input) ne "HASH")){
+      if ($input->isa($run_dt->object_type)){ 
+        return 1;
+      }
+      else {
+        return 0;
+      }
+    }
+    elsif (($in_dt->object_type eq $run_dt->object_type) && ($in_dt->ref_type eq $run_dt->ref_type)){
+      return 1;
+    }
+    else {
+      return 0;
+    }
 }
 
 =head2 run
@@ -267,13 +296,15 @@ sub output {
 
 sub run {
     my ($self) = @_;
-
+    
+    #do data checking and setup inputs of runnable
+    $self->setup_runnable_inputs();
     my $runnable = $self->runnable; 
     $self->throw("Runnable module not set") unless ($runnable);
     $self->throw("Inputs not fetched") unless ($self->input_objs());
-    $runnable->inputs($self->input_objs());
     $runnable->run();
 }
+
 
 =head2 runnable
 
@@ -293,14 +324,14 @@ sub runnable {
     }
   
     if (defined($arg)) {
+        
         #create empty runnable
-
         $arg =~ s/\::/\//g;
         require "${arg}.pm";
         $arg =~ s/\//\::/g;
 
         my $runnable = "${arg}"->new();
-	        $self->{'_runnable'}=$runnable;
+	      $self->{'_runnable'}=$runnable;
 
 =jerm
         if ($runnable->isa("Bio::Pipeline::RunnableI")) {
