@@ -57,16 +57,16 @@ ds are usually preceded with a _
 
 # Let the code begin...
 
-package Bio::Pipeline::Filter::feature_coverage;
+package Bio::Pipeline::Utils::Filter::feature_coverage;
 
 use vars qw(@ISA);
 
 use strict;
-use Bio::Pipeline::Filter;
+use Bio::Pipeline::Utils::Filter;
 use Bio::Pipeline::DataType;
 use Bio::SeqFeature::Generic;
 
-@ISA = qw(Bio::Pipeline::Filter);
+@ISA = qw(Bio::Pipeline::Utils::Filter);
 
 sub _initialize {
     my ($self,@args) = @_;
@@ -90,7 +90,12 @@ sub _initialize {
 sub run {
     my ($self,$input) = @_;
 
-    (ref($input) eq "HASH") || $self->throw("Expecting a hash reference");
+    (ref($input) eq "ARRAY") || $self->throw("Expecting an array reference");
+    return $self->_select_hits(@$input);
+
+=head
+
+    foreach my
     foreach my $key(keys %{$input}){
       if (ref($input->{$key}) eq "ARRAY"){
        my @hits = @{$input->{$key}};
@@ -108,6 +113,7 @@ sub run {
     }
       
     return $input;
+=cut
 }
 
 =head2 _set_coverage 
