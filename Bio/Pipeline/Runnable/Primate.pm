@@ -85,6 +85,7 @@ sub target{
 
     return $self->{'_target'};
 }
+
 =head2 run
 
 Title   :   run
@@ -94,6 +95,7 @@ Returns :
 Args    :
 
 =cut
+
 sub run {
   my ($self) = @_;
   $self->analysis->isa("Bio::Pipeline::Analysis") || $self->throw("Need an analysis object");
@@ -103,6 +105,10 @@ sub run {
  
   my $param_str = $self->analysis->parameters;
   my @params = $self->parse_params($param_str);
+  if ($self->analysis->program_file){
+      my $file = $self->analysis->program_file;
+      push @params , ('PROGRAM',"$file");
+  }
   
   my $factory = Bio::Tools::Run::Primate->new(@params);
   $factory->query($query);
