@@ -138,7 +138,7 @@ sub new {
         $port = 3306; 
     }
     if (! $password) {
-        $password =undef;
+        $password ='';
     }
 
 
