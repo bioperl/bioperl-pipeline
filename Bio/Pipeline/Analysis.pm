@@ -861,7 +861,7 @@ sub io_map{
 
   Title   : output_handler
   Usage   : $self->output_handler
-  Function: Get/set method for the output_handler, the IOhandler used
+  Function: Get method for the output_handlers, the IOhandlers used
             to store the results of this analysis
   Returns : String
   Args    : String
@@ -877,13 +877,14 @@ sub output_handler{
     }
     else {
         my @ioh = @{$self->iohandler};
+        my @output_ioh;
         foreach my $io (@ioh) {
             if ($io->type eq "OUTPUT"){
-                $self->{_output_handler} = $io;
-                return $self->{_output_handler};
+                push @output_ioh, $io;
             }
         }
-        return undef;
+        $self->{_output_handler} = \@output_ioh;
+        return $self->{_output_handler};
     }
 }
 
