@@ -14,11 +14,11 @@
 use strict;
 use Getopt::Long;
 
-use Bio::Pipeline::DBSQL::RuleAdaptor;;
-use Bio::Pipeline::DBSQL::JobAdaptor;
-use Bio::Pipeline::DBSQL::AnalysisAdaptor;
-use Bio::Pipeline::DBSQL::StateInfoContainer;
-use Bio::Pipeline::DBSQL::DBAdaptor;
+use Bio::Pipeline::SQL::RuleAdaptor;;
+use Bio::Pipeline::SQL::JobAdaptor;
+use Bio::Pipeline::SQL::AnalysisAdaptor;
+use Bio::Pipeline::SQL::StateInfoContainer;
+use Bio::Pipeline::SQL::DBAdaptor;
 
 # defaults: command line options override pipeConf variables,
 # which override anything set in the environment variables.
@@ -29,11 +29,11 @@ use Bio::Pipeline::PipeConf qw ( DBHOST
                                  DBPASS
                                  QUEUE
                                  USENODES
-				 NFSTMP_DIR
+                				 NFSTMP_DIR
                                  BATCHSIZE
                                  JOBNAME
                                  RETRY
-				 SLEEP
+				                 SLEEP
 			        );
 
 my $dbhost    = DBHOST;

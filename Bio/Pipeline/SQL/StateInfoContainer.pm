@@ -1,11 +1,6 @@
-# Perl module for Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer
+# Perl module for Bio::Pipeline::SQL::StateInfoContainer
 #
-# Creator: Arne Stabenau <stabenau@ebi.ac.uk>
-#
-# Date of creation: 15.09.2000
-# Last modified : 20.09.2000 by Arne Stabenau
-#
-# Copyright EMBL-EBI 2000
+# Adapted from Arne Stabenau's EnsEMBL StateInfoContainer
 #
 # You may distribute this module under the same terms as perl itself
 
@@ -13,7 +8,7 @@
 
 =head1 NAME
 
-Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer
+Bio::Pipeline::SQL::StateInfoContainer
 
 =head1 SYNOPSIS
 
@@ -30,9 +25,6 @@ Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer
 
 =head1 CONTACT
 
-    Contact Arne Stabenau on implemetation/design detail: stabenau@ebi.ac.uk
-    Contact Ewan Birney on EnsEMBL in general: birney@sanger.ac.uk
-
 =head1 APPENDIX
 
 The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
@@ -43,9 +35,9 @@ The rest of the documentation details each of the object methods. Internal metho
 # Let the code begin...
 
 
-package Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer;
+package Bio::Pipeline::SQL::StateInfoContainer;
 
-use Bio::EnsEMBL::Pipeline::DBSQL::AnalysisAdaptor;
+use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Root::RootI;
 use vars qw(@ISA);
 use strict;

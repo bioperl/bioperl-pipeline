@@ -49,7 +49,7 @@ use vars qw(@ISA);
 use strict;
 
 
-@ISA = qw(Bio::DB::SQL::BaseAdaptor);
+@ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
 
 =head2 store

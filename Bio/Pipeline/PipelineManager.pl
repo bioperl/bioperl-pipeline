@@ -133,20 +133,21 @@ while (1) {
 
             if ($local){
                 $job->run_Locally;
-	    }else{
-                $job>run_BatchRemote($LSF_params);
+	        }else{
+                $job>batch_remotely($LSF_params);
             }
         }
-	elsif ($job->status eq 'COMPLETED'){
-            create_new_job($job);
-	}
+	    elsif ($job->status eq 'COMPLETED'){
+            foreach my $new_job (&create_new_job($job)){
+                $new_job->batch_remotely($LSF_params);
+            }
+	    }
 	else (DO NOTHING?){
         }
 
     }	    
 
     #Bio::EnsEMBL::Pipeline::Job->flush_runs($jobAdaptor, $LSF_params);
-    #WHAT's THE ABOVE LINE?
     
     exit 0 if $done || $once;
     sleep($sleep) if $submitted == 0;
@@ -158,6 +159,12 @@ while (1) {
 
 sub create_new_job{
     my $job = @_;
+    my @new_jobs;
     foreach my $rule (@rules){
-        
+        if ($rule->condition == $job->analysis->dbID){
+            my $new_job = Bio::Pipeline::Job->create_by_analysis_inputId($rule->analysis,$job->input_id);
+            push (@new_jobs,$new_job);
+        }    
+    }    
+    return @new_jobs;    
 }	

@@ -36,10 +36,12 @@ package Bio::Pipeline::Job;
 use Bio::Pipeline::Analysis;
 use Bio::Pipeline::Status;
 use Bio::Pipeline::SQL::JobAdaptor;
+use Bio::Pipeline::RunnableDB;
 
 # several variables needed from PipeConf.pm
 use Bio::Pipeline::PipeConf qw ( RUNNER 
                                  NFSTMP_DIR
+                                 AUTOUPDATE
                                );
 
 use vars qw(@ISA);
@@ -60,24 +62,23 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$queueid,$input_id,$analysis,$stdout,$stderr,$input, $retry_count ) 
+    my ($adaptor,$dbID,$queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count ) 
 	= $self->_rearrange([qw(ADAPTOR
-				ID
-				QUEUE_ID
-				INPUT_ID
-				ANALYSIS
-				STDOUT
-				STDERR
-				INPUT_OBJECT_FILE
-				RETRY_COUNT
-				)],@args);
+            				ID
+			            	QUEUE_ID
+			            	INPUTS
+			            	ANALYSIS
+			            	STDOUT
+		            		STDERR
+	            			INPUT_OBJECT_FILE
+            				RETRY_COUNT
+		        		)],@args);
 
 				
     $dbID    = -1 unless defined($dbID);
     $queueid = -1 unless defined($queueid);
-    $cls = 'contig' unless defined($cls);
 
-    $input_id   || $self->throw("Can't create a job object without an input_id");
+    $inputs || $self->throw("Can't create a job object without inputs");
     $analysis   || $self->throw("Can't create a job object without an analysis object");
 
     $analysis->isa("Bio::Pipeline::Analysis") ||
@@ -85,13 +86,18 @@ sub new {
 
     $self->dbID         ($dbID);
     $self->adaptor  ($adaptor);
-    $self->input_id   ($input_id);
     $self->analysis   ($analysis);
     $self->stdout_file($stdout);
     $self->stderr_file($stderr);
-    $self->input_object_file($input);
+    $self->input_object_file($obj_file);
     $self->retry_count( $retry_count );
     $self->QUEUE_id( $queueid );
+
+    @{$self->{'_inputs'}}= ();
+
+    foreach my $input (@{$inputs}){
+        $self->add_input($input);
+    }  
 
     return $self;
 }
@@ -167,25 +173,39 @@ sub adaptor {
 }
 
 
+=head2 add_input
 
-=head2 input_id
-
-  Title   : input_id
-  Usage   : $self->input_id($id)
-  Function: Get/set method for the id of the input to the job
-  Returns : string
-  Args    : string
+  Title   : add_input
+  Usage   : 
+  Function: 
+  Returns : 
+  Args    : 
 
 =cut
 
+sub add_input {
+    my ($self,$input) = @_;
 
-sub input_id {
-    my ($self,$arg) = @_;
+    $input || $self->throw('trying to add input to Job without supplying argument');
 
-    if (defined($arg)) {
-	$self->{'_input_id'} = $arg;
-    }
-    return $self->{'_input_id'};
+    push (@{$self->{'_inputs'}},$input);
+}
+
+
+=head2 inputs
+
+  Title   : inputs
+  Usage   : 
+  Function: 
+  Returns : 
+  Args    : 
+
+=cut
+
+sub inputs {
+    my ($self) = @_;
+
+    return @{$self->{'_inputs'}};
 }
 
 =head2 analysis
@@ -409,7 +429,7 @@ sub runLocally {
   $self->runInQUEUE();
 }
 
-sub run_BatchRemote{
+sub batch_remotely{
   my $self = shift;
   my $queue = shift;
   my $useDB = shift;
@@ -489,36 +509,21 @@ sub run_BatchRemote{
 
 # question, when to submit the success report to the db?
 # we have to parse the output of QUEUE anyway....
+
 sub runInQUEUE {
   my $self = shift;
-  my $module = $self->analysis->module;
-  my $rdb;
   my $err;
   my $autoupdate = $AUTOUPDATE;
   
 
-  eval {
-      if( $module =~ /::/ ) {
-	  $module =~ s/::/\//g;
-	  require "${module}.pm";
-	  $rdb = "${module}"->new
-	      ( -analysis => $self->analysis,
-		-input_id => $self->input_id,
-		-dbobj => $self->adaptor->db );
-      } else {
-	      ####BUFF!!!!!########
-	  require "Bio/Pipeline/RunnableDB/${module}.pm";
-          $module =~ s/\//::/g;
-	  $rdb = "Bio::EnsEMBL::Pipeline::RunnableDB::${module}"->new
-	      ( -analysis => $self->analysis,
-		-input_id => $self->input_id,
-		-dbobj => $self->adaptor->db );
-      }
-  };
+  my $rdb = Bio::EnsEMBL::Pipeline::RunnableDB->new ( 
+                -job    => $self,
+            );
+
   if ($err = $@) {
       print (STDERR "CREATE: Lost the will to live Error\n");
       $self->set_status( "FAILED" );
-      $self->throw( "Problems creating runnable $module for " . $self->input_id . " [$err]\n");
+      $self->throw( "Problems creating runnabledb  [$err]\n");
   }
   eval {   
       $self->set_status( "READING" );
@@ -527,7 +532,7 @@ sub runInQUEUE {
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "READING: Lost the will to live Error\n");
-      die "Problems with $module fetching input for " . $self->input_id . " [$err]\n";
+      die "Problems with runnableDB fetching input [$err]\n";
   }
   if ($rdb->input_is_void) {
       $self->set_status( "VOID" );
@@ -540,7 +545,7 @@ sub runInQUEUE {
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "RUNNING: Lost the will to live Error\n");
-      die "Problems running $module for " . $self->input_id . " [$err]\n";
+      die "Problems running runnableDB for [$err]\n";
   }
   eval {
       $self->set_status( "WRITING" );
@@ -550,7 +555,7 @@ sub runInQUEUE {
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "WRITING: Lost the will to live Error\n");
-      die "Problems for $module writing output for " . $self->input_id . " [$err]" ;
+      die "Problems for runnableDB writing output for  [$err]" ;
   }
   if ($autoupdate) {
     eval {

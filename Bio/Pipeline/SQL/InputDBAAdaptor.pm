@@ -58,7 +58,7 @@ use strict;
 
 use Bio::DB::SQL::BaseAdaptor;
 use Bio::Pipeline::IO;
-@ISA = qw(Bio::DB::SQL::BaseAdaptor);
+@ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
 
 =head 1 Fetch methods 

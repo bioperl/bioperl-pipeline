@@ -70,46 +70,29 @@ sub new {
   return $self;
 }
 
-=head2 add_condition
+=head2 condition
 
-  Title   : add_condition
-  Usage   : $self->add_conditon($logic_name);
-  Function: Add method for conditions for the rule.
+  Title   : condition
+  Usage   : $self->conditon(analysis->dbID);
+  Function: Add/Set method for condition for the rule.
   Returns : nothing
-  Args    : a string describing a testable condition on an object
-            For now a logic_name of an analysis.
+  Args    : the dbID of an analysis that must have been fulfilled as a pre-requisite 
+            for this next analysis.
 
 =cut
 
 
-sub add_condition {
+sub condition {
   my $self = shift;
   my $condition = shift;
 
-  push( @{$self->{'_conditions'}}, $condition );
+  if (defined $condition){
+    $self->{'_condition'}= $condition;
+  }    
+
+  return $self->{'_condition'};
 }
 
-=head2 list_conditions
-
-  Title   : list_conditions
-  Usage   : $self->list_conditions();
-  Function: Give a list of all conditions you have to fulfill to make this
-            Rule evaluate to true.
-  Returns : a list of strings which are probably logic_names
-  Args    : -
-
-=cut
-
-
-sub list_conditions {
-  my $self = shift;
-
-  my @conditions = @{$self->{'_conditions'}};
-  if (! scalar (@conditions) ) {
-      $self->throw("No conditions found for this Rule");
-  }
-  return @conditions;
-}
 
 =head2 goalAnalysis
 

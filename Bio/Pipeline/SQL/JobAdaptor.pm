@@ -1,20 +1,14 @@
-# Perl module for Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor
+# BioPerl module for Bio::Pipeline::SQL::JobAdaptor
 #
-# Creator: Arne Stabenau <stabenau@ebi.ac.uk>
-# Based on Job from Michele Clamp
-#
-# Date of creation: 15.08.2000
-# Last modified : 15.08.2000 by Arne Stabenau
-#
-# Copyright EMBL-EBI 2000
+# Adaptred from Arne Stabenau EnsEMBL JobAdaptor
 #
 # You may distribute this module under the same terms as perl itself
-
+#
 # POD documentation - main docs before the code
 
 =head1 NAME
 
-Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor 
+Bio::Pipeline::SQL::JobAdaptor 
 
 =head1 SYNOPSIS
 
@@ -27,11 +21,12 @@ Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor
   Module to encapsulate all db access for persistent class Job.
   There should be just one per application and database connection.
      
+=head1 FEEDBACK
+
+=head2 Mailing Lists
 
 =head1 CONTACT
 
-    Contact Arne Stabenau on implemetation/design detail: stabenau@ebi.ac.uk
-    Contact Ewan Birney on EnsEMBL in general: birney@sanger.ac.uk
 
 =head1 APPENDIX
 
@@ -42,15 +37,15 @@ The rest of the documentation details each of the object methods. Internal metho
 
 # Let the code begin...
 
-package Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor;
+package Bio::Pipeline::SQL::JobAdaptor;
 
-use Bio::EnsEMBL::Pipeline::Job;
-use Bio::Root::RootI;
+use Bio::Pipeline::Job;
+use Bio::Root::Root;
 
 use vars qw(@ISA);
 use strict;
 
-@ISA = qw( Bio::Root::RootI );
+@ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
 sub new {
   my ($class,$dbobj) = @_;
@@ -74,138 +69,54 @@ sub new {
 sub fetch_by_dbID {
   my $self = shift;
   my $id = shift;
+  my $job;
 
   my $sth = $self->prepare( q{
-    SELECT job_id, input_id, class, analysis_id, queue_id, object_file,
+   SELECT job_id, analysis_id, queue_id, object_file,
       stdout_file, stderr_file, retry_count
     FROM job
     WHERE job_id = ? } );
   
   $sth->execute( $id );
-  my $rowHashRef = $sth->fetchrow_hashref;
-  if( ! defined $rowHashRef ) {
+
+  my $hashref = $sth->fetchrow_hashref;
+
+  my $analysis = 
+    $self->db->get_AnalysisAdaptor->
+      fetch_by_dbID( $hashref->{analysis_id} );
+
+  $job = Bio::Pipeline::Job->new
+  (
+   '-dbobj'    => $self->db,
+   '-adaptor'  => $self,
+   '-id'       => $hashref->{'job_id'},
+   '-lsf_id'   => $hashref->{'queue_id'},
+   '-input_id' => $hashref->{'input_id'},
+   '-stdout'   => $hashref->{'stdout_file'},
+   '-stderr'   => $hashref->{'stderr_file'},
+   '-input_object_file' => $hashref->{'object_file'},
+   '-analysis' => $analysis,
+   '-retry_count' => $hashref->{'retry_count'}
+  );
+
+  if( ! defined $hashref ) {
     return undef;
   }
 
-  return $self->_objFromHashref( $rowHashRef );
-}
-
-=head2 fetch_by_Status_Analysis {
-
-  Title   : fetch_by_Status_Analysis
-  Usage   : my @jobs = $adaptor->fetch_by_Status_Analysis($id, $status)
-  Function: Retrieves all jobs in the database matching status and 
-            an analysis id
-  Returns : @Bio::EnsEMBL::Pipeline::Job
-  Args    : Analysis obj, string status, and optional start and end limits
-
-=cut
-
-sub fetch_by_Status_Analysis {
-    my ($self,$status, $analysis, $start, $end) = @_;
-
-    $self->throw("Require status and analysis id for fetch_by_Status_Analysis") 
-                            unless ($analysis && $status); 
-    if( ! defined $analysis->dbID ){
-       $self->throw( "Analysis needs to be in database" );
-    }
-    my $analysis_id = $analysis->dbID;
-
-    my $query = "select j.job_id, j.input_id, j.analysis_id, j.queue_id," .
-	                   "j.stdout_file, j.stderr_file,".
-                       "j.object_file, j.retry_count".
-                       "j.status_file " . 
-	            "from job as j, current_status as cs, jobstatus as js ". 
-                "where j.job_id = cs.job_id and js.job_id = cs.job_id and ". 
-                       "cs.status = js.status and ".
-                       "j.analysis = $analysis_id and ".
-                       "cs.status = \'$status\' ".
-                       "order by js.time DESC";
-    $query .= " limit $start, $end" if ($start && $end);
-                 
-    my $sth = $self->prepare($query);
-    my $res = $sth->execute();
-    
-    my @jobs;
-    
-    while (my $row = $sth->fetchrow_hashref) 
-    {
-	    my $job = $self->_objFromHashref($row);
-	    push(@jobs,$job);
-    }
-    return @jobs;
-}
-
-
-=head2 fetch_by_Age {
-
-  Title   : fetch_by_Age
-  Usage   : my @jobs = $db->fetch_by_Age($duration)
-  Function: Retrieves all jobs in the database
-            that are older than than a certain duration given in minutes.
-  Returns : @Bio::EnsEMBL::Pipeline::Job
-  Args    : int
-
-=cut
-
-sub fetch_by_age {
-    my ($self,$age) = @_;
-
-    $self->throw("No input status for get_JobsByAge") 
-        unless defined($age);
-    #convert age from minutes to seconds
-
-    my $query = 'SELECT j.job_id, j.input_id, j.analysis_id, j.queue_id, '
-                .'j.stdout_file, j.stderr_file, j.object_file, '
-                .'j.retry_count '     
-                .'FROM job as j, jobstatus as js, current_status as cs ' 
-                .'WHERE cs.job_id = js.job_id '
-                    .'AND cs.status = js.status '
-                    .'AND cs.job_id = j.job_id '
-                    ."AND js.time < DATE_SUB( NOW(), INTERVAL $age MINUTE )";
-            
-    my $sth = $self->prepare($query);
-    my $res = $sth->execute();
-    
-    my @jobs;
-
-    while (my $row = $sth->fetchrow_hashref) {
-	my $job = $self->_objFromHashref($row);
-	push(@jobs,$job);
-    }
-
-    return @jobs;
-}
-
-
-=head2 fetch_by_inputId
-
-  Title   : fetch_by_inputId
-  Usage   : my @job = $adaptor->fetch_by_inputId
-  Function: Retrieves all jobs from adaptor with certain input id
-  Returns : list of job objects
-            throws exception when something goes wrong.
-  Args    : 
-
-=cut
-
-sub fetch_by_input_id {
-  my $self = shift;
-  my $inputid = shift;
-  my @result;
-
-  my $sth = $self->prepare( q{
-    SELECT job_id, input_id, analysis_id, queue_id, object_file,
-      stdout_file, stderr_file, retry_count
-    FROM job
-    WHERE input_id = ? } );
+  my $query = "SELECT input_id
+               FROM input
+               WHERE job_id = $id";
+  $sth = $self->prepare($query);
+  $sth->execute;
   
-  $sth->execute( $inputid );
-  while( my $rowHashRef = $sth->fetchrow_hashref ) {
-    push( @result, $self->_objFromHashref( $rowHashRef ));
+  while (my ($input_id) = $sth->fetchrow_array){
+      my $input = $self->db->get_InputAdaptor->
+                         fetch_by_dbID($input_id);
+      $job->add_input($input);                   
   }
+  
 
-  return @result;
+  return $job;
 }
 
 =head2 store
@@ -383,7 +294,7 @@ sub _objFromHashref {
     $self->db->get_AnalysisAdaptor->
       fetch_by_dbID( $hashref->{analysis_id} );
 
-  $job = Bio::EnsEMBL::Pipeline::Job->new
+  $job = Bio::Pipeline::Job->new
   (
    '-dbobj'    => $self->db,
    '-adaptor'  => $self,
@@ -420,7 +331,7 @@ sub exists {
   Usage   : my $status = $job->set_status
   Function: Sets the job status
   Returns : nothing
-  Args    : Pipeline::Job Bio::EnsEMBL::Pipeline::Status
+  Args    : Pipeline::Job Bio::Pipeline::Status
 
 =cut
 
@@ -453,7 +364,7 @@ sub set_status {
 	my $rowhash = $sth->fetchrow_arrayref();
 	my $time    = $rowhash->[0];
 
-	$status = Bio::EnsEMBL::Pipeline::Status->new
+	$status = Bio::Pipeline::Status->new
 	  (  '-jobid'   => $job->dbID,
 	     '-status'  => $arg,
 	     '-created' => $time,
@@ -479,8 +390,8 @@ sub set_status {
   Title   : current_status
   Usage   : my $status = $job->current_status
   Function: Get/set method for the current status
-  Returns : Bio::EnsEMBL::Pipeline::Status
-  Args    : Bio::EnsEMBL::Pipeline::Status
+  Returns : Bio::Pipeline::Status
+  Args    : Bio::Pipeline::Status
 
 =cut
 
@@ -489,8 +400,8 @@ sub current_status {
 
     if (defined($arg)) 
     {
-	$self->throw("[$arg] is not a Bio::EnsEMBL::Pipeline::Status object") 
-	    unless $arg->isa("Bio::EnsEMBL::Pipeline::Status");
+	$self->throw("[$arg] is not a Bio::Pipeline::Status object") 
+	    unless $arg->isa("Bio::Pipeline::Status");
 	$job->{'_status'} = $arg;
     }
     else 
@@ -512,7 +423,7 @@ sub current_status {
 	while (my  $rowhash = $sth->fetchrow_hashref() ) {
 	    $time    = $rowhash->{'now()'};
 	}
-	my $statusobj = new Bio::EnsEMBL::Pipeline::Status
+	my $statusobj = new Bio::Pipeline::Status
 	    ('-jobid'   => $id,
 	     '-status'  => $status,
 	     '-created' => $time,
@@ -527,8 +438,8 @@ sub current_status {
   Title   : get_all_status
   Usage   : my @status = $job->get_all_status
  Function: Get all status objects associated with this job
-  Returns : @Bio::EnsEMBL::Pipeline::Status
-  Args    : Bio::EnsEMBL::Pipeline::Job
+  Returns : @Bio::Pipeline::Status
+  Args    : Bio::Pipeline::Job
 
 =cut
 
@@ -548,7 +459,7 @@ sub get_all_status {
   while (my $rowhash = $sth->fetchrow_hashref() ) {
     my $time      = $rowhash->{'UNIX_TIMESTAMP(time)'};#$rowhash->{'time'};
     my $status    = $rowhash->{'status'};
-    my $statusobj = new Bio::EnsEMBL::Pipeline::Status(-jobid   => $job->dbID,
+    my $statusobj = new Bio::Pipeline::Status(-jobid   => $job->dbID,
 						       -status  => $status,
 						       -created => $time,
 						      );
@@ -565,8 +476,8 @@ sub get_all_status {
   Title   : get_last_status
   Usage   : my @status = $job->get_all_status
   Function: Get most recent status object associated with this job
-  Returns : Bio::EnsEMBL::Pipeline::Status
-  Args    : Bio::EnsEMBL::Pipeline::Job, status string
+  Returns : Bio::Pipeline::Status
+  Args    : Bio::Pipeline::Job, status string
 
 =cut
 
@@ -591,7 +502,7 @@ sub get_last_status {
 
   my $time      = $rowHashRef->{'UNIX_TIMESTAMP(time)'};#$rowhash->{'time'};
   my $status    = $rowHashRef->{'status'};
-  my $statusobj = new Bio::EnsEMBL::Pipeline::Status(-jobid   => $job->dbID,
+  my $statusobj = new Bio::Pipeline::Status(-jobid   => $job->dbID,
 						     -status  => $status,
 						     -created => $time,
 						     );
