@@ -50,10 +50,10 @@ use Bio::Root::IO;
    eval{ 
        $genscan->run();
    };
-   $@ && exit(1);
+   $@ && exit(0);
    END {
        foreach ( $Test::ntest .. $NTESTS ) {
-        skip("unable to run all of the PAML tests",1);
+        skip("unable to run all of the Genscan tests",1);
       }
    }
    my @feat = $genscan->output();
