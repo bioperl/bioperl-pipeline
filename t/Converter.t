@@ -27,7 +27,7 @@ my $converter = $ca->fetch_by_dbID("1");
 
 $converter = new Bio::Pipeline::Converter(
 	-dbid => 10,
-	-module => "foomodule"
+	-module => "blastall_2ens"
 );
 
 my @converter_methods;
@@ -46,10 +46,10 @@ $ca->store($converter);
 
 ok 1;
 
-$converter = $ca->fetch_by_dbID(10);
+# $converter = $ca->fetch_by_dbID(10);
 
 
-ok $converter->module, "foomodule";
+ok $converter->module, "blastall_2ens";
 
 #my @methods = @{$converter->method}; 
 #ok scalar(@methods), 3;

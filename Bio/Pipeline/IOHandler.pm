@@ -517,6 +517,18 @@ sub write_output {
     #    $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
     #       unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
 
+    if(defined $self->converters){
+        my @converters = @{$self->converters};
+        my $converter = shift @converters;
+        if(defined $converter){
+            if(ref($object) eq "ARRAY"){
+                $object = $converter->convert($object);
+            }else{
+                ($object) = $converter->convert([$object]);
+            }
+        }
+    }
+
     my @output_ids;
     my $output_flag = 0;
     
@@ -528,14 +540,7 @@ sub write_output {
         @output_ids = $obj->$tmp1(@args);
         $obj = $output_ids[0];
     }
-    if (defined $self->converters) {
-      my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
-      foreach my $converter(@converters){
-          @output_ids = $converter->convert($obj);
-          $obj = shift @output_ids; 
-      }
-    }
-  return @output_ids;
+    return @output_ids;
 }
 
 =head2 _format_output_arguments

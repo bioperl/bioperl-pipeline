@@ -151,12 +151,28 @@ sub fetch_by_dbID{
    $sth->execute();
 #	my ($converter_id, $module, $method, $rank, $argument) = $sth->fetchrow_array;
 	my ($converter_id, $module) = $sth->fetchrow_array;	
-	my $methods_ref = $self->_fetch_converter_method_by_converter_dbID( $converter_id);
 
-	my $converter = new Bio::Pipeline::Converter(
+   $module = "Bio::Pipeline::Converter::$module";
+   
+   $self->_load_module($module);   
+
+   my $methods_ref = $self->_fetch_converter_method_by_converter_dbID($converter_id);
+
+    my @new_arguments = ();
+    my @methods = @{$methods_ref};
+    my $first_method = shift @methods;
+    if($first_method->name eq 'new'){
+       @new_arguments = @{$self->_format_converter_new_arguments($first_method->arguments)};
+    }
+
+#    print "\nsize of args" . scalar @new_arguments . "\n";
+    
+#    push @new_arguments, 
+	my $converter = "$module"->new (
 		-dbID => $converter_id,
 		-module => $module,
 		-method => $methods_ref,
+      @new_arguments
 #		-rank => $rank,
 #		-argument => $argument
 	);
@@ -210,6 +226,31 @@ sub _fetch_arguments_by_method_dbID{
 	}
 
 	return \@arguments;
+}
+
+sub _format_converter_new_arguments{
+    my ($self, $arguments_ref) = @_;
+    my @argument_objs;
+    @argument_objs = sort {$a->rank <=> $b->rank} @{$arguments_ref};
+    my @arguments;
+#    print "\n" . scalar @argument_objs . "\n";
+    my $value;
+
+    for(my $i=0; $i <= $#argument_objs; $i++){
+        my $tag = $argument_objs[$i]->tag;
+        my $value = $argument_objs[$i]->value;
+#        print "$tag\t$value\n";
+        if(defined $tag){
+            push @arguments, ($tag => $value);
+        }else{
+            push @arguments, $value;
+        }
+
+    }
+
+    return \@arguments;
+    
+    
 }
 
 1;

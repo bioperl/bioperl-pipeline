@@ -4,7 +4,7 @@ package Bio::Pipeline::Converter::_2ens;
 use vars qw(@ISA);
 
 use strict;
-use Bio::SeqFeatureIO;
+# use Bio::SeqFeatureIO;
 use Bio::Pipeline::Converter;
 
 @ISA = qw(Bio::Pipeline::Converter);
@@ -15,11 +15,13 @@ sub new {
     my ($dbname, $host, $driver, $user, $pass) =
       $self->_rearrange([qw( DBNAME HOST DRIVER USER PASS )], @args);
 
-   my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor->new(
+
+   my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
       -user => $user,
       -dbname => $dbname,
       -host => $host,
-      -driver => $driver
+      -driver => $driver,
+      -pass => $pass
    );
 	
    $self->ens_dbadaptor($dba);
