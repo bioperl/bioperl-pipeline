@@ -4,7 +4,6 @@ package Bio::Pipeline::Converter::HSPToEnsEMBLConverter;
 use vars qw(@ISA);
 
 use strict;
-use Bio::SeqFeatureIO;
 use Bio::Pipeline::Converter::BaseEnsEMBLConverter;
 use Bio::EnsEMBL::DnaPepAlignFeature;
 use Bio::EnsEMBL::DnaDnaAlignFeature;

@@ -46,7 +46,14 @@ sub ens_dbadaptor{
 sub contig_dbID{
     my ($self, $arg) = @_;
     if(defined $arg){
-        $self->{"_contig_dbid"} = $arg;
+        my $contig;
+        eval{
+            $contig = $self->ens_dbadaptor->get_RawContigAdaptor->fetch_by_dbID($arg);
+        };
+        if($@){
+            $self->throw("Problem happens when fetching contig by dbID\n$@\n");
+        }
+        $self->contig($contig);
     }
     return $self->{"_contig_dbid"};
 }
@@ -59,10 +66,9 @@ sub contig_name{
             $contig = $self->ens_dbadaptor->get_RawContigAdaptor->fetch_by_name($arg);
         };
         if($@){
-            $self->throw("Problem happens when fetching contig by dbID\n$@\n");
+            $self->throw("Problem happens when fetching contig by name\n$@\n");
         }
         $self->contig($contig);
-#        $self->{"_contig_name"} = $arg;
         
     }
     return $self->{"_contig_name"};

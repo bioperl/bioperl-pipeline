@@ -496,7 +496,7 @@ NEW_FILE:
     else {
       push @filenames, "$filename.$index";
     }
-    my $sio = Bio::SeqIO->new(-file=>">$file",-format=>$outformat);
+    $sio = Bio::SeqIO->new(-file=>">$file",-format=>$outformat);
     my $count = 0;
     while ($index <= $n_chunks){
         if($count == $split) {

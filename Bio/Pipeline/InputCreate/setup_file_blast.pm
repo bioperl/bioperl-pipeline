@@ -293,7 +293,7 @@ NEW_FILE:
     $filename = (split /\//, $filename)[-1]; #get the filename only
     my $file = Bio::Root::IO->catfile($workdir,"$filename.$index");
     push @filenames, $file;
-    my $sio = Bio::SeqIO->new(-file=>">$file",-format=>"fasta");
+    $sio = Bio::SeqIO->new(-file=>">$file",-format=>"fasta");
     my $count = 0;
     while ($index <= $n_chunks){
         if($count == $split) {

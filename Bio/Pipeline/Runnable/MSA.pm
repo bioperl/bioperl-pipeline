@@ -239,7 +239,7 @@ END
   $factory->executable($analysis->program_file) if $analysis->program_file;
   $factory->quiet(1);
 
-  my $program = $self->analysis->program || $self->throw("No program specified |align|profile_align");
+  $program = $self->analysis->program || $self->throw("No program specified |align|profile_align");
   my $aln;
   ($program =~ /align|profile_align/i) || $self->throw("MSA needs either program to be set as align or profile_align in the analysis table");
 
