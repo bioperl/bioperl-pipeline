@@ -85,6 +85,8 @@ use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Filter;
 use Bio::Pipeline::Converter;
+use Bio::Pipeline::Utils::SaxHandler;
+use XML::SAX::PurePerl;
 use ExtUtils::MakeMaker;
 
 use vars qw(@ISA);
@@ -201,11 +203,29 @@ sub run{
 ##############################################
 #Start the Parsing and loading of the pipeline
 ##############################################
-    my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
 
     print "Reading Data_setup xml   : $XML\n";
+    my $xso1;
 
-my $xso1 = XML::SimpleObject->new( $parser->parsefile($XML) );
+    eval {
+       require('XML/SAX/PurePerl.pm');
+    };
+   if ($@) {
+      eval {
+         require('XML/Parser.pm');
+      };
+      if ($@) {
+        $self->throw(" you require either XML::SAX::PurePerl.pm or XML::Parser to be installed, none of them seem to be there");
+      } else {
+        my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
+        $xso1 = XML::SimpleObject->new( $parser->parsefile($XML) );
+      }
+   } else {
+      my $handler = Bio::Pipeline::Utils::SaxHandler->new();
+      my $parser = XML::SAX::PurePerl->new(Handler => $handler);
+      $xso1 = XML::SimpleObject->new( $parser->parse_uri($XML) );
+   }
+
 
 my @iohandler_objs;
 my $method_id = 1;
