@@ -5,7 +5,7 @@
 BEGIN {
     use lib 't';
     use Test;
-    plan tests => 11;
+    plan tests => 12;
 }
 
 END {
