@@ -22,13 +22,7 @@ use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::BatchSubmission;
 
-#use Bio::Pipeline::InputCreate::setup_genewise;
-use Bio::Pipeline::Runnable::TribeMCL;
-use Bio::GFD::SQL::Aggregator::Family;
 
-
-#DEBUG
-use Bio::Pipeline::Runnable::OrthologFinder;
 
 ############################################
 #Pipeline Setup
