@@ -99,6 +99,8 @@ sub new {
     foreach my $input (@{$inputs}){
         $self->add_input($input);
     }
+    
+    $self->make_filenames unless $self->filenames;
 
     return $self;
 }
