@@ -45,6 +45,9 @@ sub fetch_by_dbID {
     
     my ($name,$input_dba_id) = $sth->fetchrow_array;
 
+    $input_dba_id || $self->throw("No input adaptor for input with id $id");
+
+
     my $input_dba = $self->db->get_InputDBAAdaptor->fetch_by_dbID($input_dba_id);
 
     my $input = Bio::Pipeline::Input->new (
