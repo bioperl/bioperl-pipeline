@@ -13,16 +13,8 @@ END {
      foreach( $Test::ntest..$NTESTS) {
       skip('Blast or env variables not installed correctly',1);
      }
-    unlink "t/data/blast_dir/blast.fa.1";
-    unlink "t/data/blast_dir/blast.fa.2";
-    unlink "t/data/blast_dir/blast.fa.3";
-    unlink "t/data/blast_dir/blast.fa.4";
-    unlink "t/data/blast_dir/blast.fa.5";
-    unlink "t/data/blast_result/blast.fa.1.bls";
-    unlink "t/data/blast_result/blast.fa.2.bls";
-    unlink "t/data/blast_result/blast.fa.3.bls";
-    unlink "t/data/blast_result/blast.fa.4.bls";
-    unlink "t/data/blast_result/blast.fa.5.bls";
+    unlink <t/data/blast_dir/*>;
+    unlink <t/data/blast_result/*>;
     rmdir "t/data/blast_dir";
     rmdir "t/data/blast_result";
     
@@ -46,9 +38,9 @@ if( ! $blast_present ) {
 my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
 
-#open (STDERR, ">/dev/null");
+open (STDERR, ">/dev/null");
 eval {
-   require('XML::Parser');
+   require('XML/Parser.pm');
 };
 if ($@) {
    warn(" XML::Parser not installed, skipping test"); 

@@ -44,6 +44,14 @@ my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
 
 open (STDERR, ">/dev/null");
+eval {
+   require('XML/Parser.pm');
+};
+if ($@) {
+   warn(" XML::Parser not installed, skipping test");
+   skip('XML::Parser not installed',1);
+   exit;
+}
 $biopipe_test->do_xml_file("xml/templates/phylip_tree_pipeline.xml"),0;
 
 $biopipe_test->run_pipeline(), 0;
