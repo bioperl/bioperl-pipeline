@@ -52,11 +52,11 @@ Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -
 Options:
 Default values are read from PipeConf.pm
 
-     -dbhost	The database host name (localhost)
-     -dbname 	The pipeline database name (required)
-     -dbuser 	User for connecting to db (root)
-     -dbpass 	The password to mysql database(null)
-     -dbdriver 	Database driver (mysql)
+     -dbhost	The database host name ($DBHOST)
+     -dbname 	The pipeline database name ($DBNAME)
+     -dbuser 	User for connecting to db ($DBUSER)
+     -dbpass 	The password to mysql database($DBPASS)
+     -dbdriver 	Database driver ($DBI_DRIVER)
      -schema 	The Biopipe database schema (../sql/schema)
      -xml	The xml pipeline template file. It will run XMLImporter if provided
      -xf        Force drop of any existing Biopipe database with the same name
