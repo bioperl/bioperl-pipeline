@@ -218,32 +218,33 @@ IOH:    foreach my $dh($ioh->datahandlers){
     keys %{$input} > 1 ? $self->throw("Expecting only one entry for setup_genewise"):{};
 
     my ($key) = keys %{$input};
-    my @output = @{$input->{$key}};
+    my @hits= ref ($input->{$key}) eq 'ARRAY' ?  @{$input->{$key}} : $input->{$key};
     my %hash;
 
     #group the hsps by hit seqname (one gw job per hit)
-    foreach my $hsp (@output){
-      push @{$hash{$hsp->hseqname}},$hsp;
-    }
+    #foreach my $hsp (@output){
+     # push @{$hash{$hsp->hseqname}},$hsp;
+    #}
  
-    $#output >= 0 || return;
-    $output[0]->isa("Bio::SeqFeatureI") || $self->throw("Need a SeqFeatureI object to setup_genewise");
-    my $chr_name = $output[0]->entire_seq->chr_name;
-    my $chr_start = $output[0]->entire_seq->chr_start;
-    my $slice_length = $output[0]->entire_seq->length;
+    $#hits>= 0 || return;
+    ref $hits[0] || return;
+    $hits[0]->isa("Bio::SeqFeatureI") || $self->throw("Need a SeqFeatureI object to setup_genewise");
+    my @hsps = $hits[0]->get_SeqFeatures; 
+    my $chr_name = $hsps[0]->entire_seq->chr_name;
+    my $chr_start = $hsps[0]->entire_seq->chr_start;
+    my $slice_length = $hsps[0]->entire_seq->length;
     my $padding = $self->padding; 
     #shawn to fix--creating input for contig_start_end
-    foreach my $key(keys %hash){
-        my @hsp = sort {$a->start<=>$b->start}@{$hash{$key}};
-
-        my $slice_start = $hsp[0]->start;
+    foreach my $hit(@hits){
+        my @hsps = $hit->get_SeqFeatures;
+        my $slice_start = $hit->start;
         if ($slice_start > $padding){
             $slice_start -= $padding;
         }
         else {
             $slice_start = 1;
         }
-        my $slice_end   = $hsp[$#hsp]->end;
+        my $slice_end   = $hit->end;
         if ($slice_end < ($slice_length - $padding)){
             $slice_end += $padding;
         }
@@ -252,10 +253,12 @@ IOH:    foreach my $dh($ioh->datahandlers){
         $slice_start += $chr_start;
         $slice_end   += $chr_start;
 
-        my $protein_id   = $hsp[0]->hseqname;
-        my $strand       = $hsp[0]->strand;
+        my $protein_id   = $hsps[0]->hseqname;
+        my $strand       = $hsps[0]->strand;
         
         my $input1 = Bio::Pipeline::Input->new(-name=>$protein_id,-tag=>"query_pep",-input_handler=>$self->protein_ioh);
+        my $strand = $hit->strand || 1;
+        my $input3 = Bio::Pipeline::Input->new(-name=>$strand,-tag=>"genewise_strand");
 
         my @arg;
         my $arg = Bio::Pipeline::Argument->new(-rank=>1,-value=>$slice_start,-dhid=>$self->dhid,-type=>"SCALAR");
@@ -264,7 +267,8 @@ IOH:    foreach my $dh($ioh->datahandlers){
         push @arg, $arg;
 
         my $input2 = Bio::Pipeline::Input->new(-name=>$chr_name,-tag=>"target_dna",-input_handler=>$self->slice_ioh,-dynamic_arguments=>\@arg);
-        my $job = $self->create_job($next_anal,[$input1,$input2]);
+        my $job = $self->create_job($next_anal,[$input1,$input2,$input3]);
+        $job->status('HOLD');
 
         $self->dbadaptor->get_JobAdaptor->store($job);
         
