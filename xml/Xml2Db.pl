@@ -166,27 +166,28 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
 
 #  my $adaptor_id = &verify($iohandler,'adaptor_id','REQUIRED');
 
-my %adaptor_attrs;
-if(defined($iohandler->child('adaptor'))){
-    my $adaptor = $iohandler->child('adaptor');
-    %adaptor_attrs = $adaptor->attributes;
-}
+   my %adaptor_attrs;
+   if(defined($iohandler->child('adaptor'))){
+       my $adaptor = $iohandler->child('adaptor');
+      %adaptor_attrs = $adaptor->attributes;
+   }
 
-my $adaptor_type;
-if(defined($iohandler->child('adaptor_type') )){
-    $adaptor_type = $iohandler->child('adaptor_type')->value ;
-}elsif(exists $adaptor_attrs{'type'}){
-    $adaptor_type = $adaptor_attrs{'type'};
-}else{
-    $adaptor_type = "DB";
-}
+   my $adaptor_type;
+   if(defined($iohandler->child('adaptor_type') )){
+       $adaptor_type = $iohandler->child('adaptor_type')->value ;
+   }elsif(exists $adaptor_attrs{'type'}){
+       $adaptor_type = $adaptor_attrs{'type'};
+   }else{
+       $adaptor_type = "DB";
+   }
 
-my $adaptor_id;
-if(defined $iohandler->child('adaptor_id') ){
-    $adaptor_id = $iohandler->child('adaptor_id')->value;
-}elsif(exists $adaptor_attrs{'id'}){
-    $adaptor_id = $adaptor_attrs{'id'};
-}
+   my $adaptor_id;
+   if(defined $iohandler->child('adaptor_id') ){
+       $adaptor_id = $iohandler->child('adaptor_id')->value;
+   }elsif(exists $adaptor_attrs{'id'}){
+       $adaptor_id = $adaptor_attrs{'id'};
+   }
+   
   my $iotype     = &verify($iohandler,'iohandler_type','REQUIRED', '', 'type');
   
   my @method = $iohandler->children('method');
@@ -512,7 +513,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          } else {
             my @converter_objs;
             my $converter_obj = _get_converter(&verify_attr($output_iohandler, 'converter_id', 0));
-            @converter_objs = ($converter_obj);
+            push @converter_objs, $converter_obj;
 #            foreach my $converter ($output_iohandler->child('converter')) {
 #              my $converter_obj = _get_converter($converter->attribute("id"));
 #              if(defined($converter_obj)){
@@ -522,8 +523,10 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 #                 print "converter for analysis  not found\n";
 #              }
 #            }
+
+# print "\n$converter_obj\n@converter_objs\n$#converter_objs\n";
             
-            $output_iohandler_obj->converters(\@converter_objs) if $#converter_objs > 0;
+            $output_iohandler_obj->converters(\@converter_objs) if $#converter_objs >= 0;
             $output_iohandler_obj->type('OUTPUT');
             push @ioh, $output_iohandler_obj;
          }

@@ -25,12 +25,12 @@ and will store the feature information the pipeline generates.
 
 
 	<dbadaptor id="1">
-		<dbname>juguang_homo_core9_30</dbname>
+		<dbname>juguang_homo_core_9_30</dbname>
 		<driver>mysql</driver>
 		<host>mysql</host>
 		<user>root</user>
 		<password></password>
-		<module>Bio::EnsEMBL::SQLDB::DBAdaptor</module>
+		<module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
 	</dbadaptor>
 	<dbadaptor id="2">
 		<dbname>juguang_homo_core_9_30</dbname>
@@ -89,7 +89,7 @@ and will store the feature information the pipeline generates.
 		</method>
 	</iohandler>
 
-   <converter id="1" module="repeatmasker_feature_2ens">
+   <converter id="1" module="repeatmasker_2ens">
       <method id="1" name="new" >
          <argument id = "11" tag = "-host" value = "mysql"/>
          <argument id = "12" tag = "-driver" value = "mysql"/>

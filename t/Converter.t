@@ -22,7 +22,7 @@ my $dba = $biopipe_test->get_DBAdaptor();
 my $ca = new Bio::Pipeline::SQL::ConverterAdaptor($dba);
 
 my $converter = $ca->fetch_by_dbID("1");
-&_check_converter($converter, 1, "Bio::SeqFeatureIO");
+&_check_converter($converter, 1, "repeatmasker_2ens");
 
 
 $converter = new Bio::Pipeline::Converter(

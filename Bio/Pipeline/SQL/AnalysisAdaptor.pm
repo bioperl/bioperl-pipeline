@@ -107,34 +107,8 @@ sub fetch_by_dbID {
 
   foreach my $ioh(@iohs) {
      my $iohid = $ioh->dbID;
-     my $query = " SELECT  ai.converter_id, ai.converter_rank 
-                   FROM    analysis_iohandler ai
-                   WHERE   ai.analysis_id = $id AND ai.iohandler_id = $iohid";
-
-     $sth = $self->prepare($query);
-     $sth->execute ();
- 
-     my @converters;
-     while (my ($converter_id,$rank) = $sth->fetchrow_array){
-        if (defined $converter_id){
-        	$query = " SELECT  module, method 
-                	      FROM    converter 
-                    	  WHERE   converter_id = ? " ;
-
- 	       my $sth1 = $self->prepare($query);
-       		 $sth1->execute ($converter_id);        
-        	my ($module, $method) = $sth1->fetchrow_array;
-        	my $converter = new Bio::Pipeline::Converter ( -dbID => $converter_id,
-                                                       -module => $module,
-                                                       -method => $method,
-                                                       -rank => $rank
-                                                     );
- 
-
- 	       push @converters, $converter;
-        }
-     }    
-     $ioh->converters(\@converters);
+     my $converters_ref = $self->fetch_converters_by_iohandler($id, $iohid);
+     $ioh->converters($converters_ref);
   }
 
   $query = " SELECT  prev_iohandler_id, map_iohandler_id
@@ -189,24 +163,12 @@ sub fetch_converters_by_iohandler {
      my @converters;
      while (my ($converter_id,$rank) = $sth->fetchrow_array){
         if (defined $converter_id){
-                $query = " SELECT  module, method
-                              FROM    converter
-                          WHERE   converter_id = ? " ;
-
-               my $sth1 = $self->prepare($query);
-                 $sth1->execute ($converter_id);
-                my ($module, $method) = $sth1->fetchrow_array;
-                my $converter = new Bio::Pipeline::Converter ( -dbID => $converter_id,
-                                                       -module => $module,
-                                                       -method => $method,
-                                                       -rank => $rank
-                                                     );
-
-
+               my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id);
+               
                push @converters, $converter;
         }
      }
-     return @converters;
+     return \@converters;
 }
 
 
@@ -434,28 +396,9 @@ sub store {
       }
 
      my $output_handler = $analysis->output_handler;
-     my @ioh = @{$analysis->iohandler};
+     
+     $self->_store_analysis_iohandler($analysis);
 
-     foreach my $ioh (@ioh){
-        my $converters = $ioh->converters;
-        unless(defined $converters && scalar( @{$converters}) > 0  ){
-            
-            my $sth = $self->prepare("INSERT INTO analysis_iohandler 
-                                 SET analysis_id = ?,
-                                     iohandler_id = ?");
-            $sth->execute($analysis->dbID,$ioh->dbID);
-        }else{
-            foreach my $converter(@{$converters}) {
-               next unless defined $converter;            
-              my $sth = $self->prepare("INSERT INTO analysis_iohandler 
-                                        SET analysis_id = ?,
-                                            iohandler_id = ?,
-                                            converter_id = ?,
-                                            converter_rank = ?");
-              $sth->execute($analysis->dbID,$ioh->dbID, $converter->dbID, $converter->rank);
-            }  
-        }
-     }
      if (defined ($analysis->io_map)) {
 	     my %iomap = %{$analysis->io_map};
 
@@ -482,6 +425,30 @@ sub store {
       return $analysis->dbID;
 }
 
+sub _store_analysis_iohandler{
+    my ($self, $analysis) = @_;
+    my @iohs = @{$analysis->iohandler};
+
+    foreach my $ioh (@iohs){
+        my $converters_ref = $ioh->converters;
+        if(defined $converters_ref){
+            foreach my $converter (@{$converters_ref}){
+                next unless defined $converter;
+                my $sql = 
+                    "INSERT INTO analysis_iohandler 
+                    SET analysis_id = ?, iohandler_id = ?, converter_id = ?,converter_rank = ?";
+                my $sth = $self->prepare($sql);
+                $sth->execute($analysis->dbID, $ioh->dbID, $converter->dbID, $converter->rank);
+            }
+        }else{
+            my $sql = 
+                "INSERT INTO analysis_iohandler
+                SET analysis_id = ?, iohandler_id = ?";
+            my $sth = $self->prepare($sql);
+            $sth->execute($analysis->dbID, $ioh->dbID);
+        }
+    }
+}
 sub update_logic_name {
     my ($self,$dbID,$program) = @_;
     ($dbID && $program) || $self->throw("Need both a dbID and a program");

@@ -355,7 +355,11 @@ sub fetch_input {
     if (defined $self->converters) {
       my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
       foreach my $converter(@converters){
-          $obj = $converter->convert($obj);
+          print $converter;
+          
+          if(defined $converter){
+              $obj = $converter->convert($obj);
+          }
       }
     }
   return $obj;

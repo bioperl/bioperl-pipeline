@@ -174,14 +174,9 @@ sub fetch_by_dbID {
     }
 
     # attaching the converter.
-    my $sql ="SELECT analysis_id, converter_id FROM analysis_iohandler WHERE iohandler_id=$dbID";
-    $sth = $self->prepare($sql);
-    $sth->execute;
-    my ($analysis_id, $converter_id) = $sth->fetchrow_array;
-    if(defined $converter_id){
-        my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id);
-        $iohandler->converters([$converter]);
-    }
+    # moved the code into AnalysisAdaptor->fetch_converters_by_iohandler, 
+    # which 's called by AnalysisAdaptor->fetch_by_dbID.
+    #
     
     return $iohandler;
 }
