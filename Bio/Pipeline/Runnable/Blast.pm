@@ -205,7 +205,16 @@ sub run {
       system("cp ". $blast_obj->o ." $newreport");
       my $searchio = Bio::SearchIO->new ('-format' => 'blast',
                                         '-file'   => $newreport);
-      $self->output($searchio);
+      my @hsps;
+      while (my $result = $searchio->next_result){
+        while( my $hit = $result->next_hit ) {
+          while( my $hsp= $hit->next_hsp ){
+              push @hsps,$hsp;
+          }
+        }
+      }
+
+      $self->output(\@hsps);
   }
   elsif($seq1 && ($program =~/blastpgp/i)){
       my $IO = Bio::Root::IO->new();
@@ -216,7 +225,15 @@ sub run {
       system("cp ". $blast_obj->o ." $newreport");
       my $searchio = Bio::SearchIO->new ('-format' => 'psiblast',
                                         '-file'   => $newreport);
-      $self->output($searchio);
+      my @hsps;
+      while (my $result = $searchio->next_result){
+        while( my $hit = $result->next_hit ) {
+          while( my $hsp = $hit->next_hsp ) {
+              push @hsps,$hsp;
+          }
+        }
+      }
+      $self->output(\@hsps);
 
   }
   return $self->output;
