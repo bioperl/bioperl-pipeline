@@ -136,4 +136,4 @@ sub store {
   return $node->id;
 }
 
-
+1;

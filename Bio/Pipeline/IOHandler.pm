@@ -163,8 +163,19 @@ These methods calls adaptors to fetch and write inputs and outputs to database
 =cut
 
 sub fetch_input {
-    my ($self,$input_name) = @_;
-    $input_name || $self->throw("Need a name to fetch the input");
+    my ($self,$input) = @_;
+    $input || $self->throw("Need a input object");
+    my $input_name = $input->name;
+
+    #hash up the dynamic arguments by datahandler id
+    my %dyn_arg;
+
+    if($input->dynamic_arguments){
+        foreach my $arg (@{$input->dynamic_arguments}){
+            defined $arg->dhID || $self->throw("dynamic arguments much have a datahandler id");
+            push @{$dyn_arg{$arg->dhID}},$arg;
+        }
+    }
 
     my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
 
@@ -198,6 +209,7 @@ sub fetch_input {
     #                   -rank => 4)
     #                   
     #   
+
     my $obj; 
     #create the handler fetcher differently depending on whether its a DB or a Stream
     if($self->adaptor_type eq "DB"){
@@ -214,15 +226,56 @@ sub fetch_input {
     my $tmp = $obj;
     foreach my $datahandler (@datahandlers) {
         my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
+        my @dyn_arg;
+        if(ref($dyn_arg{$datahandler->dbID}) eq "ARRAY"){
+          @dyn_arg = @{$dyn_arg{$datahandler->dbID}};
+        }
+        if($#dyn_arg > 0){
+          #merge arguments if dynamic arguments exist
+          @arguments = $self->_merge_args(\@arguments,\@dyn_arg);
+        }
+
         my @args = $self->_format_input_arguments($input_name,@arguments);
         my $tmp1 = $datahandler->method;
-        $obj = $obj->$tmp1(@args);
+        my @obj = $obj->$tmp1(@args);
+        if(scalar(@obj) == 1){
+            $obj = $obj[0];
+        }
+        else {
+            $obj = \@obj;
+        }
+            
+        #$obj = $obj->$tmp1(@args);
     }
     #destroy handle only if its a dbhandle
     if($self->adaptor_type eq "DB") {$tmp->DESTROY};
 
   return $obj;
 }
+
+sub _merge_args {
+    my ($self,$arg,$dyn) = @_;
+    my @final;
+    foreach my $static(@{$arg}){
+        $final[$static->rank] = $static;
+    }
+    my @copy = @{$dyn};
+    foreach my $dynamic (@{$dyn}){
+        for (my $i = 1; $i <=$#final; $i++){
+          if(!defined $final[$i]){
+              $final[$i] = $dynamic;
+              shift @copy;
+              last;
+         }
+       }
+    }
+    if($#copy > 0){
+      push @final, @copy;
+    }
+
+  return @final;
+}
+
 
 #method used to fetch input ids, used to handle array of inputs fetched
 #may be hacky but will do for now. shawn

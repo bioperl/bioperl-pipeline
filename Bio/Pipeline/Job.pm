@@ -60,7 +60,7 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids,$dependency ) 
+    my ($adaptor,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids,$dependency) 
 	= $self->_rearrange([qw(ADAPTOR
             				ID
                     PROCESS_ID
@@ -237,7 +237,6 @@ sub adaptor {
     return $self->{'_adaptor'};
 
 }
-
 
 =head2 add_input
 

@@ -69,27 +69,28 @@ sub new {
   my $self = bless {},$class;
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
-      $gff_source,$gff_feature,$runnable,$parameters,$created,
+      $gff_source,$gff_feature,$runnable,$parameters,$data_monger_id,$created,
       $logic_name,$iohandler, $node_group, $io_map) = 
 
 	  $self->_rearrange([qw(ID
 	  			ADAPTOR
-				DB
-				DB_VERSION
-				DB_FILE
-				PROGRAM
-				PROGRAM_VERSION
-				PROGRAM_FILE
-				GFF_SOURCE
-				GFF_FEATURE
-				RUNNABLE
-				PARAMETERS
-				CREATED
-				LOGIC_NAME
-			  IOHANDLER
-       	NODE_GROUP
-        IO_MAP
-				)],@args);
+  				DB
+	  			DB_VERSION
+		  		DB_FILE
+			  	PROGRAM
+				  PROGRAM_VERSION
+				  PROGRAM_FILE
+		  		GFF_SOURCE
+		  		GFF_FEATURE
+			  	RUNNABLE
+  				PARAMETERS
+          DATA_MONGER_ID
+		  		CREATED
+			  	LOGIC_NAME
+  			  IOHANDLER
+         	NODE_GROUP
+          IO_MAP
+  				)],@args);
 
   $self->dbID           ($id);
   $self->adaptor        ($adaptor);
@@ -103,6 +104,7 @@ sub new {
   $self->gff_source     ($gff_source);
   $self->gff_feature    ($gff_feature);
   $self->parameters     ($parameters);
+  $self->data_monger_id ($data_monger_id);
   $self->created        ($created);
   $self->logic_name     ($logic_name);
   $self->iohandler      ($iohandler);
@@ -112,8 +114,13 @@ sub new {
   return $self; # success - we hope!
 }
 
+
 sub test_and_setup {
   my ($self,$verbose) = @_;
+  if($self->data_monger_id){
+      $self->warn ("Skipping test for DataMonger");
+      return;
+  }
   my $program = $self->program;
   my $db_file = $self->db_file;
 
@@ -331,6 +338,25 @@ sub adaptor {
 	$self->{_adaptor} = $arg;
     }
     return $self->{_adaptor};
+}
+
+=head2 data_monger_id
+
+  Title   : data_monger_id
+  Usage   : $self->data_monger_id
+  Function: Get/set method for the data_monger_id
+  Returns : int 
+  Args    : int 
+
+=cut
+
+sub data_monger_id {
+    my ($self,$id) = @_;
+    if(defined $id){
+        $self->{'_data_monger_id'} = $id;
+    }
+
+    return $self->{'_data_monger_id'};
 }
 
 

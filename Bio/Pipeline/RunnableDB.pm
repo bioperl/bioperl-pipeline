@@ -296,6 +296,17 @@ sub match_data_type {
         return 0;
       }
     }
+    elsif(ref($input) eq "ARRAY"){
+        if($run_dt->ref_type eq "ARRAY"){
+          foreach my $in (@{$input}){
+            if(!$in->isa($run_dt->object_type)){
+                return 0;
+            }
+          }
+          return 1;
+        }
+        else {return 0;}
+    }
     elsif (($in_dt->object_type eq $run_dt->object_type) && ($in_dt->ref_type eq $run_dt->ref_type)){
       return 1;
     }
@@ -343,7 +354,14 @@ sub runnable {
     }
   
     if (defined($arg)) {
-        
+      if($self->analysis->data_monger_id){
+          my $dm_adaptor = $self->analysis->adaptor->db->get_DataMongerAdaptor;
+          my $runnable = $dm_adaptor->fetch_by_analysis($self->analysis);
+          $runnable->next_analysis($self->analysis->adaptor->fetch_next_analysis($self->analysis));
+          $self->{'_runnable'} = $runnable;
+      }
+      else {
+
         #create empty runnable
         $arg =~ s/\::/\//g;
         require "${arg}.pm";
@@ -351,10 +369,12 @@ sub runnable {
 
         my $runnable = "${arg}"->new();
 	      $self->{'_runnable'}=$runnable;
+      }
 
 	}
     return $self->{'_runnable'};  
 }
+
 
 =head2 vc
 

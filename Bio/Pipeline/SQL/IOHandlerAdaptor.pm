@@ -84,29 +84,30 @@ sub fetch_by_dbID {
     #Fetch the datahandlers and the arguments
     ##########################################
     my $query = "SELECT datahandler_id, method, rank from datahandler
-                 WHERE iohandler_id = $dbID";
+                WHERE iohandler_id = $dbID";
+
     
     my $sth = $self->prepare($query);
     $sth->execute();
 
     my @datahandlers;
-    my $arg_sth= $self->prepare("SELECT argument_id, tag,value,rank,type FROM argument WHERE datahandler_id=?");
-    
+    my $arg_sth1 = $self->prepare("SELECT a.argument_id, a.tag,a.value,a.rank,a.type
+                                   FROM argument a 
+                                   WHERE a.datahandler_id=?");
+
     while (my ($datahandler_id, $method,  $rank) = $sth->fetchrow_array){
-        $arg_sth->execute($datahandler_id);
+        $arg_sth1->execute($datahandler_id);
         my @args;
-        while(my ($argument_id,$tag,$value,$rank,$type) = $arg_sth->fetchrow_array){
+        while(my ($argument_id,$tag,$value,$rank,$type) = $arg_sth1->fetchrow_array){
           if($argument_id && $value && $rank && $type){
             my $arg = new Bio::Pipeline::Argument(-dbID => $argument_id,
                                                   -rank => $rank,
                                                   -value=> $value,
-                                                  -tag  =>$tag,
+                                                  -tag  => $tag,
                                                   -type => $type);
             push @args, $arg;
           }
         }
-
-        
         my $datahandler = new Bio::Pipeline::DataHandler(-dbID       => $datahandler_id,
                                                          -method     => $method,
                                                          -argument   => \@args,
@@ -379,7 +380,7 @@ sub get_mapped_ioh {
 }
 
 sub fetch_new_input_ioh {
-    my ($self,$analysis_id) = @_;
+    my ($self,$analysis_id,$job_id) = @_;
     my $sth = $self->prepare("SELECT iohandler_id 
                               FROM   analysis_iohandler ai, iohandler ioh
                               WHERE  ai.analysis_id=? 
@@ -388,7 +389,7 @@ sub fetch_new_input_ioh {
     $sth->execute($analysis_id,"NEW_INPUT");
     my $ioh_id = $sth->fetchrow_array();
     $ioh_id || $self->throw("Analysis $analysis_id has no new_input iohandler");
-    my $ioh = $self->fetch_by_dbID($ioh_id);
+    my $ioh = $self->fetch_by_dbID($ioh_id,$job_id);
 
     $ioh || $self->throw("No IOHandler for new input found");
 

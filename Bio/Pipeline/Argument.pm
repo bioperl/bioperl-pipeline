@@ -65,36 +65,38 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : my $io = Bio::Pipeline::Argument->new(
- 
-  Function: this constructor should only be used in the IO_adaptor or IO objects.
-            generates a new Bio::Pipeline::Argument
-  Returns : a new Argument object 
-  Args    : 
+  Usage   : my $io = Bio::Pipeline::Argument->new($dbid,$tag,$value,$rank,$dhid,$type)
+  Function: this constructor should only be used in the Input object IO_adaptor or IO objects
+            generates a new Bio::Pipeline::Argument. It may represent static arguments that
+            are found in the argument table (tied to datahandlers) or dynamic ones found in the 
+            dynamic_argument table (tied to Inputs)
+  Returns : L<Bio::Pipeline::Argument>
+  Args    : dbID: the dbID of the argument (optional)
+            tag : the tag of the argument(optional)
+            value: the value of the argument(required)
+            type : the type of the arugment(required, SCALAR or ARRAY)
   
 =cut
 
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($dbID,$tag,$value,$rank,$type)=$self->_rearrange([qw(DBID
+  my ($dbID,$tag,$value,$rank,$dhID,$type)=$self->_rearrange([qw(DBID
                                                      TAG 
                                                      VALUE
                                                      RANK
+                                                     DHID
                                                      TYPE)],@args);
 
-  $dbID || $self->throw("Argument constructor needs a dbID");
   $rank || $self->throw("Argument constructor needs a rank");
   $value|| $self->throw("Argument needs a method arg.");
-  
   $type || $self->throw("Argument needs a type");
-  $self->{'_dbid'} = $dbID;
-  $self->{'_value'} = $value;
-  $self->{'_type'} = $type;
-  $self->{'_rank'} = $rank;
-  if($tag){
-     $self->{'_tag'} = $tag;
-  }
+  $dbID && $self->dbID($dbID);
+  $self->value($value);
+  $self->type($type);
+  $self->rank($rank);
+  $tag && $self->tag($tag);
+  $dhID  && $self->dhID($dhID); 
 
   return $self;
 }    
@@ -114,8 +116,29 @@ These methods let you get at and set the member variables
 =cut
  
 sub dbID {
-    my ($self) = @_;
-    return $self->{'_dbid'};
+    my ($self,$dbID) = @_;
+    if($dbID){
+        $self->{'_dbID'} = $dbID;
+    }
+    return $self->{'_dbID'};
+}
+
+=head2 dhID
+
+  Title    : dhID
+  Function : returns dhID
+  Example  : $data_adaptor->dhID();
+  Returns  : data handler for dynamic argument
+  Args     :
+
+=cut
+
+sub dhID {
+    my ($self,$dhID) = @_;
+    if($dhID){
+        $self->{'_dhID'} = $dhID;
+    }
+    return $self->{'_dhID'};
 }
 
 =head2 value
@@ -129,12 +152,18 @@ sub dbID {
 =cut
  
 sub value{
-    my ($self) = @_;
+    my ($self,$value) = @_;
+    if($value){
+      $self->{'_value'} = $value;
+    }
     return $self->{'_value'};
 }
 
 sub tag {
-    my ($self) = @_;
+    my ($self,$tag) = @_;
+    if($tag){
+      $self->{'_tag'} = $tag;
+    }
     return $self->{'_tag'};
 }
 
@@ -149,7 +178,10 @@ sub tag {
 =cut
  
 sub type{
-    my ($self) = @_;
+    my ($self,$type) = @_;
+    if($type){
+      $self->{'_type'} = $type;
+    }
     return $self->{'_type'};
 }
 
@@ -166,7 +198,10 @@ sub type{
 =cut
  
 sub rank{
-    my ($self) = @_;
+    my ($self,$rank) = @_;
+    if($rank) {
+      $self->{'_rank'} = $rank;
+    }
     return $self->{'_rank'};
 }
 

@@ -55,6 +55,8 @@ use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::NodeAdaptor;
 use Bio::Pipeline::SQL::NodeGroupAdaptor;
+use Bio::Pipeline::SQL::DataMongerAdaptor;
+
 use Bio::Root::Root;
 
 # Inherits from the base bioperl object
@@ -285,6 +287,29 @@ sub get_RuleAdaptor {
 
   return $self->{_RuleAdaptor};
 }
+
+=head2 get_DataMongerAdaptor;
+
+ Title   : get_DataMongerAdaptor;
+ Usage   : $db->get_DataMongerAdaptor;
+ Function: The Adaptor for DataMonger objects in this db
+ Example :
+ Returns : Bio::Pipeline::SQL::DataMongerAdaptor
+ Args    : nothing
+
+=cut
+
+sub get_DataMongerAdaptor {
+  my ($self) = @_;
+
+  if( ! defined $self->{_DataMongerAdaptor} ) {
+    $self->{_DataMongerAdaptor} = Bio::Pipeline::SQL::DataMongerAdaptor->new
+      ( $self );
+  }
+
+  return $self->{_DataMongerAdaptor};
+}
+
 
 sub delete_Job {
     my ($self,$id) = @_;

@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::IO
+# BioPerl module for Bio::Pipeline::Input
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -9,7 +9,7 @@
 # POD documentation - main docs before the code
 #
 =head1 NAME
-Bio::Pipeline::IO input/output object for pipeline
+Bio::Pipeline::Input input object
 
 =head1 SYNOPSIS
 my $io = Bio::Pipeline::IO->new(-dbadaptor=>$dbadaptor,
@@ -71,8 +71,9 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($name,$input_handler,$job_id) = $self->_rearrange([qw(    NAME
+  my ($name,$input_handler,$dyn_arg,$job_id) = $self->_rearrange([qw(    NAME
                                                                 INPUT_HANDLER
+                                                                DYNAMIC_ARGUMENTS
                                                                 JOB_ID)],@args);
 
   $name || $self->throw("Need an input name");
@@ -81,6 +82,7 @@ sub new {
   $self->job_id($job_id) if defined $job_id;
   $self->name($name);
   $self->input_handler($input_handler);
+  $self->dynamic_arguments($dyn_arg);
   
   return $self;
 }    
@@ -99,7 +101,7 @@ sub new {
 sub fetch{
   my ($self) = @_;
 
-  return $self->input_handler->fetch_input($self->name);
+  return $self->input_handler->fetch_input($self);
 }
 
 
@@ -124,6 +126,25 @@ sub name{
     }
     return $self->{'_name'};
 }
+
+=head2 dynamic_arguments
+
+  Title    : dynamic_arguments
+  Function :
+  Example  :
+  Returns  :
+  Args     :
+
+=cut
+
+sub dynamic_arguments{
+    my ($self,$dynamic_arguments) = @_;
+    if (defined $dynamic_arguments) {
+        $self->{'_dynamic_arguments'} = $dynamic_arguments;
+    }
+    return $self->{'_dynamic_arguments'};
+}
+
 
 =head2 input_handler
 

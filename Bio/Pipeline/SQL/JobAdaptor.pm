@@ -552,6 +552,7 @@ sub store {
   return $job->dbID;
 
 }
+
 =head2 remove
 
   Title   : remove
@@ -577,7 +578,6 @@ sub remove {
     DELETE FROM job
      WHERE job_id = $dbID } );
   $sth->execute;
-
 }
 
 

@@ -87,12 +87,33 @@ sub fetch_fixed_input_by_dbID {
 
     $iohandler_id || $self->throw("No input handler for input with id $id");
 
-    my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
+    my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id,$job_id);
+
+    #fetch dynamic arguments if any
+    $sth = $self->prepare("SELECT a.datahandler_id, a.tag,a.value,a.rank,a.type
+                                   FROM dynamic_argument a
+                                   WHERE a.input_id=?");
+    $sth->execute($id); 
+
+    my @args;
+    while (my ($dh_id,$tag,$value,$rank,$type) = $sth->fetchrow_array()){
+      my $arg = new Bio::Pipeline::Argument( -rank => $rank,
+                                             -value=> $value,
+                                             -tag  => $tag,
+                                             -type => $type,
+                                             -dhID => $dh_id);
+      push @args, $arg;
+    }
+
+    my $dyn_args = scalar(@args) > 0 ? \@args: undef;
+
+
 
     my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
                                     -input_handler => $input_handler,
-                                    -job_id => $job_id);
+                                    -job_id => $job_id,
+                                    -dynamic_arguments=>\@args);
                                                     
     return $input;
     
@@ -207,12 +228,21 @@ sub store_fixed_input {
       my $sql = " INSERT INTO input (iohandler_id, job_id, name)
                  VALUES (?,?,?)";
       my $sth = $self->prepare($sql);
+      my $ioh_id = (ref($input->input_handler) && $input->input_handler->can("dbID")) ? $input->input_handler->dbID : $input->input_handler;
+
       eval{
-          $sth->execute($input->input_handler->dbID,$input->job_id,$input->name);
+          $sth->execute($ioh_id,$input->job_id,$input->name);
       };if ($@){$self->throw("Error storing new input.\n$@");}
 
-
       $input->dbID($sth->{'mysql_insertid'});
+      $sql = "INSERT INTO dynamic_argument(input_id,datahandler_id,tag,value,rank,type) values (?,?,?,?,?,?)";
+      $sth = $self->prepare($sql);
+
+      if ($input->dynamic_arguments){
+          foreach my $arg (@{$input->dynamic_arguments}){
+              $sth->execute($input->dbID,$arg->dhID,$arg->tag,$arg->value,$arg->rank,$arg->type);
+          }
+      }
       $input->adaptor($self);
     }
     else {

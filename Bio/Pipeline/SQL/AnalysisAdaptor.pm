@@ -72,6 +72,7 @@ sub fetch_by_dbID {
   my $sth = $self->prepare( q{
     SELECT  analysis_id, logic_name,
             program,program_version,program_file,
+            data_monger_id,
             db,db_version,db_file,
             runnable,
             gff_source,gff_feature,
@@ -80,7 +81,7 @@ sub fetch_by_dbID {
     WHERE   analysis_id = ?});
 
   $sth->execute( $id );
-  my ($analysis_id,$logic_name,$program,$program_version,$program_file,
+  my ($analysis_id,$logic_name,$program,$program_version,$program_file,$data_monger_id,
       $db,$db_version,$db_file,$runnable,$gff_source,$gff_feature,$created,
       $parameters,$node_group_id) = $sth->fetchrow_array;
 
@@ -129,6 +130,7 @@ sub fetch_by_dbID {
                                             -GFF_FEATURE    => $gff_feature,
                                             -RUNNABLE       => $runnable,
                                             -PARAMETERS     => $parameters,
+                                            -DATA_MONGER_ID => $data_monger_id,
                                             -CREATED        => $created,
                                             -LOGIC_NAME     => $logic_name,
                                             -IOHANDLER      =>\@ioh,
@@ -138,6 +140,28 @@ sub fetch_by_dbID {
 
   return $anal;
 }
+
+=head2 fetch_next_analysis
+
+  Title   : fetch_next_analysis
+  Usage   : my $analysis = $adaptor->fetch_next_analysis
+  Function: fetches the next analysis based on current analysis
+  Returns : the next analysis based on rules, undef if not found
+  Args    : L<Bio::Pipeline::Analysis>
+
+=cut
+
+sub fetch_next_analysis {
+    my ($self,$anal) = @_;
+    my @rules = $self->db->get_RuleAdaptor->fetch_all;
+    foreach my $rule(@rules){
+      if(defined ($rule->current) && $rule->current->dbID == $anal->dbID){
+          return $self->db->get_AnalysisAdaptor->fetch_by_dbID($rule->next->dbID);
+      }
+    }
+    return undef;
+}
+
 
 =head2 fetch_create_input_id_ioh
 
