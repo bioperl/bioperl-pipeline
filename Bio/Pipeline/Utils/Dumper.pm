@@ -16,6 +16,26 @@ Object for dumping output from pipeline to flat files
 
 =head1 SYNOPSIS
 
+  use Bio::Pipeline::Dumper;
+  use Bio::SearchIO;
+
+  my $dumper = Bio::Pipeline::Dumper->new(-module=>'BlastScore',
+                                        -file=>">shawn.out",
+                                        -significance=>"<0.001",
+                                        -query_frac_identical=>">0.21");
+
+  my $searchio = Bio::SearchIO->new ('-format' => 'blast',
+                                     '-file'   => "blast.report");
+
+  my @hit;
+  while (my $r = $searchio->next_result){
+    while(my $hit = $r->next_hit){
+      push @hit, $hit;
+    }
+  }
+
+  $dumper->dump(@hit);
+
 =head1 DESCRIPTION
 
 This is the interface by which data can be dumped into flat files.

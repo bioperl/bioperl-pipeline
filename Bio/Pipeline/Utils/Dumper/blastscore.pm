@@ -11,7 +11,7 @@
 
 =head1 NAME
  
-  Bio::Pipeline::Dumper
+Bio::Pipeline::Dumper::blastscore
 
 =head1 SYNOPSIS
 
@@ -43,7 +43,7 @@ Dumps BlastHits Scores into tab delimited files
 This module will evolve to become more flexible to dump out blast scores
 in some flat file format. This is for use in various reciprocal blast type
 pipeline that just need the plain score in a file format. It will enable
-one to filter the blast score to output as well using the various
+one to filter the blast score to output using the various
 parameters that are available in Bio::Search::Hit::HitI
 
   -length                       the length of the hit
@@ -67,7 +67,7 @@ parameters that are available in Bio::Search::Hit::HitI
   -frac_aligned_subject         the fraction of the hit (sbjct) sequence which has been aligned
   -rank                         the rank of this Hit in the Query search list
 
-  The operation to be used is specied via appending '>', '<', '=' to the value provided.
+  The operation to be used is specified via appending '>', '<', '=' to the value provided.
 
   e.g -length => '>100' means dump hits with length greater than 100.
 
