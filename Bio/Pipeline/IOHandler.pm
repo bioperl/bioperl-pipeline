@@ -163,7 +163,7 @@ sub fetch_input {
   
   
     my $obj = $self->_fetch_dbadaptor();
-
+    my $tmp = $obj;
     foreach my $datahandler (@datahandlers) {
         my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
         my @args;
@@ -178,6 +178,8 @@ sub fetch_input {
         my $tmp1 = $datahandler->method;
         $obj = $obj->$tmp1(@args);
     }
+    #destroy handle
+    $tmp->DESTROY;
 
   return $obj;
 }
@@ -193,7 +195,7 @@ sub fetch_input {
 =cut
 
 sub write_output {
-    my ($self, $object) = @_;
+    my ($self, $input,$object) = @_;
     $object || $self->throw("Need an object to write to database");
 
 
@@ -224,6 +226,10 @@ sub write_output {
                 }
 
                 $output_flag++;
+            }
+            elsif($arguments[$i]->name eq 'INPUT_ID'){
+                #for now only pass the id of the first input. shawn
+                push @args,$input->[0]->name;
             }
             else {
                 push @args, $arguments[$i]->name;
