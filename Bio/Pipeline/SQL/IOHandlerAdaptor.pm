@@ -77,29 +77,16 @@ These methods retrievs the adaptors
 
 sub fetch_by_dbID {
     my ($self,$dbID) = @_;
+
     $dbID || $self->throw("Need a db ID");
-    
-    my $sth = $self->prepare("SELECT 
-                              dba.dbname,
-                              dba.driver,
-                              dba.host,
-                              dba.user,
-                              dba.pass,
-                              dba.module
-                              FROM iohandler io, dbadaptor dba
-                              WHERE io.iohandler_id= '$dbID' AND
-                              io.dbadaptor_id = dba.dbadaptor_id"
-                              );
-    $sth->execute();
-    
-    my ($dbname,$driver,$host,$user,$pass,$module)  = $sth->fetchrow_array;
-    ($dbname && $module) || $self->throw("No DBadaptor found. Can't create an IO object without a dbadaptor");
 
-
+    ##########################################
+    #Fetch the datahandlers and the arguments
+    ##########################################
     my $query = "SELECT datahandler_id, method, rank from datahandler
                  WHERE iohandler_id = $dbID";
     
-    $sth = $self->prepare($query);
+    my $sth = $self->prepare($query);
     $sth->execute();
 
     my @datahandlers;
@@ -111,31 +98,73 @@ sub fetch_by_dbID {
         while(my ($argument_id,$tag,$value,$rank,$type) = $arg_sth->fetchrow_array){
           if($argument_id && $value && $rank && $type){
             my $arg = new Bio::Pipeline::Argument(-dbID => $argument_id,
-                                               -rank => $rank,
-                                                -value => $value,
-                                                -tag  =>$tag,
-                                                -type => $type);
+                                                  -rank => $rank,
+                                                  -value=> $value,
+                                                  -tag  =>$tag,
+                                                  -type => $type);
             push @args, $arg;
           }
         }
 
         
-        my $datahandler = new Bio::Pipeline::DataHandler    (   -dbID       => $datahandler_id,
-                                                                -method     => $method,
-                                                                -argument   => \@args,
-                                                                -rank       => $rank
-                                                              );
+        my $datahandler = new Bio::Pipeline::DataHandler(-dbID       => $datahandler_id,
+                                                         -method     => $method,
+                                                         -argument   => \@args,
+                                                         -rank       => $rank
+                                                         );
         push (@datahandlers,$datahandler);
     }
-     
-    my $iohandler = Bio::Pipeline::IOHandler->new(  -dbadaptor_dbname   =>$dbname,
-                                                    -dbadaptor_driver   =>$driver,
-                                                    -dbadaptor_host     =>$host,
-                                                    -dbadaptor_user     =>$user,
-                                                    -dbadaptor_pass     =>$pass,
-                                                    -dbadaptor_module   =>$module,
-                                                    -dbID               =>$dbID,
-                                                    -datahandlers       =>\@datahandlers);
+
+    ###############################################
+    #Fetch the dbadaptor and create iohandler
+    ###############################################
+
+    $sth = $self->prepare("SELECT io.adaptor_id,io.adaptor_type
+                           FROM iohandler io
+                           WHERE io.iohandler_id='$dbID'");
+    $sth->execute();
+    my ($adp_id,$adp_type) = $sth->fetchrow_array();
+    my $iohandler;
+    if($adp_type eq "DB"){
+      my $sql = "SELECT 
+                dba.dbname,
+                dba.driver,
+                dba.host,
+                dba.user,
+                dba.pass,
+                dba.module,
+                dba.port
+                FROM dbadaptor dba
+                WHERE dba.dbadaptor_id = '$adp_id'";
+      $sth = $self->prepare($sql);
+      $sth->execute;
+      my ($dbname,$driver,$host,$user,$pass,$module,$port)  = $sth->fetchrow_array;
+      ($dbname && $module) || $self->throw("No DBadaptor found. Can't create an IO object without a dbadaptor");
+      $iohandler = Bio::Pipeline::IOHandler->new_ioh_db(  -dbadaptor_dbname   =>$dbname,
+                                                          -dbadaptor_driver   =>$driver,
+                                                          -dbadaptor_host     =>$host,
+                                                          -dbadaptor_user     =>$user,
+                                                          -dbadaptor_pass     =>$pass,
+                                                          -dbadaptor_module   =>$module,
+                                                          -dbadaptor_port     =>$port,
+                                                          -dbID               =>$dbID,
+                                                          -datahandlers       =>\@datahandlers);
+    }
+    elsif($adp_type eq "STREAM") {
+      my $sql = "SELECT 
+                f.module
+                FROM streamadaptor f
+                WHERE f.streamadaptor_id='$adp_id'";
+      $sth = $self->prepare($sql);
+      $sth->execute;
+      my ($module) = $sth->fetchrow_array;
+      $iohandler = Bio::Pipeline::IOHandler->new_ioh_stream(-module=>$module,
+                                                            -datahandlers=>\@datahandlers);
+    }
+    else {
+        $self->throw("Unallowed iohandler type $adp_type");
+    }
+
 
     $iohandler->adaptor($self);
                                     
