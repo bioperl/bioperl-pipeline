@@ -27,7 +27,7 @@ use Getopt::Long;
 use ExtUtils::MakeMaker;
 
 
-use vars qw($DBHOST $DBNAME $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT);
+use vars qw($DBHOST $DBNAME $DEBUG $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT);
 
 $DBHOST ||= "mysql";
 $DBNAME ||= "test_XML";
@@ -50,6 +50,7 @@ Default values in ()
 -schema The path to the bioperl-pipeline schema.
         Needed if you want to create a new db.
         ($SCHEMA)
+-verbose For debugging
 -p      the pipeline setup xml file (required)
 
 
@@ -61,6 +62,7 @@ GetOptions(
     'dbuser=s'    => \$DBUSER,
     'dbpass=s'    => \$DBPASS,
     'schema=s'    => \$SCHEMA,
+    'verbose'     => $DEBUG,
     'p=s'         => \$DATASETUP,
 )
 or die ($USAGE);
@@ -71,36 +73,58 @@ $DATASETUP || die($USAGE);
 #Setting up the pipeline database
 ################################
 
-my $create = prompt("Would you like to delete any existing db named $DBNAME and load a new one?  y/n","n");
-if($create =~/^[yY]/){
+my $dba;
 
-    if (!-e $SCHEMA){
-      warn("$SCHEMA doesn't seem to exist. Please use the -schema option to specify where the biopipeline schema is");
-      die(1);
-    }
-    else {
-      my $str;
-      $str .= defined $DBHOST ? "-h $DBHOST " : "";
-      $str .= defined $DBPASS ? "-p$DBPASS " : "";
-      $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
-      print STDERR "Dropping Databases\n";      
-      print STDERR "mysqladmin $str drop $DBNAME";
-      system("mysqladmin $str drop $DBNAME > /dev/null ");
-      print STDERR "Creating $DBNAME\n   ";
-      system("mysqladmin $str create $DBNAME ");
-      print STDERR "Loading Schema\n";
-      system("mysql $str $DBNAME < $SCHEMA");
-   }
-}
-else {
-  print STDERR "Using existing db $DBNAME";
-}
-my $dba = Bio::Pipeline::SQL::DBAdaptor->new(
+eval{
+  $dba = Bio::Pipeline::SQL::DBAdaptor->new(
     -host   => $DBHOST,
     -dbname => $DBNAME,
     -user   => $DBUSER,
     -pass   => $DBPASS,
-);
+  );
+};
+
+my $db_exist;
+if(ref $dba){ #able to connect 
+    $db_exist=1;
+}
+else {
+    $db_exist=0;
+}
+
+#connect string
+my $str;
+$str .= defined $DBHOST ? "-h $DBHOST " : "";
+$str .= defined $DBPASS ? "-p$DBPASS" : "";
+$str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
+
+if($db_exist){
+    
+  my $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $DATASETUP.\nWould you like to continue? y/n","n");
+  if($create =~/^[yY]/){
+      print STDERR "Dropping Databases\n";      
+      system("mysqladmin $str drop $DBNAME > /dev/null ");
+   }
+  else {
+    print STDERR "Please select another database before running this script. Good bye.\n";
+    exit(1);
+  }
+}
+
+if (!-e $SCHEMA){
+  warn("$SCHEMA doesn't seem to exist. Please use the -schema option to specify where the biopipeline schema is");
+  exit(1);
+}
+else {
+    print STDERR "Creating $DBNAME\n   ";
+    system("mysqladmin $str create $DBNAME");
+    print STDERR "Loading Schema...\n";
+    system("mysql $str $DBNAME < $SCHEMA");
+    $dba = Bio::Pipeline::SQL::DBAdaptor->new(-host   => $DBHOST,
+                                              -dbname => $DBNAME,
+                                              -user   => $DBUSER,
+                                              -pass   => $DBPASS);
+}
 
 ##############################################
 #Start the Parsing and loading of the pipeline
@@ -119,29 +143,37 @@ my $method_id = 1;
 ############################################
 
 print "Doing DBAdaptor and IOHandler setup\n";
-foreach my $iohandler ($xso1->child('pipeline_setup')->child('iohandler_setup')->children('iohandler')) {
+
+my $pipeline_setup  = $xso1->child('pipeline_setup') || die("Pipeline template missing <pipeline_setup>\n Please provide a valid one");
+my $iohandler_setup = $pipeline_setup->child('iohandler_setup') || die("Pipeline template missing <iohandler_setup>\n Please provide a valid one");
+
+foreach my $iohandler ($iohandler_setup->children('iohandler')) {
 
   my $ioid = $iohandler->attribute("id");
   my @datahandler_objs;
-  my $adaptor_type = $iohandler->child('adaptor_type')->value || "DB";
-  my $adaptor_id = $iohandler->child('adaptor_id')->value;
-  my $iotype    = $iohandler->child('iohandler_type')->value;
-  foreach my $method ($iohandler->children('method')) {
-    my $name = $method->child('name')->value;
-    my $rank = $method->child('rank')->value;
+
+  my $adaptor_type = &verify ($iohandler,'adaptor_type','REQUIRED','DB');
+
+  my $adaptor_id = &verify($iohandler,'adaptor_id','REQUIRED');
+
+  my $iotype     = &verify($iohandler,'iohandler_type','REQUIRED');
+  
+  my @method = $iohandler->children('method');
+
+  foreach my $method (@method) {
+    my $name = &verify($method,'name','REQUIRED');
+    my $rank = &verify($method,'rank','REQUIRED',1);
 
     my @arg_objs;
     my @arg=$method->children('argument');
     
     foreach my $argument (@arg) {
       if(ref($argument)){ #overcome bug in SimpleObj
-        my $tag = $argument->child('tag');
-        if (defined ($tag)) { 
-          $tag = $argument->child('tag')->value;
-        }
-        my $value = $argument->child('value')->value;
-        my $rank = $argument->child('rank')->value;
-        my $type = $argument->child('type')->value;
+        my $tag = &verify($argument,'tag','OPTIONAL');
+        my $value = &verify($argument,'value','REQUIRED');
+        my $rank  = &verify($argument,'rank','OPTIONAL',1);
+        my $type  = &verify($argument,'type','OPTIONAL',"SCALAR");
+
         my $arg_obj = Bio::Pipeline::Argument->new(-dbID  => $method_id,
                                                    -value => $value,
                                                    -type  => $type,
@@ -159,15 +191,17 @@ foreach my $iohandler ($xso1->child('pipeline_setup')->child('iohandler_setup')-
   }
 
   if ($adaptor_type eq "DB") {
-   foreach my $dbadaptor ($xso1->child('pipeline_setup')->child('database_setup')->children('dbadaptor')) {
+   my $database_setup = $pipeline_setup->child('database_setup') || die("Database setup template missing <database_setup>\n Please provide a valid one");
+
+   foreach my $dbadaptor ($database_setup->children('dbadaptor')) {
      my $id = $dbadaptor->attribute("id");
      if ($adaptor_id == $id) {
-      my $dbname = $dbadaptor->child('dbname')->value;
-      my $driver = $dbadaptor->child('driver')->value;
-      my $host = $dbadaptor->child('host')->value;
-      my $user = $dbadaptor->child('user')->value;
-      my $password = $dbadaptor->child('password')->value;
-      my $module = $dbadaptor->child('module')->value;
+      my $dbname = &verify($dbadaptor,'dbname','REQUIRED');
+      my $driver = &verify($dbadaptor,'driver','OPTIONAL','mysql');
+      my $host = &verify($dbadaptor,'host','OPTIONAL','localhost');
+      my $user = &verify($dbadaptor,'user','OPTIONAL','root');
+      my $password = &verify($dbadaptor,'password','OPTIONAL');
+      my $module = &verify($dbadaptor,'module','REQUIRED');
 
       #$dba->store($dbname,$driver,$host,$user,$password,$module);
 
@@ -185,10 +219,11 @@ foreach my $iohandler ($xso1->child('pipeline_setup')->child('iohandler_setup')-
     }
    }
    elsif ($adaptor_type eq 'STREAM') {
-     foreach my $streamadaptor ($xso1->child('pipeline_setup')->child('database_setup')->children('streamadaptor')) {
+     my $database_setup = $pipeline_setup->child('database_setup') || die("Database setup template missing <database_setup>\n Please provide a valid one");
+     foreach my $streamadaptor ($database_setup->children('streamadaptor')) {
         my $id = $streamadaptor->attribute("id");
         if ($adaptor_id == $id) {
-          my $module = $streamadaptor->child('module')->value;
+          my $module = &verify($streamadaptor,'module','REQUIRED');
           my $iohandler_obj = Bio::Pipeline::IOHandler->new_ioh_stream (-dbid=>$ioid,
                                                                         -type=>$iotype,
                                                                         -module=>$module,
@@ -207,7 +242,8 @@ foreach my $iohandler ($xso1->child('pipeline_setup')->child('iohandler_setup')-
 my @nodegroup_objs;
 print "Doing Pipeline Flow Setup\n";
 
-foreach my $node_group ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('node_group')) {
+my $pipeline_flow_setup = $pipeline_setup->child('pipeline_flow_setup') || die("Pipeline setup template missing <pipeline_flow_setup>\n Please provide a valid one");
+foreach my $node_group ($pipeline_flow_setup->children('node_group')) {
 
   if (ref($node_group)){
     my $nodegroup_id = $node_group->attribute("id");
@@ -222,8 +258,8 @@ foreach my $node_group ($xso1->child('pipeline_setup')->child('pipeline_flow_set
       push @node_objs, $node_obj;
     }
     
-    my $group_name = $node_group->child('name')->value;
-    my $group_desc = $node_group->child('description')->value;
+    my $group_name = &verify($node_group,'name','REQUIRED');
+    my $group_desc = &verify($node_group,'description','OPTIONAL');
 
     my $nodegroup_obj = Bio::Pipeline::NodeGroup->new(-id => $nodegroup_id,
                                                    -name => $group_name,
@@ -235,12 +271,14 @@ foreach my $node_group ($xso1->child('pipeline_setup')->child('pipeline_flow_set
 
 my @pipeline_converter_objs;
 print "Doing Converters..\n";
-foreach my $converter ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('converter')) {
+foreach my $converter ($pipeline_flow_setup->children('converter')) {
    
   if (ref($converter)) {
+      my $module = &verify($converter,'module','REQUIRED');
+      my $method= &verify($converter,'method','REQUIRED');
      my $converter_obj = Bio::Pipeline::Converter->new(-dbID => $converter->attribute('id'),
-                                                     -module => $converter->child('module')->value,
-                                                     -method => $converter->child('method')->value);
+                                                     -module => $module,
+                                                     -method => $method);
      push @pipeline_converter_objs, $converter_obj;
   }
 }
@@ -258,17 +296,19 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
                                                    -runnable => 'Bio::Pipeline::Runnable::DataMonger',
                                                    -logic_name => 'DataMonger',
                                                    -program => 'DataMonger');
-        
         my @initial_input_objs; 
         my $input_present_flag = 0;
     	foreach my $input ($datamonger->children('input')){
          if (ref ($input)) {
            $input_present_flag = 1;
-           my $name = $input->child('name')->value;
-           my $input_iohandler_id = $input->child('iohandler')->value;
-          my $tag = defined($input->child('tag')) ? $input->child('tag')->value : 'input';
-           my $input_iohandler_obj = _get_iohandler($input_iohandler_id);
-           push @datamonger_iohs, $input_iohandler_obj;
+           my $name = &verify($input,'name','REQUIRED');
+           my $input_iohandler_id = &verify($input,'iohandler','OPTIONAL','0');
+
+           my $tag = &verify($input,'tag','OPTIONAL','input');
+           my $input_iohandler_obj = _get_iohandler($input_iohandler_id) if $input_iohandler_id;
+
+           push @datamonger_iohs, $input_iohandler_obj if $input_iohandler_obj;
+
            my $initial_input_obj = Bio::Pipeline::Input->new(-name => $name,
                                                              -tag => $tag,
                                                              -job_id => 1,
@@ -281,18 +321,17 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
         }
 
 
-
         my $datamonger_obj = Bio::Pipeline::Runnable::DataMonger->new();
     	foreach my $filter ($datamonger->children('filter')){
          if (ref ($filter)) {
-           my $module = $filter->child('module')->value;
-           my $rank = $filter->child('rank')->value;
+           my $module = &verify($filter,'module','REQUIRED');
+           my $rank = &verify($filter,'rank','OPTIONAL',1);
            my @arguments = ();      
            foreach my $argument ($filter->children('argument')){
-           	my $tag = $argument->child('tag')->value;
-           	my $value = $argument->child('value')->value;
-                my $argument = Bio::Pipeline::Argument->new(-tag => $tag, -value => $value);
-                push @arguments, $argument;
+           	my $tag = &verify($argument,'tag','OPTIONAL');
+           	my $value = &verify($argument,'value','REQUIRED');
+            my $argument = Bio::Pipeline::Argument->new(-tag => $tag, -value => $value);
+            push @arguments, $argument;
            }
            my $filter = Bio::Pipeline::Filter->new(-module => $module, -rank => $rank);
            $filter->arguments(\@arguments);
@@ -303,13 +342,13 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
         foreach my $input_create ($datamonger->children('input_create')){
          if(ref ($input_create)) {
-           my $module = $input_create->child('module')->value;
-           my $rank = $input_create->child('rank')->value;
+           my $module = &verify($input_create,'module','REQUIRED');
+           my $rank = &verify($input_create,'rank','OPTIONAL',1);
            my @arguments = ();
            my @arguments_hash;
            foreach my $argument ($input_create->children('argument')){
-                my $tag = $argument->child('tag')->value;
-                my $value = $argument->child('value')->value;
+                my $tag = &verify($argument,'tag','OPTIONAL');
+                my $value = &verify($argument,'value','REQUIRED');
                 push @arguments_hash, $tag;
                 push @arguments_hash, $value;
                 my $argument = Bio::Pipeline::Argument->new(-tag => $tag, -value => $value);
@@ -325,9 +364,9 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
         #push @analysis_objs, $analysis_obj;
         #next;
      } else {
-
+      my $runnable = &verify($analysis,'runnable','REQUIRED');
     	$analysis_obj = Bio::Pipeline::Analysis->new(-id => $analysis->attribute('id'),
-                                                -runnable => $analysis->child('runnable')->value);
+                                                -runnable => $runnable);
     	my $program = $analysis->child('program');
 
     	my $program_file = $analysis->child('program_file');
@@ -359,9 +398,12 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
    if (defined($nodegroup_id)){
       my $node_group = _get_nodegroup($nodegroup_id->value);
       if (!defined($node_group)) {
-        print "node_group for analysis not found\n";
+#        print "node_group for analysis not found\n";
       }
-      $analysis_obj->node_group($node_group);
+      else {
+        $analysis_obj->node_group($node_group);
+      }
+        
    }
    my @ioh;
 
@@ -459,16 +501,20 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
 my @rule_objs = ();
 print "Doing Rules\n";
-foreach my $rule ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('rule')) {
+foreach my $rule ($pipeline_flow_setup->children('rule')) {
  if(ref($rule)) {
    my $current;
    if (defined $rule->child('current_analysis_id')) {
-     $current = _get_analysis($rule->child('current_analysis_id')->value);
+
+       #should be optional?
+       my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL');
+       $current = _get_analysis($anal_id);
      if (!defined($current)) {
        print "current analysis not found for rule\n";
      }
    }
-   my $next = _get_analysis($rule->child('next_analysis_id')->value);
+   my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL');
+   my $next = _get_analysis($next_anal_id);
    if (!defined($next)) {
      print "next analysis not found for rule\n";
    }
@@ -494,15 +540,16 @@ my @job_objs;
 #Load Jobs if provided 
 ############################################
 print "Doing Job Setup...\n";
-if($xso1->child('pipeline_setup')->child('job_setup')){
-foreach my $job ($xso1->child('pipeline_setup')->child('job_setup')->children('job')) {
+my $job_setup = $pipeline_setup->child('job_setup');
+if($job_setup){
+foreach my $job ($job_setup->children('job')) {
   if (ref($job)) {
    my $id = $job->attribute("id");
-   my $process_id = defined($job->child('process_id')) ?$job->child('process_id')->value : '';
-   my $queue_id = defined($job->child('queue_id')) ? $job->child('queue_id')->value : '';
-   my $retry_count = defined($job->child('retry_count')) ? $job->child('retry_count')->value : '';
-   my $analysis = defined($job->child('analysis_id')) ? _get_analysis($job->child('analysis_id')->value) : '';
-   my $status = defined($job->child('status')) ? $job->child('status')->value : '';
+   my $process_id = &verify($job,'process_id','OPTIONAL','');
+   my $queue_id = &verify($job,'queue_id','OPTIONAL','');
+   my $retry_count = &verify($job,'retry_count','OPTIONAL','');
+   my $analysis = &verify($job,'analysis_id','REQUIRED','');
+   my $status = &verify($job,'status','OPTIONAL','NEW');
 
    my @input_objs;
    foreach my $input ($job->children('fixed_input')) {
@@ -512,8 +559,8 @@ foreach my $job ($xso1->child('pipeline_setup')->child('job_setup')->children('j
        #$self->throw("Iohandler for input not found\n");
        print "Iohandler for input not found\n";
      }
-     my $tag = defined($input->child('tag')) ? $input->child('tag')->value : 'input';
-     my $name = $input->child('name')->value;
+     my $tag = &verify($input,'tag','OPTIONAL','input');
+     my $name = &verify($input,'name','REQUIRED');
 
      my $input_obj = Bio::Pipeline::Input->new(-name => $name,
                                                -tag=>$tag,
@@ -560,6 +607,29 @@ print STDERR "Loading of pipeline $DBNAME completed\n";
 #Utility Methods
 ####################################################################
 
+sub verify {
+    my ($obj, $child,$required,$default) = @_;
+        
+    if(defined $obj->child($child)){
+        if(defined $obj->child($child)->value){
+            return $obj->child($child)->value;
+        }
+        else {
+            if($required =~/REQUIRED/){
+              defined $default && return $default;
+              die($obj->name . " is missing a value");
+            }
+        }
+    }
+    else {
+        if($required =~/REQUIRED/){
+          defined $default && return $default;
+          die($obj->name. " ".$obj->attribute('id'). " is missing a $child");
+        }
+    }
+    return $default;
+} 
+    
 sub _create_initial_input_and_job {
   my ($analysis_obj, @initial_input_objs)= @_;
   my $job_obj = Bio::Pipeline::Job->new(-analysis => $analysis_obj,
