@@ -410,8 +410,9 @@ pipeline.
     307       &lt;db_file&gt;/data0/Fugu_rubripes.pep.fa&lt;/db_file&gt;
     308       &lt;program&gt;blastall&lt;/program&gt;
     309       &lt;program_file&gt;/usr/local/bin/blastall&lt;/program_file&gt;
-    310       &lt;parameters&gt;-p blastp -e 1-e05 -formatdb 1 -result_dir /data0/shawn_tmp/blast_result/ &lt;/parameters&gt;
-    311     &lt;/analysis&gt;
+    310       &lt;analysis_parameters&gt;-p blastp -e 1-e05 &lt;/analysis_parameters&gt;
+    311       &lt;runnable_parameters&gt;-formatdb 1 -result_dir /data0/shawn_tmp/blast_result/ &lt;/runnable_parameters&gt;
+    312     &lt;/analysis&gt;
     </programlisting>
 
    <para>
@@ -433,7 +434,10 @@ pipeline.
    Line 309: This is the location of the blast program
    </para>
    <para>
-   Line 310: These are the blast parameters as well as parameters to the Blast runnable.
+   Line 310: These are the blast parameters.
+   </para>
+   <para>
+   Line 311: These are blast runnable parameters.
    </para>
   <itemizedlist>
     <listitem>
