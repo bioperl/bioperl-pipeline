@@ -67,7 +67,6 @@ use vars qw(@ISA);
 use strict;
 
 use Bio::Root::Root;
-use Bio::EnsEMBL::DBSQL::DBAdaptor;
 
 @ISA = qw(Bio::Root::Root);
 
