@@ -65,8 +65,6 @@ use Bio::Root::Root;
 
   Title   : new
   Usage   : my $io = Bio::Pipeline::IO->new(-dbadaptor=>$dbadaptor,
-                                            -biodbadaptor=>$biodbadaptor,
-                                            -biodbname=>$biodbname,
                                             -dataadaptor=>$data_adaptor,
                                             -dataadaptormethod=>$data_adaptor_method);
  
@@ -121,16 +119,9 @@ sub fetch_input {
   }
   my $data_adaptor = $self->data_adaptor;
   my $data_method = $self->data_adaptor_method;
-  my @inputs;
-  if (ref($name) eq "ARRAY"){
-      foreach my $id (@{$name}){
-        push @inputs, $adaptor->$data_adaptor->${data_method}($id);
-      }
-  }
-  else {
-      push @inputs,$adaptor->$data_adaptor->${data_method}($name); 
-  }
-  return \@inputs;
+  my $input =  $adaptor->$data_adaptor->${data_method}($name); 
+  
+  return $input;
 }
 
 =head2 write_output
