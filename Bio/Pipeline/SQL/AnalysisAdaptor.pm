@@ -168,10 +168,7 @@ sub _fetch_converters_by_analysis_iohandler {
         if (defined $converter_id){
             my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id, -analysis => $anal, -iohandler => $ioh);
             push @converters, $converter;
-        }else{
-            $self->warn("there is a converter not having a dbID");
         }
-        
     }
     return \@converters;
 }
