@@ -96,11 +96,7 @@ sub fetch_by_dbID {
   $sth = $self->prepare($query);                  
   $sth->execute ();
 
-  print STDERR $query."\n";
-
   my @results = @{$sth->fetchall_arrayref};
-
-  print STDERR scalar(@results)."\n";
 
   $self->throw ("Analyses must have one and only one output handler. This analysis has ".scalar(@results)." output handlers")
   unless (scalar(@results)== 1);

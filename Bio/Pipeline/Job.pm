@@ -301,7 +301,6 @@ sub run {
 
   print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
 
-=jerm
 
   local *STDOUT;
   local *STDERR;
@@ -316,7 +315,6 @@ sub run {
     $self->set_status( "FAILED" );
     return;
   }
-=cut
   
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
