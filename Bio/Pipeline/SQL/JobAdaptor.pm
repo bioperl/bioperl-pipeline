@@ -193,7 +193,7 @@ sub fetch_jobs{
     my @jobs;
     #prepare the query
 
-    my $query =" SELECT job_id, process_id, analysis_id,rule_group_id, queue_id, object_file,
+    my $query =" SELECT job_id, hostname, process_id, analysis_id,rule_group_id, queue_id, object_file,
                         stdout_file, stderr_file, retry_count,status,stage
                 FROM job";
     $query .= $self->_make_query_conditional(-table=>"job",@args);
@@ -202,7 +202,7 @@ sub fetch_jobs{
     my $sth = $self->prepare($query);
     $sth->execute;
     
-    while (my ($job_id, $process_id, $analysis_id,$rule_group_id, $queue_id, $object_file,
+    while (my ($job_id, $hostname,$process_id, $analysis_id,$rule_group_id, $queue_id, $object_file,
                $stdout_file, $stderr_file, $retry_count, $status, $stage ) = $sth->fetchrow_array){
 
       my $analysis = $self->db->get_AnalysisAdaptor-> fetch_by_dbID( $analysis_id );
@@ -226,6 +226,7 @@ sub fetch_jobs{
        '-dbobj'       => $self->db,
        '-adaptor'     => $self,
        '-id'          => $job_id,
+       '-hostname'    => $hostname,
        '-rule_group_id'=>$rule_group_id,
        '-process_id'  => $process_id,
        '-queue_id'    => $queue_id,
@@ -625,7 +626,6 @@ sub update {
            status = ?,
            process_id = ?
      WHERE job_id = ? } );
-
   eval {
   $sth->execute($job->hostname,
      $job->stdout_file,
@@ -657,7 +657,6 @@ sub update_completed_job {
   my $job = shift;
 
   $self->throw("Can't update a completed job that has no dbID!") unless (defined $job->dbID);
-  
   my $query = " INSERT INTO completed_jobs
                      VALUES (".$job->dbID.",'".
                             $job->process_id."',".

@@ -69,6 +69,7 @@ package Bio::Pipeline::Job;
 use Bio::Pipeline::Analysis;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::RunnableDB;
+use Bio::Pipeline::BatchSubmission;
 
 # several variables needed from PipeConf.pm
 use Bio::Pipeline::PipeConf qw ( NFSTMP_DIR
@@ -349,6 +350,8 @@ sub _run_analysis {
   }
   my @output;
   eval {
+      my $hostname = Bio::Pipeline::BatchSubmission::get_host_name($self->queue_id);
+      $self->set_hostname($hostname);
       $self->set_stage( "WRITING" );
       @output= $rdb->write_output;
   }; 
@@ -430,6 +433,20 @@ sub set_status{
   }
 
   $self->{'_status'} = $arg;
+ 
+  $self->adaptor->set_status( $self );
+}
+
+sub set_hostname{
+  my ($self,$arg) = @_;
+  
+  $self->throw("no argument supplied in Job set_status") unless defined $arg;
+
+  if( ! defined( $self->adaptor )) {
+    return undef;
+  }
+
+  $self->{'_hostname'} = $arg;
  
   $self->adaptor->set_status( $self );
 }
@@ -602,14 +619,17 @@ sub filenames{
 
 sub remove {
   my $self = shift;
-  
+
+=head
   if( -e $self->stdout_file ) { unlink( $self->stdout_file )  || $self->throw("Unable to remove stdout_file ".$self->stdout_file)};
   if( -e $self->stderr_file ) { unlink( $self->stderr_file ) || $self->throw("Unable to remove stderr file".$self->stderr_file)};
   if( -e $self->input_object_file ) { unlink( $self->input_object_file )|| $self->throw("Unable to remove object file ".$self->input_object_file)};
+=cut
 
    if( defined $self->adaptor ) {
    $self->adaptor->remove( $self );
    }
+   
 }
 
 #######################################

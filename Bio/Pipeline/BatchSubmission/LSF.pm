@@ -140,7 +140,7 @@ sub submit_batch{
 
     my $lsf;
     while(<SUB>){
-        if (/Job <(\d+)>\S+queue <(\w+)>/) {
+        if (/Job <(\d+)>.*queue <(\w+)>/) {
             $lsf = $1;
         }
     }
@@ -216,10 +216,13 @@ sub construct_command_line{
 =cut
 
 sub get_host_name {
-  my ($self,$log) = @_;
-  open(LOG,$log);
+  my ($self,$queue_id) = @_;
+  open(LOG,"bjobs -l ".$queue_id."|");
   while(<LOG>){
-    if(/Job was executed on host(s) <(\S+)>/){
+    chomp;
+    print STDERR "Log: $_.\n";
+    if(/Started on\s+<(\S+)>/){
+       print STDERR "GOTCHA$1\n";
       return $1;
     }
   }
