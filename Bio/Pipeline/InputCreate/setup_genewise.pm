@@ -71,18 +71,23 @@ sub run {
     my ($self,$next_anal,@output) = @_;
     
     #check the first is enuff?
-    $#output > 0 || return;
+    $#output >= 0 || return;
     $output[0]->isa("Bio::SeqFeatureI") || $self->throw("Need a SeqFeatureI object to setup_genewise");
-    my $chr = $output[0]->entire_seq->db_handle->get_Contig($output[0]->entire_seq->display_id)->chromosome;
+    my @sub = $output[0]->sub_SeqFeature;
+    my ($first_sub)= $sub[0];
+    my $chr = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->chromosome;
+    my $contig_id = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->internal_id;
     
     #shawn to fix--creating input for contig_start_end
     foreach my $output(@output){
-        my $contig_name  = $output->seqname;
-        my $contig_start = $output->feature1->start;
-        my $contig_end   = $output->feature1->end;
-        my $protein_id   = $output->hseqname;
+        my @sub = $output->sub_SeqFeature;
+        my $contig_name  = $sub[0]->seqname;
+        my $contig_start = $output->start;
+        my $contig_end   = $output->end;
+        my $protein_id   = $sub[0]->hseqname;
+        my $strand       = $output->strand;
         
-        my $input1 = $self->create_input($protein_id,$self->protein_ioh);
+        my $input1 = Bio::Pipeline::Input->new(-name=>$protein_id,-tag=>"query_pep",-input_handler=>$self->protein_ioh);
 
         my @arg;
         my $arg = Bio::Pipeline::Argument->new(-rank=>1,-value=>$chr,-dhid=>$self->dhid,-type=>"SCALAR");
@@ -92,9 +97,13 @@ sub run {
         $arg = Bio::Pipeline::Argument->new(-rank=>3,-value=>$contig_end,-dhid=>$self->dhid,-type=>"SCALAR");
         push @arg, $arg;
 
-        my $input2 = Bio::Pipeline::Input->new(-name=>$contig_name,-input_handler=>$self->contig_ioh,-dynamic_arguments=>\@arg);
+        my $cigar_line = "$strand,$contig_start-$contig_end"; 
+        my $input2 = Bio::Pipeline::Input->new(-name=>$contig_name,-tag=>"target_dna",-input_handler=>$self->contig_ioh,-dynamic_arguments=>\@arg);
+        my $input3 = Bio::Pipeline::Input->new(-name=>$cigar_line,-tag=> "cigar");
+        my $input4 = Bio::Pipeline::Input->new(-name=>$contig_id,-tag=> "contig_id");
 
-        my $job = $self->create_job($next_anal,[$input1,$input2]);
+
+        my $job = $self->create_job($next_anal,[$input1,$input2,$input3,$input4]);
 
         $self->dbadaptor->get_JobAdaptor->store($job);
         
