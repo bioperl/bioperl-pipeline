@@ -15,7 +15,7 @@ Bio::Pipeline::Input::setup_genewise
 =head1 SYNOPSIS
 
   my $inc = Bio::Pipeline::Input::setup_genewise->
-      new(-contig_ioh=>$cioh,
+      new(-slice_ioh=>$slice_ioh,
           -protein_ioh=>$pioh,
           -dh_ioh     =>$dh_ioh,
           -padding => 1000);
