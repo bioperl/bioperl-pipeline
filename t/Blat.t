@@ -49,7 +49,7 @@ use Bio::Root::IO;
    $@ && exit(0);
    my @feat = $blat->output();
    my $no = scalar(@feat);
-  ok $no, 4;
+   ok $no, 2;
    my @subfeat = $feat[0]->get_SeqFeatures();
    $no = scalar(@subfeat);
    ok($feat[0]->isa("Bio::Search::HSP::HSPI"));

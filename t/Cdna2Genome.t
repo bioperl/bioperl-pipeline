@@ -21,6 +21,7 @@ END {
 }
 
 use BiopipeTestDB;
+
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Tools::Run::Alignment::Sim4;
 use Bio::SeqIO;
@@ -38,7 +39,7 @@ if( ! $sim4_present ) {
 my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
 
-open (STDERR, ">/dev/null");
+#open (STDERR, ">/dev/null");
 eval {
    require('XML/Parser.pm');
 };

@@ -25,17 +25,14 @@ BEGIN {
   }
 ok(1);#ok1
 
-my $verbose=1;
-my @params=('-verbose'=>$verbose,'silent'=>-1,'quiet'=>-1);
+my $verbose=0;
+my @params=('verbose'=>$verbose,'silent'=>1,'quiet'=>1);
 my $factory=Bio::Tools::Run::Promoterwise->new(@params);
 ok $factory->isa('Bio::Tools::Run::Promoterwise'); #ok2
 unless ($factory->executable) {
   warn "Promoterwise program not found. Skipping tests $Test::ntest to $NTESTS.\n";
   exit(0);
 }
-
-my $bequiet=-1;
-$factory->quiet($bequiet);
 
 my $inputfilename = Bio::Root::IO->catfile(qw(t data cdna.fa));
 my $seqstream1 = Bio::SeqIO->new(-file => $inputfilename, -format => 'Fasta');
@@ -48,13 +45,13 @@ my $seq2 = Bio::Seq->new();
 $seq2 = $seqstream2->next_seq();
   
 my $analysis = Bio::Pipeline::Analysis->new();
+$analysis->analysis_parameters("-silent 1 -quiet 1");
 my $promoterwise = Bio::Pipeline::Runnable::Promoterwise->new();
 
 $promoterwise->subject_dna($seq1);
 $promoterwise->target_dna($seq2);
   
 $promoterwise->analysis($analysis);
-open (STDERR, ">/dev/null");
 $promoterwise->run();
 
 my @promoters = $promoterwise->output();

@@ -49,15 +49,15 @@ ok $trans->in_datatype->object_type, 'general';
 ok $trans->out_datatype->object_type, 'general';
 
 #test with formatted arguments
-my @args = ("-module"=>"feature_filter","-tag"=>"evalue","-threshold"=>"0.00001","-condition"=>"<=");
-my @meth = (Bio::Pipeline::Method->new(-name=>"new",-argument=>\@args),Bio::Pipeline::Method->new(-name=>"run", -argument=>\@arg));
+@args = ("-module"=>"feature_filter","-tag"=>"evalue","-threshold"=>"0.00001","-condition"=>"<=");
+@meth = (Bio::Pipeline::Method->new(-name=>"new",-argument=>\@args),Bio::Pipeline::Method->new(-name=>"run", -argument=>\@arg));
 $trans = new Bio::Pipeline::Transformer(-module=>"Bio::Pipeline::Utils::Filter",
                                          -method=>\@meth);
 
 ok $trans->in_datatype->object_type, 'general';
 ok $trans->out_datatype->object_type, 'general';
 
-ok my $filtered = $trans->run(\@hsps);
+ok $filtered = $trans->run(\@hsps);
 ok scalar @{$filtered},4;
 
 

@@ -44,7 +44,6 @@ unless($factory->executable){
 my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
 
-open (STDERR, ">/dev/null");
 eval {
    require('XML/Parser.pm');
 };

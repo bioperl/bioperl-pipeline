@@ -46,7 +46,6 @@ ok(1);
  $genewise->target_dna($seq2);
   
   $genewise->analysis($analysis);
-  open (STDERR, ">/dev/null");
   eval{
      $genewise->run();
   };
@@ -58,7 +57,7 @@ ok(1);
   my $no = scalar(@genes);
   my @feat = $transcripts[0]->exons;
   ok($feat[0]->isa("Bio::SeqFeature::Gene::ExonI"));#ok4
-  my $seqname = $feat[0]->seqname;
+  my $seqname = $feat[0]->seq_id;
   my $start = $feat[0]->start;
   ok($start, 865);#ok5
   my $end = $feat[0]->end;

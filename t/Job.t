@@ -5,6 +5,7 @@
     BEGIN {
     use lib 't';
     use Test;
+    use Bio::Pipeline::PipeConf;
     plan tests => 13;
     }
 
@@ -52,7 +53,6 @@
     ok $status, 'NEW';
 
     eval {
-       open (STDERR, ">/dev/null");
        $job->run_local;
     };
     $err = $@;

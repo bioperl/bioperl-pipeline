@@ -15,12 +15,12 @@ use Bio::Pipeline::BatchSubmission;
 use Bio::Root::IO;
 
     unless (Bio::Root::IO->exists_exe('bsub') || Bio::Root::IO->exists_exe('qsub')){
-	warn "LSF or PBS not installed. Skipping test $Test::ntest to $NTESTS\n";
+	warn "Job Scheduler not installed. Skipping test $Test::ntest to $NTESTS\n";
 	exit(0);
     }
     END {
 	for ( $Test::ntest..$NTESTS ) {
-                skip("LSF OR PBS program not found. Skipping.\n",1);
+                skip("Job Scheduler not found. Skipping.\n",1);
           }
     }
     my $biopipe_test = BiopipeTestDB->new();
@@ -44,7 +44,6 @@ use Bio::Root::IO;
 
     $batchsubmitter->add_job($job);
     eval {
-       open (STDERR ,">/dev/null");
        $batchsubmitter->submit_batch;
     };
     if ($@){

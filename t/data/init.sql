@@ -8,8 +8,8 @@
 # Dumping data for table 'analysis'
 #
 
-INSERT INTO analysis VALUES (1,'2002-07-26 16:22:45','blast','Bio::Pipeline::Runnable::TestRunnable',NULL,NULL,NULL,NULL,'testrun',NULL,NULL,'','test',NULL,NULL,0);
-INSERT INTO analysis VALUES (2,'2002-07-26 16:22:46','blast','Bio::Pipeline::Runnable::TestRunnable',NULL,NULL,NULL,NULL,'testrun',NULL,NULL,'','test',NULL,NULL,0);
+INSERT INTO analysis VALUES (1,'2002-07-26 16:22:45','blast','Bio::Pipeline::Runnable::TestRunnable',NULL,NULL,NULL,NULL,'testrun',NULL,NULL,'','test',NULL,NULL,NULL,0);
+INSERT INTO analysis VALUES (2,'2002-07-26 16:22:46','blast','Bio::Pipeline::Runnable::TestRunnable',NULL,NULL,NULL,NULL,'testrun',NULL,NULL,'','test',NULL,NULL,NULL,0);
 
 #
 # Dumping data for table 'analysis_output_handler'

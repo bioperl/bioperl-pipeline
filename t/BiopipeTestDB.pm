@@ -38,13 +38,14 @@ B<Pipe.conf.example> for an example.
 
 package BiopipeTestDB;
 
-use vars qw(@ISA);
+use vars qw(@ISA $VERBOSE);
 use strict;
 use Sys::Hostname 'hostname';
 use Bio::Pipeline::SQL::DBAdaptor;
-#use Bio::EnsEMBL::DBLoader;
 use DBI;
 use Carp;
+*VERBOSE = \$Bio::Pipeline::PipeConf::PipeConf{VERBOSE};
+$VERBOSE = 0;
 
 #Package variable for unique database name
 my $counter=0;
@@ -53,6 +54,7 @@ my $counter=0;
     # This is a list of possible entries in the config
     # file "BiopipeTestDB.conf" or in the hash being used.
     my %known_field = map {$_, 1} qw(
+        verbose
         driver
         host
         user
@@ -76,6 +78,7 @@ my $counter=0;
         my $self =undef;
       	$self = do 'BiopipeTestDB.conf'
 	              || {
+                    'verbose'       => 0,
                 		'driver'        => 'mysql',
                 		'host'          => 'localhost',
                 		'user'          => 'root',
@@ -107,6 +110,14 @@ my $counter=0;
     }
 }
 
+sub verbose {
+    my( $self, $value ) = @_;
+    
+    if ($value) {
+        $self->{'verbose'} = $value;
+    }
+    return $self->{'verbose'};
+}
 sub driver {
     my( $self, $value ) = @_;
     
@@ -341,7 +352,7 @@ sub run_pipeline {
     $manager.= " -dbhost ".$self->host." ";
     $manager.= " -dbname ".$self->dbname ." -xml $xml_file ";
     $manager.= " -schema ".@{$self->schema_sql}[0] if $self->schema_sql;
-    $manager.=" -l -f -xf ";
+    $manager.=" -l -f -xf -verbose 0";
     my $status = system($manager);
     confess ("Problem running $manager ") if $status > 0;
     return;
