@@ -141,12 +141,9 @@ sub run {
    }
     my $tmp1 = $method->name;
     $obj = $obj->$tmp1(@arguments);                                               
-    if(scalar(@$obj) == 1){                                                      
+    if((ref($obj) eq 'ARRAY') && (scalar(@$obj) == 1)){                                                      
       $obj = $obj->[0];                                                           
     }                                                                           
-    #else {                                                                      
-     # $obj = \@obj;                                                             
-    #}                                                                           
   }    
   return $obj;
 }
