@@ -102,18 +102,35 @@ These methods calls adaptors to fetch and write inputs and outputs to database
 =head2 fetch_input 
 
   Title    : fetch_input
-  Function : fetches the input from the adaptors supplied 
+  Function : fetches the input(s) from the adaptors supplied 
   Example  : $contig = $io ->fetch_input("Scaffold_1");
-  Returns  : the input that is specified in input_dba table 
-  Args     : a string which specifies the id of the input 
+  Returns  : a array ref to the inputs 
+  Args     : a string/array ref of strings which specifies the id of the input 
 
 =cut
 
 sub fetch_input {
   my ($self,$name) = @_;
   $name || $self->throw("Need a name to fetch the input");
-  my $input = $self->_doit($name);
-  return $input;
+  my $adaptor;
+  if($self->dbadaptor){
+    $adaptor = $self->dbadaptor;
+  }
+  else {
+    $self->throw("Need a db adaptor");
+  }
+  my $data_adaptor = $self->data_adaptor;
+  my $data_method = $self->data_adaptor_method;
+  my @inputs;
+  if (ref($name) eq "ARRAY"){
+      foreach my $id (@{$name}){
+        push @inputs, $adaptor->$data_adaptor->${data_method}($id);
+      }
+  }
+  else {
+      push @inputs,$adaptor->$data_adaptor->${data_method}($name); 
+  }
+  return \@inputs;
 }
 
 =head2 write_output
@@ -122,44 +139,34 @@ sub fetch_input {
   Function : writes the output to database using the adaptors supplied 
   Example  : $io ->write_output($gene);
   Returns  : 
-  Args     : the object specified in the output_dba table 
+  Args     : an object/array ref to objects  specified in the output_dba table 
 
 =cut
 
 sub write_output {
   my ($self, $object) = @_;
   $object || $self->throw("Need an object to write to database");
-  $self->_doit($object);
+  my $adaptor;
+  if($self->dbadaptor){
+    $adaptor = $self->dbadaptor;
+  }
+  else {
+    $self->throw("Need a db adaptor");
+  }
+  my $data_adaptor = $self->data_adaptor;
+  my $data_method = $self->data_adaptor_method;
+
+  if (ref($object) eq "ARRAY"){
+      foreach my $obj (@{$object}){
+        $adaptor->$data_adaptor->${data_method}($obj);
+      }
+  }
+  else {
+      $adaptor->$data_adaptor->${data_method}($object);
+  }
+  return;
 }
 
-=head2 _doit 
-
-  Title    : _doit 
-  Function : internal function that actually does the work, called by write_output and fetch_input 
-  Example  : $self->_doit($name) 
-  Returns  : a input object if called by fetch_input 
-  Args     : name (string) or a object 
-
-=cut
-
-sub _doit {
-    my ($self,$object) = @_;
-    my $adaptor;
-    if($self->dbadaptor){
-        $adaptor = $self->dbadaptor;
-    }
-    else {
-      $self->throw("Need a db adaptor");
-    }
-    my $data_adaptor = $self->data_adaptor;
-    my $data_method = $self->data_adaptor_method;
-    
-    my $input = $adaptor->$data_adaptor->${data_method}($object);
-    if ($input){
-      return $input;
-    }
-    return;
-}
 =head1 Member variable access
 
 These methods let you get at and set the member variables
