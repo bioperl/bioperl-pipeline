@@ -380,12 +380,27 @@ sub runnable {
         
         #pass the runnable parameters along with any command line parameters
         #to the runnable
-        my $runnable = "${arg}"->new($self->analysis->parameters);
+        my $runnable = "${arg}"->new($self->_parse_params($self->analysis->runnable_parameters));
 	      $self->{'_runnable'}=$runnable;
       }
 
 	}
     return $self->{'_runnable'};  
+}
+
+sub _parse_params {
+    my ($self,$string) = @_;
+    $string || return;
+    $string = " $string"; #add one space for first param
+    my @param_str = split(/\s-/,$string);
+    shift @param_str;
+    #parse the parameters
+    my @params;
+    foreach my $p(@param_str){
+      my ($tag,$value) = $p=~/(\S+)\s+(\S+)/;
+        push @params, ("-".$tag,$value);
+    }
+    return @params;
 }
 
 =head2 write_output
@@ -424,12 +439,9 @@ sub write_output {
 sub fetch_input {
     my($self) = @_;
     my @inputs = $self->inputs;
-    my $count = 0;
     my @input_table;
     foreach my $input (@inputs){
 
-        print "fetching nbr $count\n";
-        $count++;
         #added this check to see where we get an array ref as one element of the array of inputs
         #currently this only happens for WAITFORALL_UPDATE where all the output_ids must be fetched
         #and pushed into a array to be passed as input the the runnable.

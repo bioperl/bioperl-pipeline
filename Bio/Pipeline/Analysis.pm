@@ -28,7 +28,8 @@ Bio::Pipeline::Analysis
         -gff_source      => $gff_source,
         -gff_feature     => $gff_feature,
         -runnable        => $module,
-        -parameters      => $parameters,
+        -analysis_parameters      => $analysis_parameters,
+        -runnable_parameters      => $runnable_parameters,
         -created         => $created,
         -logic_name      => $logic_name,
         -iohandler       => $iohandler,
@@ -100,7 +101,8 @@ use Bio::Root::IO;
                                   -gff_source      => $gff_source,
                                   -gff_feature     => $gff_feature,
                                   -runnable        => $module,
-                                  -parameters      => $parameters,
+                                  -analysis_parameters      => $analysis_parameters,
+                                  -runnable_parameters      => $runnable_parameters,
                                   -created         => $created,
                                   -iohandler       => $iohandler,
                                   -node_group      => $node_group,
@@ -123,7 +125,8 @@ use Bio::Root::IO;
             -gff_feature  the type of generic feature that the analysis generates
             -runnable     the name of the runnable that the analysis uses 
                           (e.g. Bio::Pipeline::Runnable::Blast)
-            -parameters   Any runnable or binary parameters
+            -analysis_parameters   binary parameters
+            -runnable_parameters   runnable parameters
             -created      the timestamp of the analysis entry in the Analysis table
             -iohandler    an array reference of iohandler that belong to this analysis.
             -node_group   the node group object that this analysis belongs to
@@ -137,7 +140,7 @@ sub new {
   my $self = bless {},$class;
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
-      $gff_source,$gff_feature,$runnable,$parameters,$data_monger_id,$created,
+      $gff_source,$gff_feature,$runnable,$analysis_parameters,$runnable_parameters,$data_monger_id,$created,
       $logic_name,$iohandler, $node_group, $io_map) = 
 
 	  $self->_rearrange([qw(ID
@@ -151,7 +154,8 @@ sub new {
 		  		GFF_SOURCE
 		  		GFF_FEATURE
 			  	RUNNABLE
-  				PARAMETERS
+  				ANALYSIS_PARAMETERS
+  				RUNNABLE_PARAMETERS
           DATA_MONGER_ID
 		  		CREATED
 			  	LOGIC_NAME
@@ -171,7 +175,8 @@ sub new {
   $self->runnable       ($runnable);
   $self->gff_source     ($gff_source);
   $self->gff_feature    ($gff_feature);
-  $self->parameters     ($parameters);
+  $self->analysis_parameters     ($analysis_parameters);
+  $self->runnable_parameters     ($runnable_parameters);
   $self->data_monger_id ($data_monger_id);
   $self->created        ($created);
   $self->logic_name     ($logic_name);
@@ -722,24 +727,47 @@ sub gff_feature {
     return $self->{_gff_feature};
 }
 
-=head2 parameters
+=head2 analysis_parameters
 
-  Title   : parameters
-  Usage   : $self->parameters
-  Function: Get/set method for the parameter string
+  Title   : analysis_parameters
+  Usage   : $self->analysis_parameters
+  Function: Get/set method for the analysis parameter string
+            which are the parameters passed directly to the binary
   Returns : String
   Args    : String
 
 =cut
 
-sub parameters {
+sub analysis_parameters {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{_parameters} = $arg;
+    	$self->{'_analysis_parameters'} = $arg;
     }
 
-    return $self->{_parameters};
+    return $self->{'_analysis_parameters'};
+}
+
+=head2 runnable_parameters
+
+  Title   : runnable_parameters
+  Usage   : $self->runnable_parameters
+  Function: Get/set method for the runnable parameter string
+            which are used only by the runnable
+  Returns : String
+  Args    : String
+
+=cut
+
+sub runnable_parameters {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+      #parse the string into array 
+	    $self->{'_runnable_parameters'} =$arg; 
+    }
+
+    return $self->{'_runnable_parameters'};
 }
 
 =head2 created
