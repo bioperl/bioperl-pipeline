@@ -224,6 +224,24 @@ sub fetch_all {
     return @jobs;
 }
 
+sub fetch_all_job_ids {
+    my ($self)  = @_;
+
+    my $query = "SELECT job_id FROM job";
+
+    my $sth = $self->prepare("SELECT job_id FROM job");
+    $sth->execute();
+    
+    my @ids;
+
+    while(my ($job_id) = $sth->fetchrow_array){
+        push @ids, $job_id;
+    }
+
+    return @ids;
+}
+
+
 =head2 job_count
 
   Title   : job_count
@@ -298,6 +316,21 @@ sub store_outputs {
    $sth->execute;
  }
 }
+
+sub remove_outputs_by_job {
+    my ($self,$job) = @_;
+    if(!$job) {
+      my $sth = $self->prepare("DELETE FROM output");
+      $sth->execute();
+    }
+    else {
+      $job->dbID || $self->throw("job doesn't have a dbID!");
+      my $sth = $self->prepare("DELETE FROM output where job_id=?");
+      $sth->execute($job->dbID);
+    }
+    return;
+}
+
 
  
  
@@ -480,6 +513,20 @@ sub update_completed_job {
   };if ($@) { $self->throw("ATTEMPT TO UPDATE COMLETED JOB FAILED.\n.$@");}
 
   return 1;
+}
+
+sub remove_completed_jobs_by_job {
+    my ($self,$job) = @_;
+    if(!$job){
+        my $sth = $self->prepare("DELETE FROM completed_jobs");
+        $sth->execute();
+    }
+    else {
+        $job->dbID || $self->throw("job has no dbID, can't remove");
+        my $sth = $self->prepare("DELETE FROM completed_jobs WHERE completed_job_id=?");
+        $sth->execute($job->dbID);
+    }
+    return;
 }
 
 sub exists {

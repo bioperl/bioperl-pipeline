@@ -87,7 +87,6 @@ sub fetch_fixed_input_by_dbID {
 
     $iohandler_id || $self->throw("No input handler for input with id $id");
 
-
     my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
 
     my $input = Bio::Pipeline::Input->new (
@@ -214,6 +213,33 @@ sub store_fixed_input {
 
 }
 
+sub remove_by_dbID{
+    my ($self,@dbID) = @_;
+    my $sth;
+    if(!@dbID) {
+        $sth = $self->prepare("DELETE FROM input");
+    }
+    else {
+        my $list = join(",",@dbID);
+        $sth = $self->prepare("DELETE FROM input where input_id in($list)");
+    }
+    $sth->execute();
+    return;
+}
+
+sub remove_new_input_by_dbID {
+    my ($self,@dbID) = @_;
+    my $sth;
+    if(!@dbID) {
+        $sth = $self->prepare("DELETE FROM new_input");
+    }
+    else {
+        my $list = join(",",@dbID);
+        $sth = $self->prepare("DELETE FROM new_input where input_id in($list)");
+    }
+    $sth->execute();
+    return;
+}
 
 
 1;
