@@ -16,9 +16,9 @@ Bio::Pipeline::Utils::Filter::feature_coverage
 
   For example, to filter a list of HSPs according to evalue,
   
-  my $fc = Bio::Pipeline::Utils::Filter::feature_coverage->new(-threshold=>0.001,
-                                                               -condition => '<',
-                                                               -tag => 'evalue');
+  my $fc = Bio::Pipeline::Utils::Filter::feature_filter->new(-threshold=>0.001,
+                                                       -condition => '<',
+                                                       -tag => 'evalue');
   my $filtered = $fc->run(\@hsps);
 
 =head1 DESCRIPTION
