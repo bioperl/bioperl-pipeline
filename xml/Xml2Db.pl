@@ -1,7 +1,11 @@
-sub BEGIN {
-    push @INC,"/usr/users/kiran/src/xml/XML-SimpleObject0.51/blib/lib";
-}
-    
+##############################################################
+#Xml2Db.pl
+#This script is used to load the pipeline up from the 
+#pipeline_setup.xml
+#You will need to have XML::SimpleObject installed for this script
+#to work.
+##############################################################
+
 use strict;
 
 use XML::Parser;
@@ -17,7 +21,6 @@ use Bio::Pipeline::NodeGroup;
 use Bio::Pipeline::Node;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
-#use Bio::Pipeline::Initializer;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 
@@ -36,7 +39,7 @@ my $USAGE =<<END;
 ******************************
 This script configures and creates a pipeline based on xml definitions.
 
-Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -d datasetup.xml -p pipelineflow.xml -j jobflow.xml
+Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
 
 Default values in ()
 -dbhost host (mysql)
@@ -46,10 +49,7 @@ Default values in ()
 -schema The path to the bioperl-pipeline schema.
         Needed if you want to create a new db.
         ($SCHEMA)
--d      the datasetup xml file (required)
--p      the pipelineflow xml file (required)
--j      the job flow xml file (required)
--t      the number of inputs to load for testing
+-p      the pipeline setup xml file (required)
 
 
 END
@@ -60,19 +60,15 @@ GetOptions(
     'dbuser=s'    => \$DBUSER,
     'dbpass=s'    => \$DBPASS,
     'schema=s'    => \$SCHEMA,
-    'd=s'         => \$DATASETUP,
-    'p=s'         => \$PIPELINEFLOW,
-    'j=s'         => \$JOBFLOW,
-    't=s'         => \$INPUT_LIMIT
+    'p=s'         => \$DATASETUP,
 )
 or die ($USAGE);
 
 $DATASETUP || die($USAGE);
-$PIPELINEFLOW || die($USAGE);
-$JOBFLOW || die($USAGE);
 
-
- 
+################################
+#Setting up the pipeline database
+################################
 
 my $create = prompt("Would you like to delete any existing db named $DBNAME and load a new one?  y/n","n");
 if($create =~/^[yY]/){
@@ -99,8 +95,10 @@ my $dba = Bio::Pipeline::SQL::DBAdaptor->new(
     -pass   => $DBPASS,
 );
 
+##############################################
+#Start the Parsing and loading of the pipeline
+##############################################
 my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
-
 
 print "Reading Data_setup xml   : $DATASETUP\n";
 
@@ -108,7 +106,13 @@ my $xso1 = XML::SimpleObject->new( $parser->parsefile($DATASETUP) );
 
 my @iohandler_objs;
 my $method_id = 1;
-foreach my $iohandler ($xso1->child('data_handling_setup')->children('iohandler')) {
+
+############################################
+#Load DBAdaptor and IOHandler information
+############################################
+
+print "Doing DBAdaptor and IOHandler setup\n";
+foreach my $iohandler ($xso1->child('pipeline_setup')->child('iohandler_setup')->children('iohandler')) {
 
   my $ioid = $iohandler->attribute("id");
   my @datahandler_objs;
@@ -148,7 +152,7 @@ foreach my $iohandler ($xso1->child('data_handling_setup')->children('iohandler'
   }
 
   if ($adaptor_type eq "DB") {
-   foreach my $dbadaptor ($xso1->child('data_handling_setup')->children('dbadaptor')) {
+   foreach my $dbadaptor ($xso1->child('pipeline_setup')->child('database_setup')->children('dbadaptor')) {
      my $id = $dbadaptor->attribute("id");
      if ($adaptor_id == $id) {
       my $dbname = $dbadaptor->child('dbname')->value;
@@ -174,7 +178,7 @@ foreach my $iohandler ($xso1->child('data_handling_setup')->children('iohandler'
     }
    }
    elsif ($adaptor_type eq 'STREAM') {
-     foreach my $streamadaptor ($xso1->child('data_handling_setup')->children('streamadaptor')) {
+     foreach my $streamadaptor ($xso1->child('pipeline_setup')->child('database_setup')->children('streamadaptor')) {
         my $id = $streamadaptor->attribute("id");
         if ($adaptor_id == $id) {
           my $module = $streamadaptor->child('module')->value;
@@ -190,11 +194,13 @@ foreach my $iohandler ($xso1->child('data_handling_setup')->children('iohandler'
 }
     
 
-print "Reading Pipeline_flow xml: $PIPELINEFLOW\n";
-my $xso2 = XML::SimpleObject->new( $parser->parsefile($PIPELINEFLOW) );
-
+############################################
+#Load Analysis and Rules information 
+############################################
 my @nodegroup_objs;
-foreach my $node_group ($xso2->child('pipeline_flow_setup')->children('node_group')) {
+print "Doing Pipeline Flow Setup\n";
+
+foreach my $node_group ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('node_group')) {
 
     my $nodegroup_id = $node_group->attribute("id");
     my @node_objs;
@@ -217,8 +223,10 @@ foreach my $node_group ($xso2->child('pipeline_flow_setup')->children('node_grou
                                                    -nodes => \@node_objs); 
     push @nodegroup_objs, $nodegroup_obj;
 }
+
 my @analysis_objs;
-foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis')) {
+print "Doing Analysis..\n";
+foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('analysis')) {
 
     my $analysis_obj = Bio::Pipeline::Analysis->new(-id => $analysis->attribute('id'),
                                                 -runnable => $analysis->child('runnable')->value);
@@ -254,7 +262,6 @@ foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis'))
    if (defined($nodegroup_id)){
       my $node_group = _get_nodegroup($nodegroup_id->value);
       if (!defined($node_group)) {
-        #$self->throw("node_group for analysis not found\n");
         print "node_group for analysis not found\n";
       }
       $analysis_obj->node_group($node_group);
@@ -328,19 +335,18 @@ foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis'))
  }
 
 my @rule_objs = ();
-foreach my $rule ($xso2->child('pipeline_flow_setup')->children('rule')) {
+print "Doing Rules\n";
+foreach my $rule ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->children('rule')) {
  if(ref($rule)) {
    my $current;
    if (defined $rule->child('current_analysis_id')) {
      $current = _get_analysis($rule->child('current_analysis_id')->value);
      if (!defined($current)) {
-       #$self->throw("current analysis not found for rule\n");
        print "current analysis not found for rule\n";
      }
    }
    my $next = _get_analysis($rule->child('next_analysis_id')->value);
    if (!defined($next)) {
-     #$self->throw("next analysis not found for rule\n");
      print "next analysis not found for rule\n";
    }
    my $action = $rule->child('action')->value;
@@ -358,13 +364,15 @@ foreach my $rule ($xso2->child('pipeline_flow_setup')->children('rule')) {
 foreach my $iohandler (@iohandler_objs) {
   $dba->get_IOHandlerAdaptor->store($iohandler);
 }
-
-print "Reading Job_flow xml     : $JOBFLOW\n";
-my $xso3 = XML::SimpleObject->new( $parser->parsefile($JOBFLOW) );
-
 my @job_objs;
 
-foreach my $job ($xso3->child('job_setup')->children('job')) {
+
+############################################
+#Load Jobs if provided 
+############################################
+print "Doing Job Setup...\n";
+if($xso1->child('pipeline_setup')->child('job_setup')){
+foreach my $job ($xso1->child('pipeline_setup')->child('job_setup')->children('job')) {
   if (ref($job)) {
    my $id = $job->attribute("id");
    my $process_id = defined($job->child('process_id')) ?$job->child('process_id')->value : '';
@@ -398,9 +406,12 @@ foreach my $job ($xso3->child('job_setup')->children('job')) {
    push @job_objs, $job_obj;
   }
 }
+}
 
+###############################################################################################
 # now the nicest part .. the actual storing.. need to store only 4 objects, 
 # iohandler, analysis, job and rule .. these objects will inturn store all the objects that they contain..
+###############################################################################################
 
 
 foreach my $analysis (@analysis_objs) {
@@ -414,8 +425,12 @@ foreach my $rule (@rule_objs) {
 }
 
 print STDERR "Loading of pipeline $DBNAME completed\n";
+
+####################################################################
+#Utility Methods
+####################################################################
+
 sub _get_analysis {
-  #my ($self,$id) = @_;
   my ($id) = @_;
 
   foreach my $analysis(@analysis_objs) {
@@ -427,7 +442,6 @@ sub _get_analysis {
 }
 
 sub _get_iohandler {
-  #my ($self,$id) = @_;
   my ($id) = @_;
 
   foreach my $iohandler(@iohandler_objs) {
@@ -439,7 +453,6 @@ sub _get_iohandler {
 }
 
 sub _get_nodegroup {
-  #my ($self,$id) = @_;
   my ($id) = @_;
 
   foreach my $nodegroup(@nodegroup_objs) {
