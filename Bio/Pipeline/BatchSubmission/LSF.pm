@@ -123,7 +123,7 @@ sub submit_batch{
 
     my $runner = $RUNNER || undef;
 
-    unless (-x $runner) {
+    unless ($runner && -x $runner) {
         $runner = __FILE__;
         $runner =~ s:/([^/]*/[^/]*/[^/]*/[^/]*)$:/scripts/runner.pl:;
         $self->throw("Can't locate runner.pl - needs to be set in PipeConf.pm") unless -x $runner;
