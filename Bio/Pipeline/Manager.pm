@@ -94,7 +94,7 @@ use vars qw($AUTOLOAD @ISA @autoload_methods);
 BEGIN {
   @autoload_methods = qw( host dbname user db ruleAdaptor jobAdaptor inputAdaptor 
                         analysisAdaptor iohAdaptor nfstmp_dir lock_dir queue 
-                        batchsize usenodes fetch_job_size retry sleep 
+                        batchsize usenodes fetch_job_size retry sleep batch_submission_obj
                         wait_for_all_percent timeout flush local resume verbose 
                         number input_limit pipeline_time pipeline_state);
 }
@@ -209,11 +209,49 @@ sub test_analysis{
     print scalar(@analysis)." analysis found.\nRunning test and setup..\n\n//////////// Analysis Test ////////////\n";
 
     foreach my $anal (@analysis) {
-        print STDERR "Checking Analysis ".$anal->dbID. " ".$anal->logic_name;
+        $self->debug("Checking Analysis ".$anal->dbID. " ".$anal->logic_name);
        $anal->test_and_setup($self->verbose);
-        print STDERR " ok\n";
+        $self->debug(" ok\n");
     }
 }
+
+=head2 shutdown
+
+  Title   : shutdown
+  Usage   : $manager->shutdown
+  Function: Shutdown the pipeline, killing jobs and making sure that job states are updated
+            appropriately
+  Returns : status
+  Args    : 
+
+=cut
+
+sub shutdown {
+  my ($self) = @_;
+  $self->debug("Getting Jobs in queue...\n");
+  #only retrieve reading,running and batched jobs, will not kill jobs in writing stage for database consistency
+  my @submitted_jobIDs = $self->jobAdaptor->list_queue_ids(-status=>['SUBMITTED'],-stage=>['READING','RUNNING','BATCHED']);
+  print scalar(@submitted_jobIDs)." jobs retrieved\nSubmitting kill commands...\n";
+  print $submitted_jobIDs[0]."\n";
+  my @queue_ids = $self->batch_submission_obj->kill_jobs(@submitted_jobIDs);
+  $self->debug("Updating job status as killed\n");
+  $self->jobAdaptor->update_killed_job(@queue_ids);
+
+  #get list of jobs in writing stage that were not killed
+  my @writing = $self->jobAdaptor->list_queue_ids(-status=>['SUBMITTED'],-stage=>['WRITING']);
+
+  return scalar(@submitted_jobIDs),scalar(@writing);
+}
+
+=head2 run
+
+  Title   : run
+  Usage   : $manager->run
+  Function: run the pipeline, fetches jobs in the pipeline and determines which to run according to rules
+  Returns : status
+  Args    : 
+
+=cut
 
 sub run{
     my ($self) = @_;
@@ -244,19 +282,20 @@ sub run{
         my $new_queue = %Bio::Pipeline::PipeConf::PipeConf->{'QUEUE'};
         $self->queue($new_queue);
         my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$self->db,-queue=>$self->queue);
+        $self->batch_submission_obj($batchsubmitter);
 
         #Give priority of fetching to new jobs, only fetch FAILED ones once NEW ones are exhausted.
-        print STDERR "Fetching Jobs...\n";
+        $self->debug("\nFetching Jobs...\n");
         my @incomplete_jobs = $self->jobAdaptor->fetch_jobs(-number =>$FETCH_JOB_SIZE,-status=>['NEW']);
         if ($#incomplete_jobs < ($FETCH_JOB_SIZE-1)){
             my $nbr_left = $FETCH_JOB_SIZE - (scalar(@incomplete_jobs));
-            push @incomplete_jobs, $self->jobAdaptor->fetch_jobs(-number =>$nbr_left ,-status=>['FAILED']);
+            push @incomplete_jobs, $self->jobAdaptor->fetch_jobs(-number =>$nbr_left ,-status=>['FAILED','KILLED']);
         }
         if($#incomplete_jobs < ($FETCH_JOB_SIZE-1)){
             my $nbr_left = $FETCH_JOB_SIZE - (scalar(@incomplete_jobs));
             push @incomplete_jobs, $self->jobAdaptor->fetch_jobs(-number =>$nbr_left ,-status=>['WAITFORALL']);
         }
-        print STDERR "Fetched ".scalar(@incomplete_jobs)." incomplete jobs\n";
+        $self->debug("\nFetched ".scalar(@incomplete_jobs)." incomplete jobs\n");
 
         $submitted = 0;
 
@@ -306,21 +345,21 @@ sub run{
                 }
             }
             else {
-                print STDERR "Job ".$job->dbID ." failed ".$job->retry_count." times. Exceed retry limit. Skipping Job...\n";
+                $self->debug("Job ".$job->dbID ." failed ".$job->retry_count." times. Exceed retry limit. Skipping Job...\n");
             }
         }
 
         #fetch completed jobs for creating new jobs
         my @completed_jobs = $self->jobAdaptor->fetch_jobs(-number =>$FETCH_JOB_SIZE,-status=>['COMPLETED']);
-        print STDERR "Fetched ".scalar(@completed_jobs)." completed jobs\n";
+        $self->debug( "\nFetched ".scalar(@completed_jobs)." completed jobs\n");
         if($#completed_jobs > 0) {
-            print STDERR "Updating Completed Jobs and creating new ones\n";
+            $self->debug("Updating Completed Jobs and creating new ones\n");
         }
     
         foreach my $job (@completed_jobs) {
             my ($new_jobs) = $self->_create_new_job($job);
             if(scalar(@{$new_jobs})){
-                print STDERR "Creating ".scalar(@{$new_jobs})." jobs\n";
+                $self->debug("Creating ".scalar(@{$new_jobs})." jobs\n");
             }
             foreach my $new_job (@{$new_jobs}){
 
@@ -341,9 +380,9 @@ sub run{
 		        $job->adaptor->update_completed_job($job);
 	 	    };
 
-	    	print STDERR ("Error updating completed job\n$@\n") if($@);
+	    	$self->debug("Error updating completed job\n$@\n") if($@);
             
-            $job->remove;
+        $job->remove;
         }
 
         #submit remaining jobs in batch.
@@ -445,8 +484,8 @@ sub _create_new_job {
 
            elsif($action eq "WAITFORALL"){
               if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
-               print STDERR "Analysis " .$job->analysis->logic_name ." finished.\n
-                               Creating next job\n";
+               $self->debug("Analysis " .$job->analysis->logic_name ." finished.\n
+                               Creating next job\n");
                my $new_job = $job->create_next_job($next_analysis);
                my @inputs = $self->inputAdaptor->copy_inputs_map_ioh($job,$new_job);
 
@@ -493,10 +532,10 @@ sub _initialise {
     }
     if (defined ($init_rule)) {
         if (!$self->jobAdaptor->job_exists($init_rule->next)) {
-            print STDERR "Starting fresh pipeline run \n";
+            $self->debug("Starting fresh pipeline run \n");
             _create_initial_jobs($init_rule->next);
         }else {
-            print STDERR "Resuming from previous run\n";
+            $self->debug("Resuming from previous run\n");
         }
     }
 }
@@ -547,7 +586,7 @@ sub _next_job_created {
 sub _check_all_jobs_complete {
   my ($self, $job) = @_;
   my $status = 1;
-  if($self->jobAdaptor->fetch_jobs(-number=>1,-analysis_id=>$job->analysis->dbID,-process_id=>$job->process_id,-status=>["SUBMITTED",'NEW','FAILED'])){
+  if($self->jobAdaptor->fetch_jobs(-number=>1,-analysis_id=>$job->analysis->dbID,-process_id=>$job->process_id,-status=>["SUBMITTED",'NEW','FAILED','KILLED'])){
     return 0;
   }
   else {
@@ -629,7 +668,7 @@ sub _submit_batch{
             $failed_job->set_status('FAILED');
             $job_ids .= $failed_job->dbID." ";
         }
-        print STDERR "Error submitting jobs with dbIDs $job_ids.\n$@\n Retrying........\n";
+        $self->debug("Error submitting jobs with dbIDs $job_ids.\n$@\n Retrying........\n");
     	$batchsubmitter->empty_batch;
     } 
 }
@@ -685,7 +724,7 @@ sub create_lock {
 sub remove_lock{
     my ($self) = @_;
 
-    print STDERR "Removing Lock File...\n";
+    $self->debug("Removing Lock File...\n");
     my $dir = $self->lock_dir;
     unlink "$dir/db.pag";
     unlink "$dir/db.dir";
