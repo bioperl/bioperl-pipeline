@@ -111,7 +111,7 @@ sub _store_transformer_method{
 	}
    
   if($transformer_method->arguments){
-  	foreach my $transformer_argument (@{$transformer_arguments_ref}) {
+  	foreach my $transformer_argument (@{$transformer_method->arguments}) {
 		  $self->_store_transformer_argument($transformer_argument, $transformer_method->dbID);
 	  }
   }
