@@ -99,7 +99,10 @@ sub fetch_fixed_input_by_dbID {
         $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
         # Attach converters to the iohandler if any for this iohandler of the analysis that this input is fed into.
         my @converters = $self->db->get_AnalysisAdaptor->fetch_converters_by_iohandler($analysis_id, $iohandler_id);
+        my $analysis = $self->db->get_AnalysisAdaptor->fetch_by_dbID($analysis_id);
+        
         $input_handler->converters(\@converters);
+        $input_handler->analysis($analysis);
     }
 
     #fetch dynamic arguments if any
@@ -197,9 +200,16 @@ sub copy_inputs_map_ioh {
     $new_job || $self->throw("Need the new job");
 
     foreach my $input($job->inputs){
-      my $map_ioh = $self->db->get_IOHandlerAdaptor->get_mapped_ioh($new_job->analysis->dbID,$input->input_handler->dbID);
-      my $in      = Bio::Pipeline::Input->new(-name => $input->name,-input_handler => $map_ioh,-job_id => $new_job->dbID); 
-      push @inputs, $in;
+      my $in;
+      if($input->input_handler){
+        my $map_ioh = $self->db->get_IOHandlerAdaptor->get_mapped_ioh($new_job->analysis->dbID,$input->input_handler->dbID);
+        $in      = Bio::Pipeline::Input->new(-name => $input->name,-input_handler => $map_ioh,-job_id => $new_job->dbID); 
+        push @inputs, $in;
+      }
+      else {
+        $in      = Bio::Pipeline::Input->new(-name => $input->name,-job_id => $new_job->dbID); 
+        push @inputs, $in;
+      }
       $self->store_fixed_input($in);
     }
     return @inputs;
@@ -209,23 +219,24 @@ sub copy_fixed_inputs {
     my ($self, $job_id, $new_job_id) = @_;
     my @inputs = ();
     
-    my $query = "SELECT name, iohandler_id
+    my $query = "SELECT name, tag,iohandler_id
                               FROM input
                               WHERE job_id = '$job_id'";
 
     my $sth = $self->prepare($query);
     $sth->execute();
-    while (my ($name, $iohandler_id) = $sth->fetchrow_array){
-      my $sql = " INSERT INTO input (name, iohandler_id, job_id) 
-                VALUES (?,?,?)";
+    while (my ($name, $tag,$iohandler_id) = $sth->fetchrow_array){
+      my $sql = " INSERT INTO input (name, tag,iohandler_id, job_id) 
+                VALUES (?,?,?,?)";
       my $sth = $self->prepare($sql);
       eval{
-          $sth->execute($name, $iohandler_id,$new_job_id);
+          $sth->execute($name, $tag,$iohandler_id,$new_job_id);
       };if ($@){$self->throw("Error copying fixed input.\n$@");}
 
-      my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
+      my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id) unless !$iohandler_id;
       my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
+                                    -tag  => $tag,
                                     -input_handler => $input_handler,
                                     -job_id => $new_job_id);
       push (@inputs,$input);
