@@ -71,8 +71,8 @@ use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::RunnableDB;
 
 # several variables needed from PipeConf.pm
-use Bio::Pipeline::PipeConf qw ( RUNNER 
-                                 NFSTMP_DIR
+use Bio::Pipeline::PipeConf qw ( NFSTMP_DIR
+                                 $NUM_TMP_DIR
                                );
 
 use vars qw(@ISA);
@@ -435,7 +435,7 @@ sub set_stage{
 sub make_filenames {
   my ($self) = @_;
   
-  my $num = int(rand(10));
+  my $num = int(rand($NUM_TMP_DIR));
   my $dir = $NFSTMP_DIR . "/$num/";
   if( ! -e $dir ) {
     mkdir $dir,0777;
