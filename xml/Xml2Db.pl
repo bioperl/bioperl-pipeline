@@ -21,6 +21,8 @@ use Bio::Pipeline::NodeGroup;
 use Bio::Pipeline::Node;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
+use Bio::Pipeline::Runnable::DataMonger;
+use Bio::Pipeline::InputCreate;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 
@@ -30,8 +32,7 @@ use vars qw($DBHOST $DBNAME $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $S
 $DBHOST ||= "mysql";
 $DBNAME ||= "test_XML";
 $DBUSER ||= "root";
-$DBPASS ||="";
-$SCHEMA = $SCHEMA || "/usr/users/kiran/src/bioperl-pipeline/t/data/schema.sql";
+$SCHEMA = $SCHEMA || "../sql/schema.sql";
 
 my $USAGE =<<END;
 ******************************
@@ -78,11 +79,16 @@ if($create =~/^[yY]/){
       die(1);
     }
     else {
-      system("mysqladmin -u root -f drop $DBNAME > /dev/null ");
+      my $str;
+      $str .= defined $DBHOST ? "-h $DBHOST " : "";
+      $str .= defined $DBPASS ? "-p$DBPASS" : "";
+      $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
+      print STDERR "Dropping Databases\n";      
+      system("mysqladmin $str drop $DBNAME > /dev/null ");
       print STDERR "Creating $DBNAME\n   ";
-      system("mysqladmin -u root create $DBNAME ");
+      system("mysqladmin $str create $DBNAME ");
       print STDERR "Loading Schema\n";
-      system("mysql -u root $DBNAME < $SCHEMA");
+      system("mysql $str $DBNAME < $SCHEMA");
    }
 }
 else {
@@ -380,7 +386,6 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          }
      }
    }
-
    foreach my $output_iohandler ($analysis->child('output_iohandler')) {
      if (defined($output_iohandler)){
          my $output_iohandler_obj = _get_iohandler($output_iohandler->attribute("id"));
