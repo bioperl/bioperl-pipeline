@@ -30,7 +30,7 @@ use Getopt::Long;
 use ExtUtils::MakeMaker;
 
 
-use vars qw($DBHOST $DBNAME $DEBUG $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT);
+use vars qw($DBHOST $DBNAME $DEBUG $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT $HELP);
 
 $DBHOST ||= "mysql";
 $DBNAME ||= "test_XML";
@@ -67,9 +67,11 @@ GetOptions(
     'schema=s'    => \$SCHEMA,
     'verbose'     => $DEBUG,
     'p=s'         => \$DATASETUP,
+	'h'           => \$HELP
 )
 or die ($USAGE);
 
+$HELP && die($USAGE);
 $DATASETUP || die($USAGE);
 
 ################################
@@ -106,7 +108,7 @@ if($db_exist){
   my $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $DATASETUP.\nWould you like to continue? y/n","n");
   if($create =~/^[yY]/){
       print STDERR "Dropping Databases\n";      
-      system("mysqladmin $str drop $DBNAME > /dev/null ");
+      system("mysqladmin $str -f drop $DBNAME > /dev/null ");
    }
   else {
     print STDERR "Please select another database before running this script. Good bye.\n";
@@ -120,7 +122,7 @@ if (!-e $SCHEMA){
 }
 else {
     print STDERR "Creating $DBNAME\n   ";
-    system("mysqladmin $str create $DBNAME");
+    system("mysqladmin $str -f create $DBNAME");
     print STDERR "Loading Schema...\n";
     system("mysql $str $DBNAME < $SCHEMA");
     $dba = Bio::Pipeline::SQL::DBAdaptor->new(-host   => $DBHOST,
