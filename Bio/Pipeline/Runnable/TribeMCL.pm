@@ -73,7 +73,7 @@ Args    :
 sub datatypes {
   
   my ($self) = @_;
-  my $dt = Bio::Pipeline::DataType->new('-object_type'=>'ARRAY',
+  my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqFeature::FeaturePair',
                                         '-name'=>'sequence',
                                         '-reftype'=>'ARRAY');
                                           
