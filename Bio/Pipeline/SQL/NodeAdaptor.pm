@@ -106,3 +106,34 @@ sub get_all_nodes {
   
   return @nodes;
 }
+
+
+sub store {
+  my ($self, $node) = @_;
+  if (!defined ($node->id)) {
+    my $sth = $self->prepare( qq{
+      INSERT INTO node
+         SET node_name= ?,
+             group_id= ? } );
+    $sth->execute($node->name, $node->current_group);
+
+   $sth = $self->prepare( q{
+      SELECT last_insert_id()
+     } );
+   $sth->execute;
+
+   my $dbID = ($sth->fetchrow_array)[0];
+   $node->id( $dbID );
+  }
+  else {
+    my $sth = $self->prepare( qq{
+      INSERT INTO node
+         SET node_id= ?,
+             node_name= ?,
+             group_id= ? } );
+    $sth->execute($node->id, $node->name, $node->current_group );
+  }
+  return $node->id;
+}
+
+
