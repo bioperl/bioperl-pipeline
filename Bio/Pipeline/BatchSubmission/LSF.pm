@@ -37,7 +37,7 @@ package Bio::Pipeline::BatchSubmission::LSF;
 
 use Bio::Pipeline::BatchSubmission;
 use Bio::Root::Root;
-use vars qw(@ISA);
+use vars qw(@ISA %OK_FIELD @ACTIONS);
 use strict;
 
 use Bio::Pipeline::PipeConf qw (RUNNER
@@ -47,9 +47,22 @@ use Bio::Pipeline::PipeConf qw (RUNNER
 
 @ISA = qw(Bio::Pipeline::BatchSubmission) ;
 
+BEGIN {
+
+    @ACTIONS  = qw(WAITFORALL WAITFORALL_AND_UPDATE UPDATE NOTHING);
+
+    # Authorize attribute fields
+    foreach my $attr ( @ACTIONS) {
+      $OK_FIELD{$attr}++;
+    }
+}
 
 sub submit_batch{
-    my ($self) = @_;
+    my ($self,$action) = @_;
+    if($action) {
+        $self->throw ("Action $action not allowed. Use only WAITFORALL WAITFORALL_AND_UPDATE UPDATE NOTHING")
+        unless $OK_FIELD{$action};
+    }
 
     my @job_ids;
 
@@ -71,8 +84,8 @@ sub submit_batch{
     }
 
     $file .= $jobs[0]->analysis->logic_name.".".time().".".int(rand(1000));
-    $self->stdout_file($file.".out");
-    $self->stderr_file($file.".err");
+    $self->stdout_file($jobs[0]->stdout_file);
+    $self->stderr_file($jobs[0]->stderr_file);
 
     my $bsub = $self->construct_command_line;
 
@@ -83,6 +96,8 @@ sub submit_batch{
         $runner =~ s:/([^/]*/[^/]*)$:/runner.pl:;
         $self->throw("Can't locate runner.pl - needs to be set in PipeConf.pm") unless -x $runner;
     }
+
+    $runner.= " -action $action" if defined $action;
 
     $bsub .= "$runner ".join(" ",@job_ids);
 
@@ -122,7 +137,7 @@ sub construct_command_line{
     my ($self) = @_;
 
     my $bsub_line;
-
+#    $bsub_line = "bsub ";
     $bsub_line = "bsub -o ".$self->stdout_file;
 
     $bsub_line .= " -e ".$self->stderr_file;
