@@ -449,7 +449,7 @@ sub construct_runner_param {
   $runner .= defined $dbobj->dbname ? " -dbname ".$dbobj->dbname : "";
   $runner .= defined $dbobj->host ? " -host ".$dbobj->host : "";
   $runner .= defined $dbobj->port ? " -port ".$dbobj->port: "";
-  $runner .= defined $dbobj->password ? " -pass ".$dbobj->password : "";
+  $runner .= " -pass ".$dbobj->password if $dbobj->password;
   $runner .= defined $dbobj->username ? " -dbuser ".$dbobj->username: "";
   return $runner;
 }
