@@ -88,9 +88,9 @@ sub new {
                                                      DHID
                                                      TYPE)],@args);
 
-  $rank || $self->throw("Argument constructor needs a rank");
+  #$rank || $self->throw("Argument constructor needs a rank");
   $value|| $self->throw("Argument needs a method arg.");
-  $type || $self->throw("Argument needs a type");
+  #$type || $self->throw("Argument needs a type");
   $dbID && $self->dbID($dbID);
   $self->value($value);
   $self->type($type);
