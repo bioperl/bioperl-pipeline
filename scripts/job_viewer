@@ -86,6 +86,7 @@ while(1){
 
 #get job status information
   foreach my $status(@STATUS){
+      
    if($status ne 'COMPLETED'){
     my $count1 = $db->get_JobAdaptor->get_job_count(-status=>[$status],-stage=>['READING'],-analysis_id=>$anal_id);
     my $count2 = $db->get_JobAdaptor->get_job_count(-status=>[$status],-stage=>['WRITING'],-analysis_id=>$anal_id);
@@ -95,6 +96,9 @@ while(1){
       @failed = ($count1,$count2,$count3,$count4);
     }
     my $total = $count1+$count2+$count3+$count4;
+    if($total == 0 && ($status eq 'NEW')){
+        $total = $db->get_JobAdaptor->get_job_count(-status=>[$status],analysis_id=>$anal_id);
+    }
     push @data, [$status,$count1,$count2,$count3,,$count4,$total];
    }
     else {
