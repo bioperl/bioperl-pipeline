@@ -122,6 +122,11 @@ sub datatypes {
     my $dtb = Bio::Pipeline::DataType->new('-object_type'=>'Bio::PrimarySeqI',
                                             '-name'=>'sequence',
                                             '-reftype'=>'SCALAR');
+    my $dtf = Bio::Pipeline::DataType->new('-object_type'=>'File',
+                                           '-name'=>'sequence',
+                                           '-reftype'=>'SCALAR');
+
+
     my %dts;
     $dts{seq1} = [];
     $dts{seq2} = [];
@@ -129,6 +134,7 @@ sub datatypes {
     push @{$dts{seq1}}, $dtb;
     push @{$dts{seq2}}, $dta;
     push @{$dts{seq2}}, $dtb;
+    $dts{file} = $dtf;
     return %dts;
 }
 
@@ -237,6 +243,9 @@ sub run {
   my $seq1 = $self->seq1;
   my $seq2 = $self->seq2;
   my $blast_report;
+  if(!$seq1){
+      $seq1 = $self->file if $self->file;
+  }
 
   #need to create a temp file for which to copy the blast output file. This
   #is because StandAloneBlast unlinks the file once leaving this subroutine.
