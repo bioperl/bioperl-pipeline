@@ -77,16 +77,6 @@ sub filters {
     }
 }
 
-sub converter {
-    my ($self,$converter ) = @_;
-
-    if($converter){
-      $converter->isa("Bio::SeqFeatureI") || $self->throw("Not a Bio::SeqFeatureI object ");
-      $self->{'_converter'} = $converter;
-    }
-
-    return $self->{'_converter'};
-}
 sub next_analysis {
     my ($self,$anal) = @_;
     if($anal){
@@ -124,9 +114,6 @@ sub datatypes {
   if($self->filters){
     my @filters = $self->filters;  
     return $filters[0]->datatypes;
-  }
-  elsif($self->converter) {
-    return $self->converter->datatypes;
   }
   elsif($self->input_creates){
     my @inc = $self->input_creates;
@@ -167,35 +154,22 @@ sub run {
   my ($self) = @_;
 
   my $input = $self->input;
-  my @output;
-  if(ref($input) eq "ARRAY"){
-    @output= @{$input};
-  }
-  else {
-    push @output,$input;
-  }
-
-
 
   if ($self->filters){
       foreach my $filter ($self->filters){
-        @output = $filter->run(@output);
+        $input = $filter->run($input);
       }
-      #   @output = $self->filter->run(@output);
-  }
-  if ($self->converter){
-    @output = $self->converter->run(@output);
   }
 
   #Input creates should not return any outputs
   if($self->input_creates){
     foreach my $inc ($self->input_creates){
-      $inc->run($self->next_analysis,@output);
+      $inc->run($self->next_analysis,$input);
     }
     return;
   }
-  $self->output(\@output);
-  return \@output;
+  $self->output($input);
+  return $input;
 
 }
 
