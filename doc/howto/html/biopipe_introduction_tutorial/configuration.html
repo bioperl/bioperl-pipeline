@@ -1,0 +1,193 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>The Pipeline XML Format</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+HREF="t1.html"><LINK
+REL="PREVIOUS"
+TITLE="System Requirements"
+HREF="systemrequirements.html"><LINK
+REL="NEXT"
+TITLE="The Simple Blast Pipeline "
+HREF="blast.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="systemrequirements.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="blast.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="CONFIGURATION"
+>The Pipeline XML Format</A
+></H1
+><P
+>This section describes the various sections of XML with Biopipe</P
+><P
+>  To describe this, we will use the demo xml template, blast_file_pipeline.xml. 
+  You may find this in the bioperl-pipeline/xml/templates directory.
+  </P
+><P
+>  <I
+CLASS="EMPHASIS"
+>XML Organization</I
+>
+  </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>  &#60;pipeline_setup&#62;
+    &#60;database_setup&#62;
+    &#60;iohandler_setup&#62;
+    &#60;pipeline_flow_setup&#62;
+    &#60;job_setup&#62;(optional)
+  &#60;/pipeline_setup&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+> 
+  &#60;database_setup&#62;
+  </P
+><P
+>  This specifies the databases that the pipeline connects to and the
+  adaptor modules that intefaces with them.
+  </P
+><P
+>  &#60;iohandler_setup&#62;
+  </P
+><P
+>  This specifies the method calls that will be used by the pipeline
+  to access the databases. These methods are contained in the modules
+  specified by the database setup section above.
+  </P
+><P
+>  &#60;pipeline_flow_setup&#62;
+  </P
+><P
+>  This specifies the analysis and rules of the pipeline. Analysis
+  refer to the runnables that will be used in this pipeline while the
+  rules specify the order in which these analysis are to be run, including
+  any specific pre-processing actions that are to be carried out.
+  </P
+><P
+>  &#60;job_setup&#62;
+  </P
+><P
+>  This is an optional part that allows specific inputs to be inserted.
+  Usually, this is done using DataMongers and Input Create modules.
+  </P
+><P
+>You will need to modify some parts of this XML file to point files to non-default places.</P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="systemrequirements.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="t1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="blast.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>System Requirements</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>The Simple Blast Pipeline</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

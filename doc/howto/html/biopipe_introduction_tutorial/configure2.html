@@ -1,0 +1,199 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+> Configuring the PipeConf</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+HREF="t1.html"><LINK
+REL="PREVIOUS"
+TITLE="Loading the Pipeline"
+HREF="loading.html"><LINK
+REL="NEXT"
+TITLE="Running your pipeline "
+HREF="running.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="loading.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="running.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="CONFIGURE2"
+>Configuring the PipeConf</A
+></H1
+><P
+>  Hangon. You may want to configure any pipeline management parameters before running. This is done via
+  the PipeConf.pm module located at <I
+CLASS="EMPHASIS"
+>bioperl-pipeline/Bio/Pipeline/PipeConf.pm</I
+>.
+  Various parameters may be set here:
+  </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>     39 %PipeConf = (
+     40
+     41     # You will need to modify these variables
+     42
+     43     # working directory for err/outfiles
+     44     NFSTMP_DIR =&#62; '/tmp/',
+     45
+     46     # database specific variables
+     47
+     48     DBI_DRIVER =&#62; 'mysql',
+     49     DBHOST     =&#62; 'mysql',
+     50     DBNAME     =&#62; 'test_xml',
+     51     DBUSER     =&#62; 'root',
+     52     DBPASS     =&#62; '',
+     53
+     54     # Batch Management system module
+     55     # Currently supports PBS and LSF
+     56     # ignored if run in local mode
+     57     BATCH_MOD   =&#62;  'LSF',
+     58
+     59     # farm queue
+     60     QUEUE      =&#62; 'normal3',
+     61
+     62     # no of jobs to send to Batch Management system at one go
+     63     BATCHSIZE  =&#62; 3,
+     64
+     65     #bsub opt
+     66     BATCH_PARAM =&#62; '-C0',
+     67
+     68     # no of jobs to fetch at a time and submit
+     69     MAX_INCOMPLETE_JOBS_BATCHSIZE =&#62; 1000,
+     70
+     71     # no of completed jobs to fetch at a time and create next jobs
+     72     MAX_CREATE_NEXT_JOBS_BATCHSIZE =&#62; 5,
+     73
+     74
+     75     # number of times to retry a failed job
+     76     RETRY       =&#62; '5',
+     77
+     78     # path to runner.pl, use by the BatchSubmission objects
+     79     # to look for runner.pl. If not supplied it looks in the default
+     80     # directory where PipelineManager lies
+     81     RUNNER     =&#62; '',
+     82
+     83     #sleep time (seconds) in PipelineManager before waking up and looking for jobs to run
+     84     SLEEP      =&#62; 30,
+     85     #number of jobs to fetch at a time
+     86     FETCH_JOB_SIZE =&#62; 100,
+
+    </PRE
+></TD
+></TR
+></TABLE
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="loading.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="t1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="running.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Loading the Pipeline</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Running your pipeline</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

@@ -1,0 +1,229 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>HOWTO-For Setting Up Biopipe</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="NEXT"
+TITLE="Installation"
+HREF="installation.html"></HEAD
+><BODY
+CLASS="ARTICLE"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="ARTICLE"
+><DIV
+CLASS="TITLEPAGE"
+><H1
+CLASS="TITLE"
+><A
+NAME="AEN2"
+>HOWTO-For Setting Up Biopipe</A
+></H1
+><DIV
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="50%"
+CELLSPACING="0"
+CELLPADDING="0"
+ALIGN="CENTER"
+><TR
+><TD
+VALIGN="TOP"
+><B
+>Abstract</B
+></TD
+></TR
+><TR
+><TD
+VALIGN="TOP"
+><P
+>This is a HOWTO written in DocBook (SGML) for the installation of the biopipe,
+its workings and definition.We will describe how to load and run a simple blast
+pipeline.</P
+></TD
+></TR
+></TABLE
+></DIV
+><HR
+WIDTH="75%"
+ALIGN="CENTER"
+COLOR="#000000"
+SIZE="1"></DIV
+><DIV
+CLASS="TOC"
+><DL
+><DT
+><B
+>Table of Contents</B
+></DT
+><DT
+><A
+HREF="t1.html#INTRO"
+>Introduction</A
+></DT
+><DT
+><A
+HREF="installation.html"
+>Installation</A
+></DT
+><DT
+><A
+HREF="systemrequirements.html"
+>System Requirements</A
+></DT
+><DT
+><A
+HREF="configuration.html"
+>The Pipeline XML Format</A
+></DT
+><DT
+><A
+HREF="blast.html"
+>The Simple Blast Pipeline</A
+></DT
+><DT
+><A
+HREF="configureblast2.html"
+>The Simple Blast Pipeline</A
+></DT
+><DT
+><A
+HREF="loading.html"
+>Loading the Pipeline</A
+></DT
+><DT
+><A
+HREF="configure2.html"
+>Configuring the PipeConf</A
+></DT
+><DT
+><A
+HREF="running.html"
+>Running your pipeline</A
+></DT
+><DT
+><A
+HREF="viewingyourresults.html"
+>Viewing Your Results</A
+></DT
+></DL
+></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="INTRO"
+>Introduction</A
+></H1
+><P
+>  The bioperl pipeline framework is a flexible workflow system that complements the bioperl
+  package in providing job managment facilities for high throughput analysis. 
+  This system is heavily inspired by the EnsEMBL Pipeline system. 
+  This section describes the design of the bioperl pipeline. 
+  Some features of the current system include:
+  </P
+><P
+></P
+><UL
+><LI
+><P
+>      Handling of various input and output data formats from various databases.
+    </P
+></LI
+><LI
+><P
+>    A bioperl interface to non-specific loadsharing software (LSF,PBS etc) to ensure that
+    the various analysis programs are run in proper order and are successfully completed 
+    while re-running those that fail.
+    </P
+></LI
+><LI
+><P
+>     A flexible pluggable bioperl interface that allows programs to be 'pipeline-enabled'.
+    </P
+></LI
+></UL
+><P
+> Setting up bioinformatics pipeline is not trivial. This tutorial introduces some aspects of 
+ biopipe through setting up a very siimple blast pipeline. It is hope that through this tutorial,
+ two objectives are achieved:
+ <P
+></P
+><UL
+><LI
+><P
+>  Iron out installation issues using a simple example. 
+  </P
+></LI
+><LI
+><P
+>  Familiarization with the biopipe system and introduction of the XML system we have
+  develop to ameliorate some of the complexities involve in setting up.
+  </P
+></LI
+></UL
+>
+ </P
+></DIV
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="installation.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Installation</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

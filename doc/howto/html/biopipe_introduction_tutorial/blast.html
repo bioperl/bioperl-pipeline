@@ -1,0 +1,241 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>The Simple Blast Pipeline </TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+HREF="t1.html"><LINK
+REL="PREVIOUS"
+TITLE="The Pipeline XML Format"
+HREF="configuration.html"><LINK
+REL="NEXT"
+TITLE="The Simple Blast Pipeline"
+HREF="configureblast2.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="configuration.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="configureblast2.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="BLAST"
+>The Simple Blast Pipeline</A
+></H1
+><P
+> <I
+CLASS="EMPHASIS"
+>Use Case</I
+> </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="SCREEN"
+>    Given a file of sequences, split the files into smaller chunks, and blast
+    it against the database over a compute farm. Blast results files are stored
+    into a given results  directory, with one result file per blast job.
+    </PRE
+></TD
+></TR
+></TABLE
+><P
+>    This is a simple blast pipeline demo that allows one to pipeline a bunch of blast
+    jobs. It is stripped bare, assuming that the user has sequences in files and simply wishes
+    to parallalize the blast jobs. It doesn't utilize one of the main features of blast which
+    is to allow inputs from different database sources.
+    </P
+><P
+><I
+CLASS="EMPHASIS"
+>Configuring the Pipeline</I
+></P
+><P
+> ANALYSIS 1: DataMonger </P
+><P
+>    This involves a DataMonger Analysis using the <I
+CLASS="EMPHASIS"
+>setup_file_blast</I
+> module.
+        The datamonger will split the input file specified into a specified number of chunks.
+        It will create a blast job in the pipeline for each chunk. It will also
+        create the specified working directory for storing these files and format the db file for
+        blasting if you are blasting against itself. If you are blasting against a different database file,
+        you can specify the formatting of the db as part of the analysis parameters. 
+    </P
+><P
+>    <TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    270     &#60;analysis id="1"&#62;
+    271       &#60;data_monger&#62;
+    272         &#60;input&#62;
+    273           &#60;name&#62;input_file&#60;/name&#62;
+    274         &#60;/input&#62;
+    275         &#60;input_create&#62;
+    276            &#60;module&#62;setup_file_blast&#60;/module&#62;
+    277            &#60;rank&#62;1&#60;/rank&#62;
+    278             &#60;argument&#62;
+    279                 &#60;tag&#62;input_file&#60;/tag&#62;
+    280                 &#60;value&#62;/data0/shawn_tmp/blast.fa&#60;/value&#62;
+    281                 &#60;type&#62;SCALAR&#60;/type&#62;
+    282             &#60;/argument&#62;
+    283             &#60;argument&#62;
+    284                 &#60;tag&#62;chop_nbr&#60;/tag&#62;
+    285                 &#60;value&#62;5&#60;/value&#62;
+    286                 &#60;type&#62;SCALAR&#60;/type&#62;
+    287             &#60;/argument&#62;
+    288             &#60;argument&#62;
+    289                 &#60;tag&#62;workdir&#60;/tag&#62;
+    290                 &#60;value&#62;/tmp/blast_dir/&#60;/value&#62;
+    291                 &#60;type&#62;SCALAR&#60;/type&#62;
+    292             &#60;/argument&#62;
+    293             &#60;argument&#62;
+    294                 &#60;tag&#62;result_dir&#60;/tag&#62;
+    295                 &#60;value&#62;/tmp/blast_dir/blast_result/&#60;/value&#62;
+    296                 &#60;type&#62;SCALAR&#60;/type&#62;
+    297             &#60;/argument&#62;
+    298          &#60;/input_create&#62;
+    299       &#60;/data_monger&#62;
+    300     &#60;/analysis&#62;
+    301
+    </PRE
+></TD
+></TR
+></TABLE
+>
+    </P
+><P
+>    line 276: This species the particular DataMonger to use that will prepare your file for
+    paralization. For this case, we will use setup_file_blast which will chop up your
+    input file specified below into smaller chunks. 
+    </P
+><P
+>    line 280: This specifies the name of the input file that will be split into smaller chunks.
+    Modify this accordingly.
+    </P
+><P
+>    line 285: This specifies the number of files to split the input file into which wil equal
+              the number of blast jobs. You will want to chose a reasonable number that will
+              utilize your compute farm best.
+    </P
+><P
+>    line 290: This specifies the working directory in which the blast chunks will be stored.
+    </P
+><P
+>    line: 295: This specifies where the blast result files will be stored.
+    </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="configuration.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="t1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="configureblast2.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>The Pipeline XML Format</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>The Simple Blast Pipeline</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

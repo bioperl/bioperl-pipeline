@@ -1,0 +1,214 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>The Simple Blast Pipeline</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+HREF="t1.html"><LINK
+REL="PREVIOUS"
+TITLE="The Simple Blast Pipeline "
+HREF="blast.html"><LINK
+REL="NEXT"
+TITLE="Loading the Pipeline"
+HREF="loading.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="blast.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="loading.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="CONFIGUREBLAST2"
+>The Simple Blast Pipeline</A
+></H1
+><P
+> ANALYSIS 2: Blast</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>    303     &#60;analysis id="2"&#62;
+    304       &#60;logic_name&#62;Blast&#60;/logic_name&#62;
+    305       &#60;runnable&#62;Bio::Pipeline::Runnable::Blast&#60;/runnable&#62;
+    306       &#60;db&#62;family&#60;/db&#62;
+    307       &#60;db_file&#62;/data0/Fugu_rubripes.pep.fa&#60;/db_file&#62;
+    308       &#60;program&#62;blastall&#60;/program&#62;
+    309       &#60;program_file&#62;/usr/local/bin/blastall&#60;/program_file&#62;
+    310       &#60;parameters&#62;-p blastp -e 1-e05 -formatdb 1 -result_dir /data0/shawn_tmp/blast_result/ &#60;/parameters&#62;
+    311     &#60;/analysis&#62;
+    </PRE
+></TD
+></TR
+></TABLE
+><P
+>   This set of xml tags specify the blast analysis to run.
+   </P
+><P
+>   Line 305: This specifies the pipeline to use the <I
+CLASS="EMPHASIS"
+>Bio::Pipeline::Runnable::Blast</I
+> runnable.
+   </P
+><P
+>   Line 306: This is the name of the database to blast against
+   </P
+><P
+>   Line 307: This is the path to the database file to blast against.
+   </P
+><P
+>   Line 308: This is the name of the blast program.
+   </P
+><P
+>   Line 309: This is the location of the blast program
+   </P
+><P
+>   Line 310: These are the blast parameters as well as parameters to the Blast runnable.
+   </P
+><P
+></P
+><UL
+><LI
+><P
+>      <I
+CLASS="EMPHASIS"
+>-p blastp</I
+> This is a blastall parameter to specify using the  blastp alignment program.
+    </P
+></LI
+><LI
+><P
+>    <I
+CLASS="EMPHASIS"
+>-e 1-e05</I
+> Another blastall parameter to return hits with scores &#60; 0.00001
+    </P
+></LI
+><LI
+><P
+>    <I
+CLASS="EMPHASIS"
+>-formatdb 1</I
+> A Bio::Pipeline::Runnable::Blast parameter that tells it to format the db file specified in line 307 before
+    commencing blasting.
+    </P
+></LI
+><LI
+><P
+>    <I
+CLASS="EMPHASIS"
+>-result_dir /data0/shawn_tmp/blast_result/</I
+> This tells the Runnable where to store the blast output. 
+    </P
+></LI
+></UL
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="blast.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="t1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="loading.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>The Simple Blast Pipeline</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Loading the Pipeline</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

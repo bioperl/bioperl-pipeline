@@ -1,0 +1,207 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Loading the Pipeline</TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+HREF="t1.html"><LINK
+REL="PREVIOUS"
+TITLE="The Simple Blast Pipeline"
+HREF="configureblast2.html"><LINK
+REL="NEXT"
+TITLE=" Configuring the PipeConf"
+HREF="configure2.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="configureblast2.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="configure2.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="LOADING"
+>Loading the Pipeline</A
+></H1
+><P
+>   The xml is loaded to create the pipeline using the Xml2DB.pl script. The script is located in the bioperl-pipeline
+   package under <I
+CLASS="EMPHASIS"
+>bioperl-pipeline/xml/</I
+>. Other xml templates are found in <I
+CLASS="EMPHASIS"
+> bioperl-pipeline/xml/templates</I
+> 
+   This script assumes that you have a mysql database installed.
+   </P
+><P
+>   Run the script with a -h to see the options available:
+   </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>shawnh@pulse1 ~/src/bioperl-pipeline/xml&#62; perl Xml2Db.pl -h
+******************************
+*Xml2DB.pl
+******************************
+This script configures and creates a pipeline based on xml definitions.
+
+Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+
+Default values in ()
+-dbhost host (mysql)
+-dbname name of pipeline database (test_XML)
+-dbuser user name (root)
+-dbpass db password()
+-schema The path to the bioperl-pipeline schema.
+        Needed if you want to create a new db.
+        (../sql/schema.sql)
+-verbose For debugging
+-p      the pipeline setup xml file (required)
+
+  </PRE
+></TD
+></TR
+></TABLE
+><P
+>  An example session:
+  </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>shawnh@pulse1 ~/src/bioperl-pipeline/xml&#62; perl Xml2Db.pl -dbname blast_pipe -dbuser root -p templates/blast_file_pipeline.xml
+A database called test_xml already exists.
+Continuing would involve dropping this database and loading a fresh one using templates/blast_file_pipeline.xml.
+Would you like to continue? y/n [n] y
+Dropping Databases
+Creating test_xml
+   Loading Schema...
+Reading Data_setup xml   : templates/blast_file_pipeline.xml
+Doing DBAdaptor and IOHandler setup
+Doing Pipeline Flow Setup
+Doing Converters..
+Doing Analysis..
+Doing Rules
+Doing Job Setup...
+Loading of pipeline test_xml completed
+shawnh@pulse1 ~/src/bioperl-pipeline/xml&#62;</PRE
+></TD
+></TR
+></TABLE
+><P
+> At this point, you have a pipeline database called blast_pipe that is ready for running. </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="configureblast2.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="t1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="configure2.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>The Simple Blast Pipeline</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Configuring the PipeConf</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>

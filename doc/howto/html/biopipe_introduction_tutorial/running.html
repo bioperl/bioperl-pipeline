@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
+<HTML
+><HEAD
+><TITLE
+>Running your pipeline </TITLE
+><META
+NAME="GENERATOR"
+CONTENT="Modular DocBook HTML Stylesheet Version 1.64
+"><LINK
+REL="HOME"
+HREF="t1.html"><LINK
+REL="PREVIOUS"
+TITLE=" Configuring the PipeConf"
+HREF="configure2.html"><LINK
+REL="NEXT"
+TITLE="Viewing Your Results"
+HREF="viewingyourresults.html"></HEAD
+><BODY
+CLASS="SECTION"
+BGCOLOR="#FFFFFF"
+TEXT="#000000"
+LINK="#0000FF"
+VLINK="#840084"
+ALINK="#0000FF"
+><DIV
+CLASS="NAVHEADER"
+><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TH
+COLSPAN="3"
+ALIGN="center"
+></TH
+></TR
+><TR
+><TD
+WIDTH="10%"
+ALIGN="left"
+VALIGN="bottom"
+><A
+HREF="configure2.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="80%"
+ALIGN="center"
+VALIGN="bottom"
+></TD
+><TD
+WIDTH="10%"
+ALIGN="right"
+VALIGN="bottom"
+><A
+HREF="viewingyourresults.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+></TABLE
+><HR
+ALIGN="LEFT"
+WIDTH="100%"></DIV
+><DIV
+CLASS="SECTION"
+><H1
+CLASS="SECTION"
+><A
+NAME="RUNNING"
+>Running your pipeline</A
+></H1
+><P
+>    To run the pipeline, cd to the <I
+CLASS="EMPHASIS"
+>bioperl-pipeline/Bio/Pipeline/</I
+> directory.
+    </P
+><P
+> 
+    Run the PipelineManger.pl with the -h option to check the options available: 
+    </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline&#62; perl PipelineManager.pl -h
+************************************
+*PipelineManager.pl
+************************************
+This is the central script used to run the pipeline.
+
+Usage: PipelineManager.pl
+
+Options:
+Default values are read from PipeConf.pm
+
+     -dbhost The database host name (localhost)
+     -dbname The pipeline database name
+     -dbpass The password to mysql database
+     -flush  flush all locks on pipeline and remove any that exists.
+             Should only be used for debugging or development.
+     -batchsize The number ofjobs to be batched to one node
+     -local     Whether to run jobs in local mode
+                (on the node where this script is run)
+     -number    Number of jobs to run (for testing)
+     -queue     Specify the queue on which to submit jobs
+     -verbose   Whether to show warning during test and setup
+     -help      Display this help
+
+    </PRE
+></TD
+></TR
+></TABLE
+><P
+>    If you run the script in local(-l) mode, the script will not be batched to LSF or PBS. Jobs are executed
+    sequentially in this way This is usually a recommended way of testing your pipeline before batching all the jobs. 
+    You may also specify the number of jobs to run with the -n option.
+    </P
+><P
+>    Once you are ready to run on the node, you may reset your jobs by rerunning the Xml2DB script as described in the last section.
+    Submit the jobs to the compute nodes now by running the PipelineManger without the -l option:
+    </P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline&#62; perl PipelineManager.pl -dbname test_xml -f
+///////////////Starting Pipeline//////////////////////
+Fetching Analysis From Pipeline test_xml
+2 analysis found.
+Running test and setup..
+
+//////////// Analysis Test ////////////
+Checking Analysis 1 DataMonger ok
+Checking Analysis 2 Blast ok
+
+///////////////Tests Completed////////////////////////
+
+Fetching Jobs...
+Fetched 1 incomplete jobs
+Fetched 0 completed jobs
+opening bsub command line:
+ bsub -o /usr/users/shawnh/tmp/test_xml_DataMonger.1038684370.167.out -e /usr/users/shawnh/tmp/test_xml_DataMonger.1038684370.167.err -q normal3 -C0  /usr/users/shawnh//src/bioperl-pipeline//Bio/Pipeline/runner.pl -dbname test_xml -host mysql -port 3306 -dbuser root 1
+Going to snooze for 3 seconds...
+Waking up and run again!
+Fetching Jobs...
+Fetched 0 incomplete jobs
+Fetched 0 completed jobs
+Going to snooze for 3 seconds...
+Waking up and run again!
+Fetching Jobs...
+Fetched 0 incomplete jobs
+Fetched 0 completed jobs
+Going to snooze for 3 seconds...
+Waking up and run again!</PRE
+></TD
+></TR
+></TABLE
+><P
+> At any one time, you may check in the job table for the status of your jobs. The following shows
+an example mysql session</P
+><TABLE
+BORDER="0"
+BGCOLOR="#E0E0E0"
+WIDTH="100%"
+><TR
+><TD
+><PRE
+CLASS="PROGRAMLISTING"
+>  shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline&#62; mysql -u root test_xml
+  Reading table information for completion of table and column names
+  You can turn off this feature to get a quicker startup with -A
+
+  Welcome to the MySQL monitor.  Commands end with ; or \g.
+  Your MySQL connection id is 3940238 to server version: 3.23.36
+
+  Type 'help;' or '\h' for help. Type '\c' to clear the buffer
+
+  mysql&#62; select * From job;
+  +--------+------------+-------------+----------+--------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+-----------+---------+---------------------+-------------+
+  | job_id | process_id | analysis_id | queue_id | stdout_file                                            | stderr_file                                            | object_file                                            | status    | stage   | time                | retry_count |
+  +--------+------------+-------------+----------+--------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+-----------+---------+---------------------+-------------+
+  |      2 | NEW        |           2 |   437257 | /usr/users/shawnh/tmp/test_xml_Blast.1038715216.66.out | /usr/users/shawnh/tmp/test_xml_Blast.1038715216.66.err | /usr/users/shawnh/tmp/test_xml_Blast.1038715216.66.obj | SUBMITTED | RUNNING | 2002-12-01 11:59:21 |           0 |
+  +--------+------------+-------------+----------+--------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+-----------+---------+---------------------+-------------+
+  1 row in set (0.00 sec)
+
+  mysql&#62;
+  </PRE
+></TD
+></TR
+></TABLE
+><P
+>  Here we can see that one blast job has been created and is currently having status <I
+CLASS="EMPHASIS"
+>SUBMITTED</I
+> and stage
+  <I
+CLASS="EMPHASIS"
+>RUNNING</I
+>. The status available are NEW|SUBMITTED|FAILED|COMPLETED and for stage are BATCHED|READING|RUNNING|WRITING.
+  Once a job is completed, the jobs will be move to the completed_jobs table.
+  If the job fails, you may view the error log specified by stderr_file.
+  Currently stderr_file and stdout_files are removed only if a job is completed. 
+  </P
+></DIV
+><DIV
+CLASS="NAVFOOTER"
+><HR
+ALIGN="LEFT"
+WIDTH="100%"><TABLE
+WIDTH="100%"
+BORDER="0"
+CELLPADDING="0"
+CELLSPACING="0"
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+><A
+HREF="configure2.html"
+>&#60;&#60;&#60; Previous</A
+></TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+><A
+HREF="t1.html"
+>Home</A
+></TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+><A
+HREF="viewingyourresults.html"
+>Next &#62;&#62;&#62;</A
+></TD
+></TR
+><TR
+><TD
+WIDTH="33%"
+ALIGN="left"
+VALIGN="top"
+>Configuring the PipeConf</TD
+><TD
+WIDTH="34%"
+ALIGN="center"
+VALIGN="top"
+>&nbsp;</TD
+><TD
+WIDTH="33%"
+ALIGN="right"
+VALIGN="top"
+>Viewing Your Results</TD
+></TR
+></TABLE
+></DIV
+></BODY
+></HTML
+>
