@@ -424,7 +424,10 @@ sub write_output {
     my @inputs = $self->inputs;
     return () unless scalar(@output);    
     defined $self->analysis->output_handler || return;
-    my @output_ids = $self->analysis->output_handler->write_output(-input=>\@inputs,-output=>\@output);
+    my @output_ids;
+    foreach my $ioh(@{$self->analysis->output_hander}) {
+      push @output_ids, $ioh->write_output(-input=>\@inputs,-output=>\@output);
+    }
 
     return wantarray ? @output_ids : \@output_ids;
 }
