@@ -50,13 +50,13 @@ if ($@) {
 
 $biopipe_test->run_pipeline("xml/templates/blast_file_pipeline.xml"), 0;
 
-ok -e "t/data/blast_dir/blast.fa.1";
-ok -e "t/data/blast_dir/blast.fa.2";
-ok -e "t/data/blast_dir/blast.fa.3";
-ok -e "t/data/blast_dir/blast.fa.4";
-ok -e "t/data/blast_dir/blast.fa.5";
-ok -e "t/data/blast_result/blast.fa.1.bls";
-ok -e "t/data/blast_result/blast.fa.2.bls";
-ok -e "t/data/blast_result/blast.fa.3.bls";
-ok -e "t/data/blast_result/blast.fa.4.bls";
-ok -e "t/data/blast_result/blast.fa.5.bls";
+ok -e "t/data/blast_dir/input.fa.1";
+ok -e "t/data/blast_dir/input.fa.2";
+ok -e "t/data/blast_dir/input.fa.3";
+ok -e "t/data/blast_dir/input.fa.4";
+ok -e "t/data/blast_dir/input.fa.5";
+ok -e "t/data/blast_result/input.fa.1.bls";
+ok -e "t/data/blast_result/input.fa.2.bls";
+ok -e "t/data/blast_result/input.fa.3.bls";
+ok -e "t/data/blast_result/input.fa.4.bls";
+ok -e "t/data/blast_result/input.fa.5.bls";
