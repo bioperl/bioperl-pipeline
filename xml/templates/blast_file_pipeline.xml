@@ -105,7 +105,7 @@ is to allow inputs from different database sources.
 
             <argument>
                 <tag>input_file</tag>
-                <value>/data0/shawn_tmp/blast.fa</value>
+                <value>t/data/blast.fa</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -115,12 +115,12 @@ is to allow inputs from different database sources.
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>/tmp/blast_dir</value>
+                <value>t/data/blast_dir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>result_dir</tag>
-                <value>/tmp/blast_dir/blast_result</value>
+                <value>t/data/blast_result</value>
                 <type> SCALAR</type>
             </argument>
 
@@ -153,13 +153,13 @@ is to allow inputs from different database sources.
           This specifies the actual location of the executable. Modify accoordingly. Note if
           this can be seen on command line at the nodes, then it is unnecessary. 
 
-          <db_file>/data0/shawn_tmp/blast.fa</db_file>
+          <db_file>t/data/blast.fa</db_file>
 
           This is the blast database that you want to blast your input_file against.
           For testing purposes, I have made it the same as the input file here, so you are blasting
           proteins against itself. You can put any database you want here.
 
-          <parameters>-p blastp -e 1-e05 -formatdb 1 -result_dir /tmp/blast_dir/blast_result/ </parameters>
+          <parameters>-p blastp -e 1-e05 -formatdb 1 -infile_dir t/data/blast_dir/ -result_dir t/data/blast_dir/blast_result/ </parameters>
 
           You may modify the parameters as u wish. Here, blast parameters are intercalated with blast runnable
           parameters so you may add any additional ones that you wish.
@@ -173,6 +173,8 @@ is to allow inputs from different database sources.
 
           Each blast result file is written to /tmp/blast_dir/blast_result/ which should be the same as the
           argument given in analysis 1.
+
+          The Blast runnable will look for the files inside the directory specified by infile_dir.
 
 
   </CONFIGURING PIPELINE>    
@@ -267,7 +269,12 @@ is to allow inputs from different database sources.
            <rank>1</rank>
             <argument>
                 <tag>input_file</tag>
-                <value>/data0/shawn_tmp/blast.fa</value>
+                <value>t/data/blast.fa</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>full_path</tag>
+                <value>1</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -277,12 +284,12 @@ is to allow inputs from different database sources.
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>/tmp/blast_dir</value>
+                <value>t/data/blast_dir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>result_dir</tag>
-                <value>/tmp/blast_dir/blast_result</value>
+                <value>t/data/blast_result</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -318,7 +325,7 @@ is to allow inputs from different database sources.
       <program>blastall</program>
       <program_file>/usr/local/bin/blastall</program_file>
       <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>
-      <runnable_parameters>-formatdb 1 -infile_dir /tmp/blast_dir -result_dir /tmp/blast_dir/blast_result </runnable_parameters>
+      <runnable_parameters>-formatdb 1 -infile_dir t/data/blast_dir -result_dir t/data/blast_result </runnable_parameters>
     </analysis>
 
     <rule>
