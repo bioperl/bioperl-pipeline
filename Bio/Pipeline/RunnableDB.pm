@@ -153,13 +153,8 @@ sub setup_runnable_params {
     #set the pamaters in the runnable
     my $runnable = $self->runnable;
     foreach my $routine (keys %param){
-      eval {
-        $runnable->$routine($param{$routine});
-      };
-      if($@) {
-
-        $self->warn("Error setting up parameter $routine for analysis ".$self->analysis->logic_name." with message:\n $@\n");
-      }
+      $self->throw("Cannot call $routine using $runnable") unless $runnable->can($routine);
+      $runnable->$routine($param{$routine});
     }
     return;
 }
@@ -280,19 +275,38 @@ sub output {
 sub setup_runnable_inputs {
     my ($self) = @_;
     my $runnable = $self->runnable;
+    $runnable->can("datatypes") || $self->throw("Runnable $runnable has no sub datatypes implemeted.");
     my %r_datatypes = $runnable->datatypes;
     my @inputs = $self->input_objs;
+        
 
     my %match_datatype={};
   
     DT: foreach my $r_key (keys %r_datatypes){
         foreach my $in_obj(@inputs){
-            next if exists $match_datatype{$in_obj};
-            if ($self->match_data_type($in_obj,$r_datatypes{$r_key})) {
-                $match_datatype{$in_obj}=1;
-                #set runnables inputs
-                $self->runnable->$r_key($in_obj);
-                next DT;
+            if (ref($r_datatypes{$r_key}) eq "ARRAY"){
+                foreach my $dt (@{$r_datatypes{$r_key}}){
+                    next DT if exists $match_datatype{$in_obj};
+                    if ($self->match_data_type($in_obj,$dt)) {
+                      $match_datatype{$in_obj}=1;
+                      #set runnables inputs
+                      $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
+                      $self->runnable->$r_key($in_obj);
+                      next DT;
+                    }
+
+                }
+                
+            }
+            else {
+              next if exists $match_datatype{$in_obj};
+              if ($self->match_data_type($in_obj,$r_datatypes{$r_key})) {
+                 $match_datatype{$in_obj}=1;
+                 #set runnables inputs
+                 $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
+                 $self->runnable->$r_key($in_obj);
+                 next DT;
+              }
             }
         }
         $self->throw("Job's inputs datatypes do not match runnable ".$self->runnable." datatypes.");
@@ -510,34 +524,6 @@ sub input_is_void {
 
 }
 
-=head2 verify_input_types
-
-    Title   :   verify_input_types
-    Usage   :   $self->verify_input_types
-    Function:   
-    Returns :   
-    Args    :   
-
-=cut
-
-sub verify_input_types{
-    my($self) = @_;
-
-    my %match_datatype={};
-
-    DT: foreach my $r_datatype ($self->runnable->datatypes){
-        foreach my $input_datatype($self->datatypes){
-            next if exists $match_datatype{$input_datatype}; 
-            if ($input_datatype->match($r_datatype)){
-                $match_datatype{$input_datatype}=1;
-                next DT;
-            }
-        } 
-        $self->throw("Job's inputs datatypes do not match runnable ".$self->runnable." datatypes.");
-    }
-
-}
-    
 =head2 fetch_input
 
     Title   :   fetch_input

@@ -121,11 +121,29 @@ sub fetch_input {
   }
   my $data_adaptor = $self->data_adaptor;
   my $data_method = $self->data_adaptor_method;
-  my $input =  $adaptor->$data_adaptor->${data_method}($name); 
+  my @methods = split("->",$data_method);
+  my $meth = $adaptor->$data_adaptor;
+  
+  #loop through each method call
+  for (my $i = 0; $i < $#methods; $i++) {
+      $meth = $self->_get_method_ref($meth,$methods[$i]);
+  }
+  my $last = $methods[-1];
+  my $input = $meth->${last}($name);
+
+  #my $input =  $adaptor->$data_adaptor->${data_method}($name); 
   
   return $input;
 }
-
+sub _get_method_ref {
+    my ($self,$object,$methodname) = @_;
+    if ($object->can($methodname)){
+      return $object->$methodname;
+    }
+    else {
+      $self->throw("Cannot call $methodname using ".(ref($object)||$object));
+  }
+}
 =head2 write_output
 
   Title    : write_output 
