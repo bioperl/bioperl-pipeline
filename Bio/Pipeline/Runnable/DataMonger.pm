@@ -69,8 +69,12 @@ sub add_filter {
 
 sub filters {
     my ($self) = @_;
-
-    return @{$self->{'_filter'}};
+    if(ref($self->{'_filter'}) eq "ARRAY"){
+      return @{$self->{'_filter'}};
+    }
+    else {
+        return;
+    }
 }
 
 sub converter {
@@ -163,7 +167,15 @@ sub run {
   my ($self) = @_;
 
   my $input = $self->input;
-  my @output= @{$input};
+  my @output;
+  if(ref($input) eq "ARRAY"){
+    @output= @{$input};
+  }
+  else {
+    push @output,$input;
+  }
+
+
 
   if ($self->filters){
       foreach my $filter ($self->filters){
