@@ -589,7 +589,7 @@ sub _timeout {
   my ($self, $jobs) = @_;
   my $curr_time = time();
   if(_pipeline_state_changed($jobs)){
-      $self->pipeline_time = $curr_time;
+      $self->pipeline_time($curr_time);
   }
   elsif(int(($curr_time - $self->pipeline_time)/3600) > $self->timeout){
       return 1;
