@@ -162,7 +162,7 @@ o Special System Variables
 
 o Individual Pipeline
   Each of pipeline templates will have its own configuration documentation and usage. Developers
-  should as much as possible defined the assumptions and system requirements in that document.
+  define the assumptions and system requirements in that document.
   Pls refer to the individual pipeline examples for more information on using them. Individual
   pipeline examples are located in the bioperl-pipeline/xml/examples directory. Sample data
   and instructions are provided.
