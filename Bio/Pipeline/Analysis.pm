@@ -1,7 +1,7 @@
 # BioPerl runnable for Bio::Pipeline::Analysisbject for storing sequence analysis details
 #
 # Adapted from Michele Clamp's EnsEMBL::Analysis  <michele@sanger.ac.uk>
-#
+# Written by FuguI team (fugui@fugu-sg.org)
 # You may distribute this runnable under the same terms as perl itself
 #
 # POD documentation - main docs before the code
@@ -37,11 +37,12 @@ Object to store details of an analysis run
 
 =head1 CONTACT
 
-Describe contact details here
+FuguI team Singapore: fugui@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. 
+Internal methods are usually preceded with a _
 
 =cut
 
@@ -206,12 +207,11 @@ sub db_version {
     return $self->{_db_version};
 }
 
-
 =head2 db_file
 
   Title   : db_file
   Usage   : $self->db_file
-  Function: Get/set method for the database file
+  Function: Get/set method for the sequence database file
   Returns : string
   Args    : string
 
@@ -433,70 +433,6 @@ sub output_handler{
 
     return $self->{_output_handler};
 }
-
-=head2 has_database
-
- Title   : has_database
- Usage   :
- Function:
- Example :
- Returns : 
- Args    :
-
-
-=cut
-
-sub has_database{
-   my ($self,@args) = @_;
-
-   if( defined $self->db ){ return 1; }
-   return 0;
-}
-
-=head2 compare
-
-  Title   : compare
-  Usage   : $self->compare( $analysis )
-  Function: returns 1 if this analysis is special case of given analysis
-            returns 0 if they are equal
-	    returns -1 if they are completely different
-  Returns : String
-  Args    : Bio::Pipeline::Analysis
-
-=cut
-
-
-sub compare {
-  my ($self, $ana ) = @_;
-  
-  $self->throw("Object is not a Bio::Pipeline::Analysis") 
-    unless $ana->isa("Bio::Pipeline::Analysis");
-  
-  my $detail = 0;
-
-  foreach my $methodName ( 'program', 'program_version', 'program_file',
-    'db','db_version','db_file','gff_source','gff_feature', 'runnable',
-    'runnable_version', 'parameters','logic_name' ) {
-    if( defined $self->$methodName() && ! $ana->can($methodName )) {
-      $detail = 1;
-    } 
-    if( defined $self->$methodName() && ! defined $ana->$methodName() ) {
-      $detail = 1;
-    } 
-    # if given anal is different from this, defined or not, then its different
-    if( defined $ana->$methodName() &&
-          ( $self->$methodName() ne $ana->$methodName() )) {
-      return -1;
-    }
-  }
-  if( $detail == 1 ) { return 1 };
-  return 0;
-}
-
-  
-  
-
-
 
 1;
 
