@@ -181,7 +181,7 @@ is to allow inputs from different database sources.
       
        The pipeline is loaded up using this XML file.
        A new database will be automtically created maybe created for you. 
-       This is done using the Xml2Db.pl script found in bioperl-pipeline/xml/Xml2Db.pl
+       This is done using the Xml2Db.pl script found in bioperl-pipeline/scripts/Xml2Db.pl
        Using the script:
 
         ******************************
@@ -217,7 +217,7 @@ is to allow inputs from different database sources.
 
     Edit PipeConf.pm accordingly for your environment variables.
 
-    run the pipeline by doing:
+    Go to bioperl-pipeline/scripts, to run the pipeline:
 
     perl PipelineManager.pl -dbname mydbname -dbuser root -dbhost pulse
 
@@ -291,8 +291,18 @@ is to allow inputs from different database sources.
                 <type>SCALAR</type>
             </argument>
             <argument>
-                <tag>format</tag>
+                <tag>informat</tag>
                 <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>outformat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>tag</tag>
+                <value>file</value>
                 <type>SCALAR</type>
             </argument>
          </input_create>
@@ -308,7 +318,7 @@ is to allow inputs from different database sources.
       <program>blastall</program>
       <program_file>/usr/local/bin/blastall</program_file>
       <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>
-      <runnable_parameters>-formatdb 1 -result_dir /tmp/blast_dir/blast_result </runnable_parameters>
+      <runnable_parameters>-formatdb 1 -infile_dir /tmp/blast_dir -result_dir /tmp/blast_dir/blast_result </runnable_parameters>
     </analysis>
 
     <rule>
