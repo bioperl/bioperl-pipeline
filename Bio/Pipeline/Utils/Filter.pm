@@ -16,7 +16,7 @@ Bio::Pipeline::Utils::Filter
 =head1 SYNOPSIS
 
   use Bio::Pipeline::Utils::Filter;
-  my $filter = Bio::Pipeline::Utils::Filter->new('-module'=>$module,'-rank'=>$rank);
+  my $filter = Bio::Pipeline::Utils::Filter->new('-module'=>$module);
   my @filtered = $filter->run(@inputs)
 
 =head1 DESCRIPTION
@@ -69,11 +69,10 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : my $filter = Bio::Pipeline::Utils::Filter->new('-module'=>$module,'-rank'=>$rank);
+  Usage   : my $filter = Bio::Pipeline::Utils::Filter->new('-module'=>$module);
   Function: constructor for filter object 
   Returns : a new Filter object 
   Args    : module, the list of filter modules found in Bio::Pipeline::Utils::Filter::*
-            The rank specifies the order in which to apply the filter in relation to others
 
 =cut
 
@@ -92,14 +91,12 @@ sub new {
       my %param = @args;
       @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
       my $module= $param{'-module'};
-      my $rank= $param{'-rank'};
       $module || Bio::Root::Root->throw("Must you must provided a filter module found in Bio::Pipeline::Utils::Filter::*");
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_filter_module($module));
       my ($self) =  "Bio::Pipeline::Utils::Filter::$module"->new(@args);
       $self->module($module);
-      $self->rank($rank);
       return $self;
     }
 }
