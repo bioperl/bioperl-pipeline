@@ -1,4 +1,4 @@
-The pipeline relies on a mysql database for its job management and tracking.
+The bioperl-pipeline relies on a mysql database for its job management and tracking.
 This allows persistency of most operations inherent to the pipeline, which
 in turn allows the pipeline to restart seemlessly even after an abrupt halt due
 to some system failure (e.g. network problems, power cut,etc.)
