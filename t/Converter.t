@@ -1,11 +1,20 @@
 
 use strict;
+use vars qw($NTESTS);
 
 BEGIN{
 	use lib 't';
 	use Test;
-	plan tests => 28 
+	$NTESTS=28;
+	plan tests => $NTESTS;
 }
+
+END {
+     foreach( $Test::ntest..$NTESTS) {
+      skip('Ensembl or env variables not installed correctly',1);
+     }
+}
+
 
 use BiopipeTestDB;
 use Bio::Pipeline::SQL::DBAdaptor;
@@ -13,6 +22,16 @@ use Bio::Pipeline::SQL::ConverterAdaptor;
 use Bio::Pipeline::Converter;
 use Bio::Pipeline::Method;
 use Bio::Pipeline::Argument;
+
+
+ 
+eval {
+	require "Bio/EnsEMBL/Root.pm";
+};
+if ($@){	
+	skip('Ensembl not installed',1);
+        exit;
+}
 
 
 my $biopipe_test = BiopipeTestDB->new();
