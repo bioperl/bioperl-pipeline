@@ -151,92 +151,78 @@ sub deleteObj {
 }
 
 sub store {
-  my ($self,$analysis) = @_;
-
-  return $analysis->dbID
-  if defined ($analysis->dbID);
-
-  if( defined $analysis->created ) {
-    my $sth = $self->prepare( q{
-      INSERT INTO analysis
-      SET created = ?,
-          logic_name = ?,
-          db = ?,
-          db_version = ?,
-          db_file = ?,
-          program = ?,
-          program_version = ?,
-          program_file = ?,
-          parameters = ?,
-          runnable = ?,
-          gff_source = ?,
-          gff_feature = ? } );
-    $sth->execute
-      ( $analysis->created,
-        $analysis->logic_name,
-        $analysis->db,
-        $analysis->db_version,
-        $analysis->db_file,
-        $analysis->program,
-        $analysis->program_version,
-        $analysis->program_file,
-        $analysis->parameters,
-        $analysis->runnable,
-        $analysis->gff_source,
-        $analysis->gff_feature
-      );
-    $sth = $self->prepare( q{
-      SELECT last_insert_id() ;
-    } );
-    $sth->execute;
-    my $dbID = ($sth->fetchrow_array)[0];
-    $analysis->dbID( $dbID );
-  } else {
-    my $sth = $self->prepare( q{
-
-      INSERT INTO analysis
-      SET created = now(),
-          logic_name = ?,
-          db = ?,
-          db_version = ?,
-          db_file = ?,
-          program = ?,
-          program_version = ?,
-          program_file = ?,
-          parameters = ?,
-          runnable = ?,
-          gff_source = ?,
-          gff_feature = ? } );
-
-    $sth->execute
-      ( $analysis->logic_name,
-        $analysis->db,
-        $analysis->db_version,
-        $analysis->db_file,
-        $analysis->program,
-        $analysis->program_version,
-        $analysis->program_file,
-        $analysis->parameters,
-        $analysis->runnable,
-        $analysis->gff_source,
-        $analysis->gff_feature
-      );
-
-    $sth = $self->prepare( q{
-      SELECT last_insert_id()
-    } );
-    $sth->execute;
-
-    my $dbID = ($sth->fetchrow_array)[0];
-    $analysis->dbID( $dbID );
-    if( defined $dbID ) {
-      $sth = $self->prepare( q{
-        SELECT created
-        FROM analysis
-        WHERE analysis_id = ? } );
-      $sth->execute( $dbID );
-      $analysis->created( ($sth->fetchrow_array)[0] );
+    my ($self,$analysis) = @_;
+    
+    return $analysis->dbID if defined ($analysis->dbID);
+    
+    if( defined $analysis->created ) {
+	my $sth = $self->prepare( q{
+	    INSERT INTO analysis
+		SET created = ?,
+		logic_name = ?,
+		db = ?,
+		db_version = ?,
+		db_file = ?,
+		program = ?,
+		program_version = ?,
+		program_file = ?,
+		parameters = ?,
+		runnable = ?,
+		gff_source = ?,
+		gff_feature = ? } );
+	$sth->execute
+	    ( $analysis->created,
+	      $analysis->logic_name,
+	      $analysis->db,
+	      $analysis->db_version,
+	      $analysis->db_file,
+	      $analysis->program,
+	      $analysis->program_version,
+	      $analysis->program_file,
+	      $analysis->parameters,
+	      $analysis->runnable,
+	      $analysis->gff_source,
+	      $analysis->gff_feature
+	      );
+    } else {
+	my $sth = $self->prepare( q{
+	    
+	    INSERT INTO analysis
+		SET created = now(),
+		logic_name = ?,
+		db = ?,
+		db_version = ?,
+		db_file = ?,
+		program = ?,
+		program_version = ?,
+		program_file = ?,
+		parameters = ?,
+		runnable = ?,
+		gff_source = ?,
+		gff_feature = ? } );
+	
+	$sth->execute
+	    ( $analysis->logic_name,
+	      $analysis->db,
+	      $analysis->db_version,
+	      $analysis->db_file,
+	      $analysis->program,
+	      $analysis->program_version,
+	      $analysis->program_file,
+	      $analysis->parameters,
+	      $analysis->runnable,
+	      $analysis->gff_source,
+	      $analysis->gff_feature
+	      );
+	my $dbid = $sth->{mysql_insertid};
+	$sth = $self->prepare( q{
+	    SELECT created
+		FROM analysis
+		    WHERE analysis_id = ? } );
+	$sth->execute($dbid);
+	$analysis->created( ($sth->fetchrow_array)[0] );
+	$analysis->dbID($dbid);
+	return $dbid;
     }
-  }
 }
 1;
