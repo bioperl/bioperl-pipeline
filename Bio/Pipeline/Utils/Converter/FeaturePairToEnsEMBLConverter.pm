@@ -1,5 +1,5 @@
 
-package Bio::Pipeline::Converter::FeaturePairToEnsEMBLConverter;
+package Bio::Pipeline::Utils::Converter::FeaturePairToEnsEMBLConverter;
 
 use vars qw(@ISA);
 
@@ -7,9 +7,9 @@ use strict;
 use Bio::EnsEMBL::RepeatFeature;
 use Bio::EnsEMBL::RepeatConsensus;
 use Bio::EnsEMBL::RawContig;
-use Bio::Pipeline::Converter::BaseEnsEMBLConverter;
+use Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter;
 
-@ISA = qw(Bio::Pipeline::Converter::BaseEnsEMBLConverter);
+@ISA = qw(Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter);
 
 
 sub new{

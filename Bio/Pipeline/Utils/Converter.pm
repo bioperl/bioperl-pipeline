@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::Converter
+# BioPerl module for Bio::Pipeline::Utils::Converter
 #
 # Cared for by Juguang Xiao  <juguang@fugu-sg.org> ,Kiran <kiran@fugu-sg.org>
 #
@@ -10,15 +10,15 @@
 #
 =head1 NAME
 
-Bio::Pipeline::Converter input object
+Bio::Pipeline::Utils::Converter input object
 
 The converter object for handling object conversion during io handling.
 
 =head1 SYNOPSIS
 
-  use Bio::Pipeline::Converter;
+  use Bio::Pipeline::Utils::Converter;
 
-  my $converter = new Bio::Pipeline::Converter( -dbID => $converter_id,
+  my $converter = new Bio::Pipeline::Utils::Converter( -dbID => $converter_id,
                                                 -module => $module,
                                                 -method => $method,
                                                 -argument => $argument);
@@ -62,7 +62,7 @@ ds are usually preceded with a _
 =cut
 
 
-package Bio::Pipeline::Converter;
+package Bio::Pipeline::Utils::Converter;
 
 use vars qw(@ISA);
 use strict;
@@ -75,11 +75,11 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : my $converter = Bio::Pipeline::Converter->new('-module'=>'Bio::SeqFeatureIO',
+  Usage   : my $converter = Bio::Pipeline::Utils::Converter->new('-module'=>'Bio::SeqFeatureIO',
                                                           '-method'=>"convert",
                                                           '-rank'  => 1);
   Function: constructor for converter object
-  Returns : L<Bio::Pipeline::Converter>
+  Returns : L<Bio::Pipeline::Utils::Converter>
   Args    : module the module name
             method the method to call that converts the object
             rank   the rank of the converter assuming that they may be
@@ -198,7 +198,7 @@ converter sometimes needs to access database to fetch the relevant informations,
 
 sub _load_converter_module{
 	my ($self, $module) = @_;
-	$module = "Bio::Pipeline::Converter::$module";
+	$module = "Bio::Pipeline::Utils::Converter::$module";
 	my $ok;
 	#eval{
 	#	$ok = $self->_load_module($module);

@@ -1,10 +1,10 @@
 
-package Bio::Pipeline::Converter::HSPToEnsEMBLConverter;
+package Bio::Pipeline::Utils::Converter::HSPToEnsEMBLConverter;
 
 use vars qw(@ISA);
 
 use strict;
-use Bio::Pipeline::Converter::BaseEnsEMBLConverter;
+use Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter;
 use Bio::EnsEMBL::DnaPepAlignFeature;
 use Bio::EnsEMBL::DnaDnaAlignFeature;
 use Bio::EnsEMBL::Analysis;
@@ -12,7 +12,7 @@ use Bio::EnsEMBL::RawContig;
 use Bio::EnsEMBL::SeqFeature;
 use Bio::EnsEMBL::FeaturePair;
 
-@ISA = qw(Bio::Pipeline::Converter::BaseEnsEMBLConverter);
+@ISA = qw(Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter);
 
 sub new{
     my($class, @args) = @_;

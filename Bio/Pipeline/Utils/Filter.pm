@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::Filter
+# BioPerl module for Bio::Pipeline::Utils::Filter
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -11,18 +11,18 @@
 
 =head1 NAME
 
-Bio::Pipeline::Filter 
+Bio::Pipeline::Utils::Filter 
 
 =head1 SYNOPSIS
 
-  use Bio::Pipeline::Filter;
-  my $filter = Bio::Pipeline::Filter->new('-module'=>$module,'-rank'=>$rank);
+  use Bio::Pipeline::Utils::Filter;
+  my $filter = Bio::Pipeline::Utils::Filter->new('-module'=>$module,'-rank'=>$rank);
   my @filtered = $filter->run(@inputs)
 
 =head1 DESCRIPTION
 
 Filter object plugged into DataMonger to be carried out between analysis.
-List of filter modules may be found in Bio::Pipeline::Filter::*
+List of filter modules may be found in Bio::Pipeline::Utils::Filter::*
 Filters do not modify the objects, only returns a subset of the objects
 
 =head1 FEEDBACK
@@ -58,7 +58,7 @@ ds are usually preceded with a _
 
 # Let the code begin...
 
-package Bio::Pipeline::Filter;
+package Bio::Pipeline::Utils::Filter;
 use vars qw(@ISA);
 use strict;
 use Bio::Root::Root;
@@ -69,10 +69,10 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : my $filter = Bio::Pipeline::Filter->new('-module'=>$module,'-rank'=>$rank);
+  Usage   : my $filter = Bio::Pipeline::Utils::Filter->new('-module'=>$module,'-rank'=>$rank);
   Function: constructor for filter object 
   Returns : a new Filter object 
-  Args    : module, the list of filter modules found in Bio::Pipeline::Filter::*
+  Args    : module, the list of filter modules found in Bio::Pipeline::Utils::Filter::*
             The rank specifies the order in which to apply the filter in relation to others
 
 =cut
@@ -83,7 +83,7 @@ sub new {
 
     # or do we want to call SUPER on an object if $caller is an
     # object?
-    if( $class =~ /Bio::Pipeline::Filter::(\S+)/ ) {
+    if( $class =~ /Bio::Pipeline::Utils::Filter::(\S+)/ ) {
       my ($self) = $class->SUPER::new(@args);
       $self->_initialize(@args);
       return $self;
@@ -93,11 +93,11 @@ sub new {
       @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
       my $module= $param{'-module'};
       my $rank= $param{'-rank'};
-      $module || Bio::Root::Root->throw("Must you must provided a filter module found in Bio::Pipeline::Filter::*");
+      $module || Bio::Root::Root->throw("Must you must provided a filter module found in Bio::Pipeline::Utils::Filter::*");
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_filter_module($module));
-      my ($self) =  "Bio::Pipeline::Filter::$module"->new(@args);
+      my ($self) =  "Bio::Pipeline::Utils::Filter::$module"->new(@args);
       $self->module($module);
       $self->rank($rank);
       return $self;
@@ -122,7 +122,7 @@ sub _initialize {
 
 sub _load_filter_module {
     my ($self, $module) = @_;
-    $module = "Bio::Pipeline::Filter::" . $module;
+    $module = "Bio::Pipeline::Utils::Filter::" . $module;
     my $ok;
 
     eval {
@@ -132,7 +132,7 @@ sub _load_filter_module {
     print STDERR <<END;
 $self: $module cannot be found
 Exception $@
-For more information about the Bio::Pipeline::Filter system please see the pipeline docs 
+For more information about the Bio::Pipeline::Utils::Filter system please see the pipeline docs 
 This includes ways of checking for formats at compile time, not run time
 END
   ;

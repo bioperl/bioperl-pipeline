@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::Dumper::generic
+# BioPerl module for Bio::Pipeline::Utils::Dumper::generic
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -69,7 +69,7 @@ ds are usually preceded with a _
 
 =cut
 
-package Bio::Pipeline::Dumper::generic;
+package Bio::Pipeline::Utils::Dumper::generic;
 use vars qw(@ISA @BS_PARAMS %OK_FIELD $AUTOLOAD);
 use strict;
 use Bio::Root::Root;

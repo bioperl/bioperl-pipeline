@@ -1,13 +1,13 @@
-package Bio::Pipeline::Converter::ExonToEnsEMBLConverter;
+package Bio::Pipeline::Utils::Converter::ExonToEnsEMBLConverter;
 
 use Bio::EnsEMBL::Analysis;
 use Bio::EnsEMBL::RawContig;
 use Bio::EnsEMBL::Exon;
 use vars qw(@ISA);
 
-use Bio::Pipeline::Converter::BaseEnsEMBLConverter;
+use Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter;
 
-@ISA = qw(Bio::Pipeline::Converter::BaseEnsEMBLConverter);
+@ISA = qw(Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter);
 
 =head2 new
 

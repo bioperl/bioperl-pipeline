@@ -12,7 +12,7 @@
 
 =head1 NAME
 
-Bio::Pipeline::Converter::SeqFeatureToEnsEMBLConverter
+Bio::Pipeline::Utils::Converter::SeqFeatureToEnsEMBLConverter
 
 =head1 SYNOPSIS
 
@@ -27,15 +27,15 @@ feel free to apply in any field if you feel comfortable.
 
 # Gentlemen, start your engine...
 
-package Bio::Pipeline::Converter::SeqFeatureToEnsEMBLConverter;
+package Bio::Pipeline::Utils::Converter::SeqFeatureToEnsEMBLConverter;
 
 use strict;
 use vars qw(@ISA);
 use Bio::EnsEMBL::Analysis;
 use Bio::EnsEMBL::SimpleFeature;
-use Bio::Pipeline::Converter::BaseEnsEMBLConverter;
+use Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter;
 
-@ISA = qw(Bio::Pipeline::Converter::BaseEnsEMBLConverter);
+@ISA = qw(Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter);
 
 sub _convert_single{
      my ($self, $input) = @_;

@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::Dumper
+# BioPerl module for Bio::Pipeline::Utils::Dumper
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -11,16 +11,16 @@
 
 =head1 NAME
 
-Bio::Pipeline::Dumper
+Bio::Pipeline::Utils::Dumper
 
 Object for dumping output from pipeline to flat files
 
 =head1 SYNOPSIS
 
-  use Bio::Pipeline::Dumper;
+  use Bio::Pipeline::Utils::Dumper;
   use Bio::SearchIO;
 
-  my $dumper = Bio::Pipeline::Dumper->new(-module=>'BlastScore',
+  my $dumper = Bio::Pipeline::Utils::Dumper->new(-module=>'BlastScore',
                                         -file=>">shawn.out",
                                         -significance=>"<0.001",
                                         -query_frac_identical=>">0.21");
@@ -39,7 +39,7 @@ Object for dumping output from pipeline to flat files
 
 #or 
   use Bio::TreeIO;
-  use Bio::Pipeline::Dumper;
+  use Bio::Pipeline::Utils::Dumper;
 
   my $tio = Bio::TreeIO->new(-file=>$ARGV[0],-format=>"newick");
 
@@ -47,7 +47,7 @@ Object for dumping output from pipeline to flat files
     push @tree, $tree;
   }
 
-  my $du = Bio::Pipeline::Dumper->new(-module=>"generic",
+  my $du = Bio::Pipeline::Utils::Dumper->new(-module=>"generic",
                                       -format=>"newick",
                                       -dir=>"/usr/users/shawnh/src/bioperl-pipeline/Bio/Pipeline/Dumper",
                                       -file_suffix=>".tr",
@@ -62,7 +62,7 @@ Object for dumping output from pipeline to flat files
 =head1 DESCRIPTION
 
 This is the interface by which data can be dumped into flat files.
-Specific dumpers are found in Bio::Pipeline::Dumper::*
+Specific dumpers are found in Bio::Pipeline::Utils::Dumper::*
 
 =head1 FEEDBACK
 
@@ -95,7 +95,7 @@ ds are usually preceded with a _
 
 =cut
 
-package Bio::Pipeline::Dumper;
+package Bio::Pipeline::Utils::Dumper;
 use vars qw(@ISA);
 use strict;
 use Bio::Root::Root;
@@ -106,10 +106,10 @@ use Bio::Root::IO;
 =head2 new
 
   Title   : new
-  Usage   : my $inc = Bio::Pipeline::Dumper->new('-module'=>$module,-file=>$out_file_name,-arg1=>$arg1,-arg2=>$arg2);
+  Usage   : my $inc = Bio::Pipeline::Utils::Dumper->new('-module'=>$module,-file=>$out_file_name,-arg1=>$arg1,-arg2=>$arg2);
   Function: constructor for Dumper object 
   Returns : a new Dumper object
-  Args    : -module the list of Dumper modules found in Bio::Pipeline::Dumper::*
+  Args    : -module the list of Dumper modules found in Bio::Pipeline::Utils::Dumper::*
             -file   the output file for dumping 
             -args   Any number of arguments to be passed on to the Dumper modules
 
@@ -121,7 +121,7 @@ sub new {
 
     # or do we want to call SUPER on an object if $caller is an
     # object?
-    if( $class =~ /Bio::Pipeline::Dumper::(\S+)/ ) {
+    if( $class =~ /Bio::Pipeline::Utils::Dumper::(\S+)/ ) {
       my ($self) = $class->SUPER::new(@args);
       return $self;
     }
@@ -129,7 +129,7 @@ sub new {
       my %param = @args;
       @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
       my $module= $param{'-module'};
-      $module || Bio::Root::Root->throw("Must you must provided a Dumper module found in Bio::Pipeline::Dumper::*");
+      $module || Bio::Root::Root->throw("Must you must provided a Dumper module found in Bio::Pipeline::Utils::Dumper::*");
       my $file= $param{'-file'};
       delete $param{'-file'};
       my $dir = $param{'-dir'};
@@ -142,7 +142,7 @@ sub new {
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_Dumper_module($module));
-      my ($self) =  "Bio::Pipeline::Dumper::$module"->new(@args);
+      my ($self) =  "Bio::Pipeline::Utils::Dumper::$module"->new(@args);
       $self->module($module);
       $file = shift @{$file} if ref($file) eq "ARRAY";
       $self->_file($file) if $file;
@@ -213,13 +213,13 @@ sub _file_suffix {
   Usage   : $inc->_load_Dumper_module("setup_genewise");
   Function: loads the input create module 
   Returns : a new Dumper object
-  Args    : module, the name of the module found in Bio::Pipeline::Dumper
+  Args    : module, the name of the module found in Bio::Pipeline::Utils::Dumper
 
 =cut
 
 sub _load_Dumper_module {
     my ($self, $module) = @_;
-    $module = "Bio::Pipeline::Dumper::" . $module;
+    $module = "Bio::Pipeline::Utils::Dumper::" . $module;
     my $ok;
 
     eval {
@@ -229,7 +229,7 @@ sub _load_Dumper_module {
     print STDERR <<END;
 $self: $module cannot be found
 Exception $@
-For more information about the Bio::Pipeline::Dumper system please see the pipeline docs 
+For more information about the Bio::Pipeline::Utils::Dumper system please see the pipeline docs 
 This includes ways of checking for formats at compile time, not run time
 END
   ;

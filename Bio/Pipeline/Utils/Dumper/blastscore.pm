@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::Dumper::blastscore
+# BioPerl module for Bio::Pipeline::Utils::Dumper::blastscore
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -11,7 +11,7 @@
 
 =head1 NAME
  
-Bio::Pipeline::Dumper::blastscore
+Bio::Pipeline::Utils::Dumper::blastscore
 
 =head1 SYNOPSIS
 
@@ -104,7 +104,7 @@ ds are usually preceded with a _
 
 =cut
 
-package Bio::Pipeline::Dumper::blastscore;
+package Bio::Pipeline::Utils::Dumper::blastscore;
 use vars qw(@ISA @BS_PARAMS %OK_FIELD $AUTOLOAD);
 use strict;
 use Bio::Root::Root;

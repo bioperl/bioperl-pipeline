@@ -1,14 +1,14 @@
 
-package Bio::Pipeline::Converter::BaseEnsEMBLConverter;
+package Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter;
 
 use vars qw(@ISA);
 
 use strict;
 # use Bio::SeqFeatureIO;
 use Bio::EnsEMBL::Analysis;
-use Bio::Pipeline::Converter;
+use Bio::Pipeline::Utils::Converter;
 
-@ISA = qw(Bio::Pipeline::Converter);
+@ISA = qw(Bio::Pipeline::Utils::Converter);
 
 sub new {
     my ($class, @args) = @_;

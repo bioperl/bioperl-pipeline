@@ -1,14 +1,14 @@
 
-package Bio::Pipeline::Converter::featurePair_bio2ens;
+package Bio::Pipeline::Utils::Converter::featurePair_bio2ens;
 
 
 use vars qw(@ISA);
 
 use strict;
 use Bio::SeqFeatureIO;
-use Bio::Pipeline::Converter;
+use Bio::Pipeline::Utils::Converter;
 
-@ISA = qw(Bio::Pipeline::Converter);
+@ISA = qw(Bio::Pipeline::Utils::Converter);
 
 sub ens_dbadaptor{
    my ($self, @args) = @_;

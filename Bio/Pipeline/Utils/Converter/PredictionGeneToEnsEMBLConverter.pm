@@ -8,11 +8,11 @@
 
 =head1 NAME
 
-Bio::Pipeline::Converter::PredictionGeneToEnsEMBLConverter
+Bio::Pipeline::Utils::Converter::PredictionGeneToEnsEMBLConverter
 
 =cut
 
-package Bio::Pipeline::Converter::PredictionGeneToEnsEMBLConverter;
+package Bio::Pipeline::Utils::Converter::PredictionGeneToEnsEMBLConverter;
 
 use strict;
 use vars qw(@ISA);
@@ -20,10 +20,10 @@ use vars qw(@ISA);
 use Bio::EnsEMBL::Analysis;
 use Bio::EnsEMBL::PredictionTranscript;
 
-use Bio::Pipeline::Converter::PredictionExonToEnsEMBLConverter;
-use Bio::Pipeline::Converter::BaseEnsEMBLConverter;
+use Bio::Pipeline::Utils::Converter::PredictionExonToEnsEMBLConverter;
+use Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter;
 
-@ISA = qw(Bio::Pipeline::Converter::BaseEnsEMBLConverter);
+@ISA = qw(Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter);
 
 sub new{
     my ($class, @args) = @_;
@@ -48,7 +48,7 @@ sub _convert_single{
 
     $output->analysis($self->analysis);
 
-    my $exonConverter = Bio::Pipeline::Converter::PredictionExonToEnsEMBLConverter->new();
+    my $exonConverter = Bio::Pipeline::Utils::Converter::PredictionExonToEnsEMBLConverter->new();
     $exonConverter->contig($self->contig);
 
     my @exons = $input->exons;
