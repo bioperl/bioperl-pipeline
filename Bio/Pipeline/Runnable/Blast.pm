@@ -220,6 +220,11 @@ sub run {
       my $filename = (split /\//, $self->seq1)[-1];
       $file = $filename.".bls";
     }
+    elsif($self->file) {
+      #is a file name
+      my $filename = (split /\//, $self->file)[-1];
+      $file = $filename.".bls";
+    }
     else {
       $file = "blastreport.bls";
     }
