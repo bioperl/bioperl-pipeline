@@ -217,7 +217,7 @@ and run PipelineManager.pl to start the pipeline.
       <logic_name>Tmhmm</logic_name>
       <runnable>Bio::Pipeline::Runnable::Tmhmm</runnable>
       <program>tmhmm</program>
-      <parameters>-PROGRAM /usr/users/pipeline/programs/TMHMM2.0b/bin/tmhmm</parameters>
+      <analysis_parameters>-PROGRAM /usr/users/pipeline/programs/TMHMM2.0b/bin/tmhmm</analysis_parameters>
       <!-- Specify which iohandler to use fetch the sequence -->
       <input_iohandler id="2"/>
       <!-- Specify which iohandler to use to store the protein features --> 
@@ -241,7 +241,7 @@ and run PipelineManager.pl to start the pipeline.
       <db>prints35_0.pval_blos62</db>
       <db_file>/data0/prints35_0.pval_blos62</db_file>
       <program>prints</program>
-      <parameters>-DB /data0/prints35_0.pval_blos62</parameters>
+      <analysis_parameters>-DB /data0/prints35_0.pval_blos62</analysis_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
@@ -253,7 +253,7 @@ and run PipelineManager.pl to start the pipeline.
       <db>prosite.dat</db>
       <db_file>/data0/prosite_17.16.dat</db_file>
       <program>profile</program>
-     <parameters>-PROGRAM /usr/users/pipeline/programs/pfscan</parameters>
+     <analysis_parameters>-PROGRAM /usr/users/pipeline/programs/pfscan</analysis_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
@@ -274,7 +274,7 @@ and run PipelineManager.pl to start the pipeline.
       <db>Pfam_ls_7.4</db>
       <db_file>/data0/Pfam_ls_7.4</db_file>
       <program>hmmpfam</program>
-      <parameters>-DB /data0/Pfam_ls_7.4</parameters>
+      <analysis_parameters>-DB /data0/Pfam_ls_7.4</analysis_parameters>
       <input_iohandler id="2"/>
       <output_iohandler id="3"/>
     </analysis>
