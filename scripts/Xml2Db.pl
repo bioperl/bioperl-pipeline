@@ -30,7 +30,7 @@ use Getopt::Long;
 use ExtUtils::MakeMaker;
 
 
-use vars qw($DBHOST $DBNAME $DEBUG $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT $HELP);
+use vars qw($DBHOST $DBNAME $DEBUG $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT $HELP $FORCE);
 
 $DBHOST ||= "mysql";
 $DBNAME ||= "test_XML";
@@ -66,7 +66,8 @@ GetOptions(
     'dbuser=s'    => \$DBUSER,
     'dbpass=s'    => \$DBPASS,
     'schema=s'    => \$SCHEMA,
-    'verbose'     => $DEBUG,
+    'verbose'     => \$DEBUG,
+    'force'       => \$FORCE,
     'p=s'         => \$DATASETUP,
 	'h'           => \$HELP
 )
@@ -105,8 +106,13 @@ $str .= defined $DBPASS ? "-p$DBPASS " : "";
 $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
 
 if($db_exist){
-    
-  my $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $DATASETUP.\nWould you like to continue? y/n","n");
+  my $create; 
+  if(!$FORCE){
+     $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $DATASETUP.\nWould you like to continue? y/n","n");
+  }
+  else {
+      $create="y";
+  }
   if($create =~/^[yY]/){
       print STDERR "Dropping Databases\n";      
       system("mysqladmin $str -f drop $DBNAME > /dev/null ");
