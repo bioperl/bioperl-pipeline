@@ -174,6 +174,7 @@ sub fetch_by_dbID {
     else {
         $self->throw("Unallowed iohandler type $adp_type");
     }
+    $iohandler->adaptor($self);
 
     return $iohandler;
 }
