@@ -410,7 +410,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
            push @initial_input_objs, $initial_input_obj;
          }
         }
-        if ($input_present_flag) {
+        if ($datamonger->child('initial')) {
           _create_initial_input_and_job($analysis_obj,@initial_input_objs); 
         }
 
