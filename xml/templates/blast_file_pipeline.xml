@@ -25,72 +25,60 @@ is to allow inputs from different database sources.
 
 </DESCRIPTION>
 
-
-<XML ORGANIZATION>
-
-  <pipeline_setup>
-    <database_setup>
-    <iohandler_setup>
-    <pipeline_flow_setup>
-    <job_setup>(optional)
-  </pipeline_setup>
-
-  <database_setup>
-  This specifies the databases that the pipeline connects to and the
-  adaptor modules that intefaces with them.
-
-  <iohandler_setup>
-  This specifies the method calls that will be used by the pipeline
-  to access the databases. These methods are contained in the modules
-  specified by the database setup section above.
-
-  <pipeline_flow_setup>
-  This specifies the analysis and rules of the pipeline. Analysis
-  refer to the runnables that will be used in this pipeline while the
-  rules specify the order in which these analysis are to be run, including
-  any specific pre-processing actions that are to be carried out.
-
-  <job_setup>
-  This is an optional part that allows specific inputs to be inserted.
-  Usually, this is done using DataMongers and Input Create modules.
-
-</XML ORGANIZATION>
-
-
 <THE BLAST DEMO PIPELINE>
 
-  <INSTALLATION>
-
+  <INSTALLATION REQUIREMENTS>
     <PERL PACKAGES>
-      The following perl packages are required:
-
-        <Bioperl>
-          bioperl-pipeline
-          bioperl-live
-          bioperl-run
-
-          Available thru anonymous cvs:
-
-          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-live
-          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
-          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline
-
-
-          This is bleeding edge stuff so it is recommended that you use main trunk code for all three packages.
- 
-          Note the schema for biopipe has moved to bioperl-pipeline/sql/schema.sql for convenience
-        </Bioperl>
+      Standard Biopipe installation (pls refer to bioperl-pipeline/INSTALL)
     </PERL PACKAGES>
 
     <BINARIES>
-      NCBI's blastall
+      NCBI's blastall package
     </BINARIES>
  
-  <CONFIGURING PIPELINE>
+  <CONFIGURING PIPELINE FOR THE IMPATIENT>
 
-      You will need to modify some parts of this XML file to point files to non-default places.
+    Modify the following parameters under the <global> tag to point to the directories,
+    files and parameters appropriately.
 
-      The following sections describe that.
+    <global 
+          rootdir="/Users/shawn/cvs_src/biopipe-release/examples/blast_file_pipeline/"
+          datadir="$rootdir/data"
+          workdir="$rootdir/blast"
+          inputfile="$datadir/input.fa"
+
+          blastpath = ""
+          
+          blast_param1="-p blastp -e 1e-5"
+          blastdb1="$datadir/blast.fa"
+          resultdir1="$rootdir/results/analysis1"
+
+          blast_param2="-p blastp -e 1e-50"
+          blastdb2="$datadir/blast.fa"
+          resultdir2="$rootdir/results/analysis2"
+          
+    />
+
+    rootdir - specifies base directory where subsequent directories point to
+    datadir - directory where blast input file and blast data files are located
+    workdir - working directory where input sequences are split. Each job will consist
+              of a single input file
+    inputfile - the path to the input file containing all the query sequences for blasting
+    blastpath - the path to NCBI's blastall binary
+    resultdir - directory where the blast results are stored. Each job will result
+                in a single blast result file
+
+    For the following parameters, each of the parameter followed by the digit 
+    refers to the particular analysis. 
+    In this example, we provide 2 analysis, but it is trivial to add more blasts analysis.
+  
+    blast_param - blast parameter string passed to blast 
+    blastdb - the path to the blast database file
+
+   </CONFIGURING PIPELINE FOR THE IMPATIENT>
+
+   <CONFIGURING THE PIPELINE>
+
 
       <analysis 1> Setting Up the Blast Jobs
 
@@ -105,7 +93,7 @@ is to allow inputs from different database sources.
 
             <argument>
                 <tag>input_file</tag>
-                <value>t/data/blast.fa</value>
+                <value>$workdir/input.fa</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -115,12 +103,12 @@ is to allow inputs from different database sources.
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>t/data/blast_dir</value>
+                <value>$workdir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>result_dir</tag>
-                <value>t/data/blast_result</value>
+                <value>$resultdir1</value>
                 <type> SCALAR</type>
             </argument>
 
@@ -153,30 +141,26 @@ is to allow inputs from different database sources.
           This specifies the actual location of the executable. Modify accoordingly. Note if
           this can be seen on command line at the nodes, then it is unnecessary. 
 
-          <db_file>t/data/blast.fa</db_file>
+          <db_file>$workdir/blast.fa</db_file>
 
           This is the blast database that you want to blast your input_file against.
           For testing purposes, I have made it the same as the input file here, so you are blasting
           proteins against itself. You can put any database you want here.
 
-          <parameters>-p blastp -e 1-e05 -formatdb 1 -infile_dir t/data/blast_dir/ -result_dir t/data/blast_dir/blast_result/ </parameters>
+          <analysis_parameters>$blast_param2</analysis_parameters>
+          <runnable_parameters>-formatdb 1 -result_dir $resultdir2</runnable_parameters>
 
-          You may modify the parameters as u wish. Here, blast parameters are intercalated with blast runnable
-          parameters so you may add any additional ones that you wish.
+          analysis parameters are the actual blast parameters.
+          runnable parameters are runnables passed to the blast module that does certain
+          preprocessing, handling of input/outputs etc. 
 
           If formatdb is set as above , the db_file will be formatdb-ed for blasting. If not, make sure
-          you do it yourself.
+          you do it yourself. result_dir refers to the directory in which the blast result of each job
+          are stored.
 
           Note this is using blastp for proteins, so if your input or database are dna sequences, change
           accordingly to blastn, blastx or tblastx etc...
           
-
-          Each blast result file is written to /tmp/blast_dir/blast_result/ which should be the same as the
-          argument given in analysis 1.
-
-          The Blast runnable will look for the files inside the directory specified by infile_dir.
-
-
   </CONFIGURING PIPELINE>    
 
   <LOADING PIPELINE>
@@ -186,25 +170,39 @@ is to allow inputs from different database sources.
        This is done using the PipelineManager script found in bioperl-pipeline/scripts.
        Using the script:
 
-        ******************************
-        * PipelineManager
-        ******************************
-        This script configures and runs a pipeline based on xml definitions.
+      ************************************
+      *PipelineManager
+      ************************************
+      This is the central script used to run the pipeline.
 
-         Usage: PipelineManager -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -xml pipeline_setup.xml
+      Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
 
-          Default values in ()
-            -dbhost host (mysql)
-            -dbname name of pipeline database (test_XML)
-            -dbuser user name (root)
-            -dbpass db password()
-            -schema The path to the bioperl-pipeline schema.
-                    Needed if you want to create a new db.
-                    (../sql/schema.sql)
-            -xml    the pipeline setup xml file (required)
+      Options:
+      Default values are read from PipeConf.pm
+
+           -dbhost    The database host name (localhost)
+           -dbname    The pipeline database name (annotate_pipeline)
+           -dbuser    User for connecting to db (root)
+           -dbpass    The password to mysql database()
+           -dbdriver  Database driver (mysql)
+           -schema    The Biopipe database schema (../sql/schema)
+           -xml       The xml pipeline template file. It will run XMLImporter if provided
+           -xf        Force drop of any existing Biopipe database with the same name
+           -flush     flush all locks on pipeline and remove any that exists. 
+                      Should only be used for debugging or development.
+           -batchsize The number ofjobs to be batched to one node
+           -local     Whether to run jobs in local mode 
+                      (on the node where this script is run)
+           -jobnbr    Number of jobs to run (for testing)
+           -queue     Specify the queue on which to submit jobs
+           -retry     Number of times to retry failed jobs
+           -notest    Don't run pre-pipeline checks
+           -norun     Use when you just want to load the XML without running
+           -verbose   Whether to show warning during test and setup
+           -help      Display this help
 
         Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in 
-	the Bio/Pipeline/PipeConf.pm file, for ease of use.
+      	the Bio/Pipeline/PipeConf.pm file, for convenience.
 
   </LOADING THE PIPELINE>
 
@@ -214,12 +212,27 @@ is to allow inputs from different database sources.
 
     Edit PipeConf.pm accordingly for your environment variables.
 
-    Go to bioperl-pipeline/scripts, to run the pipeline:
+    Go to bioperl-pipeline/scripts, to load the pipeline without running:
 
-    perl PipelineManager.pl -dbname mydbname -dbuser root -dbhost pulse
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -xml ~/biopipe_release/xml/templates/examble/blast_file_pipeline.xml
+                         -norun 
+
+    run the pipeline:
+
+    
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -queue priority
 
     you may use the -local option to run it in local mode without submitting to the nodes yet.
     This will be a good test before submitting, and is recommended for debugging.
+  
+    If you encounter any errors, you can simply rerun the first command with the xml option
+    and the biopipe database will be automatically recreated once the errors have been fixed.
 
   </RUNNING THE PIPELINE>
 
@@ -234,25 +247,40 @@ is to allow inputs from different database sources.
 
       cheers,
 
-      The Fugu Team
+      The Biopipe Team
+      bioperl-pipeline@bioperl.org
 
    </AFTER NOTE>
 
 <CHANGE LOG>
 28 Nov 2002 - First Addition - shawn
+10 Apr 2003 - Put in place global variables - shawn
 </CHANGE LOG>
 
 //-->
 
 <pipeline_setup>
-  <database_setup>
-    <streamadaptor id="1">
-      <module>Bio::Pipeline::Dumper</module>
-    </streamadaptor>
-  </database_setup>
 
-  <!-- fetch the sequence -->
+  <!-- You really only need to modify here -->
+  <global 
+          rootdir="t/"
+          datadir="$rootdir/data"
+          workdir="$datadir/blast_dir"
+          inputfile="$datadir/input.fa"
 
+          blastpath = ""
+          
+          blast_param1="-p blastp -e 1e-5"
+          blastdb1="$datadir/blast.fa"
+          resultdir1="$datadir/blast_result/"
+
+          blast_param2="-p blastp -e 1e-50"
+          blastdb2="$datadir/blast.fa"
+          resultdir2="$datadir/blast_result/"
+          
+  />
+
+  <!-- You shouldn't need to modify from here on -->
   <pipeline_flow_setup>
     <analysis id="1">
       <data_monger>
@@ -265,7 +293,7 @@ is to allow inputs from different database sources.
            <rank>1</rank>
             <argument>
                 <tag>input_file</tag>
-                <value>t/data/blast.fa</value>
+                <value>$inputfile</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -280,12 +308,12 @@ is to allow inputs from different database sources.
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>t/data/blast_dir</value>
+                <value>$workdir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>result_dir</tag>
-                <value>t/data/blast_result</value>
+                <value>$resultdir1</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -317,20 +345,38 @@ is to allow inputs from different database sources.
       <logic_name>Blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>family</db>
-      <db_file>t/data/blast.fa</db_file>
+      <db_file>$blastdb1</db_file>
       <program>blastall</program>
+
       <!--Provide path to blast here-->
-      <program_file></program_file>
-      <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>
-      <runnable_parameters>-formatdb 1 -result_dir t/data/blast_result </runnable_parameters>
+      <program_file>$blastpath</program_file>
+      <analysis_parameters>$blast_param1</analysis_parameters>
+      <runnable_parameters>-formatdb 1 -result_dir $resultdir1</runnable_parameters>
+    </analysis>
+    <analysis id="3">
+      <logic_name>Blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>family</db>
+      <db_file>$blastdb2</db_file>
+      <program>blastall</program>
+
+      <!--Provide path to blast here-->
+      <program_file>$blastpath</program_file>
+      <analysis_parameters>$blast_param2</analysis_parameters>
+      <runnable_parameters>-formatdb 1 -result_dir $resultdir2</runnable_parameters>
     </analysis>
 
     <rule>
       <current_analysis_id>1</current_analysis_id>
-     <next_analysis_id>2</next_analysis_id>
+      <next_analysis_id>2</next_analysis_id>
       <action>NOTHING</action>
     </rule>
 
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+      <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID_FILE</action>
+    </rule>
   </pipeline_flow_setup>
 
   <job_setup>
