@@ -510,7 +510,7 @@ sub update_runnable {
 sub _update_text{
 	my ($self, $dbID, $name, $value) =  @_;
 	my $query = "UPDATE analysis SET $name='$value' WHERE analysis_id=$dbID";
-	$self->prepare_execute(query);
+	$self->prepare_execute($query);
 }
 
 1;

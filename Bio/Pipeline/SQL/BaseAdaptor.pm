@@ -90,7 +90,7 @@ sub prepare_execute{
 	my ($self, $query, @args) = @_;
 	my $sth = $self->prepare($query);
 	$sth->execute(@args);
-	$self->throw("cannot execute because of $@) if($@);
+	$self->throw("cannot execute because of $@") if($@);
 	return $sth;
 }
 	

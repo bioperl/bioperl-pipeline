@@ -90,7 +90,7 @@ sub fetch_by_dbID{
 	my $query = "SELECT converter_id, module, method, argument FROM converter WHERE converter_id = $id";
 	
 	my $sth = $self->prepare_execute($query);
-	my ($converter_id, module, method, argument) = $sth->fetchrow_array;
+	my ($converter_id, $module, $method, $argument) = $sth->fetchrow_array;
 	
 	my $converter = new Bio::Pipeline::Converter(
 		-dbID => $converter_id,
