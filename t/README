@@ -1,0 +1,35 @@
+Tests for Bioperl Pipeline
+
+Different functionalities and bioperl pipleline objects are tested in different tests as follows.
+
+Input.t
+Input Handling(IoHandler with datahandlers to read in the input)
+Classes tested : IOHandler(fetching input), DataHandler, InputAdaptor, Input
+
+Output.t
+Output Handling ( IOHandler with datahandlers to write the output)
+Classes tested : IOHandler (writing output), DataHandler, AnalysisAdaptor
+
+Job.t
+Job (Fetching of jobs, running, creation of next job according to the rules) 
+Classes tested : Job, JobAdaptoar, Rule, RuleAdaptor
+
+BatchSubmission.t
+BatchSubmission (Submitting the jobs through Batch submission interface) 
+Classes tested : BatchSubmission, LSF
+
+Analysis.t
+Classes tested : Analysis, AnalysisAdaptor
+
+
+RunnableI, RunnableDB are implicitly tested throuh Job.t , a TestRunnable is used to test Job
+DataTypes is implicitly tested through Input.t
+
+BiopipeTestDB.conf need to be modified to point to the schema required to create the test database. The schema
+file also contains the test data required for the tests to run.
+Some Adaptor clases needed for testing are in SQL dir
+
+Runnables are not tested as yet. coming soon..
+PipelineManager.pl is not tested.. havent figured out how to write a test case...
+
+
