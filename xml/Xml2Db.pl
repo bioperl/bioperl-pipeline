@@ -224,7 +224,7 @@ foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis'))
                                                 -runnable => $analysis->child('runnable')->value);
     my $program = $analysis->child('program');
     my $output_handler_id = $analysis->child('output_iohandler_id');
-    my $new_input_handler_id = $analysis->child('new_input_handler_id');
+    my $new_input_handler_id = $analysis->child('new_input_iohandler_id');
 
     my $program_file = $analysis->child('program_file');
     my $db = $analysis->child('db');
@@ -287,17 +287,43 @@ foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis'))
    }
    $analysis_obj->iohandler(\@ioh);
 
-    foreach my $map ($analysis->children('map_iohandler')){
-        if (ref($map)){
-          my $prev_iohandler_id = $map->child('prev_iohandler_id');
-          my $map_iohandler_id = $map->child('map_iohandler_id');
-          if ($prev_iohandler_id && $map_iohandler_id){
-      #store to iohandler_map table
-          $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$prev_iohandler_id->value,$map_iohandler_id->value);
+   
+    foreach my $create_input ($analysis->children('create_input_setup')){
+        if (ref($create_input)){
+          my $ids_iohandler_id = $create_input->child('fetch_input_ids_iohandler_id');
+          my $input_iohandler_id = $create_input->child('fetch_input_iohandler_id');
+          if ($ids_iohandler_id && $input_iohandler_id){
+    		  my $input_iohandler = _get_iohandler($input_iohandler_id->value);
+	          if (!defined($input_iohandler)) {
+        	     print "input iohandler for analysis not found\n";
+      	       	  }
+                  push @ioh, $input_iohandler;
+                  my $ids_iohandler = _get_iohandler($ids_iohandler_id->value);
+                  if (!defined($ids_iohandler)) {
+                     print "fetch input ids iohandler for analysis not found\n";
+                  }
+                  push @ioh, $ids_iohandler;
+      		  #store to iohandler_map table
+                  $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$ids_iohandler_id->value,$input_iohandler_id->value);
           }
         }
    }
-   
+    foreach my $map ($analysis->children('input_iohandler_mapping')){
+        if (ref($map)){
+          my $prev_iohandler_id = $map->child('prev_analysis_iohandler_id');
+          my $current_iohandler_id = $map->child('current_analysis_iohandler_id');
+          if ($prev_iohandler_id && $current_iohandler_id){
+                  my $current_iohandler = _get_iohandler($current_iohandler_id->value);
+                  if (!defined($current_iohandler)) {
+                     print "current input iohandler for analysis not found\n";
+                  }
+                  push @ioh, $current_iohandler;
+                  #store to iohandler_map table
+                  $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$prev_iohandler_id->value,$current_iohandler_id->value);
+          }
+        }
+   }
+
    push @analysis_objs, $analysis_obj;
  }
 
