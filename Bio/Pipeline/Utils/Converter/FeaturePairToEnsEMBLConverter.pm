@@ -30,7 +30,7 @@ sub convert{
     my @pairs = @{$arg};
     my @ens_repeatfeatures;
     
-    $self->analysis || $self-throw("an analysis is needed");
+    $self->analysis || $self->throw("an analysis is needed");
     my $analysis = $self->analysis;
     
     foreach my $pair (@pairs){
