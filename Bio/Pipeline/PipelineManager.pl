@@ -35,6 +35,8 @@ use Bio::Pipeline::PipeConf qw (DBHOST
                                 QUEUE
                                 USENODES
                                 BATCHSIZE
+                                MAX_INCOMPLETE_JOBS_BATCHSIZE
+				MAX_CREATE_NEXT_JOBS_BATCHSIZE
                                 JOBNAME
                                 RETRY
                                 SLEEP
@@ -49,6 +51,7 @@ $| = 1;
 #my $currentStart = 0;       # Running total of job ids
 #my $completeRead = 0;       # Have we got all the input ids yet?
 my $local        = 0;       # Run failed jobs locally
+my $resume       = 0;
 my $analysis;               # Only run this analysis ids
 my $JOBNAME;                # Meaningful name displayed by bjobs
 my $pipeline_time = time(); #tracks how long pipeline has been running in seconds
@@ -59,7 +62,7 @@ my %pipeline_state;         #hash used to store state of all jobs in the pipelin
 			    # maybe this should be compulsory, as
 			    # the default jobname really isn't any use
 my $once =0;
-my $INPUT_LIMIT = 3;
+my $INPUT_LIMIT = 10000;
 GetOptions(
     'host=s'      => \$DBHOST,
     'dbname=s'    => \$DBNAME,
@@ -67,6 +70,7 @@ GetOptions(
     'dbpass=s'    => \$DBPASS,
     'flushsize=i' => \$BATCHSIZE,
     'local'       => \$local,
+    'resume'      => \$resume,
     'queue=s'     => \$QUEUE,
     'jobname=s'   => \$JOBNAME,
     'usenodes=s'  => \$USENODES,
@@ -142,13 +146,17 @@ print "///////////////Starting Pipeline//////////////////////\n";
 
 my @rules       = $ruleAdaptor->fetch_all;
 
-my $init_rule;
-foreach my $rule (@rules) {
-   if (! defined($rule->current) && ($rule->action eq 'CREATE_INPUT')) {
-      $init_rule = $rule;
-   }
+if (!$resume) {
+	my $init_rule;
+	foreach my $rule (@rules) {
+	   if (! defined($rule->current) && ($rule->action eq 'CREATE_INPUT')) {
+	      $init_rule = $rule;
+	   }
+	}
+	if (defined ($init_rule)) {
+	  _create_initial_jobs($init_rule->next);
+	}
 }
-_create_initial_jobs($init_rule->next);
 
 my $run = 1;
 my $submitted;
@@ -156,20 +164,19 @@ my $total_jobs;
 while ($run) {
     
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db,-queue=>$QUEUE);
-    my @jobs = $jobAdaptor->fetch_all;
-    if(!$total_jobs) {
-        $total_jobs = scalar(@jobs);
-    }
-    print STDERR "Fetched ".scalar(@jobs)." jobs\n";
+    my @incomplete_jobs = $jobAdaptor->fetch_incomplete_jobs($MAX_INCOMPLETE_JOBS_BATCHSIZE);
+    my @completed_jobs = $jobAdaptor->fetch_completed_jobs($MAX_CREATE_NEXT_JOBS_BATCHSIZE);
+    print STDERR "Fetched ".scalar(@incomplete_jobs)." incomplete jobs\n";
+    print STDERR "Fetched ".scalar(@completed_jobs)." completed jobs\n";
     $submitted = 0;
 
-    foreach my $job(@jobs){
+    foreach my $job(@incomplete_jobs){
         
-	      #check whether output of job needed for downstream analysis
+        #check whether output of job needed for downstream analysis
         my $job_depend = $ruleAdaptor->check_dependency_by_job($job,@rules);
         $job->dependency($job_depend);
         
-        if (($job->status eq 'NEW')   || ( ($job->status eq 'FAILED') && ($job->retry_count < $RETRY) )){ 
+        if ($job->retry_count < $RETRY ){ 
             $submitted = 1;
             
             if ($job->status eq 'FAILED'){
@@ -190,7 +197,9 @@ while ($run) {
                 &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
             }
         }
-        elsif ($job->status eq 'COMPLETED'){
+    }
+    foreach my $job(@completed_jobs) {
+
             my ($new_jobs) = &create_new_job($job);
             print STDERR "Creating ".scalar(@{$new_jobs})." jobs\n";
             foreach my $new_job (@{$new_jobs}){
@@ -212,7 +221,6 @@ while ($run) {
                 }
             }
             $job->remove;
-        }
     }
 
     #submit remaining jobs in batch.
@@ -220,7 +228,7 @@ while ($run) {
 
     my $count = $jobAdaptor->job_count($RETRY);
     $run =  0 if ($once || !$count);
-    sleep($SLEEP) if ($run && !$submitted);
+    #sleep($SLEEP) if ($run && !$submitted);
     #$completeRead = 0;
     #$currentStart = 0;
     print "Waking up and run again!\n";
@@ -322,7 +330,6 @@ sub _create_initial_jobs {
         $input->job_id($jobid);
         my @input_objs;
         push @input_objs, $input;
-        #$inputAdaptor->store_fixed_input($input);
         my $job = Bio::Pipeline::Job->new(-id => $jobid,
                                               -analysis => $analysis,
                                               -adaptor => $jobAdaptor,
@@ -332,6 +339,7 @@ sub _create_initial_jobs {
         if($INPUT_LIMIT && $jobid == $INPUT_LIMIT){
             last;}
     }
+    print "CREATED Initial jobs!\n";
 }
 
 sub _create_input {
