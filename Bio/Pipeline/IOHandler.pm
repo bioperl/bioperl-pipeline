@@ -129,11 +129,13 @@ sub new_ioh_db {
 sub new_ioh_stream{
     my ($class,@args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($module,$datahandlers) = $self->_rearrange([qw(MODULE
+    my ($dbID,$module,$datahandlers) = $self->_rearrange([qw(DBID
+                                                       MODULE
                                                        DATAHANDLERS)],@args);
 
     $module  || $self->throw("Need a stream module");
 
+    $self->dbID($dbID);
     $self->stream_module($module);
 
     $self->type("STREAM");
