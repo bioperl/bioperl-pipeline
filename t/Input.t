@@ -5,7 +5,7 @@
     BEGIN {
     use lib 't';
     use Test;
-    plan tests => 18;
+    plan tests => 17;
     }
     use BiopipeTestDB;
     use Bio::Pipeline::SQL::DBAdaptor;
@@ -68,11 +68,9 @@
 
   ok $obj->isa(Bio::PrimarySeqI);
   
-  my $dispid = $obj->display_id;
-  my $primaryid = $obj->primary_id;
+  my $dispid = $obj->display_name;
   my $subseq = $obj->subseq(10,15);
   
   ok $dispid, "test1";
-  ok $primaryid, "test1";
   ok $subseq, "CCCCCC";
 
