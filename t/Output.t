@@ -30,7 +30,7 @@
     my $analysis = $analysisAdaptor->fetch_by_dbID(1);
     ok $analysis;
     
-    my $io = $analysis->output_handler;
+    my ($io) = $analysis->output_handler;
      ok defined $io;
 
 
