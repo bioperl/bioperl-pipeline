@@ -35,22 +35,20 @@ package Bio::Pipeline::PipeConf;
 use strict;
 use vars qw (%PipeConf);
 
-
-
 %PipeConf = ( 
 
     # You will need to modify these variables
 
     # working directory for err/outfiles
-    NFSTMP_DIR => '/usr/users/juguang/tmp/',
+    NFSTMP_DIR => '/tmp/',
 
     # database specific variables
     
     DBI_DRIVER => 'mysql',
-    DBHOST     => 'mysql',
+    DBHOST     => 'localhost',
     DBNAME     => 'annotate_pipeline',
     DBUSER     => 'root',
-    DBPASS     => '',	     
+    DBPASS     => '',
 
     # Batch Management system module
     # Currently supports PBS and LSF
@@ -61,7 +59,7 @@ use vars qw (%PipeConf);
     QUEUE      => 'normal3', 
     
     # no of jobs to send to Batch Management system at one go
-    BATCHSIZE  => 3,        
+    BATCHSIZE  => 1 ,        
 
     #bsub opt
     BATCH_PARAM => '-C0',
