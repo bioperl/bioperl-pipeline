@@ -64,7 +64,8 @@ use vars qw(@ISA);
 use strict;
 use Bio::Root::Root;
 
-use Bio::Pipeline::PipeConf qw( BATCH_MOD);
+use Bio::Pipeline::PipeConf qw(BATCH_MOD
+                               BATCH_PARAM);
 
 
 @ISA = qw(Bio::Root::Root);
@@ -99,6 +100,9 @@ sub new{
         }
         if(defined($parameters)){
             $self->parameters($parameters);
+        }
+        elsif($BATCH_PARAM){
+            $self->parameters($BATCH_PARAM);
         }
         if(defined($pre_exec)){
             $self->pre_exec($pre_exec);
@@ -202,7 +206,7 @@ sub parameters{
    my ($self, $arg) = @_;
 
    if(defined($arg)){
-     $self->{'_paramemters'} = $arg;
+     $self->{'_parameters'} = $arg;
    }
 
    return $self->{'_parameters'};
