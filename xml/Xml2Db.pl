@@ -78,7 +78,7 @@ if($create =~/^[yY]/){
       die(1);
     }
     else {
-      system("mysqladmin -u root drop $DBNAME > /dev/null ");
+      system("mysqladmin -u root -f drop $DBNAME > /dev/null ");
       print STDERR "Creating $DBNAME\n   ";
       system("mysqladmin -u root create $DBNAME ");
       print STDERR "Loading Schema\n";
@@ -259,10 +259,11 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
            $input_present_flag = 1;
            my $name = $input->child('name')->value;
            my $input_iohandler_id = $input->child('iohandler')->value;
+          my $tag = defined($input->child('tag')) ? $input->child('tag')->value : 'input';
            my $input_iohandler_obj = _get_iohandler($input_iohandler_id);
            push @datamonger_iohs, $input_iohandler_obj;
            my $initial_input_obj = Bio::Pipeline::Input->new(-name => $name,
-                                                             -tag => 'input',
+                                                             -tag => $tag,
                                                              -job_id => 1,
                                                              -input_handler => $input_iohandler_obj);
            push @initial_input_objs, $initial_input_obj;
@@ -478,7 +479,7 @@ foreach my $rule ($xso1->child('pipeline_setup')->child('pipeline_flow_setup')->
 #store first before fetching job ids as I need the iohandlers in the db
 
 foreach my $iohandler (@iohandler_objs) {
-  $dba->get_IOHandlerAdaptor->store($iohandler);
+  $dba->get_IOHandlerAdaptor->store_if_needed($iohandler);
 }
 my @job_objs;
 
@@ -495,6 +496,7 @@ foreach my $job ($xso1->child('pipeline_setup')->child('job_setup')->children('j
    my $queue_id = defined($job->child('queue_id')) ? $job->child('queue_id')->value : '';
    my $retry_count = defined($job->child('retry_count')) ? $job->child('retry_count')->value : '';
    my $analysis = defined($job->child('analysis_id')) ? _get_analysis($job->child('analysis_id')->value) : '';
+   my $status = defined($job->child('status')) ? $job->child('status')->value : '';
 
    my @input_objs;
    foreach my $input ($job->children('fixed_input')) {
@@ -504,9 +506,11 @@ foreach my $job ($xso1->child('pipeline_setup')->child('job_setup')->children('j
        #$self->throw("Iohandler for input not found\n");
        print "Iohandler for input not found\n";
      }
+     my $tag = defined($input->child('tag')) ? $input->child('tag')->value : 'input';
      my $name = $input->child('name')->value;
 
      my $input_obj = Bio::Pipeline::Input->new(-name => $name,
+                                               -tag=>$tag,
                                              -input_handler => $input_iohandler);
      $input_obj->job_id($id);
      push @input_objs, $input_obj;
@@ -517,6 +521,7 @@ foreach my $job ($xso1->child('pipeline_setup')->child('job_setup')->children('j
                                          -queue_id => $queue_id,
                                          -retry_count => $retry_count,
                                          -analysis => $analysis,
+                                         -status =>$status,
                                          -adaptor => $dba->get_JobAdaptor,
                                          -inputs => \@input_objs);
    push @job_objs, $job_obj;
