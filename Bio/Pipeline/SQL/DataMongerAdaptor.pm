@@ -82,30 +82,11 @@ sub fetch_by_analysis{
     my ($self,$anal) = @_;
     #my $id = $anal->data_monger_id;
     my $id = $anal->dbID;
-
-    #fetch filters
-    my $sth = $self->prepare("SELECT filter_id,module,rank FROM filter where data_monger_id=?");
-    my $sth2 = $self->prepare("SELECT tag,value FROM filter_argument WHERE filter_id=?"); 
-  
-    $sth->execute($id);
-    
     my $dm = Bio::Pipeline::Runnable::DataMonger->new();
 
-    while(my ($filter_id,$module,$rank) = $sth->fetchrow_array()){
-        $sth2->execute($filter_id);
-        my @args;
-        push @args,('-module'=>$module,'-rank'=>$rank);
-
-        while(my($tag,$value) = $sth2->fetchrow_array()){
-            push @args, ($tag => $value);
-        }
-        my $filter = Bio::Pipeline::Filter->new(@args);
-        $dm->add_filter($filter);
-    }
-
     #fetch create inputs
-    $sth = $self->prepare("SELECT input_create_id,module,rank FROM input_create where data_monger_id=?");
-    $sth2 = $self->prepare("SELECT tag,value FROM input_create_argument WHERE input_create_id=?");
+    my $sth = $self->prepare("SELECT input_create_id,module,rank FROM input_create where data_monger_id=?");
+    my $sth2 = $self->prepare("SELECT tag,value FROM input_create_argument WHERE input_create_id=?");
 
     $sth->execute($id);
 
@@ -136,10 +117,6 @@ sub store {
 #                                                   -logic_name => 'DataMonger',
 #                                                   -program => 'DataMonger'); 
 #    $self->db->get_AnalysisAdaptor->store($dm_analysis);
-    my @filters = $dm->filters;
-    foreach my $filter($dm->filters) {
-       $self->_store_filter($filter, $anal_id);
-    }
     foreach my $input_create($dm->input_creates) {
        $self->_store_input_create($input_create, $anal_id);
     }
@@ -165,29 +142,6 @@ sub _store_input_create {
                 	                            tag = ?,
                         	                    value = ?");
            	      $sth->execute($input_create->dbID,$argument->tag, $argument->value);
-                      my $dbid = $sth->{mysql_insertid};
-                      $argument->dbID($dbid);
-              }
-}
-
-sub _store_filter {
-    my ($self, $filter, $data_monger_id) = @_;
-
-              my $sth = $self->prepare("INSERT INTO filter 
-                                        SET data_monger_id = ?,
-                                            module = ?,
-                                            rank = ?");
-              $sth->execute($data_monger_id, $filter->module,$filter->rank);
-              my $dbid = $sth->{mysql_insertid};
-              $filter->dbID($dbid);
-
-
-              foreach my $argument (@{$filter->arguments}) {
-                      my $sth = $self->prepare("INSERT INTO filter_argument
-                                                SET filter_id = ?,
-                                                    tag = ?,
-                                                    value = ?");
-                      $sth->execute($filter->dbID,$argument->tag, $argument->value);
                       my $dbid = $sth->{mysql_insertid};
                       $argument->dbID($dbid);
               }

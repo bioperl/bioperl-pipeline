@@ -44,7 +44,7 @@ package Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::Analysis;
 use Bio::Pipeline::SQL::BaseAdaptor;
 use Bio::Root::Root;
-use Bio::Pipeline::Converter;
+use Bio::Pipeline::Transformer;
 
 use vars qw(@ISA);
 use strict;
@@ -142,35 +142,35 @@ sub fetch_by_dbID {
                                             -IO_MAP         => \%iomap);
 
   $self->{'_cache'}->{$id} = $anal;
-    # I moved the converter code below the  analysis creation because it wants 
-    # the analysis as the parameter of converter, 
-    # and the analysis object, not id, must be assigned into converter when the converter is created. 
-    # - Juguang
-    foreach my $ioh(@iohs) {
-        my $converters_ref = $self->_fetch_converters_by_analysis_iohandler($anal, $ioh);
-        $ioh->converters($converters_ref) if ref $converters_ref;
-    }
+  foreach my $ioh(@iohs) {
+    my $trans_ref  = $self->_fetch_transformer_by_analysis_iohandler($anal, $ioh);
+    $ioh->transformers($trans_ref) if defined $trans_ref;
+  }
   return $anal;
 }
 
-sub _fetch_converters_by_analysis_iohandler {
+sub _fetch_transformer_by_analysis_iohandler {
     my ($self, $anal, $ioh) = @_;
 
-    my $query = " SELECT  ai.converter_id, ai.converter_rank
+    my $query = " SELECT  ai.transformer_id, ai.transformer_rank
                    FROM    analysis_iohandler ai
-                   WHERE   ai.analysis_id = ? AND ai.iohandler_id = ? ";
+                   WHERE   ai.analysis_id = ? AND ai.iohandler_id = ?
+                   AND     ai.transformer_id != NULL ";
 
     my $sth = $self->prepare($query);
     $sth->execute ($anal->dbID, $ioh->dbID);
 
-    my @converters;
-    while (my ($converter_id,$rank) = $sth->fetchrow_array){
-        if (defined $converter_id){
-            my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id, -analysis => $anal, -iohandler => $ioh);
-            push @converters, $converter;
-        }
+    my @trans;
+    while (my ($trans_id,$rank) = $sth->fetchrow_array){
+      defined $trans_id || next;
+      my $trans= $self->db->get_TransformerAdaptor->fetch_by_dbID($trans_id);
+      $trans || next;
+      $trans->analysis($anal);
+      $trans->iohandler($ioh);
+      push @trans, $trans;
     }
-    return \@converters;
+    return \@trans if $#trans > 0;
+    return undef;
 }
 
 
@@ -278,6 +278,7 @@ sub fetch_analysis_iohandler{
   return undef;
 
 }
+
 #############################################################################
 sub fetch_all {
     my ($self) = @_;
@@ -298,8 +299,6 @@ sub db {
     ($self->{'_db'} = $arg);
   $self->{'_db'};
 }
-
-
 
 sub deleteObj {
   my ($self) = @_;
@@ -425,17 +424,16 @@ sub store {
 sub _store_analysis_iohandler{
     my ($self, $analysis) = @_;
     my @iohs = @{$analysis->iohandler};
-
     foreach my $ioh (@iohs){
-        my $converters_ref = $ioh->converters;
-        if(defined $converters_ref){
-            foreach my $converter (@{$converters_ref}){
-                next unless defined $converter;
+        my $tran_ref = $ioh->transformers;
+        if(defined $tran_ref){
+            foreach my $tran(@{$tran_ref}){
+                next unless defined $tran;
                 my $sql =
                     "INSERT INTO analysis_iohandler
-                    SET analysis_id = ?, iohandler_id = ?, converter_id = ?,converter_rank = ?";
+                    SET analysis_id = ?, iohandler_id = ?, transformer_id = ?,transformer_rank = ?";
                 my $sth = $self->prepare($sql);
-                $sth->execute($analysis->dbID, $ioh->dbID, $converter->dbID, $converter->rank);
+                $sth->execute($analysis->dbID, $ioh->dbID, $tran->dbID, $tran->rank);
             }
         }else{
             my $sql =

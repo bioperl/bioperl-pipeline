@@ -354,12 +354,13 @@ sub fetch_input {
         }
     }
 
-    if (defined $self->converters) {
-      my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
-      foreach my $converter(@converters){
+    #run transformers after fetching
+    if (defined $self->transformers) {
+      my @trans = sort {$a->rank <=> $b->rank} @{$self->transformers};
+      foreach my $tran(@trans){
           
-          if(defined $converter){
-              $obj = $converter->convert($obj);
+          if(defined $tran){
+              $obj = $tran->run($obj);
           }
       }
     }
@@ -521,35 +522,18 @@ sub write_output {
         my @args = $self->_format_output_args($input,$object,@arguments);
         $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
     }
-
-    # safety check ? Maybe this check should be made before the runnable is even ran
-    #    $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
-    #       unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
-
-    if(defined $self->converters){
-        my @converters = @{$self->converters};
-        my $converter = shift @converters;
-        if(defined $converter){
-            my @methods = sort {$a->rank <=> $b->rank} @{$converter->method};
-            my $i = 0;
-            foreach my $method (@methods){
-                my $method_name = $method->name;
-                next if($method_name eq 'new') ;
-
-                if($method_name eq 'convert'){
-                    if(ref($object) eq "ARRAY"){
-                        $object = $converter->convert($object);
-                    }else{
-                        ($object) = $converter->convert([$object]);
-                    }
-                }else{
-                    my @arguments = sort { $a->rank <=> $b->rank} @{$method->arguments};
-                    my @args = $self->_format_output_args($input, $object, @arguments);
-                    $converter->$method_name(@args);
-                }
-                $i++;
-            }
+   
+    #run transformers before storing 
+    if(defined $self->transformers){
+      my @trans= @{$self->transformers};
+      my $tran = shift @trans;
+      my $obj = $tran->run($object);
+      foreach my $tran(@trans){
+        if(defined $tran){
+          $obj = $tran->run($obj);
         }
+      }
+      $object = $obj;
     }
 
     my @output_ids;
@@ -943,23 +927,23 @@ sub dbID {
 
 }
 
-=head2 converters
+=head2 transformers
 
-  Title   : converters
-  Usage   : $self->converters($id)
-  Function: get set the converters for this object
-  Returns : Bio::Pipeline::Converter 
-  Args    : Bio::Pipelnie::Converter 
+  Title   : transformers
+  Usage   : $self->transformers($id)
+  Function: get set the transformers for this object
+  Returns : L<Bio::Pipeline::Transformer> 
+  Args    : L<Bio::Pipelnie::Transformer> 
 
 =cut
 
-sub converters {
+sub transformers {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-        $self->{'_converters'} = $arg;
+        $self->{'_transformers'} = $arg;
     }
-    return $self->{'_converters'};
+    return $self->{'_transformers'};
 
 }
 
