@@ -35,7 +35,7 @@
     ok $batchsubmitter;
 
     my $jobAdaptor  = $dba->get_JobAdaptor;
-    my @jobs = $jobAdaptor->fetch_all; 
+    my @jobs = $jobAdaptor->fetch_jobs; 
 
     my $job = $jobs[0];
     ok $job;
