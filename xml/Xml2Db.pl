@@ -54,6 +54,7 @@ Default values in ()
         Needed if you want to create a new db.
         ($SCHEMA)
 -verbose For debugging
+-help   This message
 -p      the pipeline setup xml file (required)
 
 
@@ -522,7 +523,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 #              }
 #            }
             
-            $output_iohandler_obj->converters(\@converter_objs);
+            $output_iohandler_obj->converters(\@converter_objs) if $#converter_objs > 0;
             $output_iohandler_obj->type('OUTPUT');
             push @ioh, $output_iohandler_obj;
          }
