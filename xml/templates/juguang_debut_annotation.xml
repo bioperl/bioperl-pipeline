@@ -1,5 +1,5 @@
 <!--
-jug:uang_debut_annotation.xml
+juguang_debut_annotation.xml
 
 There are 2 new features of this xml different from Shawn, Kiran used before.
 1. Introducting converter tag, which is usually located within analysis.output_iohandler.
@@ -31,14 +31,6 @@ and will store the feature information the pipeline generates.
 		<user>root</user>
 		<password></password>
 		<module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
-	</dbadaptor>
-	<dbadaptor id="2">
-		<dbname>juguang_homo_core_9_30</dbname>
-		<driver>mysql</driver>
-		<host>mysql</host>
-		<user>root</user>
-		<password></password>
-		<module>Bio::BioToEns::Beacon</module>
 	</dbadaptor>
 	
 </database_setup>
@@ -87,44 +79,50 @@ and will store the feature information the pipeline generates.
 	<iohandler id="4" type="INPUT">
 		<adaptor id="1" type="DB"/>
       <method name="get_RawContigAdaptor" rank="1"/>
-		<method name="fetch_repeatMaskedSeq_by_contig_id" rank="2">
+		<method name="fetch_by_name" rank="2">
 			<argument value="INPUT" type="SCALAR" rank="1"/>
 		</method>
       <method name="get_repeatmasked_seq" rank="3"/>
 	</iohandler>
 	
 	<iohandler id="5" type="OUTPUT">
-		<adaptor id="2" type="DB"/>
-		<method name="store_BlastFeature_by_contig_id" rank="1">
-			<argument value="INPUT" type="SCALAR" rank="1"/>
-			<argument value="OUTPUT" type="ARRAY" rank="2"/>
+		<adaptor id="1" type="DB"/>
+      <method name="get_ProteinAlignFeatureAdaptor" rank="1"/>
+		<method name="store" rank="2">
+			<!-- argument value="INPUT" type="SCALAR" rank="1"/ -->
+			<argument value="OUTPUT" type="ARRAY" rank="1"/>
 		</method>
 	</iohandler>
 
    <converter id="1" module="repeatmasker_2ens">
-      <method id="11" name="new" rank="1">
-         <argument id = "11" tag = "-host" value = "mysql"/>
-         <argument id = "12" tag = "-driver" value = "mysql"/>
-         <argument id = "13" tag = "-dbname" value = "juguang_homo_core_9_30"/>
-         <argument id = "14" tag = "-user" value = "root"/>
+      <method name="new" rank="1">
+         <argument tag = "-host" value = "mysql"/>
+         <argument tag = "-driver" value = "mysql"/>
+         <argument tag = "-dbname" value = "juguang_homo_core_9_30"/>
+         <argument tag = "-user" value = "root"/>
          <!-- argument id = "15" tag = "-passwd" value = ""/ -->
+         <!-- I think to make the analysis logic name build in the converter instance module, but gave up since that will decrease the flexibility. 
+         -->
+         <argument tag="-analysis_logic_name" value="RepeatMask"/>
       </method >
-      <method id="12" name="contig_name" rank="2">
-         <argument id = "121" value="INPUT" type="SCALAR" rank="1"/>
+      <method name="contig_name" rank="2">
+         <argument value="INPUT" type="SCALAR" rank="1"/>
       </method>
-      <method id="13" name="convert" rank="3">
-         <argument id ="100" value="OK" rank=""/>
-      </method>   
-  </converter>    
+      <method name="convert" rank="3"/>
+      
   <converter id="2" module="blastall_2ens">
-      <method id="2" name="new" >
-         <argument id="29" tag = "-program" value = "blastx"/>
-         <argument id="21" tag = "-host" value ="mysql"/>
-         <argument id="22" tag = "-driver" value = "mysql"/>
-         <argument id="23" tag = "-dbname" value = "juguang_homo_core_9_30"/>
-         <argument id="24" tag = "-user" value = "root"/>
-         <!--argument id="25" tag = "-passwd" value = ""/ -->
+      <method name="new" rank="1">
+         <argument tag = "-program" value = "blastx"/>
+         <argument tag = "-host" value ="mysql"/>
+         <argument tag = "-driver" value = "mysql"/>
+         <argument tag = "-dbname" value = "juguang_homo_core_9_30"/>
+         <argument tag = "-user" value = "root"/>
+         <argument tag="-analysis_logic_name" value="blastall"/>
       </method >
+      <method name="contig_name" rank="2">
+         <argument value="INPUT" type="SCALAR" rank="1"/>
+      </method>
+      <method name="convert" rank="3"/>
    </converter>
                                                                                                             
 </iohandler_setup>
@@ -159,17 +157,17 @@ and will store the feature information the pipeline generates.
 		<output_iohandler id="3" converter_id="1" />
 			
 	</analysis>
-<!--	
+	
 	<analysis id="3">
 		<logic_name>Blast</logic_name>
 		<runnable>Bio::Pipeline::Runnable::Blast</runnable>
 		<db>swissprot</db>
 		<db_file>/data0/swissprot</db_file>
 		<program>blastall</program>
-		<parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+		<analysis_parameters>-p blastx -e 0.001 -F SEG+XNU</analysis_parameters>
 		<output_iohandler id="5" converter_id="2"/>
 	</analysis>
-	
+<!--	
 	<analysis id="4">
 		<logic_name>Blast</logic_name>
 		<runnable>Bio::Pipeline::Runnable::Blast</runnable>
@@ -187,9 +185,10 @@ and will store the feature information the pipeline generates.
 	-->
    <rule next="1" action="NOTHING"/>
 	<rule current="1" next="2" action="NOTHING"/>
-<!--
+
    <rule current="2" next="3" action="COPY_ID"/>
-	<rule current="2" next="4" action="COPY_ID"/>
+<!--
+   <rule current="2" next="4" action="COPY_ID"/>
 -->	
 </pipeline_flow_setup>
 
