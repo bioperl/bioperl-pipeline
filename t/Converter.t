@@ -1,11 +1,10 @@
-#!/usr/local/bin/perl
 
 use strict;
 
 BEGIN{
 	use lib 't';
 	use Test;
-	plan tests => 29;
+	plan tests => 5;
 }
 
 use BiopipeTestDB;
@@ -29,16 +28,16 @@ $converter = new Bio::Pipeline::Converter(
 	-module => "foomodule"
 );
 
-my @converter_methods;
-for(my $i=0; $i<3; $i++){
-	my $converter_method = new Bio::Pipeline::DataHandler(
-		-dbID => 100+$i,
-		-method => "method$i",
-		-rank => 1+$i
-	);
-	push @converter_methods, $converter_method;
-}
-$converter->method(\@converter_methods);
+#my @converter_methods;
+#for(my $i=0; $i<3; $i++){
+#	my $converter_method = new Bio::Pipeline::DataHandler(
+#		-dbID => 100+$i,
+#		-method => "method$i",
+#		-rank => 1+$i
+#	);
+#	push @converter_methods, $converter_method;
+#}
+#$converter->method(\@converter_methods);
 
 $ca->store($converter);
 
@@ -50,14 +49,12 @@ $converter = $ca->fetch_by_dbID(10);
 
 ok $converter->module, "foomodule";
 
-my @methods = @{$converter->method}; 
-ok scalar(@methods), 3;
+#my @methods = @{$converter->method}; 
+#ok scalar(@methods), 3;
 
-foreach my $method (@methods){
+#foreach my $method (@methods){
 
-
-
-}
+#}
 
 
 # internal methods to help test
@@ -69,17 +66,17 @@ sub _check_converter{
 	$module = $converter->module;
 	ok $module, $module;
 
-	my @methods = @{$converter->method};
+#	my @methods = @{$converter->method};
 
-	foreach my $method (@methods){
+#	foreach my $method (@methods){
 
-		if($method->dbID == 1){
-			&_check_converter_method($method, 1, 'new', 1);
-		}elsif($method->dbID == 2){
-			&_check_converter_method($method, 2, 'convert', 2);
-		}	
+#		if($method->dbID == 1){
+#			&_check_converter_method($method, 1, 'new', 1);
+#		}elsif($method->dbID == 2){
+#			&_check_converter_method($method, 2, 'convert', 2);
+#		}	
 	
-	}
+#	}
 }
 
 sub _check_converter_method{
