@@ -62,6 +62,12 @@ use vars qw (%PipeConf);
     # no of jobs to send to Batch Management system at one go
     BATCHSIZE  => 3,        
 
+    # no of jobs to fetch at a time and submit
+    MAX_INCOMPLETE_JOBS_BATCHSIZE => 1000,
+ 
+    # no of completed jobs to fetch at a time and create next jobs 
+    MAX_CREATE_NEXT_JOBS_BATCHSIZE => 5,
+
     #bsub opt
     BSUB_OPT   => '-C0',
 
