@@ -73,9 +73,9 @@ package Bio::Pipeline::Utils::Dumper::generic;
 use vars qw(@ISA @BS_PARAMS %OK_FIELD $AUTOLOAD);
 use strict;
 use Bio::Root::Root;
-use Bio::Pipeline::Dumper;
+use Bio::Pipeline::Utils::Dumper;
 
-@ISA = qw(Bio::Pipeline::Dumper);
+@ISA = qw(Bio::Pipeline::Utils::Dumper);
 
 sub _initialize {
   my($self,@args) = @_;

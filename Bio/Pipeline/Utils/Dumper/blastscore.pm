@@ -108,9 +108,9 @@ package Bio::Pipeline::Utils::Dumper::blastscore;
 use vars qw(@ISA @BS_PARAMS %OK_FIELD $AUTOLOAD);
 use strict;
 use Bio::Root::Root;
-use Bio::Pipeline::Dumper;
+use Bio::Pipeline::Utils::Dumper;
 
-@ISA = qw(Bio::Pipeline::Dumper);
+@ISA = qw(Bio::Pipeline::Utils::Dumper);
 BEGIN {
   @BS_PARAMS = qw(FORMAT LENGTH RAW_SCORE SIGNIFICANCE BITS N P QUERY_LENGTH_ALN
                   SUBJECT_LENGTH_ALN QUERY_GAPS SUBJECT_GAPS ID_MATCHES
