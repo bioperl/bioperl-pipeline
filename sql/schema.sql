@@ -1,11 +1,16 @@
 #job - holds the job information necessary for job tracking.
 #analysis_id is the foreign key to analysis table
 #added process_id to job - all the jobs associated with a single pipeline run are identified by this process_id
+#rule_group_id -  rule group that this groups together. One rule group per job. It 
+#specifies that the job will execute all the analysis within a rule group serially
+#
 CREATE TABLE job (
   job_id             int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   process_id         varchar(100) DEFAULT 'NEW' NOT NULL,
   analysis_id        int(10) unsigned DEFAULT '0',
+  rule_group_id      int(10) unsigned DEFAULT '0',
   queue_id           int(10) unsigned DEFAULT '0',
+  hostname           varchar(100) DEFAULT '',  
   stdout_file        varchar(100) DEFAULT '',
   stderr_file        varchar(100) DEFAULT '',
   object_file        varchar(100) DEFAULT '',
@@ -60,10 +65,9 @@ CREATE TABLE input_create (
 
 CREATE TABLE iohandler (
    iohandler_id         int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
-   adaptor_id           int(10) DEFAULT '0' NOT NULL,
+   adaptor_id           int(10) DEFAULT '0' ,
    type                 enum ('INPUT','OUTPUT') NOT NULL,
-   adaptor_type         enum('DB','STREAM') DEFAULT 'DB' NOT NULL,
-
+   adaptor_type         enum('DB','STREAM','CHAIN') DEFAULT 'DB' NOT NULL, 
    PRIMARY KEY (iohandler_id),
    KEY adaptor (adaptor_id)
 );
@@ -170,9 +174,10 @@ CREATE TABLE new_input (
 
 CREATE TABLE rule (
   rule_id          int(10) unsigned DEFAULT'0' NOT NULL auto_increment,
+  rule_group_id    int(10) unsigned DEFAULT '0',
   current          int(10) unsigned DEFAULT '',
   next             int(10) unsigned NOT NULL,
-  action           enum('WAITFORALL','WAITFORALL_AND_UPDATE','UPDATE','NOTHING','COPY_INPUT','COPY_ID','CREATE_INPUT','COPY_ID_FILE'),
+  action           enum('WAITFORALL','WAITFORALL_AND_UPDATE','UPDATE','NOTHING','COPY_INPUT','COPY_ID','CREATE_INPUT','COPY_ID_FILE','CHAIN'),
   
   PRIMARY KEY (rule_id)
 );
@@ -257,7 +262,9 @@ CREATE TABLE completed_jobs (
   completed_job_id      int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   process_id            varchar(100) DEFAULT 'NEW' NOT NULL,
   analysis_id           int(10) unsigned DEFAULT '0',
+  rule_group_id         int(10) unsigned DEFAULT '0',
   queue_id              int(10) unsigned DEFAULT '0',
+  hostname              varchar(100) DEFAULT '',  
   stdout_file           varchar(100) DEFAULT '' NOT NULL,
   stderr_file           varchar(100) DEFAULT '' NOT NULL,
   object_file           varchar(100) DEFAULT '' NOT NULL,
