@@ -293,6 +293,20 @@ sub run {
 
 }
 
+sub run_local {
+    my ($self) = @_;
+    $self->local(1);
+    $self->run();
+}
+
+sub local {
+    my ($self,$local) = @_;
+    if($local){
+      $self->{'_local'} = $local;
+    }
+    return $self->{'_local'};
+}
+
 sub _run_analysis {
   my ($self,$analysis,$fetched_input,@inputs) = @_;
 
@@ -350,8 +364,13 @@ sub _run_analysis {
   }
   my @output;
   eval {
-      my $hostname = Bio::Pipeline::BatchSubmission::get_host_name($self->queue_id);
-      $self->set_hostname($hostname);
+      if($self->local){
+        $self->set_hostname("localhost");
+      }
+      else {
+        my $hostname = Bio::Pipeline::BatchSubmission::get_host_name($self->queue_id);
+        $self->set_hostname($hostname);
+      }
       $self->set_stage( "WRITING" );
       @output= $rdb->write_output;
   }; 

@@ -291,7 +291,7 @@ sub run{
                     $job->status('SUBMITTED');
                     $job->make_filenames unless $job->filenames;
                     $job->update;
-                    $job->run;
+                    $job->run_local;
                     $nbr_ran++;
                     if($NUMBER && ($nbr_ran == $NUMBER)){
                         print "Ran $NUMBER jobs..exiting";
@@ -328,7 +328,7 @@ sub run{
                     $new_job->status('SUBMITTED');
                     $new_job->make_filenames unless $job->filenames;
                     $new_job->update;
-                    $new_job->run;
+                    $new_job->run_local;
 	            }else{
                     $batchsubmitter->add_job($new_job);
                     $new_job->status('SUBMITTED');
