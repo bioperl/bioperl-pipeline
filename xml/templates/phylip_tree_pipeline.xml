@@ -370,8 +370,8 @@ both to database or files depending on one's specification.
              <value>infile</value>
            </argument>
             <argument>
-                <tag>input_dir</tag>
-                <value>/data0/shawn_tmp/phylip_dir</value>
+                <tag>input_file</tag>
+                <value>t/data/cysprot.fa</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
