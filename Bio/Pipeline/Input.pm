@@ -180,6 +180,25 @@ sub adaptor{
     return $self->{'_adaptor'};
 }
 
+=head2 dbID
+
+
+  Title    : dbID
+  Function : 
+  Example  : 
+  Returns  : 
+  Args     : 
+
+=cut
+
+sub dbID{
+    my ($self,$dbID) = @_;
+    if (defined $dbID) {
+        $self->{'_dbID'} = $dbID;
+    }
+    return $self->{'_dbID'};
+}
+
 1;
 
 

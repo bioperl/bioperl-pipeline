@@ -64,7 +64,7 @@ sub store {
     $input || $self->throw("Need input obj to store");
 
     my $sql = " INSERT INTO input (input_dba_id, job_id, name) 
-                VAULES (?,?,?)";
+                VALUES (?,?,?)";
     my $sth = $self->prepare($sql);
     eval{
         $sth->execute($input->input_dba->dbID,$input->job_id,$input->name);

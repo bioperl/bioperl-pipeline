@@ -88,7 +88,7 @@ sub parse_results {
     while (<RESULTS>){
         my $line = $_;
         my ($start,$end,$strand) = split("\t",$line);
-        my $feat = new Bio::EnsEMBL::SeqFeature(-seqname=>'Scaffold_1.1',
+        my $feat = new Bio::EnsEMBL::SeqFeature(-seqname=>'DR-AOV_SU09-F10',
                                                 -start =>$start,
                                                 -analysis=>$self->analysis,
                                                 -end   =>$end,

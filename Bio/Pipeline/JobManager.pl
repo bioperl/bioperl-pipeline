@@ -123,7 +123,7 @@ while ($run) {
     
     my $count = $jobAdaptor->job_count($RETRY);
     $run =  0 if ($once || !$count);
-    sleep($SLEEP);
+    sleep($SLEEP) if $run;
     print "Waking up and run again!\n";
 }
 

@@ -147,6 +147,7 @@ sub create_next_job{
 
   my $new_job = Bio::Pipeline::Job->new
     ( -analysis    => $next_analysis,
+      -retry_count => 0,
     );
 
   $self->adaptor->store($new_job);
@@ -172,10 +173,15 @@ sub create_next_job{
                                                     -input_dba => $old_input->input_dba,);
         $new_input->job_id($new_job->dbID);
         $self->adaptor->db->get_InputAdaptor->store($new_input);
+        $new_job->add_input($new_input);
     }
   }else {
     $self->throw("Input jump not implemented yet.");
   }
+
+  my $output_adp = $self->adaptor->db->get_OutputDBAAdaptor->fetch_by_analysisID($next_analysis->dbID);
+
+  $new_job->output_adaptor($output_adp);
   
   return $new_job;
 } 
@@ -333,6 +339,7 @@ sub run {
     $self->set_status( "FAILED" );
     return;
   }
+
   
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );

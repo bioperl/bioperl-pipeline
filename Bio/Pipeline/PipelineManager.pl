@@ -100,6 +100,7 @@ while ($run) {
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db);
     my @jobs = $jobAdaptor->fetch_all;
     print STDERR "Fetched ".scalar(@jobs)." jobs\n";
+    $submitted = 0;
 
     foreach my $job(@jobs){
    
@@ -128,14 +129,14 @@ while ($run) {
             foreach my $new_job (&create_new_job($job)){
 
                 if ($local){
-                    $job->status('SUBMITTED');
-                    $job->make_filenames unless $job->filenames;
-                    $job->update;
-                    $job->run;
+                    $new_job->status('SUBMITTED');
+                    $new_job->make_filenames unless $job->filenames;
+                    $new_job->update;
+                    $new_job->run;
 	            }else{
                     $batchsubmitter->add_job($job);
-                    $job->status('BATCHED');
-                    $job->update;
+                    $new_job->status('BATCHED');
+                    $new_job->update;
                     $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
                 }
             }
@@ -146,7 +147,9 @@ while ($run) {
     #submit remaining jobs in batch.
     $batchsubmitter->submit_batch if ($batchsubmitter->batched_jobs);
 
-    sleep($SLEEP) unless $submitted;
+    my $count = $jobAdaptor->job_count($RETRY);
+    $run =  0 if ($once || !$count);
+    sleep($SLEEP) if ($run && !$submitted);
     $completeRead = 0;
     $currentStart = 0;
     print "Waking up and run again!\n";
@@ -158,7 +161,7 @@ sub create_new_job{
     foreach my $rule (@rules){
         if ($rule->condition == $job->analysis->dbID){
             my $new_job = $job->create_next_job($rule->goalAnalysis);
-            $jobAdaptor->store($new_job);
+            #            $jobAdaptor->store($new_job);
             push (@new_jobs,$new_job);
         }    
     }    

@@ -82,10 +82,11 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
+  my ($dbID,$dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
       $dbadaptor_user,$dbadaptor_pass,$dbadaptor_module,
       $biodbadaptor,$biodbname,$data_adaptor,
-      $data_adaptor_method) = $self->_rearrange([qw(DBADAPTOR_DBNAME
+      $data_adaptor_method) = $self->_rearrange([qw(DBID
+                                                    DBADAPTOR_DBNAME
                                                     DBADAPTOR_DRIVER
                                                     DBADAPTOR_HOST
                                                     DBADAPTOR_USER
@@ -104,6 +105,7 @@ sub new {
   $data_adaptor || $self->throw("Need a data adaptor");
   $data_adaptor_method || $self->throw("Need a data adaptor method");
 
+  $self->dbID($dbID);
   $self->dbadaptor_dbname($dbadaptor_dbname);
   $self->dbadaptor_driver($dbadaptor_driver);
   $self->dbadaptor_host($dbadaptor_host);

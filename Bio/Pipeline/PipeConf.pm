@@ -34,11 +34,12 @@ use vars qw (%PipeConf);
 
     # working directory for err/outfiles
     NFSTMP_DIR => '/home/jerm/tmp/',
+    WORKDIR    => '/tmp/',
 
     # database specific variables
     DBI_DRIVER => 'mysql',
     DBHOST     => 'localhost',
-    DBNAME     => 'biopipeline',
+    DBNAME     => 'biopipe',
     DBUSER     => 'root',
     DBPASS     => '',	     
 
@@ -58,11 +59,11 @@ use vars qw (%PipeConf);
     AUTOUPDATE => 1,    
 
     # no of jobs to send to Batch Management system at one go
-    BATCHSIZE  => 1,        
+    BATCHSIZE  => 5,        
     BSUB_OPT   => '-C0',
 
     # number of times to retry a failed job
-    RETRY       => '5',
+    RETRY       => '10',
     # path to runner.pl, needed by Job.pm
     RUNNER     => '',   
     #sleep time in Rulemanager
