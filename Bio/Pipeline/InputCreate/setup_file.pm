@@ -74,6 +74,8 @@ use Bio::Pipeline::Runnable::Blast;
 use Bio::Pipeline::DataType;
 use Bio::SeqIO;
 use Bio::Root::IO;
+use File::Copy;
+use Cwd;
 
 @ISA = qw(Bio::Pipeline::InputCreate);
 
@@ -86,6 +88,7 @@ sub _initialize {
         $outformat,
         $tag,
         $input_file,
+        $input_dir,
         $chop_size,
         $workdir,
         $result_dir,
@@ -97,6 +100,7 @@ sub _initialize {
                                                 OUTFORMAT
                                                 TAG
                                                 INPUT_FILE 
+                                                INPUT_DIR
                                                 CHOP_NBR 
                                                 WORKDIR 
                                                 RESULT_DIR 
@@ -108,8 +112,9 @@ sub _initialize {
     $runnable || $self->throw("Need an runnable name");
     $self->runnable($runnable);
     
-    $input_file|| $self->throw("Need a input file");
-    $self->input_file($input_file);
+    $input_dir || $input_file|| $self->throw("Need a input file or directory");
+    $self->input_file($input_file) if $input_file;
+    $self->input_dir($input_dir) if $input_dir;
 
     $informat ||='fasta';
     $self->informat($informat);
@@ -128,7 +133,7 @@ sub _initialize {
     $self->result_dir($result_dir);
     $self->tag($tag) if $tag;
     
-    $self->full_path if($full_path);
+    $self->full_path($full_path) if $full_path;
 
     #standalone blast works with ncbi blast only anyway 
     $format_db_exe ||='formatdb';
@@ -157,6 +162,24 @@ sub input_file{
         $self->{'_input_file'} = $arg;
     }
     return $self->{'_input_file'};
+}
+
+=head2 input_dir
+
+  Title   : input_dir
+  Usage   : $self->input_dir()
+  Function: get/sets of the input_dir
+  Returns :  
+  Args    :
+
+=cut
+
+sub input_dir{
+    my ($self,$arg) = @_;
+    if($arg){
+        $self->{'_input_dir'} = $arg;
+    }
+    return $self->{'_input_dir'};
 }
 
 sub full_path{
@@ -333,6 +356,35 @@ sub datatypes {
     return;
 }
 
+sub _get_file_from_dir {
+    my ($self,) = @_;
+    my $dir = $self->input_dir;
+    opendir(DIR,$dir);
+    my @files = grep(!/^\./,readdir(DIR));
+    closedir DIR;
+
+    my @file_fullpath = map{Bio::Root::IO->catfile($dir,$_)}@files;
+    
+    if($self->workdir){
+        my $workdir = $self->workdir;
+        if($workdir !~/^\/./){#is relative path
+            #make absolute
+            $workdir = Bio::Root::IO->catfile(cwd,$workdir);
+        }
+        mkdir($workdir,0755) || $self->warn("$workdir: $!");
+        #move files to workdir
+        foreach my $f(@file_fullpath){
+          my $filename = (split /\//, $f)[-1]; 
+          copy($f,Bio::Root::IO->catfile($workdir,$filename)) || $self->throw("Can't write to dir $workdir");
+        }
+    }
+
+    if($self->full_path){
+        @files = @file_fullpath;
+    }
+
+    return @files;
+}
 =head2 run
 
   Title   : run
@@ -345,7 +397,13 @@ sub datatypes {
 
 sub run {
     my ($self,$next_anal) = @_;
-    my @file_names = $self->_chop_files;
+    my @file_names;
+    if($self->input_file){
+      @file_names = $self->_chop_files;
+    }
+    elsif($self->input_dir) {
+      @file_names = $self->_get_file_from_dir;
+    }
     my $runnable = $self->runnable;
     if($runnable !~/Bio::Pipeline::Runnable/){
         $runnable = "Bio::Pipeline::Runnable::".ucfirst $runnable;
@@ -433,7 +491,7 @@ NEW_FILE:
     $filename = (split /\//, $filename)[-1]; #get the filename only
     my $file = Bio::Root::IO->catfile($workdir,"$filename.$index");
     if($self->full_path){
-      push @filenames, "$file.$index";
+      push @filenames, "$file";
     }
     else {
       push @filenames, "$filename.$index";
@@ -449,7 +507,7 @@ NEW_FILE:
             $sio->close;
             $sio = Bio::SeqIO->new(-file=>">$file",-format=>$outformat);
             if($self->full_path){
-              push @filenames, "$file.$index";
+              push @filenames, "$file";
             }
             else {
               push @filenames, "$filename.$index";
