@@ -88,7 +88,7 @@ sub fetch_by_dbID {
     return undef;
   }
 
-  my $node_group - $self->db->get_NodeGroupAdaptor->fetch_by_dbID($node_group_id);
+  my $node_group = $self->db->get_NodeGroupAdaptor->fetch_by_dbID($node_group_id);
   
 
   my $query = " SELECT  io.iohandler_id 
