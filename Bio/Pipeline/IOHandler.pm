@@ -248,8 +248,14 @@ sub fetch_input {
         #$obj = $obj->$tmp1(@args);
     }
     #destroy handle only if its a dbhandle
-#    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
+    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
 
+    if (defined $self->converters) {
+      my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
+      foreach my $converter(@converters){
+          $obj = $converter->convert($obj);
+      }
+    }
   return $obj;
 }
 
@@ -393,7 +399,13 @@ sub write_output {
         @output_ids = $obj->$tmp1(@args);
         $obj = $output_ids[0];
     }
-
+    if (defined $self->converters) {
+      my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
+      foreach my $converter(@converters){
+          @output_ids = $converter->convert($obj);
+          $obj = $output_ids[0];
+      }
+    }
   return @output_ids;
 }
 
@@ -684,6 +696,17 @@ sub adaptor {
     return $self->{'_adaptor'};
 
 }
+
+sub converters {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+        $self->{'_converters'} = $arg;
+    }
+    return $self->{'_converters'};
+
+}
+
 
 1;
 
