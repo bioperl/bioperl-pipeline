@@ -77,20 +77,25 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($dbID,$name,$rank,$type)=$self->_rearrange([qw(DBID
-                                                     NAME 
+  my ($dbID,$tag,$value,$rank,$type)=$self->_rearrange([qw(DBID
+                                                     TAG 
+                                                     VALUE
                                                      RANK
                                                      TYPE)],@args);
 
   $dbID || $self->throw("Argument constructor needs a dbID");
   $rank || $self->throw("Argument constructor needs a rank");
-  $name|| $self->throw("Argument needs a method arg.");
+  $value|| $self->throw("Argument needs a method arg.");
+  
   $type || $self->throw("Argument needs a type");
   $self->{'_dbid'} = $dbID;
-  $self->{'_name'} = $name;
-  $self->{'_tupe'} = $type;
+  $self->{'_value'} = $value;
+  $self->{'_type'} = $type;
   $self->{'_rank'} = $rank;
-  
+  if($tag){
+     $self->{'_tag'} = $tag;
+  }
+
   return $self;
 }    
 
@@ -113,19 +118,24 @@ sub dbID {
     return $self->{'_dbid'};
 }
 
-=head2 name
+=head2 value
 
-  Title    : name
-  Function : returns name
-  Example  : $Argument->name(); 
-  Returns  : name of the Argument
+  Title    : value
+  Function : returns value
+  Example  : $Argument->value(); 
+  Returns  : value of the Argument
   Args     : 
 
 =cut
  
-sub name{
+sub value{
     my ($self) = @_;
-    return $self->{'_name'};
+    return $self->{'_value'};
+}
+
+sub tag {
+    my ($self) = @_;
+    return $self->{'_tag'};
 }
 
 =head2 argument

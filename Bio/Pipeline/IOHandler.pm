@@ -168,11 +168,21 @@ sub fetch_input {
         my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
         my @args;
         for (my $i = 0; $i <=$#arguments; $i++){
-            if ($arguments[$i]->name eq 'INPUT') {
-                push @args, $input_name;
+            if ($arguments[$i]->value eq 'INPUT') {
+                if ($arguments[$i]->tag){
+                    push @args, ($arguments[$i]->tag => $input_name);
+                }
+                else {
+                  push @args, $input_name;
+                }
             }
             else {
-              push @args, $arguments[$i]->name;
+                if($arguments[$i]->tag){
+                    push @args, ($arguments[$i]->tag => $arguments[$i]->value);
+                }
+                else {
+                  push @args, $arguments[$i]->value;
+                }
             }
         }
         my $tmp1 = $datahandler->method;
@@ -217,22 +227,43 @@ sub write_output {
         my @args;
         my $tmp1 = $datahandler->method;
         for (my $i = 0; $i <=$#arguments; $i++){
-            if ($arguments[$i]->name eq 'OUTPUT'){
+            if ($arguments[$i]->value eq 'OUTPUT'){
                 if (ref($object) eq "ARRAY"){
-                  push @args, @{$object};
+                  if($arguments[$i]->tag){
+                      push @args, $arguments[$i]->tag;
+                      push @args, @{$object};
+                  }
+                  else {
+                    push @args, @{$object};
+                  }
                 }
                 else {
-                    push @args, $object;
+                    if($arguments[$i]->tag){
+                        push @args,($arguments[$i]->tag=>$object);
+                    }
+                    else {
+                      push @args, $object;
+                    }
                 }
 
                 $output_flag++;
             }
-            elsif($arguments[$i]->name eq 'INPUT_ID'){
+            elsif($arguments[$i]->value eq 'INPUT_ID'){
                 #for now only pass the id of the first input. shawn
-                push @args,$input->[0]->name;
+                if($arguments[$i]->tag){
+                    push @args,($arguments[$i]->tag => $input->[0]->name);
+                }
+                else {
+                  push @args,$input->[0]->name;
+                }
             }
             else {
-                push @args, $arguments[$i]->name;
+                if($arguments[$i]->tag){
+                    push @args,($arguments[$i]->tag => $arguments[$i]->value);
+                }
+                else {
+                  push @args, $arguments[$i]->value;
+                }
             }
         }
         if($output_flag) {
