@@ -367,11 +367,11 @@ both to database or files depending on one's specification.
            <rank>1</rank>
            <argument>
              <tag>tag</tag>
-             <value>file</value>
+             <value>infile</value>
            </argument>
             <argument>
-                <tag>input_file</tag>
-                <value>t/data/cysprot.fa</value>
+                <tag>input_dir</tag>
+                <value>/data0/shawn_tmp/phylip_dir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -391,7 +391,7 @@ both to database or files depending on one's specification.
             </argument>
             <argument>
                 <tag>runnable</tag>
-                <value>Bio::Pipeline::Runnable::Clustalw</value>
+                <value>Bio::Pipeline::Runnable::MSA</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -411,12 +411,22 @@ both to database or files depending on one's specification.
 
     <analysis id="2">
       <logic_name>Clustalw</logic_name>
-      <runnable>Bio::Pipeline::Runnable::Clustalw</runnable>
+      <runnable>Bio::Pipeline::Runnable::MSA</runnable>
       <program>align</program>
       <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
-      <runnable_parameters>-infile_dir t/data/phylip_dir/</runnable_parameters>
+      <runnable_parameters>-program Clustalw -infile_dir t/data/phylip_dir/</runnable_parameters>
       <output_iohandler id="1"/>
     </analysis>
+
+<!--    <analysis id="2">
+      <logic_name>TCoffee</logic_name>
+      <runnable>Bio::Pipeline::Runnable::MSA</runnable>
+      <program>align</program>
+      <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
+      <runnable_parameters>-program TCoffee -infile_dir t/data/phylip_dir/</runnable_parameters>
+      <output_iohandler id="1"/>
+    </analysis>
+-->
     <analysis id="3">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
