@@ -166,7 +166,7 @@ sub run{
     #connect string
     my $str;
     $str .= defined $DBHOST ? "-h $DBHOST " : "";
-    $str .= defined $DBPASS ? "-p $DBPASS " : "";
+    $str .= defined $DBPASS ? "-p$DBPASS " : "";
     $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
 
     if($db_exist){
@@ -177,7 +177,6 @@ sub run{
             $create="y";
         }
         if($create =~/^[yY]/){
-            print STDERR "Dropping Databases\n";      
             system("mysqladmin $str -f drop $DBNAME > /dev/null ");
         }else {
             print STDERR "Please select another database before running this script. Good bye.\n";
@@ -583,9 +582,17 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
             print "output iohandler for analysis $analysis->dbID not found\n";
          } else {
             my @transformer_objs;
-            my $transformer_obj = $self->_get_transformer(\@pipeline_transformer_objs, &verify_attr($output_iohandler, 'transformer_id', 0));
-            push @transformer_objs, $transformer_obj if $transformer_obj;
-            $output_iohandler_obj->transformers(\@transformer_objs) if $#transformer_objs >= 0;
+            foreach my $transformer ($output_iohandler->child('transformer')) {
+              my $transformer_obj = $self->_get_transformer(\@pipeline_transformer_objs, $transformer->attribute("id")); 
+              if(defined($transformer_obj)){
+                 my $rank = &verify($transformer,'rank',0,1); 
+                 $transformer_obj->rank($rank);
+                 push @transformer_objs, $transformer_obj;
+              } else {
+                 print "transformer for analysis  not found\n";
+              }
+            }
+            $output_iohandler_obj->transformers(\@transformer_objs) if $#transformer_objs >=0;
             $output_iohandler_obj->type('OUTPUT');
             push @ioh, $output_iohandler_obj;
          }
