@@ -80,11 +80,24 @@ sub new {
 
     $self->{'_input_objs'}=[];
     $self->{'_data_types'}=[];
-
+      
     foreach my $input (@{$inputs}){
-        my $input_obj = $input->fetch;
-        my $datatype =  Bio::Pipeline::DataType->create_from_input($input_obj);
-        $self->add_input_obj($input_obj);
+        #added this check to see where we get an array ref as one element of the array of inputs
+        #currently this only happens for WAITFORALL_UPDATE where all the output_ids must be fetched
+        #and pushed into a array to be passed as input the the runnable. 
+        if(ref($input) eq "ARRAY"){
+            my @input_objs;
+            foreach my $sub (@{$input}){
+#               $self->add_input_obj($sub->fetch);
+              push @input_objs, $sub->fetch;
+            }
+            $self->add_input_obj(\@input_objs);
+        }
+        else {
+          my $input_obj = $input->fetch;
+          my $datatype =  Bio::Pipeline::DataType->create_from_input($input_obj);
+          $self->add_input_obj($input_obj);
+        }
     }
 
     $self->setup_runnable_inputs();

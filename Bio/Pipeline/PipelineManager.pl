@@ -42,7 +42,7 @@ $| = 1;
 my $chunksize    = 500000;  # How many InputIds to fetch at one time
 my $currentStart = 0;       # Running total of job ids
 my $completeRead = 0;       # Have we got all the input ids yet?
-my $local        = 1;       # Run failed jobs locally
+my $local        = 0;       # Run failed jobs locally
 my $analysis;               # Only run this analysis ids
 my $JOBNAME;                # Meaningful name displayed by bjobs
 			    # aka "bsub -J <name>"
@@ -128,11 +128,13 @@ while ($run) {
                 $job->stage ('BATCHED');
                 $job->update;
 
-                &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs < $BATCHSIZE);
+                &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
             }
         }
         elsif ($job->status eq 'COMPLETED'){
-            foreach my $new_job (&create_new_job($job)){
+            my ($action,$new_jobs) = &create_new_job($job);
+            print STDERR "Creating ".scalar(@{$new_jobs})." jobs\n";
+            foreach my $new_job (@{$new_jobs}){
 
                 if ($local){
                     $new_job->status('SUBMITTED');
@@ -140,11 +142,12 @@ while ($run) {
                     $new_job->update;
                     $new_job->run;
 	            }else{
-                    $batchsubmitter->add_job($job);
-                    $new_job->status('BATCHED');
+                    $batchsubmitter->add_job($new_job);
+                    $new_job->status('SUBMITTED');
+                    $new_job->stage('BATCHED');
                     $new_job->update;
 
-                    &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs < $BATCHSIZE);
+                    &submit_batch($batchsubmitter,$action) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
                 }
             }
             $job->remove;
@@ -167,14 +170,15 @@ sub create_new_job{
     my ($job) = @_;
     my @rules       = $ruleAdaptor->fetch_all;
     my @new_jobs;
+    my $action;
     foreach my $rule (@rules){
         if ($rule->current == $job->analysis->dbID){
             my $next_analysis = $analysisAdaptor->fetch_by_dbID($rule->next);
-            my $action = $rule->action;
+            $action = $rule->action;
             if ($action eq 'NOTHING') {
                print "Rule action : $action\n";
                my $new_job = $job->create_next_job($next_analysis);
-               my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
+               my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
                foreach my $input (@inputs) {
                  $new_job->add_input($input);
                }
@@ -182,14 +186,14 @@ sub create_new_job{
             }
 
             elsif ($action eq 'UPDATE') {
-               my @output_ids = $job->output_ids;
+               my @output_ids = $job->_output_ids;
                if (scalar(@output_ids) == 0) {  ## No outputs, so dont create any job 
                   print "No outputs from the previous job, so no job created\n";
                }
                else {
                   foreach my $output_id (@output_ids){
                      my $new_job = $job->create_next_job($next_analysis);
-                     my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
+                     my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
                      foreach my $input (@inputs) {
                        $new_job->add_input($input);
                      }
@@ -204,7 +208,7 @@ sub create_new_job{
             #waits for all the jobs of this analysis to finish before starting the new job
               if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
                   my $new_job = $job->create_next_job($next_analysis);
-                  my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
+                  my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
                   foreach my $input (@inputs) {
                      $new_job->add_input($input);
                   }
@@ -228,7 +232,7 @@ sub create_new_job{
 
         }
     }
-    return @new_jobs;
+    return ($action,\@new_jobs);
 }
 
 sub _update_inputs {
@@ -288,10 +292,16 @@ my $status = 1;
 
 
 sub submit_batch{
-	my ($batchsubmitter) = @_;
+	my ($batchsubmitter,$action) = @_;
 
     eval{
-        $batchsubmitter->submit_batch;
+        if ($action){
+          $batchsubmitter->submit_batch($action);
+        }     
+        else {
+          $batchsubmitter->submit_batch();
+        }
+
     };
     my $err = $@;
     if ($err){
