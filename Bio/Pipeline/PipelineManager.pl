@@ -224,8 +224,8 @@ sub create_new_job {
     my @new_jobs;
     my $action;
     foreach my $rule (@rules){
-        if ($rule->current == $job->analysis->dbID){
-            my $next_analysis = $analysisAdaptor->fetch_by_dbID($rule->next);
+        if ($rule->current->dbID == $job->analysis->dbID){
+            my $next_analysis = $analysisAdaptor->fetch_by_dbID($rule->next->dbID);
             $action = $rule->action;
             if ($action eq 'NOTHING') {
                my $new_job = $job->create_next_job($next_analysis);
@@ -289,7 +289,7 @@ sub create_new_job {
 sub _get_action_by_next_anal {
     my ($job,@rules) = @_;
     foreach my $rule (@rules){
-        if ($rule->next == $job->analysis->dbID){
+        if ($rule->next->dbID == $job->analysis->dbID){
             return $rule->action;
         }
     }
@@ -314,7 +314,7 @@ sub _update_inputs {
 sub _next_job_created {
     my ($job, $rule) = @_;
     my $status = 1;
-    my @jobs = $jobAdaptor->fetch_by_analysisId_and_processId($rule->next, $job->process_id);
+    my @jobs = $jobAdaptor->fetch_by_analysisId_and_processId($rule->next->dbID, $job->process_id);
     my $no = scalar(@jobs);
     if ($no == 0) {
        return 0;
