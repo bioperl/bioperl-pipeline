@@ -68,7 +68,6 @@ package Bio::Pipeline::SQL::DataMongerAdaptor;
 use Bio::Pipeline::Node;
 use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Root::Root;
-use Bio::Pipeline::Filter;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
 
