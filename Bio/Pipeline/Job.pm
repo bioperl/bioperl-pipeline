@@ -273,6 +273,22 @@ sub inputs {
     return @{$self->{'_inputs'}};
 }
 
+=head2 flush_inputs
+
+  Title   : flush_inputs
+  Usage   : $self->flush_inputs
+  Function: empty the input array
+  Returns : 
+  Args    :
+
+=cut
+
+sub flush_inputs {
+    my ($self) = @_;
+
+    $self->{'_inputs'} = ();
+}
+
 =head2 analysis
 
   Title   : analysis
@@ -321,7 +337,7 @@ sub run {
   local *STDOUT;
   local *STDERR;
   if( ! open ( STDOUT, ">".$self->stdout_file )) {
-
+  print STDERR $self->stdout_file;
     $self->set_status( "FAILED" );
 	$self->throw("Cannot pipe STDOUT to stdout_file.");
   }
@@ -377,8 +393,8 @@ sub run {
       print (STDERR "WRITING: Lost the will to live Error\nProblems for runnableDB writing output for \n[$err]") ;
       $self->throw( "Problems for runnableDB writing output for \n[$err]") ;
   }
-  $self->adaptor->store_outputs($self, @output_ids);
-  $self->output_ids(@output_ids);
+  $self->adaptor->store_outputs($self, @output_ids) unless (scalar(@output_ids) == 0);
+  $self->output_ids(@output_ids) unless (scalar(@output_ids) == 0);
   $self->stage('UPDATING');
   $self->status( "COMPLETED" );
   $self->update;
