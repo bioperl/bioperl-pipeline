@@ -11,7 +11,7 @@ BEGIN {
 
 END {
      foreach( $Test::ntest..$NTESTS) {
-      skip('Blast or env variables not installed correctly',1);
+      skip('Sim4 or env variables not installed correctly',1);
      }
     unlink <t/data/cdna2genome_results/*>;
     unlink <t/data/cdna2genome_results/blast_dir/*>;
@@ -27,7 +27,7 @@ use Bio::SeqIO;
 
 my  $factory = Bio::Tools::Run::Alignment::Sim4->new();
 
-my $sim4_present = $factory->executable('sim4');
+my $sim4_present = $factory->executable();
 if( ! $sim4_present ) {
         skip('Sim4 not installed',1);
             exit;
@@ -38,7 +38,7 @@ if( ! $sim4_present ) {
 my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
 
-open (STDERR, ">/dev/null");
+#open (STDERR, ">/dev/null");
 eval {
    require('XML/Parser.pm');
 };
