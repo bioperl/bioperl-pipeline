@@ -73,7 +73,7 @@ NAME="RUNNING"
 ><P
 >    To run the pipeline, cd to the <I
 CLASS="EMPHASIS"
->bioperl-pipeline/Bio/Pipeline/</I
+>bioperl-pipeline/scripts/</I
 > directory.
     </P
 ><P
@@ -88,7 +88,7 @@ WIDTH="100%"
 ><TD
 ><PRE
 CLASS="PROGRAMLISTING"
->shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline&#62; perl PipelineManager.pl -h
+>shawnh@pulse1 ~/src/bioperl-pipeline/scripts&#62; perl PipelineManager.pl -h
 ************************************
 *PipelineManager.pl
 ************************************
@@ -123,7 +123,10 @@ Default values are read from PipeConf.pm
     </P
 ><P
 >    Once you are ready to run on the node, you may reset your jobs by rerunning the Xml2DB script as described in the last section.
-    Submit the jobs to the compute nodes now by running the PipelineManger without the -l option:
+    Submit the jobs to the compute nodes now by running the PipelineManger without the -l option. It is recommended
+    for those who is running this on a desktop setup to use the nice command to set a lower priority like 15 so that
+    your computer doesn't hang up on a large process. C-Shell has a built in nice command so we specify the full path
+    below:
     </P
 ><TABLE
 BORDER="0"
@@ -133,7 +136,7 @@ WIDTH="100%"
 ><TD
 ><PRE
 CLASS="PROGRAMLISTING"
->shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline&#62; perl PipelineManager.pl -dbname test_xml -f
+>shawnh@pulse1 ~/src/bioperl-pipeline/scripts&#62; /usr/bin/nice -n 15 perl PipelineManager.pl -dbname test_xml -f
 ///////////////Starting Pipeline//////////////////////
 Fetching Analysis From Pipeline test_xml
 2 analysis found.

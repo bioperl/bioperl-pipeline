@@ -74,7 +74,7 @@ NAME="LOADING"
 >   The xml is loaded to create the pipeline using the Xml2DB.pl script. The script is located in the bioperl-pipeline
    package under <I
 CLASS="EMPHASIS"
->bioperl-pipeline/xml/</I
+>bioperl-pipeline/scripts/</I
 >. Other xml templates are found in <I
 CLASS="EMPHASIS"
 > bioperl-pipeline/xml/templates</I
@@ -92,7 +92,7 @@ WIDTH="100%"
 ><TD
 ><PRE
 CLASS="PROGRAMLISTING"
->shawnh@pulse1 ~/src/bioperl-pipeline/xml&#62; perl Xml2Db.pl -h
+>shawnh@pulse1 ~/src/bioperl-pipeline/scripts&#62; perl Xml2Db.pl -h
 ******************************
 *Xml2DB.pl
 ******************************
@@ -126,7 +126,7 @@ WIDTH="100%"
 ><TD
 ><PRE
 CLASS="PROGRAMLISTING"
->shawnh@pulse1 ~/src/bioperl-pipeline/xml&#62; perl Xml2Db.pl -dbname blast_pipe -dbuser root -p templates/blast_file_pipeline.xml
+>shawnh@pulse1 ~/src/bioperl-pipeline/scripts&#62; perl Xml2Db.pl -dbname blast_pipe -dbuser root -p ../xml/templates/blast_file_pipeline.xml
 A database called test_xml already exists.
 Continuing would involve dropping this database and loading a fresh one using templates/blast_file_pipeline.xml.
 Would you like to continue? y/n [n] y

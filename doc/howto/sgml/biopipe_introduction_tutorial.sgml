@@ -389,7 +389,7 @@ pipeline.
   <title>Loading the Pipeline</title>
   <para>
    The xml is loaded to create the pipeline using the Xml2DB.pl script. The script is located in the bioperl-pipeline
-   package under <emphasis>bioperl-pipeline/xml/</emphasis>. Other xml templates are found in <emphasis> bioperl-pipeline/xml/templates</emphasis> 
+   package under <emphasis>bioperl-pipeline/scripts/</emphasis>. Other xml templates are found in <emphasis> bioperl-pipeline/xml/templates</emphasis> 
    This script assumes that you have a mysql database installed.
    </para>
 
@@ -397,7 +397,7 @@ pipeline.
    Run the script with a -h to see the options available:
    </para>
    <programlisting>
-shawnh@pulse1 ~/src/bioperl-pipeline/xml> perl Xml2Db.pl -h
+shawnh@pulse1 ~/src/bioperl-pipeline/scripts> perl Xml2Db.pl -h
 ******************************
 *Xml2DB.pl
 ******************************
@@ -422,7 +422,7 @@ Default values in ()
   An example session:
   </para>
 <programlisting>
-shawnh@pulse1 ~/src/bioperl-pipeline/xml> perl Xml2Db.pl -dbname blast_pipe -dbuser root -p templates/blast_file_pipeline.xml
+shawnh@pulse1 ~/src/bioperl-pipeline/scripts> perl Xml2Db.pl -dbname blast_pipe -dbuser root -p ../xml/templates/blast_file_pipeline.xml
 A database called test_xml already exists.
 Continuing would involve dropping this database and loading a fresh one using templates/blast_file_pipeline.xml.
 Would you like to continue? y/n [n] y
@@ -507,13 +507,13 @@ shawnh@pulse1 ~/src/bioperl-pipeline/xml>
   <section id="Running">
     <title>Running your pipeline </title>
     <para>
-    To run the pipeline, cd to the <emphasis>bioperl-pipeline/Bio/Pipeline/</emphasis> directory.
+    To run the pipeline, cd to the <emphasis>bioperl-pipeline/scripts/</emphasis> directory.
     </para>
     <para> 
     Run the PipelineManger.pl with the -h option to check the options available: 
     </para>
     <programlisting>
-shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline> perl PipelineManager.pl -h
+shawnh@pulse1 ~/src/bioperl-pipeline/scripts> perl PipelineManager.pl -h
 ************************************
 *PipelineManager.pl
 ************************************
@@ -552,7 +552,7 @@ Default values are read from PipeConf.pm
     below:
     </para>
     <programlisting>
-shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline> /usr/bin/nice -n 15 perl PipelineManager.pl -dbname test_xml -f
+shawnh@pulse1 ~/src/bioperl-pipeline/scripts> /usr/bin/nice -n 15 perl PipelineManager.pl -dbname test_xml -f
 ///////////////Starting Pipeline//////////////////////
 Fetching Analysis From Pipeline test_xml
 2 analysis found.
