@@ -1,3 +1,63 @@
+# BioPerl runnable for Bio::Pipeline::BatchSubmission 
+
+# Written by FuguI team (fugui@fugu-sg.org)
+# You may distribute this module under the same terms as perl itself
+#
+# POD documentation - main docs before the code
+
+=pod
+
+=head1 NAME
+
+Bio::Pipeline::BatchSubmission
+
+=head1 SYNOPSIS
+
+   #There are two ways to create a BatchSubmission modules
+   #Either you can call new on this top-level module
+   #as below, and the batch module will be specified by the BATCH_MOD 
+   #variable, or you can call new directly on one of the BatchSubmission 
+   #modules such as Bio::Pipeline::LSF or Bio::Pipeline::PBS
+
+   my $batchsub = Bio::Pipeline::BatchSubmission->new(
+						      -dbobj => $dbobj,
+						      -stdout => $stdout,
+						      -stderr => $stderr,
+						      -parameters => $pars,
+						      -pre_exec => $pre,
+						      -command => $command,
+						      -queue => $queue,
+						      -jobname => $jobn,
+						      -nodes => $nodes
+						      );
+
+=head1 DESCRIPTION
+
+This module is a generic representation of different Batch Submission
+systems, which allow distribution of work across a cluster. The logic
+was abstracted in this module to allow users to write different modules
+for different systems. Specific modules have been written for PBS and LSF
+and are stored in the BatchSubmission directory.
+
+The module's getset deal with the STDOUT and STDERR files required, the 
+actual command to be issued as well as the pre-execution command to use as 
+test, parameters to be passed onto the submission system, the queue to send 
+the job to, and the name of the job.
+
+=head1 CONTACT
+
+FuguI team Singapore: fugui@fugu-sg.org
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods.
+Internal methods are usually preceded with a _
+
+=cut
+
+# Let the code begin...
+
+
 package Bio::Pipeline::BatchSubmission;
 
 use vars qw(@ISA);
