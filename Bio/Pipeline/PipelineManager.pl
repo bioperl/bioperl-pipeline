@@ -26,13 +26,12 @@ use Bio::Pipeline::BatchSubmission;
 #Pipeline Setup
 ############################################
 # defaults: command line options override pipeConf variables,
-# which override anything set in the environment variables.
-
 
 use Bio::Pipeline::PipeConf qw (DBHOST 
                                 DBNAME
                                 DBUSER
                                 DBPASS
+                                NFSTMP_DIR
                                 QUEUE
                                 BATCHSIZE
                                 USENODES
@@ -47,20 +46,18 @@ use Bio::Pipeline::PipeConf qw (DBHOST
 			                    );
 
 $| = 1; #flush all print statements
+my $flush        = 0;       #flush is used to check whether to flush all locks on pipeline and disregard  any that exist.
+                            #should only be used for debugging.
 
 my $local        = 0;       # Run failed jobs locally
 my $resume       = 0;       # Flag to indicate whether resuming or doing a fresh run. 
                             # Used to check whether to do a CREATE_INPUT
-                            #
-#my $analysis;               # Only run this analysis ids
 my $pipeline_time = time(); #tracks how long pipeline has been running in seconds
                             #use to see whether timeout has occured
 my %pipeline_state;         #hash used to store state of all jobs in the pipeline 
-
-my $once =0;
-
 my $INPUT_LIMIT = undef;
 my $HELP = undef;
+my $verbose = 0;
 
 my $USAGE =<<END;
 ************************************
@@ -76,10 +73,14 @@ Default values are read from PipeConf.pm
      -dbhost The database host name (localhost)
      -dbname The pipeline database name
      -dbpass The password to mysql database
+     -flush  flush all locks on pipeline and remove any that exists. 
+             Should only be used for debugging or development.
      -batchsize The number ofjobs to be batched to one node
      -local     Whether to run jobs in local mode 
                 (on the node where this script is run)
      -queue     Specify the queue on which to submit jobs
+     -verbose   Whether to show warning during test and setup
+     -help      Display this help
 
 END
 
@@ -88,21 +89,63 @@ GetOptions(
     'dbname=s'    => \$DBNAME,
     'dbuser=s'    => \$DBUSER,
     'dbpass=s'    => \$DBPASS,
-    'flushsize=i' => \$BATCHSIZE,
+    'flush'       => \$flush,
+    'batchsize=i' => \$BATCHSIZE,
     'local'       => \$local,
     'resume'      => \$resume,
     'queue=s'     => \$QUEUE,
     'usenodes=s'  => \$USENODES,
-    'once!'       => \$once,
     'retry=i'     => \$RETRY,
- #   'analysis=s'  => \$analysis,
     'wait_for_all_percent=i'=>\$WAIT_FOR_ALL_PERCENT,
     'timeout=s'   => \$TIMEOUT,
+    'verbose'     => \$verbose,
     'help'        => \$HELP
 )
 or die $USAGE;
 
+# Lock to prevent two Pipeline Mangers from  connecting to the same DB.
+# (i.e. same dbname and dbhost)
+#
+# Makes directory in $NFSTMP_DIR writes a DBM file in this directory
+# which stores useful things like process id/host and the time it
+# was started.
+#
+
 $HELP && die($USAGE);
+$QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
+
+my $lock_dir = $NFSTMP_DIR . "/.bioperl-pipeline.$DBHOST.$DBNAME";
+
+if (-e $lock_dir && !$flush) {
+    # Another pipeline is running: describe it
+    my($subhost, $pid, $started,$user) = &running_pipeline($lock_dir);
+    $started = scalar localtime $started;
+
+    print STDERR <<EOF;
+
+Error: a pipeline appears to be running!
+Created by: $user
+
+    db       $DBNAME\@$DBHOST
+    pid      $pid on host $subhost
+    started  $started
+
+You cannot have two PipelineMangers connecting to the same database.
+The process above must be terminated before this script can be run.
+If the process does not exist, remove the lock by executing
+
+    rm -r $lock_dir
+
+
+Thankyou
+
+
+EOF
+    exit 1;
+}
+$flush && &remove_lock($lock_dir);
+&create_lock($lock_dir, $DBHOST, $$);
+
 
 my $db = Bio::Pipeline::SQL::DBAdaptor->new(
     -host   => $DBHOST,
@@ -110,8 +153,6 @@ my $db = Bio::Pipeline::SQL::DBAdaptor->new(
     -user   => $DBUSER,
     -pass   => $DBPASS,
 );
-
-$QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
 
 my $ruleAdaptor     = $db->get_RuleAdaptor;
 my $jobAdaptor      = $db->get_JobAdaptor;
@@ -131,6 +172,8 @@ my $iohAdaptor      = $db->get_IOHandlerAdaptor;
 #map the runnable module to the program if not specified
 #check db_file exists if not specified
 
+print "///////////////Starting Pipeline//////////////////////\n";
+
 print "Fetching Analysis From Pipeline $DBNAME\n";
 
 my @analysis = $analysisAdaptor->fetch_all;
@@ -138,38 +181,27 @@ my @analysis = $analysisAdaptor->fetch_all;
 print scalar(@analysis)." analysis found.\nRunning test and setup..\n\n//////////// Analysis Test ////////////\n";
 
 foreach my $anal (@analysis) {
-    $anal->test_and_setup;
+    print STDERR "Checking Analysis ".$anal->dbID. " ".$anal->logic_name;
+    $anal->test_and_setup($verbose);
+    print STDERR " ok\n";
 }
 
-print "///////////////Tests Completed////////////////////////\n\n";
+print "\n///////////////Tests Completed////////////////////////\n\n";
 
-print "///////////////Starting Pipeline//////////////////////\n";
 
 ######################################################################
 #Running the Pipeline
-# scp
-# $QUEUE_params - send certain (LSF) parameters to Job. This hash contains
-# things QUEUE wants to know, i.e. queue name, nodelist, jobname (things that
-# go on the bsub command line), plus the queue flushsize. This hash is
-# passed to batch_runRemote which passes them on to flush_runs.
-#
-# The idea is that you could have more than one of these hashes to suit
-# different types of jobs, with different QUEUE options. You would then define
-# a queue 'resolver' function. This would take the Job object and return the
-# queue type, based on variables in the Job/underlying Analysis object.
-#
-# For example, you could put slow (e.g., blastx) jobs in a different queue,
-# or on certain nodes, or simply label them with a different jobname.
+######################################################################
+
 # Fetch all the analysis rules.  These contain details of all the
 # analyses we want to run and the dependences between them. e.g. the
 # fact that we only want to run blast jobs after we've repeat masked etc.
-######################################################################
-
 my @rules       = $ruleAdaptor->fetch_all;
 
 # Create initial inputs and jobs in bulk if necessary
-&_initialise();
+&initialise();
 
+#variables
 my $run = 1;
 my $submitted;
 my $total_jobs;
@@ -251,15 +283,47 @@ while ($run) {
     &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs);
 
     my $count = $jobAdaptor->job_count($RETRY);
-    $run =  0 if ($once || !$count);
+
+    # exit if there are any more jobs left.
+    $run =  0 if (!$count);
+
+    print "Going to snooze for $SLEEP seconds...\n";
+
     sleep($SLEEP) if ($run && !$submitted);
+
     print "Waking up and run again!\n";
 }
+
+print "Nothing left to run.\n\n///////////////Shutting Down Pipeline//////////////////////\n";
+
+print STDERR "Removing Lock File...\n";
+&remove_lock($lock_dir); 
+print "Done\n///////////////////////////////////////////////////////////\n";
+
+
 
 ############################
 #Utiltiy methods
 ############################
-
+#sub create_new_job
+#this method creates new jobs taking into account the actions
+#in the rule tables to be carried out before the next job is to be created.
+#
+# COPY_ID      this copys the input name from the job that 
+#              just finished to a new input while mapping the new iohandler to this input
+#
+# COPY_INPUT   this copys the input and the iohandler from the previous job to a new input.
+#
+# CREATE_INPUT not implemented yet.
+#
+# UPDATE       this creates new jobs from the new_input table which stores outputs from the previous
+#              job and passing in inputs from the previous job as well
+#
+# WAITFORALL   create a new job only if all jobs of this analysis are done. Inputs to this new job are
+#              the inputs from the previous analysis
+#
+# WAITFORALL_AND_UPDATE  create a new job only if all jobs of this analysis are done. All outputs from jobs
+#                       previous analysis are passed as input to this new job. Fixed inputs are not passed.
 
 sub create_new_job {
     my ($job) = @_;
@@ -342,8 +406,12 @@ sub create_new_job {
     }
     return (\@new_jobs);
 }
+##############################
+#sub initialise
+#this routine checks whether to resume running pipeline from previous runs or to start
+#start the pipeline afresh and create inputs if able to.
 
-sub _initialise {
+sub initialise {
         my $init_rule;
         foreach my $rule (@rules) {
            if (! defined($rule->current) && ($rule->action eq 'CREATE_INPUT')) {
@@ -362,6 +430,7 @@ sub _initialise {
         }
 }
 
+#creates the initial jobs, used by &initialise
 sub _create_initial_jobs {
     my ($analysis) = @_;
     my @inputs = _create_input ($analysis);
@@ -383,10 +452,10 @@ sub _create_initial_jobs {
     print "CREATED Initial jobs!\n";
 }
 
+#creates initial inputs
 sub _create_input {
     my ($analysis) = @_;
     print "Fetching Input ids \n";
-    #my $ioh = $analysis->create_input_iohandler;
     my $iohs = $analysis->create_input_iohandler;
     my @input_objs;
     foreach my $ioh (@{$iohs}) {
@@ -405,6 +474,7 @@ sub _create_input {
     return @input_objs;
 }
 
+#find the next action to do based on current analysis
 sub _get_action_by_next_anal {
     my ($job,@rules) = @_;
     foreach my $rule (@rules){
@@ -414,7 +484,8 @@ sub _get_action_by_next_anal {
     }
 }
     
-
+#get completed jobs, return new inputs from new_input_table if present
+#use for WAITFORALL_AND_UPDATE
 sub _update_inputs {
    my ($old_job, $new_job) = @_;
    my @inputs = ();
@@ -428,7 +499,7 @@ sub _update_inputs {
 }
  
       
-
+#check whether the next job has been created for the the same process
 sub _next_job_created {
     my ($job, $rule) = @_;
     my $status = 1;
@@ -443,19 +514,7 @@ sub _next_job_created {
 }
 
 
-sub _get_waiting_job {
-  my (@jobs) = @_;
-
-  my $waiting_job;
-
-  foreach my $job (@jobs) {
-     if($job->status eq 'WAIT') {
-        $waiting_job = $job;
-     }
-  }
-  return $waiting_job;
-}
-
+#check whether all jobs for an analysis is completed given a job
 sub _check_all_jobs_complete {
   my ($job) = @_;
   my $status = 1;
@@ -482,6 +541,7 @@ sub _check_all_jobs_complete {
   return $status;
 }
 
+#under dev
 #check whether pipeline has timeout with not status changed for more than $TIMEOUT hours
 sub _timeout {
   my ($jobs) = @_;
@@ -496,6 +556,7 @@ sub _timeout {
   return 0;
 }
 
+#under dev. 
 sub _pipeline_state_changed {
     my($jobs) = @_;
     my %last_state = %pipeline_state;
@@ -512,6 +573,7 @@ sub _pipeline_state_changed {
     return 0 
 }
 
+#batch submit the jobs
 sub submit_batch{
 	my ($batchsubmitter,$action) = @_;
 
@@ -535,3 +597,47 @@ sub submit_batch{
     	$batchsubmitter->empty_batch;
     } 
 }
+
+# running pipelines should have lock files in $NFS_TMPDIR/.bioperl-pipeline/.*
+sub running_pipeline {
+    my ($dir) = @_;
+    my %db;
+
+    dbmopen %db, "$dir/db", undef;
+    my $host = $db{'subhost'};
+    my $name = $db{'pid'};
+    my $time = $db{'started'};
+    my $user = $db{'user'};
+    dbmclose %db;
+
+    return $host, $name, $time,$user;
+}
+
+
+# create lock file in NFS_TMPDIR 
+sub create_lock {
+    my ($dir, $host, $pid) = @_;
+    my %db;
+
+    mkdir $dir, 0777 or die "Can't make lock directory";
+
+    dbmopen %db, "$dir/db", 0666;
+    $db{'subhost'} = $host;
+    $db{'pid'}     = $pid;
+    $db{'started'} = time();
+    $db{'user'}    = getlogin();
+    dbmclose %db;
+}
+
+# remove 'lock' file
+sub remove_lock{
+    my ($dir) = @_;
+
+    unlink "$dir/db.pag";
+    unlink "$dir/db.dir";
+    rmdir $dir;
+}
+
+
+
+
