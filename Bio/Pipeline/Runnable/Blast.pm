@@ -90,6 +90,10 @@ use Bio::AlignIO;
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
+  my ($return_type,$formatdb) = $self->_rearrange([qw(RETURN_TYPE FORMATDB)],@args);
+  $return_type && $self->return_type($return_type);
+  $formatdb && $self->formatdb($formatdb);
+
   return $self;
 
 }
@@ -158,12 +162,20 @@ sub seq2{
     return $self->{'_seq2'};
 }
 
-sub file {
-    my ($self,$file) = @_;
-    if(defined($file)){
-        $self->{'_file'} = $file;
+sub return_type {
+    my ($self,$val) = @_;
+    if(defined($val)){
+        $self->{'_return_type'} = $val;
     }
-    return $self->{'_file'};
+    return $self->{'_return_type'};
+}
+
+sub formatdb {
+    my ($self,$val) = @_;
+    if(defined($val)){
+        $self->{'_formatdb'} = $val;
+    }
+    return $self->{'_formatdb'};
 }
 
 =head2 run
@@ -179,51 +191,37 @@ sub file {
 sub run {
   my ($self) = @_;
   my $analysis = $self->analysis;
+  $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
   my $blast_obj;
-  my $return_type = 'hsp';
-
+  my $return_type = $self->return_type || 'hsp';
 
   #initialize the StandAloneBlast Module
-
-  if ($self->analysis->parameters){
-    my @params = $self->parse_params($self->analysis->parameters);
-    my %param = @params;
-    if($param{'return_type'}){
-        $return_type = $param{'return_type'};
-        delete $param{'return_type'};
+  my $result_dir;
+  if($self->result_dir){
+    my $dir = $self->result_dir;
+    my $file;
+    if(ref $self->seq1){
+      $file = $self->seq1->id.".bls";
     }
-    my $result_dir;
-    if($param{'result_dir'}){
-        my $dir = $param{'result_dir'};
-        delete $param{'result_dir'};
-        my $file;
-        if(ref $self->seq1){
-            $file = $self->seq1->id.".out";
-        }
-        elsif($self->seq1) {
-            #is a file name
-            my $filename = (split /\//, $self->seq1)[-1];
-            $file = $filename.".out";
-        }
-        else {
-            $file = "blastreport.out";
-        }
-        $result_dir=Bio::Root::IO->catfile($dir,$file);
-
+    elsif($self->seq1) {
+      #is a file name
+      my $filename = (split /\//, $self->seq1)[-1];
+      $file = $filename.".bls";
     }
-    if($param{'formatdb'}){
-        $self->_setup_blastdb($analysis->db_file);
-        delete $param{'formatdb'};
+    else {
+      $file = "blastreport.bls";
     }
-    @params = %param;
-    push @params, ('output'=>$result_dir) if $result_dir;
-    $blast_obj = Bio::Tools::Run::StandAloneBlast->new(@params);
+    $result_dir=Bio::Root::IO->catfile($dir,$file);
   }
-  else {
-    $blast_obj = Bio::Tools::Run::StandAloneBlast->new();
+  if($self->formatdb){
+    $self->_setup_blastdb($analysis->db_file);
   }
 
-  $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
+  # the binary parameters
+  my @params = $self->parse_params($analysis->analysis_parameters) if $analysis->analysis_parameters;
+  push @params, ('output'=>$result_dir) if $result_dir;
+  $blast_obj = Bio::Tools::Run::StandAloneBlast->new(@params);
+
 
   my $program = $analysis->program || 'blastall';
 
@@ -273,7 +271,7 @@ sub run {
         while (my $result = $searchio->next_result){
           while( my $hit = $result->next_hit ) {
             while( my $hsp= $hit->next_hsp ){
-                $hsp->add_tag_value('analysis_parameters',$self->analysis->parameters);
+                $hsp->add_tag_value('analysis_parameters',$self->analysis->analysis_parameters);
                 $hsp->add_tag_value('analysis_program',$self->analysis->program);
                 $hsp->add_tag_value('analysis_db',$self->analysis->db);
                 push @output,$hsp;

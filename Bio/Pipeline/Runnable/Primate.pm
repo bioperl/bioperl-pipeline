@@ -100,21 +100,17 @@ sub target{
 
 sub run {
   my ($self) = @_;
-  $self->analysis->isa("Bio::Pipeline::Analysis") || $self->throw("Need an analysis object");
+  my $analysis = $self->analysis;
+  $analysis->isa("Bio::Pipeline::Analysis") || $self->throw("Need an analysis object");
+  
   my $target = $self->target || $self->throw("Need a target sequence to run primate");
   my $query = $self->analysis->db_file || $self->throw("Need a db file of primer tags");
   (-e $query) || $self->throw("Query file doesn't seem to exist");
 
-  my $param_str = $self->analysis->parameters;
-  my @params = $self->parse_params($param_str);
-  if ($self->analysis->program_file){
-      my $file = $self->analysis->program_file;
-      push @params , ('PROGRAM',"$file");
-  }
-
+  my @params = $self->parse_params($analysis->analysis_parameters);
   my $factory = Bio::Tools::Run::Primate->new(@params);
+  $factory->executable($analysis->program_file) if $analysis->program_file;
   $factory->query($query);
-
   my @feats = $factory->search($target);
 
   $self->output(\@feats);

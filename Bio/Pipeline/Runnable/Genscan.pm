@@ -92,8 +92,6 @@ sub datatypes {
 
     return %dts;
 }
-
-
  
 =head2 feat1
 
@@ -113,9 +111,6 @@ sub feat1{
     return $self->{'_feat1'};
 }
 
-
-
-
 =head2 run
 
  Title   :   run
@@ -133,22 +128,32 @@ sub run {
 
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
-  if($self->analysis->parameters){
-    my @params = $self->parse_params($self->analysis->parameters);
-    $factory = Bio::Tools::Run::Genscan->new(@params);
-  }
-  else {
-    $factory = Bio::Tools::Run::Genscan->new();
-  }
+  my @params = $self->parse_params($self->analysis->parameters);
+  $factory = Bio::Tools::Run::Genscan->new(@params);
+  $factory->quiet(1);
 
   my @genes;
   eval {
     @genes = $factory->predict_genes($seq);
   };
+  $self->throw("Error predicting genes due to $@") if $@;
+
+  foreach my $g(@genes){
+    $self->contig_id && $g->add_tag_value('contig_id'=>$self->contig_id);
+  }
   $self->output(\@genes);
+
   
   return \@genes;
 
+}
+
+sub contig_id {
+    my ($self,$value) = @_;
+    if($value){
+        $self->{'_contig_id'} = $value;
+    }
+    return $self->{'_contig_id'};
 }
 
 =head2 output

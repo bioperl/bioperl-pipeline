@@ -153,13 +153,11 @@ sub run {
     #run genewise       
     $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
     my $factory;
-    if($self->analysis->parameters){
-      my @params = $self->parse_params($self->analysis->parameters);
-      $factory = Bio::Tools::Run::Genewise->new(@params);
-    }
-    else {
-      $factory = Bio::Tools::Run::Genewise->new();
-    }
+
+    my @params = $self->parse_params($self->analysis->analysis_parameters);
+    $factory = Bio::Tools::Run::Genewise->new(@params);
+    $factory->executable($self->analysis->program_file) if $self->analysis->program_file;
+  
     my @genes;
     eval {
      @genes = $factory->predict_genes($seq1, $seq2);

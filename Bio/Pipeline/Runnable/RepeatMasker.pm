@@ -118,22 +118,20 @@ sub seq {
 
 sub run {
   my ($self) = @_;
-  my $params = $self->params;
   my $seq = $self->seq || $self->throw("Need a sequence to run RepeatMasker");
-  
+  my $analysis = $self->analysis; 
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
-  if($self->analysis->parameters){
-    my @params = $self->parse_params($self->analysis->parameters);
-    $factory = Bio::Tools::Run::RepeatMasker->new(@params);
-  }
-  else {
-    $factory = Bio::Tools::Run::RepeatMasker->new();
-  }
+  my @params = $self->parse_params($analysis->analysis_parameters);
+  $factory = Bio::Tools::Run::RepeatMasker->new(@params);
+  $factory->executable($analysis->program_file) if $analysis->program_file;
   my @feats;
   eval {
       @feats = $factory->mask($seq);
   };
+  if($@){
+    $self->throw("RepeatMasker Wrapper had problems running. $@");
+  }
   $self->output(\@feats);
   return \@feats;
 }

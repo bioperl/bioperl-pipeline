@@ -137,19 +137,16 @@ sub run {
 
     my ($self) = @_;
      #check seq
+    my $analysis = $self->analysis;
+    $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
     my $seq1 = $self->query_pep() || $self->throw("Query protein sequence required for Genscan\n");
     my $seq2 = $self->query_cdna() || $self->throw("Query cdna sequence  required for Genscan\n");
     my $seq3 = $self->target_dna() || $self->throw("Target dna sequence required for Genscan\n");
     #run pseudowise       
-    $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
-    my $factory;
-    if($self->analysis->parameters){
-      my @params = $self->parse_params($self->analysis->parameters);
-      $factory = Bio::Tools::Run::Pseudowise->new(@params);
-    }
-    else {
-      $factory = Bio::Tools::Run::Pseudowise->new();
-    }
+    my @params = $self->parse_params($self->analysis->analysis_parameters);
+    my $factory = Bio::Tools::Run::Pseudowise->new(@params);
+    $factory->executable($analysis->program_file) if $analysis->program_file;
+
     my @genes;
     eval {
       @genes = $factory->predict_genes($seq1, $seq2, $seq3);

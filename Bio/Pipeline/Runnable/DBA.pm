@@ -68,13 +68,6 @@ use Bio::Tools::Run::Alignment::DBA;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
 
-sub new {
-  my ($class, @args) = @_;
-  my $self = $class->SUPER::new(@args);
-  return $self;
-
-}
-
 =head2 datatypes
 
  Title   :   datatypes
@@ -171,24 +164,43 @@ sub dba{
 
 sub run {
   my ($self) = @_;
-  my @seq = ($self->feat1,$self->feat2);
-  my $params = $self->params;
-  my $dba = $self->dba;
-
-  $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
-  my $factory;
-  if($self->analysis->parameters){
-    my @params = $self->parse_params($self->analysis->parameters);
-    $factory = Bio::Tools::Run::Alignment::DBA->new(@params);
+  my $seq;
+  my $analysis = $self->analysis;
+  $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
+  if($self->feat1 && $self->feat2){
+    #2 seqs
+    $seq = [$self->feat1,$self->feat2];
   }
   else {
-    $factory = Bio::Tools::Run::Alignment::DBA->new();
+    #file
+    $seq = $self->feat1;  
   }
+  my $result_dir;
+  if($self->result_dir){
+    my $dir = $self->result_dir;
+    my $file;
+    if(ref $self->feat1){
+      $file = $self->feat1->id.".dba";
+    }
+    elsif($self->feat1) {
+      #is a file name
+      my $filename = (split /\//, $self->feat1)[-1];
+      $file = $filename.".dba";
+    }
+    else {
+      $file = "dba.dba";
+    }
+    $result_dir=Bio::Root::IO->catfile($dir,$file);
+  }
+  my @params = $self->parse_params($analysis->analysis_parameters);
+  push @params, ('outfile'=>$result_dir) if $result_dir;
+  
+  my $factory;
+  $factory = Bio::Tools::Run::Alignment::DBA->new(@params);
+  $factory->executable($analysis->program_file) if $analysis->program_file;
 
   my @hsps;
-  eval {
-    @hsps = $factory->align(\@seq);
-  };
+  @hsps = $factory->align($seq);
   $self->output(\@hsps);
   return \@hsps;
 

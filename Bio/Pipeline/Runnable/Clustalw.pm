@@ -105,22 +105,6 @@ use Bio::Tools::Run::Alignment::Clustalw;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
 
-=head2 new
-
- Title   :   new
- Usage   :   $self->new()
- Function:
- Returns :
- Args    :
-
-=cut
-
-sub new {
-  my ($class, @args) = @_;
-  my $self = $class->SUPER::new(@args);
-  return $self;
-
-}
 
 =head2 datatypes
 
@@ -210,13 +194,31 @@ sub align {
 sub run {
   my ($self) = @_;
   my $factory;
-  if ($self->analysis->parameters){
-      my @params = $self->parse_params($self->analysis->parameters);
-      $factory = Bio::Tools::Run::Alignment::Clustalw->new(@params);
+  my $result_dir;
+  my $analysis = $self->analysis;
+  if($self->result_dir){
+    my $dir = $self->result_dir;
+    my $file;
+    if(ref $self->seq){
+      $file = $self->seq->id.".aln";
+    }
+    elsif($self->seq) {
+      #is a file name
+      my $filename = (split /\//, $self->seq)[-1];
+      $file = $filename.".aln";
+    }
+    else {
+      $file = "clustalw.aln";
+    }
+    $result_dir=Bio::Root::IO->catfile($dir,$file);
   }
-  else {
-      $factory = Bio::Tools::Run::Alignment::Clustalw->new();
-  }
+  my @params = $self->parse_params($analysis->analysis_parameters) if $analysis->analysis_parameters;
+  push @params, ('outfile'=>$result_dir) if $result_dir;
+ 
+  $factory = Bio::Tools::Run::Alignment::Clustalw->new(@params);
+  $factory->executable($analysis->program_file) if $analysis->program_file;
+  $factory->quiet(1);
+
   my $program = $self->analysis->program || $self->throw("No program specified for Clustalw |align|profile_align");
   my $aln;
   ($program =~ /align|profile_align/i) || $self->throw("Clustalw needs either program to be set as align or profile_align in the analysis table");

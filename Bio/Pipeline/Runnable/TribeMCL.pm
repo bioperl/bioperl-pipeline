@@ -56,6 +56,8 @@ use Bio::Pipeline::RunnableI;
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
+  my ($blastdir) = $self->_rearrange([qw(BLASTDIR)],@args);
+
   return $self;
 
 }
@@ -82,6 +84,23 @@ sub datatypes {
 
 }
 
+=head2 blastdir 
+
+ Title   :   blastdir 
+ Usage   :   $self->blastdir()
+ Function:   get/set for blast directory 
+ Returns :   
+ Args    :
+
+=cut
+
+sub blastdir {
+    my ($self,$val) = @_;
+    if($val){
+        $self->{'_blastdir'} = $val;
+    }
+    return $self->{'_blastdir'};
+}
 
 =head2 run
 
@@ -96,25 +115,20 @@ sub datatypes {
 sub run {
   my ($self) = @_;
   my $err;
-#  my $protein = $self->protein || $self->throw("Input Proteins not set!");
+  my $analysis = $self->analysis;
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
   my $file;
-  if($self->analysis->parameters){
-    my @params = $self->parse_params($self->analysis->parameters);
-    my %hash = @params;
-    my $blastdir = $hash{'blastdir'}  || $self->throw("Need the location of the blast directory");
-    $file = $blastdir."/blast_out.".time().rand(1000);
-    delete $hash{'blastdir'};
-    system("echo $blastdir/* | xargs cat > $file");
-    @params = %hash;
-    push @params, ("scorefile"=>$file);
+  my @params = $self->parse_params($analysis->analysis_parameters);
+  my $blastdir = $self->blastdir  || $self->throw("Need the location of the blast directory");
+  $file = $blastdir."/blast_out.".time().rand(1000);
+  system("echo $blastdir/* | xargs cat > $file");
+  push @params, ("scorefile"=>$file);
 
-    $factory = Bio::Tools::Run::TribeMCL->new(@params);
-  }
-  else {
-    $factory = Bio::Tools::Run::TribeMCL->new();
-  }
+  $factory = Bio::Tools::Run::TribeMCL->new(@params);
+  $factory->executable($analysis->program_file) if $analysis->program_file;
+
+
   my @clusters;
   eval {
       @clusters = $factory->run();
