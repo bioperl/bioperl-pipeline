@@ -77,28 +77,6 @@ sub _initialize {
     $threshold && $self->threshold($threshold);
 }
 
-
-=head2 datatypes
-
-  Title   : datatypes
-  Usage   : $self->datatypes()
-  Function: specifies the datatype expected by this module 
-  Returns : the hash reference of of datatypes.
-  Args    : 
-
-=cut
-
-sub datatypes {
-    my ($self) = @_;
-    my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqFeatureI',
-                                          '-name'=>'sequence',
-                                          '-reftype'=>'HASH');
-
-    my %dts;
-    $dts{input} = $dt;
-    return %dts;
-}
-
 =head2 run 
 
   Title   : run 

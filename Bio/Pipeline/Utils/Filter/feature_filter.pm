@@ -120,28 +120,6 @@ sub tag{
   return $self->{'_tag'};
 }
 
-
-=head2 datatypes
-
-  Title   : datatypes
-  Usage   : $self->datatypes()
-  Function: specifies the datatype expected by this module 
-  Returns : the hash reference of of datatypes.
-  Args    : 
-
-=cut
-
-sub datatypes {
-    my ($self) = @_;
-    my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqFeatureI',
-                                          '-name'=>'sequence',
-                                          '-reftype'=>'HASH');
-
-    my %dts;
-    $dts{input} = $dt;
-    return %dts;
-}
-
 =head2 run 
 
   Title   : run 
@@ -157,7 +135,7 @@ sub run {
 	my @output;
 	my $tag = $self->tag;
 
-    (ref($input) eq "ARRAY") || $self->throw("Expecting a hash reference");
+    (ref($input) eq "ARRAY") || $self->throw("Expecting a array reference");
 
 	foreach my $ele (@{$input}){
 		if ($ele->can($tag)){
