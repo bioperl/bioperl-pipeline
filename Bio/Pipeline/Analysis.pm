@@ -873,7 +873,7 @@ sub output_handler{
     my ($self) = @_;
     #search from list of iohandlers, cache if found
     if($self->{_output_handler}){
-        return $self->{_output_handler};
+        return wantarray ? @{$self->{_output_handler}}:$self->{_output_handler};
     }
     else {
         my @ioh = @{$self->iohandler};
@@ -884,7 +884,7 @@ sub output_handler{
             }
         }
         $self->{_output_handler} = \@output_ioh;
-        return $self->{_output_handler};
+        return wantarray ? @{$self->{_output_handler}}: $self->{_output_handler};
     }
 }
 
