@@ -67,11 +67,6 @@ use Bio::Tools::Run::Pseudowise
 sub new {
     my ($class,@args) = @_;
     my $self = $class->SUPER::new(@args);    
-
-    #$self->query_pep($query_pep);
-    #$self->query_cdna($query_cdna);
-    #$self->target_dna($target_dna);
-
     return $self;
 }
 
@@ -141,12 +136,20 @@ sub target_dna {
 sub run {
 
     my ($self) = @_;
-    #check seq
+     #check seq
     my $seq1 = $self->query_pep() || $self->throw("Query protein sequence required for Genscan\n");
     my $seq2 = $self->query_cdna() || $self->throw("Query cdna sequence  required for Genscan\n");
     my $seq3 = $self->target_dna() || $self->throw("Target dna sequence required for Genscan\n");
     #run pseudowise       
-    my $factory = Bio::Tools::Run::Pseudowise->new();
+    $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
+    my $factory;
+    if($self->analysis->parameters){
+      my @params = $self->parse_params($self->analysis->parameters);
+      $factory = Bio::Tools::Run::Pseudowise->new(@params);
+    }
+    else {
+      $factory = Bio::Tools::Run::Pseudowise->new();
+    }
     my @genes;
     eval {
       @genes = $factory->predict_genes($seq1, $seq2, $seq3);
@@ -160,8 +163,8 @@ sub run {
 Title   :   output
 Usage   :   $self->output($seq)
 Function:   Get/set method for output
-Returns :   An array of Bio::Search::HSP::GenericHSP objects
-Args    :   An array ref to an array of Bio::Search::HSP::GenericHSP objects
+Returns :   An array of Bio::SeqFeature objects
+Args    :   An array ref to an array of Bio::SeqFeature objects
 
 =cut
 
