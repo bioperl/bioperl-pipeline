@@ -57,6 +57,13 @@ sub run {
     (ref($input) eq "HASH") || $self->throw("Expecting a hash reference");
     foreach my $key(keys %{$input}){
       if (ref($input->{$key}) eq "ARRAY"){
+       my @hits = @{$input->{$key}};
+       if (scalar(@hits) == 0) {
+           return $input; 
+       }
+       my $junk = $self->_select_hits(@{$input->{$key}});
+ 	#$input->($key) = ();
+        #push @{$input->{$key}}, @{$self->_select_hits(@{$input->{$key}})};
         $input->{$key} = $self->_select_hits(@{$input->{$key}});
       }
       else {
@@ -189,7 +196,8 @@ LONG:       foreach my $longest_hit ($longest_hit->sub_SeqFeature){
 
   my @features;
 
-  return @selected_hits;
+  #return \@selected_hits;
+  return \@selected_hits;
 }
 
 1;
