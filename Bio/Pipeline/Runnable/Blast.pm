@@ -174,7 +174,7 @@ sub run {
 
   $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
   
-  my $program = $analysis->program_file || 'blastall';
+  my $program = $analysis->program || 'blastall';
   
   my $seq1 = $self->seq1;
   my $seq2 = $self->seq2;
