@@ -92,7 +92,7 @@ sub fetch_by_dbID {
   
 
   my $query = " SELECT  io.iohandler_id 
-                FROM    iohandler io, analysis_iohandler ai
+                FROM    iohandler io, analysis_output_handler ai
                 WHERE   ai.iohandler_id = io.iohandler_id 
                         and ai.analysis_id = $id
                         and io.type = 'OUTPUT'";
@@ -139,7 +139,7 @@ sub db {
 
 sub deleteObj {
   my ($self) = @_;
-  my @dummy = values %{$self};
+ my @dummy = values %{$self};
   foreach my $key ( keys %$self ) {
     delete $self->{$key};
   }
