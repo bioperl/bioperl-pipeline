@@ -14,8 +14,6 @@
 
 # All Bioperl dependencies on external modules are defined here
 %packages = (
-	     'IO::String'               => '0.0/IO handle to read or write to a string/GenBank+GenPept sequence retrieval, Variation code/Bio::DB::*,Bio::Variation::*,Bio::Tools::Blast::Run::Webblast, Bio::Index::Blast',
-	     'File::Temp'               => '0.0/Temporary File creation/Bio::Root::IO uses if present/Bio::DB::WebDBSeqI, Bio::Seq::LargePrimarySeq',
 	     'DBD::mysql'               => '0.0/Mysql driver/loading',
 	     );
 
@@ -30,6 +28,30 @@ sub check_package {
     return 0;
 }
 
+%necessary = (
+	'Bio::Tools::Run::Genscan' => 'The bioperl-run package/to run all programs within the pipeline framework',
+	'DBD::mysql'               => 'The MySQL drivers (DBD:mysql)/because the bioperl-pipeline is a completely database-centric software which requires MySQL to run'
+	);
+sub check_necessary_package {
+    my ($name,$str) = @_;
+    my ($desc,$expl) = split( /\// , $str);
+    if( !eval "require($name)") {
+        print "WARNING! $desc is not installed on this computer. It is necessary for the bioperl-pipeline $expl\n\n";
+	return 1;
+    }
+return 0;
+}
+foreach $name ( keys %necessary ) {
+	    if( &check_necessary_package($name,$necessary{$name}) == 1 ) {
+		            $error = 1;
+			        }
+			}
+			if ($error) {
+				        print "INSTALLATION FAILED. The necessary packages/modules detailed above are not present, thus installation cannot proceed. Please install the missing packages/modules and retry\n";
+					exit;
+				}
+	
+	
 #
 # Generate sub testing package system
 #
@@ -81,7 +103,11 @@ foreach $name ( keys %packages ) {
 	$error = 1;
     }
 }
-
+foreach $name ( keys %necessary ) {
+    if( &check_necessary_package($name,$necessary{$name}) == 1 ) { 
+    $error = 1;
+    }
+}
 if( $error == 1 ) {
     print <<QQ_ERROR_QQ;
 
