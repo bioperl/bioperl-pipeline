@@ -159,8 +159,14 @@ sub input {
 
 sub run {
   my ($self) = @_;
-
-  my $input = $self->input;
+  my ($input,$infile);
+  if($self->input){
+      $input = $self->input;
+  }
+  elsif($self->infile){
+      ($infile) = values(%{$self->infile});
+  }
+  else {}
 
   if ($self->filters){
       foreach my $filter ($self->filters){
@@ -171,7 +177,9 @@ sub run {
   #Input creates should not return any outputs
   if($self->input_creates){
     foreach my $inc ($self->input_creates){
-      $inc->run($self->next_analysis,$input);
+      $inc->run($self->next_analysis,$input) if $input;
+      $inc->infile($infile) if $infile;
+      $inc->run($self->next_analysis) if $infile;
     }
     return;
   }
