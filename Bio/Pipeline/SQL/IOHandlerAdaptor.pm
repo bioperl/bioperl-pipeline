@@ -161,6 +161,7 @@ sub fetch_by_dbID {
       my ($module) = $sth->fetchrow_array;
       $iohandler = Bio::Pipeline::IOHandler->new_ioh_stream(-type=>$type,
                                                             -module=>$module,
+                                                            -dbID  => $dbID,
                                                             -datahandlers=>\@datahandlers);
     }
     else {
