@@ -541,17 +541,46 @@ sub submit_batch{
 
 }
 
+=head2 kill_jobs
+
+  Title    : kill_jobs
+  Function : kills jobs in the queue and updates the job status as 'KILLED'
+  Example  : $command = $bs->kill_jobs;
+  Returns  : 
+  Args     : a list of queue ids
+
+=cut
+
+sub kill_jobs {
+  my ($self) = @_;
+  $self->throw_not_implemented();
+}
+
 sub get_host_name{
     my ($queue_id) = @_;
     my $module = "Bio/Pipeline/BatchSubmission/$BATCH_MOD.pm";
     eval {
       require $module;
    };
-   if ($@) { 
+   if ($@) {
     print STDERR "Module $module can't be found.\nException $@";
     return;
   }
   my $mod = "Bio::Pipeline::BatchSubmission::$BATCH_MOD";
   return $mod->get_host_name($queue_id);
+}
+
+sub sort_by_queue {
+  my ($self,@jobs) = @_;
+  my %hash;
+  foreach my $j(@jobs) {
+   if(!$j->analysis->queue){
+    push @{$hash{$self->queue}} ,$j;
+   }
+   else {
+    push @{$hash{$j->analysis->queue}},$j;
+   }
+  }
+  return \%hash;
 }
 1;
