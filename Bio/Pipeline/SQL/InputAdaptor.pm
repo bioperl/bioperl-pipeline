@@ -198,20 +198,34 @@ sub store_fixed_input {
     my ($self,$input) =@_;
     $input || $self->throw("Need input obj to store");
 
-    my $sql = " INSERT INTO input (iohandler_id, job_id, name) 
-                VALUES (?,?,?)";
-    my $sth = $self->prepare($sql);
-    eval{
-        $sth->execute($input->input_handler->dbID,$input->job_id,$input->name);
-    };if ($@){$self->throw("Error storing new input.\n$@");}
+    if (!defined ($input->dbID)) {
+      my $sql = " INSERT INTO input (iohandler_id, job_id, name)
+                 VALUES (?,?,?)";
+      my $sth = $self->prepare($sql);
+      eval{
+          $sth->execute($input->input_handler->dbID,$input->job_id,$input->name);
+      };if ($@){$self->throw("Error storing new input.\n$@");}
 
 
-    $input->dbID($sth->{'mysql_insertid'});
-    $input->adaptor($self);
-    
+      $input->dbID($sth->{'mysql_insertid'});
+      $input->adaptor($self);
+    }
+    else {
+      my $sql = " INSERT INTO input (input_id, iohandler_id, job_id, name)
+                VALUES (?,?,?,?)";
+      my $sth = $self->prepare($sql);
+      eval{
+         $sth->execute($input->dbID, $input->input_handler->dbID,$input->job_id,$input->name);
+      };if ($@){$self->throw("Error storing new input.\n$@");}
+
+      $input->adaptor($self);
+    }
+
+
     return $input->dbID;
 
 }
+
 
 sub remove_by_dbID{
     my ($self,@dbID) = @_;

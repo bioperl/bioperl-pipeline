@@ -66,21 +66,33 @@ use strict;
 sub store {
   my ( $self, $rule ) = @_;
 
+  if (defined ($rule->dbID)) {
     my $sth = $self->prepare( qq{
       INSERT INTO rule
-         SET current=$rule->current
-             next=$rule->next
-             action=$rule->action } );
-    $sth->execute;
+         SET current = ?
+             next= ?
+             action= ? } );
+    $sth->execute($rule->current, $rule->next, $rule->action);
   
-  $sth = $self->prepare( q{
-     SELECT last_insert_id()
-    } );
-  $sth->execute;
+   $sth = $self->prepare( q{
+      SELECT last_insert_id()
+     } );
+   $sth->execute;
 
-  my $dbID = ($sth->fetchrow_array)[0];
-  $rule->dbID( $dbID );
-  $rule->adaptor( $self );
+   my $dbID = ($sth->fetchrow_array)[0];
+   $rule->dbID( $dbID );
+  }
+  else {
+    my $sth = $self->prepare( qq{
+      INSERT INTO rule
+         SET rule_id= ?,
+             current= ?,
+             next= ?,
+             action= ?} );
+    $sth->execute($rule->dbID, $rule->current, $rule->next, $rule->action);
+  }
+  #$rule->adaptor( $self );
+  return $rule->dbID;
 }
 
 =head2 remove
