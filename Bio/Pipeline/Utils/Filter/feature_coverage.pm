@@ -1,3 +1,62 @@
+#
+# BioPerl module for Bio::Pipeline::Filter::feature_coverage
+#
+# You may distribute this module under the same terms as perl itself
+#
+# POD documentation - main docs before the code
+#
+
+=head1 NAME
+
+Bio::Pipeline::Filter::feature_coverage
+
+=head1 SYNOPSIS
+
+  my $fc = Bio::Pipeline::Filter::feature_coverage->new(-threshold=>80);
+  my @filtered = $fc->run(@inputs);
+
+=head1 DESCRIPTION
+
+Specific filter for filtering of blast hits based on feature coverage.
+Current use case for filtering the blast hits to be passed to genewise
+for gene building. We only want the maximum coverage for a hit so as
+to build the longest possible gene.
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html     - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - Shawn Hoon
+
+Email shawnh@fugu-sg.org
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. Internal metho
+
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
+
+=cut
+
+# Let the code begin...
+
 package Bio::Pipeline::Filter::feature_coverage;
 
 use vars qw(@ISA);
@@ -39,7 +98,6 @@ sub datatypes {
     $dts{input} = $dt;
     return %dts;
 }
-
 
 =head2 run 
 
@@ -96,13 +154,13 @@ sub _set_coverage {
     return @modified;
 }
 
-=head2 _select_features
+=head2 _select_hits
 
-  Title   : _select_features
-  Usage   : $self->_select_features(@features)
+  Title   : _select_hits
+  Usage   : $self->_select_hits(@hits)
   Function: obtain the best scoring HSP within a certain area
-  Returns : Array of FeaturePairs
-  Args    : Array of selected hseqnames
+  Returns : Array of hits  
+  Args    : Array of hits
 
 =cut
 
@@ -196,7 +254,6 @@ LONG:       foreach my $longest_hit ($longest_hit->sub_SeqFeature){
 
   my @features;
 
-  #return \@selected_hits;
   return \@selected_hits;
 }
 
