@@ -41,7 +41,6 @@ sub new{
     
     my ($dbhost, $dbname, $dbuser, $dbpass, $schema, $datasetup) = 
         $self->_rearrange([qw(DBHOST DBNAME DBUSER DBPASS SCHEMA DATASETUP)], @args);
-    print "in new: $dbhost|$dbname\n";
     $self->dbhost($dbhost);
     $self->dbname($dbname);
     $self->dbuser($dbuser);
@@ -60,7 +59,6 @@ sub run{
     my $DBPASS = $self->dbpass;
     my $SCHEMA = $self->schema;
     my $DATASETUP = $self->datasetup;
-    print "DB:$DBHOST\t$DBNAME\t$DBUSER\n";
     my $dba;
     eval{
         $dba = Bio::Pipeline::SQL::DBAdaptor->new(
