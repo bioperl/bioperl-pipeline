@@ -1,0 +1,612 @@
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<article>
+
+<!-- Header -->
+
+<articleinfo>
+
+  <!-- title of HOWTO, include the word HOWTO -->
+
+<title>HOWTO-For Setting Up Biopipe</title>
+<author>
+  <firstname>Shawn</firstname>
+  <surname>Hoon</surname>
+  <affiliation>
+    <address>
+      <email>shawnh@fugu-sg.org</email>
+    </address>
+  </affiliation>
+</author>
+
+<revhistory>
+  <revision>
+    <revnumber>0.1</revnumber>
+    <date>2002-11-29</date>
+    <authorinitials>shawnh</authorinitials>
+    <revremark> First Draft </revremark>
+  </revision>
+</revhistory>
+
+<!--<legalnotice>
+<para>
+This document is copyright Shawn Hoon, 2002. For reproduction other than
+personal use, please contact me at shawnh@fugu-sg.org
+</para>
+</legalnotice>//-->
+
+<abstract>
+<para>
+This is a HOWTO written in DocBook (SGML) for the installation of the biopipe,
+its workings and definition.We will describe how to load and run a simple blast
+pipeline.
+</para>
+</abstract>
+
+ </articleinfo>
+
+
+<!-- Section1: intro -->
+
+<section id="intro">
+  <title>Introduction</title>
+
+  <indexterm>
+    <primary>disk!introduction</primary>
+  </indexterm>
+
+  <para>
+  The bioperl pipeline framework is a flexible workflow system that complements the bioperl
+  package in providing job managment facilities for high throughput analysis. 
+  This system is heavily inspired by the EnsEMBL Pipeline system. 
+  This section describes the design of the bioperl pipeline. 
+  Some features of the current system include:
+  </para>
+
+  <itemizedlist>
+    <listitem>
+    <para>
+      Handling of various input and output data formats from various databases.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+    A bioperl interface to non-specific loadsharing software (LSF,PBS etc) to ensure that
+    the various analysis programs are run in proper order and are successfully completed 
+    while re-running those that fail.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+     A flexible pluggable bioperl interface that allows programs to be 'pipeline-enabled'.
+    </para>
+  </listitem>
+  </itemizedlist>
+
+ <para>
+ Setting up bioinformatics pipeline is not trivial. This tutorial introduces some aspects of 
+ biopipe through setting up a very siimple blast pipeline. It is hope that through this tutorial,
+ two objectives are achieved:
+ <itemizedlist>
+ <listitem>
+ <para>
+  Iron out installation issues using a simple example. 
+  </para>
+  </listitem>
+  <listitem>
+  <para>
+  Familiarization with the biopipe system and introduction of the XML system we have
+  develop to ameliorate some of the complexities involve in setting up.
+  </para>
+  </listitem>
+  </itemizedlist>
+ </para>
+ </section>
+ 
+ <section id="installation">
+  <title>Installation</title>
+  <para>The following sections descibes how to install your pipeline from start to finish</para>
+  </section>
+
+ <section id="systemrequirements"> 
+  <title>System Requirements</title>
+  <para>
+  Note these are the requirements needed for running the simple blast example. Each pipeline will come
+  with dependencies that depend on the pipeline design. Note that Biopipe is a framework and depending
+  on your input and output sources, your analysis, it will greatly affect what you need to install.
+  </para>
+  <section id='mysql'>
+    <title>MySQL</title>
+    <para>
+    The database persistent design of the pipeline means that all information necessary to run the pipeline is
+    stored in a database. The Biopipe was mainly designed to work with mySQL although it should work with other
+    DBMS system but this has not been verified. <ulink url="http://www.mysql.com">MySQL</ulink> is an open source system that has proven to be robust enough for high throughput projects like genome annotation.
+    </para>
+  </section>
+  <section id="perllibraries">
+    <title>Perl Libraries</title>  
+    <itemizedlist>
+      <listitem>
+        <para>
+          bioperl-pipeline
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          bioperl-live
+        </para>
+      </listitem>
+      <listitem>
+        <para>
+          bioperl-run
+        </para>
+        </listitem>
+      </itemizedlist>
+    <para>
+    Available thru anonymous cvs:
+    </para>
+    <screen>
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-live
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline
+    </screen>
+    <para>
+    This is bleeding edge stuff so it is recommended that you use main trunk code for all three packages.
+    </para>
+    <para>
+    Note the schema for biopipe has moved to bioperl-pipeline/sql/schema.sql for convenience
+    </para>
+  </section>
+  <section id="binaries"> 
+    <title>Binaries</title>
+    <para>
+    NCBI Blast Package which is available at this <ulink url="ftp://ftp.ncbi.nih.gov/blast/executables/">ftp site</ulink>
+    </para>
+  </section>
+ </section>
+
+ <section id="configuration">
+  <title>The Pipeline XML Format</title>
+  <para>This section describes the various sections of XML with Biopipe</para>
+
+  <para>
+  To describe this, we will use the demo xml template, blast_file_pipeline.xml. 
+  You may find this in the bioperl-pipeline/xml/templates directory.
+  </para>
+
+  <para>
+  <emphasis>XML Organization</emphasis>
+  </para>
+<screen>
+  &lt;pipeline_setup&gt;
+    &lt;database_setup&gt;
+    &lt;iohandler_setup&gt;
+    &lt;pipeline_flow_setup&gt;
+    &lt;job_setup&gt;(optional)
+  &lt;/pipeline_setup&gt;
+</screen>
+
+  <para> 
+  &lt;database_setup&gt;
+  </para>
+  <para>
+  This specifies the databases that the pipeline connects to and the
+  adaptor modules that intefaces with them.
+  </para>
+  <para>
+  &lt;iohandler_setup&gt;
+  </para>
+  <para>
+  This specifies the method calls that will be used by the pipeline
+  to access the databases. These methods are contained in the modules
+  specified by the database setup section above.
+  </para>
+
+  <para>
+  &lt;pipeline_flow_setup&gt;
+  </para>
+  <para>
+  This specifies the analysis and rules of the pipeline. Analysis
+  refer to the runnables that will be used in this pipeline while the
+  rules specify the order in which these analysis are to be run, including
+  any specific pre-processing actions that are to be carried out.
+  </para>
+
+  <para>
+  &lt;job_setup&gt;
+  </para>
+  <para>
+  This is an optional part that allows specific inputs to be inserted.
+  Usually, this is done using DataMongers and Input Create modules.
+  </para>
+
+  <para>You will need to modify some parts of this XML file to point files to non-default places.</para>
+
+  </section>
+
+  <section id="blast">
+    <title>The Simple Blast Pipeline </title>
+    <para> <emphasis>Use Case</emphasis> </para>
+    <screen>
+    Given a file of sequences, split the files into smaller chunks, and blast
+    it against the database over a compute farm. Blast results files are stored
+    into a given results  directory, with one result file per blast job.
+    </screen>
+    <para>
+    This is a simple blast pipeline demo that allows one to pipeline a bunch of blast
+    jobs. It is stripped bare, assuming that the user has sequences in files and simply wishes
+    to parallalize the blast jobs. It doesn't utilize one of the main features of blast which
+    is to allow inputs from different database sources.
+    </para>
+
+    <para><emphasis>Configuring the Pipeline</emphasis></para>
+    
+    <para> ANALYSIS 1: DataMonger </para>
+    <para>
+    This involves a DataMonger Analysis using the <emphasis>setup_file_blast</emphasis> module.
+        The datamonger will split the input file specified into a specified number of chunks.
+        It will create a blast job in the pipeline for each chunk. It will also
+        create the specified working directory for storing these files and format the db file for
+        blasting if you are blasting against itself. If you are blasting against a different database file,
+        you can specify the formatting of the db as part of the analysis parameters. 
+    </para>
+    <para>
+    <programlisting>
+    270     &lt;analysis id="1"&gt;
+    271       &lt;data_monger&gt;
+    272         &lt;input&gt;
+    273           &lt;name&gt;input_file&lt;/name&gt;
+    274         &lt;/input&gt;
+    275         &lt;input_create&gt;
+    276            &lt;module&gt;setup_file_blast&lt;/module&gt;
+    277            &lt;rank&gt;1&lt;/rank&gt;
+    278             &lt;argument&gt;
+    279                 &lt;tag&gt;input_file&lt;/tag&gt;
+    280                 &lt;value&gt;/data0/shawn_tmp/blast.fa&lt;/value&gt;
+    281                 &lt;type&gt;SCALAR&lt;/type&gt;
+    282             &lt;/argument&gt;
+    283             &lt;argument&gt;
+    284                 &lt;tag&gt;chop_nbr&lt;/tag&gt;
+    285                 &lt;value&gt;5&lt;/value&gt;
+    286                 &lt;type&gt;SCALAR&lt;/type&gt;
+    287             &lt;/argument&gt;
+    288             &lt;argument&gt;
+    289                 &lt;tag&gt;workdir&lt;/tag&gt;
+    290                 &lt;value&gt;/tmp/blast_dir/&lt;/value&gt;
+    291                 &lt;type&gt;SCALAR&lt;/type&gt;
+    292             &lt;/argument&gt;
+    293             &lt;argument&gt;
+    294                 &lt;tag&gt;result_dir&lt;/tag&gt;
+    295                 &lt;value&gt;/tmp/blast_dir/blast_result/&lt;/value&gt;
+    296                 &lt;type&gt;SCALAR&lt;/type&gt;
+    297             &lt;/argument&gt;
+    298          &lt;/input_create&gt;
+    299       &lt;/data_monger&gt;
+    300     &lt;/analysis&gt;
+    301
+    </programlisting>
+    </para>
+    <para>
+    line 276: This species the particular DataMonger to use that will prepare your file for
+    paralization. For this case, we will use setup_file_blast which will chop up your
+    input file specified below into smaller chunks. 
+    </para>
+    <para>
+    line 280: This specifies the name of the input file that will be split into smaller chunks.
+    Modify this accordingly.
+    </para>
+    <para>
+    line 285: This specifies the number of files to split the input file into which wil equal
+              the number of blast jobs. You will want to chose a reasonable number that will
+              utilize your compute farm best.
+    </para>
+    <para>
+    line 290: This specifies the working directory in which the blast chunks will be stored.
+    </para>
+    <para>
+    line: 295: This specifies where the blast result files will be stored.
+    </para> 
+   </section>
+   <section id="configureblast2">
+    <title>The Simple Blast Pipeline</title>
+    <para> ANALYSIS 2: Blast</para>
+   
+    <programlisting>
+    303     &lt;analysis id="2"&gt;
+    304       &lt;logic_name&gt;Blast&lt;/logic_name&gt;
+    305       &lt;runnable&gt;Bio::Pipeline::Runnable::Blast&lt;/runnable&gt;
+    306       &lt;db&gt;family&lt;/db&gt;
+    307       &lt;db_file&gt;/data0/Fugu_rubripes.pep.fa&lt;/db_file&gt;
+    308       &lt;program&gt;blastall&lt;/program&gt;
+    309       &lt;program_file&gt;/usr/local/bin/blastall&lt;/program_file&gt;
+    310       &lt;parameters&gt;-p blastp -e 1-e05 -formatdb 1 -result_dir /data0/shawn_tmp/blast_result/ &lt;/parameters&gt;
+    311     &lt;/analysis&gt;
+    </programlisting>
+
+   <para>
+   This set of xml tags specify the blast analysis to run.
+   </para>
+   <para>
+   Line 305: This specifies the pipeline to use the <emphasis>Bio::Pipeline::Runnable::Blast</emphasis> runnable.
+   </para>
+   <para>
+   Line 306: This is the name of the database to blast against
+   </para>
+   <para>
+   Line 307: This is the path to the database file to blast against.
+   </para>
+   <para>
+   Line 308: This is the name of the blast program.
+   </para>
+   <para>
+   Line 309: This is the location of the blast program
+   </para>
+   <para>
+   Line 310: These are the blast parameters as well as parameters to the Blast runnable.
+   </para>
+  <itemizedlist>
+    <listitem>
+    <para>
+      <emphasis>-p blastp</emphasis> This is a blastall parameter to specify using the  blastp alignment program.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+    <emphasis>-e 1-e05</emphasis> Another blastall parameter to return hits with scores < 0.00001
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+    <emphasis>-formatdb 1</emphasis> A Bio::Pipeline::Runnable::Blast parameter that tells it to format the db file specified in line 307 before
+    commencing blasting.
+    </para>
+  </listitem>
+  <listitem>
+    <para>
+    <emphasis>-result_dir /data0/shawn_tmp/blast_result/</emphasis> This tells the Runnable where to store the blast output. 
+    </para>
+  </listitem>
+
+  </itemizedlist>
+  </section>
+  <section id="Loading">
+  <title>Loading the Pipeline</title>
+  <para>
+   The xml is loaded to create the pipeline using the Xml2DB.pl script. The script is located in the bioperl-pipeline
+   package under <emphasis>bioperl-pipeline/xml/</emphasis>. Other xml templates are found in <emphasis> bioperl-pipeline/xml/templates</emphasis> 
+   This script assumes that you have a mysql database installed.
+   </para>
+
+   <para>
+   Run the script with a -h to see the options available:
+   </para>
+   <programlisting>
+shawnh@pulse1 ~/src/bioperl-pipeline/xml> perl Xml2Db.pl -h
+******************************
+*Xml2DB.pl
+******************************
+This script configures and creates a pipeline based on xml definitions.
+
+Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+
+Default values in ()
+-dbhost host (mysql)
+-dbname name of pipeline database (test_XML)
+-dbuser user name (root)
+-dbpass db password()
+-schema The path to the bioperl-pipeline schema.
+        Needed if you want to create a new db.
+        (../sql/schema.sql)
+-verbose For debugging
+-p      the pipeline setup xml file (required)
+
+  </programlisting>
+
+  <para>
+  An example session:
+  </para>
+<programlisting>
+shawnh@pulse1 ~/src/bioperl-pipeline/xml> perl Xml2Db.pl -dbname blast_pipe -dbuser root -p templates/blast_file_pipeline.xml
+A database called test_xml already exists.
+Continuing would involve dropping this database and loading a fresh one using templates/blast_file_pipeline.xml.
+Would you like to continue? y/n [n] y
+Dropping Databases
+Creating test_xml
+   Loading Schema...
+Reading Data_setup xml   : templates/blast_file_pipeline.xml
+Doing DBAdaptor and IOHandler setup
+Doing Pipeline Flow Setup
+Doing Converters..
+Doing Analysis..
+Doing Rules
+Doing Job Setup...
+Loading of pipeline test_xml completed
+shawnh@pulse1 ~/src/bioperl-pipeline/xml>
+</programlisting>
+
+  <para> At this point, you have a pipeline database called blast_pipe that is ready for running. </para> 
+  </section>
+
+  <section id="configure2">
+  <title> Configuring the PipeConf</title>
+
+  <para>
+  Hangon. You may want to configure any pipeline management parameters before running. This is done via
+  the PipeConf.pm module located at <emphasis>bioperl-pipeline/Bio/Pipeline/PipeConf.pm</emphasis>.
+  Various parameters may be set here:
+  </para>
+  <programlisting>
+     39 %PipeConf = (
+     40
+     41     # You will need to modify these variables
+     42
+     43     # working directory for err/outfiles
+     44     NFSTMP_DIR => '/tmp/',
+     45
+     46     # database specific variables
+     47
+     48     DBI_DRIVER => 'mysql',
+     49     DBHOST     => 'mysql',
+     50     DBNAME     => 'annotate_pipeline',
+     51     DBUSER     => 'root',
+     52     DBPASS     => '',
+     53
+     54     # Batch Management system module
+     55     # Currently supports PBS and LSF
+     56     # ignored if run in local mode
+     57     BATCH_MOD   =>  'LSF',
+     58
+     59     # farm queue
+     60     QUEUE      => 'normal3',
+     61
+     62     # no of jobs to send to Batch Management system at one go
+     63     BATCHSIZE  => 3,
+     64
+     65     #bsub opt
+     66     BATCH_PARAM => '-C0',
+     67
+     68     # no of jobs to fetch at a time and submit
+     69     MAX_INCOMPLETE_JOBS_BATCHSIZE => 1000,
+     70
+     71     # no of completed jobs to fetch at a time and create next jobs
+     72     MAX_CREATE_NEXT_JOBS_BATCHSIZE => 5,
+     73
+     74
+     75     # number of times to retry a failed job
+     76     RETRY       => '5',
+     77
+     78     # path to runner.pl, use by the BatchSubmission objects
+     79     # to look for runner.pl. If not supplied it looks in the default
+     80     # directory where PipelineManager lies
+     81     RUNNER     => '',
+     82
+     83     #sleep time (seconds) in PipelineManager before waking up and looking for jobs to run
+     84     SLEEP      => 30,
+     85
+     86     FETCH_JOB_SIZE => 100,
+
+</programlisting>
+</section>  
+
+  <section id="Running">
+    <title>Running your pipeline </title>
+    <para>
+    To run the pipeline, cd to the <emphasis>bioperl-pipeline/Bio/Pipeline/</emphasis> directory.
+    </para>
+    <para> 
+    Run the PipelineManger.pl with the -h option to check the options available: 
+    </para>
+    <programlisting>
+shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline> perl PipelineManager.pl -h
+************************************
+*PipelineManager.pl
+************************************
+This is the central script used to run the pipeline.
+
+Usage: PipelineManager.pl
+
+Options:
+Default values are read from PipeConf.pm
+
+     -dbhost The database host name (localhost)
+     -dbname The pipeline database name
+     -dbpass The password to mysql database
+     -flush  flush all locks on pipeline and remove any that exists.
+             Should only be used for debugging or development.
+     -batchsize The number ofjobs to be batched to one node
+     -local     Whether to run jobs in local mode
+                (on the node where this script is run)
+     -number    Number of jobs to run (for testing)
+     -queue     Specify the queue on which to submit jobs
+     -verbose   Whether to show warning during test and setup
+     -help      Display this help
+
+    </programlisting>
+
+    <para>
+    If you run the script in local(-l) mode, the script will not be batched to LSF or PBS. Jobs are executed
+    sequentially in this way This is usually a recommended way of testing your pipeline before batching all the jobs. 
+    You may also specify the number of jobs to run with the -n option.
+    </para>
+    <para>
+    Once you are ready to run on the node, you may reset your jobs by rerunning the Xml2DB script as described in the last section.
+    Submit the jobs to the compute nodes now by running the PipelineManger without the -l option:
+    </para>
+    <programlisting>
+shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline> perl PipelineManager.pl -dbname test_xml -f
+///////////////Starting Pipeline//////////////////////
+Fetching Analysis From Pipeline test_xml
+2 analysis found.
+Running test and setup..
+
+//////////// Analysis Test ////////////
+Checking Analysis 1 DataMonger ok
+Checking Analysis 2 Blast ok
+
+///////////////Tests Completed////////////////////////
+
+Fetching Jobs...
+Fetched 1 incomplete jobs
+Fetched 0 completed jobs
+opening bsub command line:
+ bsub -o /usr/users/shawnh/tmp/test_xml_DataMonger.1038684370.167.out -e /usr/users/shawnh/tmp/test_xml_DataMonger.1038684370.167.err -q normal3 -C0  /usr/users/shawnh//src/bioperl-pipeline//Bio/Pipeline/runner.pl -dbname test_xml -host mysql -port 3306 -dbuser root 1
+Going to snooze for 3 seconds...
+Waking up and run again!
+Fetching Jobs...
+Fetched 0 incomplete jobs
+Fetched 0 completed jobs
+Going to snooze for 3 seconds...
+Waking up and run again!
+Fetching Jobs...
+Fetched 0 incomplete jobs
+Fetched 0 completed jobs
+Going to snooze for 3 seconds...
+Waking up and run again!
+</programlisting>
+
+<para> At any one time, you may check in the job table for the status of your jobs. The following shows
+an example mysql session</para>
+  <programlisting>
+  shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline> mysql -u root test_xml
+  Reading table information for completion of table and column names
+  You can turn off this feature to get a quicker startup with -A
+
+  Welcome to the MySQL monitor.  Commands end with ; or \g.
+  Your MySQL connection id is 3940238 to server version: 3.23.36
+
+  Type 'help;' or '\h' for help. Type '\c' to clear the buffer
+
+  mysql> select * From job;
+  +--------+------------+-------------+----------+--------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+-----------+---------+---------------------+-------------+
+  | job_id | process_id | analysis_id | queue_id | stdout_file                                            | stderr_file                                            | object_file                                            | status    | stage   | time                | retry_count |
+  +--------+------------+-------------+----------+--------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+-----------+---------+---------------------+-------------+
+  |      2 | NEW        |           2 |   437257 | /usr/users/shawnh/tmp/test_xml_Blast.1038715216.66.out | /usr/users/shawnh/tmp/test_xml_Blast.1038715216.66.err | /usr/users/shawnh/tmp/test_xml_Blast.1038715216.66.obj | SUBMITTED | RUNNING | 2002-12-01 11:59:21 |           0 |
+  +--------+------------+-------------+----------+--------------------------------------------------------+--------------------------------------------------------+--------------------------------------------------------+-----------+---------+---------------------+-------------+
+  1 row in set (0.00 sec)
+
+  mysql>
+  </programlisting>
+
+  <para>
+  Here we can see that one blast job has been created and is currently having status <emphasis>SUBMITTED</emphasis> and stage
+  <emphasis>RUNNING</emphasis>. The status available are NEW|SUBMITTED|FAILED|COMPLETED and for stage are BATCHED|READING|RUNNING|WRITING.
+  Once a job is completed, the jobs will be move to the completed_jobs table.
+  If the job fails, you may view the error log specified by stderr_file.
+  Currently stderr_file and stdout_files are removed only if a job is completed. 
+  </para>
+
+</section>
+  <section id="ViewingYourResults">
+  <title>Viewing Your Results</title>
+  <para>You may now check the <emphasis>resultdir</emphasis> specified in the Blast Analysis to 
+  see if your blast results are stored properly.
+  </para>
+
+  <para>Congratulations at this point you have managed to setup the biopipe successfully. It is
+  hoped that you have a feel of how the biopipe works. You may now try out more complex examples of 
+  through the other XML templates that we have. More documentation for this will come in the future.
+  </para>
+  </section>
+    
+    
+</article>
