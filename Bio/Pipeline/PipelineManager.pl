@@ -22,7 +22,7 @@ use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::BatchSubmission;
 
-use Bio::Pipeline::InputCreate::setup_genewise;
+#use Bio::Pipeline::InputCreate::setup_genewise;
 
 
 ############################################
@@ -185,7 +185,7 @@ print scalar(@analysis)." analysis found.\nRunning test and setup..\n\n/////////
 
 foreach my $anal (@analysis) {
     print STDERR "Checking Analysis ".$anal->dbID. " ".$anal->logic_name;
-    $anal->test_and_setup($verbose);
+#    $anal->test_and_setup($verbose);
     print STDERR " ok\n";
 }
 
