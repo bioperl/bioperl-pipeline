@@ -72,7 +72,7 @@ sub store {
          SET current = ?
              next= ?
              action= ? } );
-    $sth->execute($rule->current, $rule->next, $rule->action);
+    $sth->execute($rule->current->dbID, $rule->next->dbID, $rule->action);
   
    $sth = $self->prepare( q{
       SELECT last_insert_id()
@@ -89,7 +89,7 @@ sub store {
              current= ?,
              next= ?,
              action= ?} );
-    $sth->execute($rule->dbID, $rule->current, $rule->next, $rule->action);
+    $sth->execute($rule->dbID, $rule->current->dbID, $rule->next->dbID, $rule->action);
   }
   #$rule->adaptor( $self );
   return $rule->dbID;
