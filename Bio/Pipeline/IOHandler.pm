@@ -255,7 +255,9 @@ sub fetch_input_ids {
     
     #now get the ids
     my $last = $datahandlers[$#datahandlers]->method;
-    my @ids = $obj->$last($param);
+    my @arguments = sort {$a->rank <=> $b->rank} @{$datahandlers[$#datahandlers]->argument};
+    my @args = $self->_format_input_arguments($param,@arguments);
+    my @ids = $obj->$last(@args);
 
     #destroy handle only if its a dbhandle
     if($self->adaptor_type eq "DB") {$tmp->DESTROY};
@@ -347,37 +349,45 @@ sub _format_output_args {
     my @args;
     my $value;
     for (my $i = 0; $i <=$#arguments; $i++){
+      #pass output object
       if ($arguments[$i]->value eq 'OUTPUT'){
         $value = $object
       }
+      #pass input id
       elsif($arguments[$i]->value eq 'INPUT'){
-	my @names;
-	foreach my $in (@{$input}){
-		push @names, $in->name;
-	}
-        $value = \@names;
+	      my @names;
+	      foreach my $in (@{$input}){
+		      push @names, $in->name;
+	      }
+          $value = \@names;
       }
+      #pass input obj
       elsif($arguments[$i]->value eq 'INPUTOBJ'){
-	my @values;
-	foreach my $in (@{$input}){
-		push @values, $in->fetch;
-	}
-	$value = \@values;
+	      my @values;
+	      foreach my $in (@{$input}){
+		      push @values, $in->fetch;
+	      }
+	      $value = \@values;
       }
+      #just pass the value
       else {
         $value = $arguments[$i]->value;
       }
+
+      #if there are tags
       if($arguments[$i]->tag){
-        if(ref($value) eq "ARRAY"){
-          push @args, $arguments[$i]->tag;
-          push @args, @{$value};
+        #if you have an array ref of outputs and your method expects an array (as opposed to array ref)
+        if(ref($value) eq "ARRAY" && ($arguments[$i]->type eq "ARRAY")){
+            push @args, $arguments[$i]->tag;
+            push @args, @{$value}
         }
+        #if your method expects a single variable (array ref)
         else {
           push @args, ($arguments[$i]->tag => $value);
         }
       } 
       else {
-        if(ref($value) eq "ARRAY"){
+        if(ref($value) eq "ARRAY" && ($arguments[$i]->type eq "ARRAY")){
           push @args, @{$value};
         }
         else {
