@@ -227,6 +227,12 @@ sub setup_runnable_inputs {
                $hash{$in->[0]} = $in_obj;
             }
         }
+        #default to input method call for DataMonger is no tag specified.
+        if($tag eq "no_tag"){
+            $self->runnable->can('input') || $self->throw("Runnable $runnable cannot call $tag");
+            $self->runnable->input(\%hash);
+            return;
+        }
         $self->runnable->can($tag) || $self->throw("Runnable $runnable cannot call $tag");
         $self->runnable->$tag(\%hash);
         return;
