@@ -17,6 +17,10 @@ This specifies the method calls that will be used by the pipeline
 to access the databases. These methods are contained in the modules
 specified by the database setup section above.
 
+<transformer_setup>
+This specifies the transformer modules like Converters and Filters
+that maybe plugged into iohandlers for processing data.
+
 <pipeline_flow_setup>
 This specifies the analysis and rules of the pipeline. Analysis
 refer to the runnables that will be used in this pipeline while the
@@ -42,108 +46,53 @@ Log:
 30 Aug 2002
   Grammar error correct. (Juguang)
 -->
-<!-- Shared ELEMENTs -->
-<!ELEMENT module (#PCDATA)>
-<!-- shared by dbadaptor and streamadaptor -->
-<!ELEMENT rank (#PCDATA)>
-<!-- shared by method and argument -->
-<!ELEMENT name (#PCDATA)>
-<!-- visual hierarchy, drawn by hand.
-
-pipeline_setup
-	database_setup
-		dbadaptor				-id
-			dbname
-			driver
-			host
-			user
-			password
-			module
-		streamadaptor
-			module
-	iohanlder_setup
-		iohandler
-			adaptor_id
-				adaptor_id
-				adaptor_type
-				iohandler_type
-				method
-					name
-					rank
-					argument
-						value
-						type
-						rank
-	pipeline_flow_setup
-		analysis
-			data_monger
-				input
-					nmae
-					iohandler (id)
-				input_create
-					module
-					rank
-					argument
-						tage
-						value
-			logic_name
-			runnable
-			db
-			db_file
-			program
-			paramters
-			modegroup_id
-			out_iohandler		-id
-			input_iohandler_mapping
-				prev_analysis_iohandler_id
-				current_analysis_iohandler_id
-		rule
-			current_analysis_id
-			next_analysis_id
-			action
-
--->
 <!-- pipeline_setup is the root element of this schema
 There are 4 sub-setup, 
 1. database_setup for setting up the database adaptors,
-2. iohanderl_setup,
+2. iohandler_setup,
+3. transformer_setup,
 3. pipeline_flow_setup, and
 4. job_setup.
-
  -->
-<!ELEMENT pipeline_setup (database_setup, iohandler_setup, pipeline_flow_setup, job_setup?)>
+
+<!ELEMENT pipeline_setup (database_setup?, iohandler_setup?, transformer_setup?, pipeline_flow_setup, job_setup?)>
+
 <!-- database_setup -->
 <!ELEMENT database_setup (dbadaptor*, streamadaptor*)>
-<!ATTLIST dbadaptor
-	id ID #REQUIRED
->
+<!ATTLIST dbadaptor id ID #REQUIRED >
 <!ELEMENT dbadaptor (dbname, driver, host, user, password, module)>
 <!ELEMENT dbname (#PCDATA)>
 <!ELEMENT driver (#PCDATA)>
 <!ELEMENT host (#PCDATA)>
 <!ELEMENT user (#PCDATA)>
 <!ELEMENT password (#PCDATA)>
-<!ATTLIST streamadaptor
-	id ID #REQUIRED
->
-<!ELEMENT streamadaptor (module)>
+<!ELEMENT module (#PCDATA)>
+<!ATTLIST streamadaptor id ID #REQUIRED >
+<!ELEMENT streamadaptor (module+)>
+<!ELEMENT module (#PCDATA)>
+
+<!-- iohandler_setup -->
 <!ELEMENT iohandler_setup (iohandler*)>
-<!ATTLIST iohandler
-	id ID #REQUIRED
->
+<!ATTLIST iohandler id ID #REQUIRED >
 <!ELEMENT iohandler (iohandler_type, adaptor_id, adaptor_type, method+)>
 <!ELEMENT iohandler_type (#PCDATA)>
 <!ELEMENT adaptor_id (#PCDATA)>
 <!ELEMENT adaptor_type (#PCDATA)>
 <!ELEMENT method (name, rank, argument*)>
-<!ELEMENT argument (value, type, rank)>
+<!ELEMENT name(#PCDATA)>
+<!ELEMENT rank (#PCDATA)>
+<!ELEMENT argument (tag,value, type, rank)>
 <!ELEMENT value (#PCDATA)>
 <!ELEMENT type (#PCDATA)>
+
+<!--transformer_setup-->
+<!ELEMENT transformer_setup (transformer*)>
+<!ATTLIST transformer id ID #REQUIRED>
+<!ELEMENT transformer (module+,method+)>
+
 <!-- pipeline_flow_setup -->
 <!ELEMENT pipeline_flow_setup (analysis*, rule*)>
-<!ATTLIST analysis
-	id ID #REQUIRED
->
+<!ATTLIST analysis id ID #REQUIRED >
 <!ELEMENT analysis ((logic_name, runnable, db, db_file, program, parameters, nodegroup_id, output_iohandler_id, input_iohandler_mapping) | (data_monger))>
 <!ELEMENT logic_name (#PCDATA)>
 <!ELEMENT runnable (#PCDATA)>
@@ -156,20 +105,21 @@ There are 4 sub-setup,
 <!ELEMENT input_iohandler_mapping (prev_analysis_iohandler_id, current_analysis_iohandler_id)>
 <!ELEMENT prev_analysis_iohandler_id (#PCDATA)>
 <!ELEMENT current_analysis_iohandler_id (#PCDATA)>
-<!ELEMENT data_monger ANY>
+<!ELEMENT data_monger (input,input_create, initial?) >
+<!ELEMENT input(name)>
+<!ELEMENT input_create(module,rank,argument?)>
 <!ELEMENT rule (current_analysis_id, next_analysis_id, action)>
 <!ELEMENT current_analysis_id (#PCDATA)>
 <!ELEMENT next_analysis_id (#PCDATA)>
 <!ELEMENT action (#PCDATA)>
+
 <!-- job_setup -->
 <!ELEMENT job_setup (job+, fixed_input+)>
-<!ELEMENT job (process_id, analysis_id, queue_id, retry_count, fixed_input+)>
-<!ATTLIST job
-	id CDATA #REQUIRED
->
+<!ELEMENT job (process_id, analysis_id, queue_id, retry_count, input+)>
+<!ATTLIST job id CDATA #REQUIRED >
 <!ELEMENT analysis_id (#PCDATA)>
 <!ELEMENT process_id (#PCDATA)>
 <!ELEMENT queue_id (#PCDATA)>
 <!ELEMENT retry_count (#PCDATA)>
-<!ELEMENT fixed_input (name, input_iohandler_id)>
+<!ELEMENT input (name, input_iohandler_id)>
 <!ELEMENT input_iohandler_id (#PCDATA)>
