@@ -144,7 +144,8 @@ sub run {
    my @args        = $constructor->arguments;
    my $obj         = $self->_load_obj($self->module,$constructor,@args);
    foreach my $method(@methods){
-    my @arguments = sort {$a->rank <=> $b->rank} @{$method->argument};
+    my @arguments = sort {$a->rank <=> $b->rank}@{$method->argument};
+    my @args = $self->_format_input_arguments($input_ref,@arguments);
     my $tmp1 = $method->method;
     my @obj = $obj->$tmp1(@args);                                               
     if(scalar(@obj) == 1){                                                      
@@ -157,6 +158,34 @@ sub run {
   return $obj;
 }
 
+
+=head2 _format_input_arguments
+
+  Title    : _format_input_arguments
+  Function : formats the arguments for input, replace key word
+             INPUT with the input object 
+  Example  : $io ->_format_input_arguments($input_id,@args);
+  Returns  : an array of arguments
+  Args     : 
+
+=cut
+
+sub _format_input_arguments {
+  my ($self,$input,@arguments) = @_;
+  my @args;
+  for (my $i = 0; $i <=$#arguments; $i++){
+    if($arguments[$i]->tag){
+      push @args, $arguments[$i]->tag;
+    }
+    if($arguments[$i]->value eq 'INPUT'){
+      push @args, $input;
+    }
+    else {
+      push @args, $arguments[$i]->value;
+    }
+  }                                                                                                                                                 
+  return @args;                                                                                                                                     
+}  
 
 =head2 _load_obj
     
