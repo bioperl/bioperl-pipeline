@@ -87,8 +87,9 @@ CLASS="PROGRAMLISTING"
     307       &#60;db_file&#62;/data0/Fugu_rubripes.pep.fa&#60;/db_file&#62;
     308       &#60;program&#62;blastall&#60;/program&#62;
     309       &#60;program_file&#62;/usr/local/bin/blastall&#60;/program_file&#62;
-    310       &#60;parameters&#62;-p blastp -e 1-e05 -formatdb 1 -result_dir /data0/shawn_tmp/blast_result/ &#60;/parameters&#62;
-    311     &#60;/analysis&#62;
+    310       &#60;analysis_parameters&#62;-p blastp -e 1-e05 &#60;/analysis_parameters&#62;
+    311       &#60;runnable_parameters&#62;-formatdb 1 -result_dir /data0/shawn_tmp/blast_result/ &#60;/runnable_parameters&#62;
+    312     &#60;/analysis&#62;
     </PRE
 ></TD
 ></TR
@@ -115,7 +116,10 @@ CLASS="EMPHASIS"
 >   Line 309: This is the location of the blast program
    </P
 ><P
->   Line 310: These are the blast parameters as well as parameters to the Blast runnable.
+>   Line 310: These are the blast parameters.
+   </P
+><P
+>   Line 311: These are blast runnable parameters.
    </P
 ><P
 ></P
