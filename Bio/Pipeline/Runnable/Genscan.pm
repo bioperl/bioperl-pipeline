@@ -134,10 +134,10 @@ sub run {
 
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
-  my @params = $self->parse_params($self->analysis->parameters);
+  my @params = ('MATRIX', $self->analysis->analysis_parameters);
   $factory = Bio::Tools::Run::Genscan->new(@params);
   $factory->quiet(1);
-
+    print "ref seq is " . ref($seq );
   my @genes;
   eval {
     @genes = $factory->predict_genes($seq);

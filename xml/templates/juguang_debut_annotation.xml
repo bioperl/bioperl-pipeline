@@ -51,6 +51,7 @@ and will store the feature information the pipeline generates.
       <method>
          <name>get_all_Contig_name</name>
          <rank>2</rank>
+         <argument value="5" type="SCALAR" rank="1"/>
       </method>  
 
          

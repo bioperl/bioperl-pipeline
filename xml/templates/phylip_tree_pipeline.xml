@@ -41,7 +41,9 @@ both to database or files depending on one's specification.
   <database_setup>
   This specifies the databases that the pipeline connects to and the
   adaptor modules that intefaces with them.
-
+  
+  Since this case is file-based, stream adaptor, rather than db adaptor in other cases, is applied. 
+  The instance of stream adaptor we are using here is Bio::Pipeline::Dumper.
   <iohandler_setup>
   This specifies the method calls that will be used by the pipeline
   to access the databases. These methods are contained in the modules
@@ -79,14 +81,19 @@ both to database or files depending on one's specification.
           cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline
 
 
-          This is bleeding edge stuff so it is recommended that you use main trunk code for all three packages.
+          This is bleeding edge stuff so it is recommended 
+          that you use main trunk code for all three packages.
  
-          Note the schema for biopipe has moved to bioperl-pipeline/sql/schema.sql for convenience
+          Note the schema for biopipe has moved to 
+          bioperl-pipeline/sql/schema.sql for convenience
         </Bioperl>
     </PERL PACKAGES>
 
     <BINARIES>
-      NCBI's blastall
+      1. PHYLIP, a free package of programs for inferring phylogenies
+         see: http://evolution.genetics.washington.edu/phylip.html
+      2. clustalw: To align a group of Protein Sequences in table format.
+         see: http://bmerc-www.bu.edu/examples/clustalw.html
     </BINARIES>
  
   <CONFIGURING PIPELINE>
@@ -164,7 +171,8 @@ both to database or files depending on one's specification.
    </AFTER NOTE>
 
 <CHANGE LOG>
-19 Dec 2002 - First Addition - shawn
+19 Dec 2002 - First Addition - Shawn
+03 Jan 2003 - Docs slightly Motified - Juguang
 </CHANGE LOG>
 
 //-->

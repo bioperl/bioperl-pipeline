@@ -54,7 +54,16 @@ sub contig_dbID{
 sub contig_name{
     my ($self, $arg) = @_;
     if(defined $arg){
-        $self->{"_contig_name"} = $arg;
+        my $contig;
+        eval{
+            $contig = $self->ens_dbadaptor->get_RawContigAdaptor->fetch_by_name($arg);
+        };
+        if($@){
+            $self->throw("Problem happens when fetching contig by dbID\n$@\n");
+        }
+        $self->contig($contig);
+#        $self->{"_contig_name"} = $arg;
+        
     }
     return $self->{"_contig_name"};
 }
@@ -80,9 +89,9 @@ sub analysis_logic_name{
             $self->throw("Problem happens when fetching analysis by logic name\n$@");
         }
         $self->analysis($analysis);
-        $self->{'_analysis'} = $analysis;
-        $self->{'_analysis_id'} = $analysis->dbID;
-        $self->{'_analysis_logic_name'} = $arg;
+#        $self->{'_analysis'} = $analysis;
+#        $self->{'_analysis_id'} = $analysis->dbID;
+#        $self->{'_analysis_logic_name'} = $arg;
     }
     return $self->{'_analysis_logic_name'};
 }
