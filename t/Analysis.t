@@ -40,7 +40,8 @@
 
     my $ioid = $dba->get_IOHandlerAdaptor->store($iohandler_obj);
 
-
+    my @ioh;
+    push @ioh, $iohandler_obj;
     my $analysis = Bio::Pipeline::Analysis->new(
 		   -logic_name      => 'SWIRBlast',
 		   -db              => 'swissprot',
@@ -54,7 +55,7 @@
 		   -runnable        => 'Bio::Pipeline::Runnable::Blast',
 		   -runnable_version  => 1,
 		   -parameters      => '',
-       -output_handler  =>$iohandler_obj
+       -iohandler  =>\@ioh
 	      	   );
 
     my $id = $analysisAdaptor->store($analysis);
