@@ -509,51 +509,6 @@ sub _initialise {
     }
 }
 
-#creates the initial jobs, used by &initialise
-sub _create_initial_jobs {
-    my ($self, $analysis) = @_;
-    my $INPUT_LIMIT = $self->input_limit;
-    my @inputs = $self->_create_input ($analysis);
-    my $jobid = 1;
-    my @job_objs;
-    foreach my $input (@inputs){
-        $input->job_id($jobid);
-        my @input_objs;
-        push @input_objs, $input;
-        my $job = Bio::Pipeline::Job->new(-id => $jobid,
-                                              -analysis => $analysis,
-                                              -adaptor => $self->jobAdaptor,
-                                              -inputs => \@input_objs);
-        $self->jobAdaptor->store($job);
-        $jobid++;
-        if($INPUT_LIMIT && $jobid == $INPUT_LIMIT){
-            last;}
-    }
-    print "CREATED Initial jobs!\n";
-}
-
-#creates initial inputs
-sub _create_input {
-    my ($self, $analysis) = @_;
-    print "Fetching Input ids \n";
-    my $iohs = $analysis->create_input_iohandler;
-    my @input_objs;
-    foreach my $ioh (@{$iohs}) {
-      
-    	my ($inputs) = $ioh->fetch_input_ids();
-    	my %io_map = %{$analysis->io_map};
-    	my $map_ioh = $io_map{$ioh->dbID}; 
-    	print scalar(@{$inputs}). " inputs fetched\nStoring...\n";
- 
-    	foreach my $in (@{$inputs}){
-        	my $input_obj = Bio::Pipeline::Input->new(-name => $in,
-                                                  -input_handler => $map_ioh);
-        	push @input_objs, $input_obj;
-    	}
-    }
-    return @input_objs;
-}
-
 #find the next action to do based on current analysis
 sub _get_action_by_next_anal {
     my ($self, $job,@rules) = @_;

@@ -28,6 +28,9 @@ sub fetch_inputs_by_jobID {
 
   my ($self, $job_id) = @_;
 
+  if($job_id == 14) {
+    print "HERE\n";
+  }
   # getting the inputs
   my @inputs=() ;
 
@@ -96,12 +99,8 @@ sub fetch_fixed_input_by_dbID {
     my $input_handler;
     if($iohandler_id){
         $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
-        # Attach converters to the iohandler if any for this iohandler of the analysis that this input is fed into.
-#        my $converters_ref = $self->db->get_AnalysisAdaptor->fetch_converters_by_iohandler($analysis_id, $iohandler_id);
         my $analysis = $self->db->get_AnalysisAdaptor->fetch_by_dbID($analysis_id);
-        
-#        $input_handler->converters($converters_ref);
-        $input_handler->analysis($analysis);
+        $input_handler->analysis($analysis) if $analysis;
     }
 
     #fetch dynamic arguments if any
@@ -200,8 +199,21 @@ sub copy_inputs_map_ioh {
 
     foreach my $input($job->inputs){
       my $in;
+      my $map_ioh;
       if($input->input_handler){
-        my $map_ioh = $self->db->get_IOHandlerAdaptor->get_mapped_ioh($new_job->analysis->dbID,$input->input_handler->dbID);
+        $map_ioh = $self->db->get_IOHandlerAdaptor->get_mapped_ioh($new_job->analysis->dbID,$input->input_handler->dbID);
+      }
+      else {
+        $map_ioh = $self->db->get_IOHandlerAdaptor->get_mapped_ioh($new_job->analysis->dbID);
+      }
+
+        #heuristically look for file tag, need to fix to avoid hardcoding of infile -- shawn
+      if($map_ioh && ($tag ne 'infile')){
+        my $trans_ref = $self->db->get_AnalysisAdaptor->fetch_transformer_by_analysis_iohandler($new_job->analysis,$map_ioh);
+       $map_ioh->transformers($trans_ref) if ($trans_ref);
+        if(!$tag && ($map_ioh->file_path || $map_ioh->file_suffix)){
+            $tag = 'input';
+        }
         $in      = Bio::Pipeline::Input->new(-name => $input->name,-input_handler => $map_ioh,-job_id => $new_job->dbID,-tag=>$tag); 
         push @inputs, $in;
       }

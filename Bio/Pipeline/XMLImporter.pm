@@ -207,22 +207,22 @@ sub run{
     my $xso1;
 
     eval {
-       require('XML/SAX/PurePerl.pm');
+         require('XML/Parser.pm');
     };
    if ($@) {
       eval {
-         require('XML/Parser.pm');
+       require('XML/SAX/PurePerl.pm');
       };
       if ($@) {
         $self->throw(" you require either XML::SAX::PurePerl.pm or XML::Parser to be installed, none of them seem to be there");
       } else {
-        my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
-        $xso1 = XML::SimpleObject->new( $parser->parsefile($XML) );
-      }
-   } else {
       my $handler = Bio::Pipeline::Utils::SaxHandler->new();
       my $parser = XML::SAX::PurePerl->new(Handler => $handler);
       $xso1 = XML::SimpleObject->new( $parser->parse_uri($XML) );
+      }
+   } else {
+        my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
+        $xso1 = XML::SimpleObject->new( $parser->parsefile($XML) );
    }
 
 
@@ -341,9 +341,13 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
         my $id = $streamadaptor->attribute("id");
         if ($adaptor_id == $id) {
           my $module = &verify($streamadaptor,'module','REQUIRED');
+          my $file_path = &verify($streamadaptor,'file_path');
+          my $file_suffix = &verify($streamadaptor,'file_suffix');
           my $iohandler_obj = Bio::Pipeline::IOHandler->new_ioh_stream (-dbid=>$ioid,
                                                                         -type=>$iotype,
                                                                         -module=>$module,
+                                                                        -file_path=>$file_path,
+                                                                        -file_suffix=>$file_suffix,
                                                                         -datahandlers => \@datahandler_objs);
 
           push @iohandler_objs, $iohandler_obj;
@@ -356,43 +360,36 @@ print "Doing Transformers..\n";
 my @pipeline_transformer_objs;
 $iohandler_setup->children('transformer') || goto PIPELINE_FLOW_SETUP;
 foreach my $transformer ($iohandler_setup->children('transformer')){
-#       print "".(defined($transformer)?"defined":"not defined").(ref($transformer))."\n";
        next unless (defined $transformer);
        next unless ref $transformer;
        my $id = &verify_attr($transformer, 'id', 1);
-       my $module = &verify_attr($transformer, 'module');
+       my $module = &verify($transformer, 'module');
        my @method_objs;
        foreach my $method ($transformer->children('method')){
            next unless(defined $method);
            next unless ref $method;
-           my $method_id = &verify_attr($method, 'id', 1);
-           my $method_name = &verify_attr($method, 'name', 1);
-           my $method_rank = &verify_attr($method, 'rank', 0);
+           my $method_name = &verify($method, 'name', 1);
+           my $method_rank = &verify($method, 'rank', 0);
            my @method_arguments;
            if(defined $method->children('argument')){
-           foreach my $argument ($method->children('argument')){
+             foreach my $argument ($method->children('argument')){
                next unless(defined $argument);
                next unless ref $argument;
-               my $argument_id = &verify_attr($argument, 'id', 1);
-               my $argument_tag = &verify_attr($argument, 'tag', 0);
-               my $argument_value = &verify_attr($argument, 'value', 1);
-               my $argument_rank = &verify_attr($argument, 'rank', 0);
-               my $argument_type = &verify_attr($argument, 'type', 0);
+               my $argument_tag = &verify($argument, 'tag', 0);
+               my $argument_value = &verify($argument, 'value', 1);
+               my $argument_rank = &verify($argument, 'rank', 0);
+               my $argument_type = &verify($argument, 'type', 0);
                my $argument_obj = new Bio::Pipeline::Argument(
-                  -dbID => $argument_id,
                   -tag => $argument_tag,
                   -value => $argument_value,
                   -rank => $argument_rank,
                   -type => $argument_type
                   );
                push @method_arguments, $argument_obj;
+            }
                
            }
-           }else{
-#               print "i do not have arugmnts\n";
-           }
            my $method_obj = new Bio::Pipeline::Method(
-               -dbID => $method_id,
                -name => $method_name,
                -rank => $method_rank,
                -argument => \@method_arguments
@@ -406,7 +403,6 @@ foreach my $transformer ($iohandler_setup->children('transformer')){
          -module => $module,
          -method => \@method_objs
        );
-#       print "now , we got one transformer\n";
        push @pipeline_transformer_objs, $transformer_obj;
 }       
 
@@ -566,7 +562,8 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
             foreach my $transformer ($input_iohandler->child('transformer')) {
               my $transformer_obj = $self->_get_transformer(\@pipeline_transformer_objs, $transformer->attribute("id")); 
               if(defined($transformer_obj)){
-                 $transformer_obj->rank($transformer->attribute("rank"));
+                 my $rank = &verify($transformer,'rank',0,1); 
+                 $transformer_obj->rank($rank);
                  push @transformer_objs, $transformer_obj;
               } else {
                  print "transformer for analysis  not found\n";
@@ -598,14 +595,15 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
         if (ref($map)){
           my $prev_iohandler_id = $map->child('prev_analysis_iohandler_id');
           my $current_iohandler_id = $map->child('current_analysis_iohandler_id');
-          if ($prev_iohandler_id && $current_iohandler_id){
+          if ($current_iohandler_id){
                   my $current_iohandler = $self->_get_iohandler(\@iohandler_objs, $current_iohandler_id->value);
                   if (!defined($current_iohandler)) {
                      print "current input iohandler for analysis not found\n";
                   }
-                  push @ioh, $current_iohandler;
+#                  push @ioh, $current_iohandler;
                   #store to iohandler_map table
-                  $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$prev_iohandler_id->value,$current_iohandler_id->value);
+                  my $prev = $prev_iohandler_id->value if $prev_iohandler_id;
+                  $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$prev,$current_iohandler_id->value);
           }
         }
    }

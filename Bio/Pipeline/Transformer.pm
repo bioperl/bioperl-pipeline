@@ -136,13 +136,13 @@ sub run {
     my @arguments = sort {$a->rank <=> $b->rank}@{$method->arguments} if ref($method->arguments);
     my @args = $self->_format_input_arguments($input_ref,@arguments);
     my $tmp1 = $method->name;
-    my @obj = $obj->$tmp1(@args);                                               
-    if(scalar(@obj) == 1){                                                      
-      $obj = $obj[0];                                                           
+    $obj = $obj->$tmp1(@args);                                               
+    if(scalar(@$obj) == 1){                                                      
+      $obj = $obj->[0];                                                           
     }                                                                           
-    else {                                                                      
-      $obj = \@obj;                                                             
-    }                                                                           
+    #else {                                                                      
+     # $obj = \@obj;                                                             
+    #}                                                                           
   }    
   return $obj;
 }

@@ -67,7 +67,7 @@ sub store {
     my ($self, $transformer) = @_;
 
     unless(ref($transformer) eq 'ARRAY'){
-        $self->warn("A ref of array of object wanted in TransformerAdaptor::store");
+        $self->warn("An array ref wanted: TransformerAdaptor::store");
         return $self->_store_single($transformer);
     }
     
@@ -76,6 +76,7 @@ sub store {
     }
 }
 
+#stores transformer module into transformer table
 sub _store_single {
     my ($self,$transformer) = @_;
 
@@ -102,18 +103,22 @@ sub _store_single {
     }
    if($transformer->method) {
          my @methods = @{$transformer->method};
-  	 foreach my $transformer_method (@methods) {
-	    $self->_store_transformer_method($transformer_method, $transformer->dbID);
-	 }
+      	 foreach my $transformer_method (@methods) {
+    	     $self->_store_transformer_method($transformer_method, $transformer->dbID);
+	       }
+   }
+   else {
+    $self->warn("Storing Transformer without methods!");
    }
    return $transformer->dbID; 
 }
 
+#store method information into transformer_method table
 sub _store_transformer_method{
 	my ($self, $transformer_method, $transformer_id) = @_;
 
 	if(defined ($transformer_method->dbID)){
-		my $sql = "INSERT INTO transformer_methods SET transformer_method_id=?, transformer_id=?, name=?, rank=?";
+		my $sql = "INSERT INTO transformer_method SET transformer_method_id=?, transformer_id=?, name=?, rank=?";
 		my $sth = $self->prepare($sql);
       $sth->execute( 
 			$transformer_method->dbID, 
@@ -138,6 +143,7 @@ sub _store_transformer_method{
 
 }
 
+#store argument information into transformer_method table
 sub _store_transformer_argument{
 	my ($self, $transformer_argument, $transformer_method_id) = @_;
    $transformer_method_id || $self->throw("a method id needed");
@@ -177,7 +183,7 @@ sub fetch_by_dbID{
 		return $self->{_cache}->{$id};
 	}
 
-  my $query = "SELECT transformer_id, module FROM transformers WHERE transformer_id = $id";
+  my $query = "SELECT transformer_id, module FROM transformer WHERE transformer_id = $id";
 	
 	my $sth = $self->prepare($query);
   $sth->execute();
@@ -200,7 +206,7 @@ sub fetch_by_dbID{
     push @new_params, -method => $methods_ref;
     push @new_params, @new_arguments;
     
-	my $transformer = "$module"->new(@new_params);
+	my $transformer = Bio::Pipeline::Transformer->new(@new_params);
 
 	$self->{_cache}->{$id} = $transformer;
 
@@ -210,7 +216,7 @@ sub fetch_by_dbID{
 sub _fetch_transformer_method_by_transformer_dbID{
 	my ($self, $id) = @_;
 	
-	my $query = "SELECT transformer_method_id, name, rank FROM transformer_methods WHERE transformer_id = $id";
+	my $query = "SELECT transformer_method_id, name, rank FROM transformer_method WHERE transformer_id = $id";
 	my $sth = $self->prepare($query);
 	$sth->execute();
 	my @methods;
@@ -231,7 +237,7 @@ sub _fetch_transformer_method_by_transformer_dbID{
 sub _fetch_arguments_by_method_dbID{
 	my ($self, $id) = @_;
 	
-	my $query = "SELECT transformer_argument_id, tag, value, rank FROM transformer_arguments WHERE transformer_method_id = $id";
+	my $query = "SELECT transformer_argument_id, tag, value, rank FROM transformer_argument WHERE transformer_method_id = $id";
 
 	my $sth = $self->prepare($query);
 	$sth->execute;

@@ -169,7 +169,8 @@ use Bio::Pipeline::PipeConf qw(RELEASE_DBCONNECTION);
   Function: generates a new Bio::Pipeline::IOHandler for DB connections
   Returns : a new IOHandler object 
   Args    : dbID              the dbID of this iohandler
-            dbadaptor_dbname  the database name
+            type              iohandler type (INPUT|OUTPUT)
+            dbadaptor_dbname  the database name (required)
             dbadaptor_driver  the database driver
             dbadaptor_host    the database host name
             dbadaptor_user    the database user
@@ -177,6 +178,7 @@ use Bio::Pipeline::PipeConf qw(RELEASE_DBCONNECTION);
             dbadaptor_module  the module used for connecting to the database
             dbadaptor_port    the database port number
             datahandlers      the array ref of datahandler objects
+            analysis          a Bio::Pipeline::Analysis object(optional)
 
 =cut
 
@@ -231,21 +233,36 @@ sub new_ioh_db {
                                                                      -datahandlers=>[$datahandler_1,$datahandler_2]);
   Function: generates a new Bio::Pipeline::IOHandler for streams(files or remote fetching) 
   Returns : a new IOHandler object 
-  Args    : module a string of the form Bio::XXX 
-            datahandlers array of L<Bio::Pipeline::DataHandler> 
+  Args    : dbID        - the database id of the module
+            type        -iohandler type (INPUT|OUTPUT)
+            module      -a string of the form Bio::XXX  that specifies the stream adaptor module
+            file_path   -a directory path for stream adaptor which have files as input names
+            file_suffix -the file extenstion to append to a file input name
+            datahandlers - array ref of L<Bio::Pipeline::DataHandler> 
+
+***Note file paths and file suffix***
+File paths and file_suffix are optional parameters. They are used in conjunction with input names when 
+fetching using streamadaptors where file paths are inputs. When an iohandler->fetch_input is called, 
+the special argument tag INPUT is replaced with the input_name specified in the input table. 
+If the file_path and file_suffix arguments are present, the input_name is modifled to the following:
+
+/file_path/input_name.file_suffix
 
 =cut
 
 sub new_ioh_stream{
     my ($class,@args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($dbID,$type,$module,$datahandlers) = $self->_rearrange([qw(DBID
+    my ($dbID,$type,$module,$file_path,$file_suffix,$datahandlers) = $self->_rearrange([qw(DBID
                                                        TYPE
                                                        MODULE
+                                                       FILE_PATH
+                                                       FILE_SUFFIX
                                                        DATAHANDLERS)],@args);
 
     $module  || $self->throw("Need a stream module");
-
+    $file_path && $self->file_path($file_path);
+    $file_suffix && $self->file_suffix($file_suffix); 
     $self->dbID($dbID);
     $self->stream_module($module);
 
@@ -320,13 +337,22 @@ sub fetch_input {
 
     my $obj; 
     #create the handler fetcher differently depending on whether its a DB or a Stream
+
+    #add the file paths and extension if present
+    $input_name = Bio::Root::IO->catfile($self->file_path,$input_name) if $self->file_path;
+    $input_name = $input_name.$self->file_suffix if $self->file_suffix;
+
     if($self->adaptor_type eq "DB"){
         $obj = $self->_load_dbadaptor();
     }
     else {
         my $constructor = shift @datahandlers;
         my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
+
+        #format the arguments into an array
         my @args = $self->_format_input_arguments($input_name,@arguments);
+    
+        #load the object
         $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
     }
 
@@ -335,9 +361,11 @@ sub fetch_input {
     foreach my $datahandler (@datahandlers) {
         my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
         my @dyn_arg;
+
         if(ref($dyn_arg{$datahandler->dbID}) eq "ARRAY"){
           @dyn_arg = @{$dyn_arg{$datahandler->dbID}};
         }
+
         if($#dyn_arg > 0){
           #merge arguments if dynamic arguments exist
           @arguments = $self->_merge_args(\@arguments,\@dyn_arg);
@@ -346,6 +374,9 @@ sub fetch_input {
         my @args = $self->_format_input_arguments($input_name,@arguments);
         my $tmp1 = $datahandler->method;
         my @obj = $obj->$tmp1(@args);
+
+        #intermediate objects should return only one object while fetched inputs
+        #tend to be in an array
         if(scalar(@obj) == 1){
           $obj = $obj[0];
         }
@@ -358,12 +389,10 @@ sub fetch_input {
     if (defined $self->transformers) {
       my @trans = sort {$a->rank <=> $b->rank} @{$self->transformers};
       foreach my $tran(@trans){
-          
-          if(defined $tran){
-              $obj = $tran->run($obj);
-          }
+        $obj = $tran->run($obj) if $tran;
       }
     }
+
     #destroy handle only if its a dbhandle
     if($self->adaptor_type eq "DB" && $RELEASE_DBCONNECTION) {
       $tmp->DESTROY;
@@ -404,47 +433,45 @@ sub _merge_args {
   return @final;
 }
 
+=head2 file_path
 
-#method used to fetch input ids, used to handle array of inputs fetched
-#may be hacky but will do for now. shawn
+ Title   :   file_path
+ Usage   :   $self->file_path()
+ Function:   get/set
+             holds the file_path 
+ Returns :   a string
+ Args    :   a string (optional)
 
-sub fetch_input_ids {
-    my ($self,$param) = @_;
+=cut
 
-    my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
-    my $obj;
-    #create the handler fetcher differently depending on whether its a DB or a Stream
-    if($self->adaptor_type eq "DB"){
-        $obj = $self->dbadaptor;
-    }
-    else {
-        my $constructor = shift @datahandlers;
-        my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
-        my @args = $self->_format_input_arguments($param,@arguments);
-        $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
-    }
-
-    #now call the cascade of datahandler methods
-    my $tmp = $obj;
-    for (my $i = 0; $i < $#datahandlers; $i++){
-        my $dh = $datahandlers[$i];
-        my @arguments = sort {$a->rank <=> $b->rank} @{$dh->argument};
-        my @args = $self->_format_input_arguments($param,@arguments);
-        my $tmp1 = $dh->method;
-        $obj= $obj->$tmp1(@args);
-    }
-    
-    #now get the ids
-    my $last = $datahandlers[$#datahandlers]->method;
-    my @arguments = sort {$a->rank <=> $b->rank} @{$datahandlers[$#datahandlers]->argument};
-    my @args = $self->_format_input_arguments($param,@arguments);
-    my @ids = $obj->$last(@args);
-
-    #destroy handle only if its a dbhandle
-    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
-
-  return \@ids;
+sub file_path {
+  my ($self,$path) = @_;
+  if($path) {
+    $self->{'_file_path'} = $path;
+  }
+  return $self->{'_file_path'};
 }
+
+=head2 file_suffix
+
+ Title   :   file_suffix
+ Usage   :   $self->file_suffix()
+ Function:   get/set
+             holds the file extension of the input file.
+             it provides the dot if not provided
+ Returns :   a string
+ Args    :   a string (optional)
+
+=cut
+
+sub file_suffix{
+    my ($self,$val) = @_;
+    if($val){
+        $val = $val=~/^\.\S*/ ? $val : ".$val";
+        $self->{'_file_suffix'} = $val;
+    }
+    return $self->{'_file_suffix'};                         
+}  
 
 =head2 _format_input_arguments
 
@@ -605,14 +632,10 @@ sub _format_output_args {
         if($arguments[$i]->type eq "ARRAY"){
             #if your method expects an array
             if(ref($value) eq "ARRAY"){
-                push @args, ($arguments[$i]->tag => @{$value});
+              push @args, ($arguments[$i]->tag => @{$value});
             }
             else {
-#                my @array;
-#                push @array, $value;
-#                push @args, ($arguments[$i]->tag => @array);
-# Change is based on the discuss.
-		push @args, ($arguments[$i]->tag => $value); 
+		          push @args, ($arguments[$i]->tag => $value); 
            }
         }
         else {
@@ -946,6 +969,16 @@ sub transformers {
     return $self->{'_transformers'};
 
 }
+
+=head2 analysis
+
+  Title   : analysis
+  Usage   : $self->analysis($id)
+  Function: get set the analysis for this object
+  Returns : L<Bio::Pipeline::Analysis> 
+  Args    : L<Bio::Pipelnie::Analysis> 
+
+=cut
 
 sub analysis {
     my ($self,$analysis) = @_;

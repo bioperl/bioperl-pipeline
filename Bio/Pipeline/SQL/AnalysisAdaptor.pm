@@ -105,9 +105,6 @@ sub fetch_by_dbID {
       push @iohs, $self->db->get_IOHandlerAdaptor->fetch_by_dbID($ioid);
   }
 
-#   Th original place that fetches the converters.
-#   
-
   $query = " SELECT  prev_iohandler_id, map_iohandler_id
                 FROM    iohandler_map  
                 WHERE   analysis_id = $id";
@@ -121,6 +118,7 @@ sub fetch_by_dbID {
       $iomap{$prev_ioid} = $map_ioh;
   }
 
+  #create the analysis object
   my $anal = new Bio::Pipeline::Analysis (  -ID             => $analysis_id,
                                             -ADAPTOR        => $self,
                                             -DB             => $db,
@@ -142,20 +140,23 @@ sub fetch_by_dbID {
                                             -IO_MAP         => \%iomap);
 
   $self->{'_cache'}->{$id} = $anal;
+
+  #fetch transformers for each iohandler associated with an iohandler for
+  #this analysis if present
   foreach my $ioh(@iohs) {
-    my $trans_ref  = $self->_fetch_transformer_by_analysis_iohandler($anal, $ioh);
+    my $trans_ref  = $self->fetch_transformer_by_analysis_iohandler($anal, $ioh);
     $ioh->transformers($trans_ref) if defined $trans_ref;
   }
   return $anal;
 }
 
-sub _fetch_transformer_by_analysis_iohandler {
+sub fetch_transformer_by_analysis_iohandler {
     my ($self, $anal, $ioh) = @_;
 
     my $query = " SELECT  ai.transformer_id, ai.transformer_rank
                    FROM    analysis_iohandler ai
                    WHERE   ai.analysis_id = ? AND ai.iohandler_id = ?
-                   AND     ai.transformer_id != NULL ";
+                   AND     ai.transformer_id != 'NULL' ";
 
     my $sth = $self->prepare($query);
     $sth->execute ($anal->dbID, $ioh->dbID);
@@ -165,9 +166,7 @@ sub _fetch_transformer_by_analysis_iohandler {
       defined $trans_id || next;
       my $trans= $self->db->get_TransformerAdaptor->fetch_by_dbID($trans_id);
       $trans || next;
-      $trans->analysis($anal);
-      $trans->iohandler($ioh);
-      push @trans, $trans;
+      push @trans,$trans;
     }
     return \@trans if $#trans > 0;
     return undef;
@@ -219,37 +218,6 @@ sub fetch_prev_analysis {
     return @analysis;
 }
 
-
-
-=head2 fetch_create_input_id_ioh
-
-  Title   : fetch_create_input_id_ioh
-  Usage   : my $analysis = $adaptor->fetch_create_input_id_ioh
-  Function: fetches the input create method which retrieves an array of input ids for 
-            the next analysis 
-  Returns : throws exception when something goes wrong.
-            undef if the id is not in the db.
-  Args    : L<Bio::Pipeline::Analysis>
-
-=cut
-
-sub fetch_create_input_id_ioh{
-  my ($self,$analysis) = @_;
-  
-  my $query = "SELECT iohandler_id
-               FROM analysis_iohandler ai, iohandler ioh
-               WHERE ai.analysis_id=? AND ioh.type=?";
-  my $sth = $self->prepare($query);
-  $sth->execute($analysis->dbID,'INPUT_CREATION');
-  my ($io_id) = $sth->fetchrow_array;
-  if($io_id){
-    my $ioh = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($io_id) || $self->throw("Unable to fetch iohandler $io_id");
-    return $ioh;
-  }
-  return undef;
-
-}
-
 #####################################################################3
 =head2 fetch_analysis_iohandler
 
@@ -268,6 +236,7 @@ sub fetch_analysis_iohandler{
   my $query = "SELECT iohandler_id
                FROM analysis_iohandler ai, iohandler ioh
                WHERE ai.analysis_id=? AND ioh.type=?";
+	
   my $sth = $self->prepare($query);
   $sth->execute($analysis->dbID,'INPUT_CREATION');
   my ($io_id) = $sth->fetchrow_array;

@@ -16,7 +16,7 @@ Bio::Pipeline::IOHandlerAdaptor - input/output adaptors object for pipeline
 
 =head1 DESCRIPTION
 
-The adaptor to get the input database adaptor 
+The adaptor to get IOHandlers 
 
 =head1 FEEDBACK
 
@@ -158,14 +158,16 @@ sub fetch_by_dbID {
     }
     elsif($adp_type eq "STREAM") {
       my $sql = "SELECT 
-                f.module
+                f.module,f.file_path,f.file_suffix
                 FROM streamadaptor f
                 WHERE f.streamadaptor_id='$adp_id'";
       $sth = $self->prepare($sql);
       $sth->execute;
-      my ($module) = $sth->fetchrow_array;
+      my ($module,$file_path,$file_suffix) = $sth->fetchrow_array;
       $iohandler = Bio::Pipeline::IOHandler->new_ioh_stream(-type=>$type,
                                                             -module=>$module,
+                                                            -file_path=>$file_path,
+                                                            -file_suffix=>$file_suffix,
                                                             -dbID  => $dbID,
                                                             -datahandlers=>\@datahandlers);
     }
@@ -173,11 +175,6 @@ sub fetch_by_dbID {
         $self->throw("Unallowed iohandler type $adp_type");
     }
 
-    # attaching the converter.
-    # moved the code into AnalysisAdaptor->fetch_converters_by_iohandler, 
-    # which 's called by AnalysisAdaptor->fetch_by_dbID.
-    #
-    
     return $iohandler;
 }
 
@@ -223,6 +220,17 @@ sub store_if_needed {
     return $id;
 }
 
+
+=head2 store 
+
+  Title    : store 
+  Function : stores the IOHandler
+  Example  : $dbID = $ioadp->store($iohandler)
+  Returns  : an int dbID
+  Args     : L<Bio::Pipeline::IOHandler> 
+
+=cut
+
 sub store {
   my ($self, $iohandler) = @_;
 
@@ -266,8 +274,8 @@ sub store {
      if (!defined ($adap_id)) {
        $sth = $self->prepare( qq{
          INSERT INTO streamadaptor
-         SET module = ? } );
-      $sth->execute($iohandler->stream_module);
+         SET module = ?,file_path=?,file_suffix=? } );
+      $sth->execute($iohandler->stream_module,$iohandler->file_path,$iohandler->file_suffix);
 
       $sth = $self->prepare( q{
         SELECT last_insert_id()
@@ -337,35 +345,24 @@ sub store {
             $sth->execute;
             my $argument_id = ($sth->fetchrow_array)[0];
             $argument->dbID($argument_id);
-         }
       }
- }
-
-
-    
-
+     }
+   }
 }
 
 
-sub fetch_inputhandler_dbID_by_analysis{
-    my ($self,$analysis_id) = @_;
+=head2 store_map_ioh 
 
-    my $query = "   SELECT iohandler.iohandler_id
-                    FROM   analysis_iohandler,iohandler
-                    WHERE  analysis_id = ? 
-                           and iohandler.type = 'INPUT'
-                           and iohandler.iohandler_id= analysis_iohandler.iohandler_id";
-    my $sth = $self->prepare($query);
-    $sth->execute($analysis_id);
+  Title    : store_map_ioh 
+  Function : stores the mapping iohandler information 
+  Example  : $dbID = $ioadp->store_map_ioh($analysis_id,
+                                           $prev_iohandler_id,
+                                           $mapped_iohandler_id);
+  Returns  : an int dbID
+  Args     : analysis_dbID,previous_iohandler_id,mapped_iohandler_id
 
-    my @dbIDs;
+=cut
 
-    while (my ($id) = $sth->fetchrow_array){
-        push (@dbIDs,$id);
-    }
-
-    return @dbIDs;
-}
 sub store_map_ioh {
     my ($self,$anal_id,$prev_ioh_id,$map_ioh_id) = @_;
     my $query = "INSERT INTO iohandler_map
@@ -378,21 +375,47 @@ sub store_map_ioh {
     return $id;
 }
 
+=head2 get_mapped_ioh 
+
+  Title    : get_mapped_ioh 
+  Function : returns the mapped iohandler object
+  Example  : $ioh = $ioadp->get_mapped_ioh($analysis_id,
+                                           $prev_iohandler_id,
+                                           );
+  Returns  : L<Bio::Pipeline::IOHandler> 
+  Args     : analysis_dbID,previous_iohandler_id
+
+=cut
+
 sub get_mapped_ioh {
     my ($self,$anal_id,$prev_ioh_id) = @_;
-
-    my $query = "SELECT map_iohandler_id 
+    my ($query,$sth);
+  
+    if($prev_ioh_id){
+      $query = "SELECT map_iohandler_id 
                  FROM iohandler_map 
                  WHERE analysis_id = ? 
                  AND   prev_iohandler_id = ?";
-    my $sth = $self->prepare($query);
-    $sth->execute($anal_id,$prev_ioh_id);
-
-    my $map_ioh = $sth->fetchrow_array;
-
+      $sth = $self->prepare($query);
+      $sth->execute($anal_id,$prev_ioh_id);
+    }
+    else {
+      $query = "SELECT map_iohandler_id
+                FROM iohandler_map 
+                WHERE analysis_id= ?";
+      $sth = $self->prepare($query);
+      $sth->execute($anal_id);
+    }
+            
+    my @map_ioh = $sth->fetchrow_array;
+    unless ($#map_ioh <= 0){
+      $self->throw("More than one possible ioh to map to, ambiguous.");
+    }
+    
     #if no map, reuse old one
-    $map_ioh  = $map_ioh || $prev_ioh_id;
+    my $map_ioh  = $map_ioh[0] || $prev_ioh_id;
 
+    $map_ioh || return;
 
     my $ioh = $self->fetch_by_dbID($map_ioh);
     $ioh || $self->throw("Unable to retrieve IOHandler of dbID $map_ioh");
