@@ -386,13 +386,33 @@ sub fetch_input {
     }
 
     #run transformers after fetching
-    if (defined $self->transformers) {
+    if(defined $self->transformers){
       my @trans = sort {$a->rank <=> $b->rank} @{$self->transformers};
-      foreach my $tran(@trans){
-        $obj = $tran->run($obj) if $tran;
+      my @new_trans;
+      #set the arguments for transformers
+      foreach my $t(@trans){
+        my @methods = @{$t->method};
+        my @new_method;
+        foreach my $method(@methods){
+            my @arguments = @{$method->arguments};
+            my @args = $self->_format_input_args($input,$obj,@arguments);
+            $method->arguments(\@args);
+            push @new_method, $method;
+        }
+        $t->method(\@new_method);
+        push @new_trans, $t;
       }
+      
+      my $tran = shift @new_trans;
+      my $obj = $tran->run($obj);
+      foreach my $tran(@new_trans){
+        if(defined $tran){
+          $obj = $tran->run($obj);
+        }
+      }
+      $obj= $obj;
     }
-
+    
     #destroy handle only if its a dbhandle
     if($self->adaptor_type eq "DB" && $RELEASE_DBCONNECTION) {
       $tmp->DESTROY;
@@ -496,6 +516,15 @@ sub _format_input_arguments {
         push @args, $input_name;
       }
     }
+    elsif($arguments[$i]->value eq 'ANALYSIS') {
+      if ($arguments[$i]->tag){
+        push @args, ($arguments[$i]->tag => $self->analysis);
+      }
+      else {
+        push @args, $self->analysis;
+      }
+    }
+		
     elsif($arguments[$i]->value eq 'ANALYSIS_NAME'){
       if ($arguments[$i]->tag){
         push @args, ($arguments[$i]->tag => $self->analysis->logic_name);
@@ -552,10 +581,25 @@ sub write_output {
    
     #run transformers before storing 
     if(defined $self->transformers){
-      my @trans= @{$self->transformers};
-      my $tran = shift @trans;
+      my $trans= $self->transformers;
+      my @new_trans;
+      #set the arguments for transformers
+      foreach my $t(@{$trans}){
+        my @methods = @{$t->method};
+        my @new_method;
+        foreach my $method(@methods){
+            my @arguments = @{$method->arguments};
+            my @args = $self->_format_output_args($input,$object,@arguments);
+            $method->arguments(\@args);
+            push @new_method, $method;
+        }
+        $t->method(\@new_method);
+        push @new_trans, $t;
+      }
+      
+      my $tran = shift @new_trans;
       my $obj = $tran->run($object);
-      foreach my $tran(@trans){
+      foreach my $tran(@new_trans){
         if(defined $tran){
           $obj = $tran->run($obj);
         }
@@ -622,6 +666,9 @@ sub _format_output_args {
 	      }
 	      $value = \@values;
       }
+      elsif($arguments[$i]->value eq 'ANALYSIS'){
+	$value=$self->analysis;
+      }	
       #just pass the value
       else {
         $value = $arguments[$i]->value;
