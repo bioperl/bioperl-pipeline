@@ -73,7 +73,7 @@ The next analysis will blast each of the input against the blast database.
       ************************************
       This is the central script used to run the pipeline.
 
-      Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
+      Usage: PipelineManager -dbname test_pipe -xml template/blast_db_flat_pipeline.xml -local 
 
       Options:
       Default values are read from PipeConf.pm
@@ -115,7 +115,7 @@ The next analysis will blast each of the input against the blast database.
     perl PipelineManager -dbname mydbname \                                                                  
                          -dbuser <user> \                                                                    
                          -dbhost <host> \                                                                    
-                         -xml ~/biopipe_release/xml/templates/examble/blast_file_pipeline.xml                
+                         -xml ~/biopipe_release/xml/templates/examble/blast_db_flat_pipeline.xml                
                          -norun                                                                              
                                                                                                              
     run the pipeline:                                                                                        
@@ -217,7 +217,7 @@ The next analysis will blast each of the input against the blast database.
       <method>
         <name>get_Seq_by_id</name>
         <argument>
-          <value>INPUT</value>
+          <value>!INPUT!</value>
         </argument>
         <rank>2</rank>
       </method>
@@ -247,7 +247,7 @@ The next analysis will blast each of the input against the blast database.
         <argument>
           <tag>-prefix</tag>
           <type>SCALAR</type>
-          <value>INPUT</value>
+          <value>!INPUT!</value>
           <rank>2</rank>
         </argument>
         <argument>
@@ -267,7 +267,7 @@ The next analysis will blast each of the input against the blast database.
         <name>dump</name>
         <rank>2</rank>
         <argument>
-          <value>OUTPUT</value>
+          <value>!OUTPUT!</value>
           <type>ARRAY</type>
           <rank>1</rank>
         </argument>
