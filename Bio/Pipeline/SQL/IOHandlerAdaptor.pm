@@ -119,11 +119,11 @@ sub fetch_by_dbID {
     #Fetch the dbadaptor and create iohandler
     ###############################################
 
-    $sth = $self->prepare("SELECT io.adaptor_id,io.adaptor_type
+    $sth = $self->prepare("SELECT io.adaptor_id,io.adaptor_type,io.type
                            FROM iohandler io
                            WHERE io.iohandler_id='$dbID'");
     $sth->execute();
-    my ($adp_id,$adp_type) = $sth->fetchrow_array();
+    my ($adp_id,$adp_type,$type) = $sth->fetchrow_array();
     my $iohandler;
     if($adp_type eq "DB"){
       my $sql = "SELECT 
@@ -140,7 +140,8 @@ sub fetch_by_dbID {
       $sth->execute;
       my ($dbname,$driver,$host,$user,$pass,$module,$port)  = $sth->fetchrow_array;
       ($dbname && $module) || $self->throw("No DBadaptor found. Can't create an IO object without a dbadaptor");
-      $iohandler = Bio::Pipeline::IOHandler->new_ioh_db(  -dbadaptor_dbname   =>$dbname,
+      $iohandler = Bio::Pipeline::IOHandler->new_ioh_db(  -type               =>$type, 
+                                                          -dbadaptor_dbname   =>$dbname,
                                                           -dbadaptor_driver   =>$driver,
                                                           -dbadaptor_host     =>$host,
                                                           -dbadaptor_user     =>$user,
@@ -158,7 +159,8 @@ sub fetch_by_dbID {
       $sth = $self->prepare($sql);
       $sth->execute;
       my ($module) = $sth->fetchrow_array;
-      $iohandler = Bio::Pipeline::IOHandler->new_ioh_stream(-module=>$module,
+      $iohandler = Bio::Pipeline::IOHandler->new_ioh_stream(-type=>$type,
+                                                            -module=>$module,
                                                             -datahandlers=>\@datahandlers);
     }
     else {
@@ -178,7 +180,7 @@ sub _get_dbadaptor {
                 dbadaptor_id
                 FROM dbadaptor
                 WHERE module = '$module' and
-                      dbname = 'dbname' ";
+                      dbname = '$dbname' ";
       my $sth = $self->prepare($sql);
       $sth->execute;
       # note -- no checking done here if there are more than one records
@@ -206,7 +208,7 @@ sub store {
   my $adap_id;
   my $sth;
 
-  if ($iohandler->type eq "DB") {
+  if ($iohandler->adaptor_type eq "DB") {
 
     # check if the dbadaptor already exists 
     $adap_id = $self->_get_dbadaptor($iohandler->dbadaptor_module, $iohandler->dbadaptor_dbname);
@@ -235,7 +237,7 @@ sub store {
       $adap_id = ($sth->fetchrow_array)[0];
     }
   }
-  elsif ($iohandler->type eq "STREAM") {
+  elsif ($iohandler->adaptor_type eq "STREAM") {
  
     # check if the streamadaptor already exists 
     $adap_id = $self->_get_streamadaptor($iohandler->stream_module);
@@ -258,8 +260,9 @@ sub store {
     $sth = $self->prepare( qq{
       INSERT INTO iohandler
          SET adaptor_id = ?,
-             adaptor_type = ? } );
-    $sth->execute($adap_id, $iohandler->type);
+             adaptor_type = ?,
+             type = ?} );
+    $sth->execute($adap_id, $iohandler->adaptor_type,$iohandler->type);
 
    $sth = $self->prepare( q{
       SELECT last_insert_id()
@@ -274,8 +277,9 @@ sub store {
       INSERT INTO iohandler
          SET iohandler_id = ?,
              adaptor_id = ?,
-             adaptor_type = ? } );
-    $sth->execute($iohandler->dbID, $adap_id, $iohandler->type);
+             adaptor_type = ?,
+             type = ?} );
+    $sth->execute($iohandler->dbID, $adap_id, $iohandler->adaptor_type,$iohandler->type);
   }
 
   #now fill up the data handler and argument tables
