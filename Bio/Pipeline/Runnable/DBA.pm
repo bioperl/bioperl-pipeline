@@ -10,12 +10,13 @@
 #
 # =head1 NAME
 #
-# Bio::EnsEMBL::Pipeline::Runnable::DBA
+# Bio::Pipeline::Runnable::DBA
 #
 =head1 SYNOPSIS
 
 =head1 DESCRIPTION
-
+Runnable for Dna Block Aligner program by Ewan Birney available at
+ftp://ftp.sanger.ac.uk/pub/birney/wise2/
 
 =head1 CONTACT
 
@@ -30,34 +31,41 @@ package Bio::Pipeline::Runnable::DBA;
 use vars qw(@ISA);
 use strict;
 use FileHandle;
-use Bio::EnsEMBL::Pipeline::RunnableI;
-use Bio::EnsEMBL::FeaturePair;
-use Bio::EnsEMBL::SeqFeature;
-use Bio::EnsEMBL::Analysis;
-use Bio::EnsEMBL::Pipeline::Runnable::FeatureFilter;
 use Bio::PrimarySeq; 
-use Bio::Seq;
+use Bio::SeqFeature::FeaturePair;
+use Bio::SeqFeature::Generic;
+use Bio::SeqI;
 use Bio::SeqIO;
 use Bio::Root::Root;
 use Bio::Pipeline::DataType;
-@ISA = qw(Bio::EnsEMBL::Pipeline::RunnableI);
+use Bio::Pipeline::RunnableI;
+
+@ISA = qw(Bio::Pipeline::RunnableI);
 
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
-
-
-
   return $self;
 
 }
+=head2 datatypes
+
+Title   :   datatypes 
+Usage   :   $self->datatypes
+Function:   Returns the datatypes that the runnable requires. This is used by the Runnable DB to 
+            match the inputs to the corresponding. 
+Returns :   It returns a hash of the different data types. The key of the hash is the name of the 
+            get/set method used by the RunnableDB to set the input
+Args    :
+
+=cut
 
 sub datatypes {
     my ($self) = @_;
-    my $dt1 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::EnsEMBL::SeqFeature',
+    my $dt1 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqI',
                                            '-name'=>'sequence',
                                            '-reftype'=>'SCALAR');
-    my $dt2 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::EnsEMBL::SeqFeature',
+    my $dt2 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqI',
                                            '-name'=>'sequence',
                                            '-reftype'=>'SCALAR');
     my %dts;
@@ -67,20 +75,6 @@ sub datatypes {
     return %dts; 
 }
 
-sub inputs {
-    my ($self,$value) = @_;
-    if ($value) {
-        if (ref($value) eq "ARRAY"){
-            $self->{'_inputs'} = $value;
-        }
-        else {
-            my @tmp;
-            push @tmp, $value;
-            $self->{'_inputs'} = \@tmp;
-        }
-    }
-    return $self->{'_inputs'};
-}
 =head2 feat1
   
 Title   :   feat1
@@ -159,8 +153,8 @@ sub dba{
 Title   :   alignpair
 Usage   :   $self->alignpair($seq)
 Function:   Get/set method for alignpair 
-Returns :   Bio::EnsEMBL::FeaturePair 
-Args    :   Bio::EnsEMBL::FeaturePair 
+Returns :   Bio::SeqFeature::FeaturePair 
+Args    :   Bio::SeqFeature::FeaturePair 
 
 =cut
 
@@ -183,14 +177,13 @@ Args    :
 =cut
 sub run {
   my ($self) = @_;
-  $self->data_match;
   my $seq1 = $self->feat1->seq ;
   my $seq2 = $self->feat2->seq;
 
   my $params = $self->params;
   my $dba = $self->dba;
   if (!defined $dba) {
-    $dba =  $self->find_executable('dba');
+    $dba =  $self->analysis->program_file;
   }
 
   my $infile1 = "/tmp/$ENV{USER}-$$.dba_1";
@@ -221,15 +214,20 @@ sub run {
   Title   :   parse_results
   Usage   :   $self->parse_results($seq)
   Function:   Parse results into a feature pair 
-  Returns :   Bio::EnsEMBL::FeaturePair 
+  Returns :   Bio::SeqFeature::FeaturePair 
   Args    :   filepath to results 
 
 =cut
   
 sub parse_results {
   my($self,$resultfile) = @_;
+  print $resultfile;
   my ($score,$feat1_start,$feat1_end,$feat2_start,$feat2_end,$pid);
-  my $featpair = $self->featpair();
+	my ($global_end1,$global_end2);
+	$global_end1 	 = $self->feat1->end;
+	$global_end2	 = $self->feat2->end;
+
+  #do the parsing	
   if (-e $resultfile) {
     open(DBA, "<$resultfile") || $self->throw("Error opening $resultfile \n");
   }
@@ -237,8 +235,8 @@ sub parse_results {
     $self->throw("$resultfile doesn't exist.\n");
   }
   while (<DBA>){
-   
-    if (/score = (\d+.\d+)/){
+    print $_;   
+    if (/score =\s+(\S+)/){
       $score = $1;
     }
     if (/\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%/){
@@ -250,43 +248,58 @@ sub parse_results {
     }
   }
   if (!$feat1_start){#no alignment
-      $self->warn("No alignment for ".$featpair->seqname);
+      $self->warn("No alignment for ".$self->feat1->seqname);
       return;
   }
-  my $analysis_obj    = new Bio::EnsEMBL::Analysis
-                      (-db              => undef,
-                       -db_version      => undef,
-                       -program         => "dba",
-                       -program_version => "1",
-                       -gff_source      =>"dba",
-                       -gff_feature     =>"similarity" 
-                       );
-  
-  my $feat1 = Bio::EnsEMBL::SeqFeature->new (-seqname => $featpair->feature1->seqname,
-                                             -strand  => $featpair->feature1->strand,
+
+ #create the coordinates. Note here have to map back to original coordinates if
+ #negative strand since what was given was reverse complemented sequence
+ my ($feature1_start,$feature1_end,$feature2_start,$feature2_end);
+ if ($self->feat1->strand < 0){
+
+		 $feature1_start = $self->feat1->end - $feat1_end;
+		 $feature1_end = $self->feat1->end - $feat1_start;
+ }
+ else {
+		 $feature1_start = $feat1_start + $self->feat1->start;
+		 $feature1_end   = $feat1_end + $self->feat1->start;
+ }
+ if ($self->feat2->strand < 0){
+		 $feature2_start = $self->feat2->end - $feat2_end;
+		 $feature2_end = $self->feat2->end - $feat2_start;
+ }
+ else {
+		 $feature2_start = $self->feat2->start + $feat2_start;
+		 $feature2_end = $self->feat2->start + $feat2_end;
+	}
+
+ 
+  my $feat1 = Bio::SeqFeature::Generic->new (-seqname => $self->feat1->seqname,
+                                             -strand  => $self->feat1->strand,
                                              -score   => $score,
-                                             -start   => $feat1_start,
-                                             -end     => $feat1_end,
-                                             -frame   => $featpair->feature1->frame,
-                                             -source_tag => "dba",
-                                             -primary_tag => $featpair->feature2->seqname,
-                                             -percent_id =>$pid,
-                                             -analysis=>$analysis_obj);
- my $feat2 = Bio::EnsEMBL::SeqFeature->new (-seqname => $featpair->feature2->seqname,
-                                             -strand  => $featpair->feature2->strand,
+                                             -start   => $feature1_start,
+                                             -end     => $feature1_end,
+                                             -frame   => $self->feat1->frame,
+                                             -source  => "dba",
+                                             -primary => $self->feat2->seqname,
+                                             -tag     => {
+                                                          percent_id=>$pid});
+
+ my $feat2 = Bio::SeqFeature::Generic->new (-seqname => $self->feat2->seqname,
+                                             -strand  => $self->feat2->strand,
                                              -score   => $score,
-                                             -start   => $feat2_start,
-                                             -end     => $feat2_end,
-                                             -frame   => $featpair->feature2->frame,
-                                             -source_tag => "dba",
-                                             -primary_tag => $featpair->feature2->seqname,
-                                             -percent_id=>$pid,
-                                             -analysis_id=>$analysis_obj);
+                                             -start   => $feature2_start,
+                                             -end     => $feature2_end,
+                                             -frame   => $self->feat2->frame,
+                                             -source  => "dba",
+                                             -primary => $self->feat2->seqname,
+                                             -tag     => {percent_id=>$pid});
 
 
- my $featurepair = Bio::EnsEMBL::FeaturePair->new(-feature1 => $feat1,
+ my $featurepair = Bio::SeqFeature::FeaturePair->new(-feature1 => $feat1,
                                                   -feature2 => $feat2);
  
+ print "#####\n".$featurepair->gff_string."\n";
  $self->alignpair($featurepair);
  return $featurepair;
 }
@@ -296,13 +309,14 @@ sub parse_results {
 Title   :   output
 Usage   :   $self->output($seq)
 Function:   Get/set method for output 
-Returns :   Bio::EnsEMBL::FeaturePair 
-Args    :   Bio::EnsEMBL::FeaturePair 
+Returns :   Bio::SeqFeature::FeaturePair 
+Args    :   Bio::SeqFeature::FeaturePair 
 
 =cut
 
 sub output{
     my ($self) = @_;
+    
     return $self->alignpair;
 }
 
