@@ -168,7 +168,7 @@ sub fetch_transformer_by_analysis_iohandler {
       $trans || next;
       push @trans,$trans;
     }
-    return \@trans if $#trans > 0;
+    return \@trans if $#trans >= 0;
     return undef;
 }
 
