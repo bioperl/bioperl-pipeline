@@ -110,8 +110,9 @@ sub new {
   return $self;
 }    
 
-=head 1 Fetch/Write methods 
+=head1 Fetch/Write methods 
 These methods calls adaptors to fetch and write inputs and outputs to database
+=cut
 
 =head2 fetch_input 
 

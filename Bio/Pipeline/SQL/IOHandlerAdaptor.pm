@@ -61,8 +61,9 @@ use Bio::Pipeline::Argument;
 @ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
 
-=head 1 Fetch methods 
+=head1 Fetch methods 
 These methods retrievs the adaptors
+=cut
 
 =head2 fetch_by_dbID
 
