@@ -101,7 +101,7 @@ sub _store_single {
         $sth->execute($transformer->dbID,$transformer->module) || $self->throw("Unable to insert into transformer table");
     }
    if($transformer->method) {
-         my @methods = $transformer->method;
+         my @methods = @{$transformer->method};
   	 foreach my $transformer_method (@methods) {
 	    $self->_store_transformer_method($transformer_method, $transformer->dbID);
 	 }
