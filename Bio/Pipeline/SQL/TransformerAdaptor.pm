@@ -76,7 +76,12 @@ sub store {
     }
 }
 
-#stores transformer module into transformer table
+# NOTE: No return value from this method, since we follow the EnsEMBL adaptor's
+# store method conventions, e.g. No return dbID, but assign the dbID into the 
+# object.
+
+# stores transformer module into transformer table
+
 sub _store_single {
     my ($self,$transformer) = @_;
 
@@ -101,6 +106,8 @@ sub _store_single {
 
         $sth->execute($transformer->dbID,$transformer->module) || $self->throw("Unable to insert into transformer table");
     }
+    $transformer->adaptor($self);
+    
    if($transformer->method) {
          my @methods = @{$transformer->method};
       	 foreach my $transformer_method (@methods) {
@@ -110,7 +117,6 @@ sub _store_single {
    else {
     $self->warn("Storing Transformer without methods!");
    }
-   return $transformer->dbID; 
 }
 
 #store method information into transformer_method table

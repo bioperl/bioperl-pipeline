@@ -274,4 +274,12 @@ sub rank{
     return $self->{'_rank'};
 }
 
+# supposed to be used only in this module and its adaptor.
+
+sub adaptor {
+    my ($self, $arg) = @_;
+    $self->{'_adaptor'} = $arg if(defined($arg));
+    return $self->{'_adaptor'};
+}
+
 1;

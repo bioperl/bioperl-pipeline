@@ -65,9 +65,6 @@ ok $_->percent_id, 54;
 
 #    print($_->cigar_string . "\n") foreach(@ens_alignFeatures);
 
-
-
-
 # Test for SeqFeatureToEnsEMBLConverter
 
 my $seqFeature1 = new Bio::SeqFeature::Generic(
