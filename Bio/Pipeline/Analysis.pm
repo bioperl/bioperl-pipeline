@@ -65,7 +65,7 @@ sub new {
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
       $gff_source,$gff_feature,$runnable,$parameters,$created,
-      $logic_name,$iohandler, $node_group ) = 
+      $logic_name,$iohandler, $node_group, $io_map) = 
 
 	  $self->_rearrange([qw(ID
 	  			ADAPTOR
@@ -81,8 +81,9 @@ sub new {
 				PARAMETERS
 				CREATED
 				LOGIC_NAME
-        IOHANDLER
-        NODE_GROUP
+			        IOHANDLER
+       			 	NODE_GROUP
+                                IO_MAP
 				)],@args);
 
   $self->dbID           ($id);
@@ -99,7 +100,8 @@ sub new {
   $self->parameters     ($parameters);
   $self->created        ($created);
   $self->logic_name     ($logic_name);
-  $self->iohandler ($iohandler);
+  $self->iohandler      ($iohandler);
+  $self->io_map         ($io_map);
   $self->node_group     ($node_group);
 
   return $self; # success - we hope!
@@ -145,6 +147,14 @@ sub iohandler {
         $self->{'_iohandler'} = $ioh;
     }
     return $self->{'_iohandler'};
+}
+
+sub io_map{
+    my ($self, $io_map) = @_;
+    if($io_map) {
+        $self->{'_io_map'} = $io_map;
+    }
+    return $self->{'_io_map'};
 }
 
 =head2 exists_db_file
@@ -622,6 +632,35 @@ sub output_handler{
     }
 }
 
+=head2 create_input_handler
+
+  Title   : create_input_handler
+  Usage   : $self->create_input_handler
+  Function: Get/set method for the create_input_handler, the IOhandler used
+            to create fixed inputs for this analysis
+  Returns : IOHandler 
+  Args    : IOHandler 
+
+=cut
+
+
+sub create_input_iohandler{
+    my ($self) = @_;
+    #search from list of iohandlers, cache if found
+    if($self->{_create_input_handler}){
+        return $self->{_create_input_handler};
+    }
+    else {
+        my @ioh = @{$self->iohandler};
+        foreach my $io (@ioh) {
+            if ($io->type eq "CREATE_INPUT"){
+                $self->{_create_input_handler} = $io;
+                return $self->{_create_input_handler};
+            }
+        }
+        return undef;
+    }
+}
 
 =head2 node_group
 
