@@ -90,6 +90,9 @@ sub fetch_by_dbID {
   
   my @nodes = $self->db->get_NodeAdaptor->get_nodes_by_group_id($id);
     
+  if(scalar(@nodes) == 0){
+	@nodes = $self->db->get_NodeAdaptor->get_all_nodes();
+  }
   my $group = Bio::Pipeline::NodeGroup->new('-id'=>$id,'-name'=>$name,'-description'=>$desc,'-nodes'=>\@nodes);
   return $group;
 }

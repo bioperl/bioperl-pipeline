@@ -81,8 +81,8 @@ sub new {
                                                                                                               DESCRIPTION
                                                                                                               NODES
                                                                                                               )],@args);
-  $id || $self->throw("Need a node id to create a node object");
-  $self->throw("Need at least 1 node per group") unless (scalar(@{$nodes} > 0));
+  defined($id) || $self->throw("Need a node id to create a node object");
+  #$self->throw("Need at least 1 node per group") unless (scalar(@{$nodes} > 0));
   
   $self->id($id);
   $self->description($description);
