@@ -80,7 +80,7 @@ BEGIN {
                     InputAdaptor
                     NodeGroupAdaptor
                     DataMongerAdaptor
-                    ConverterAdaptor);
+                    TransformerAdaptor);
 
   foreach my $adpt (@ALLOWED){
     $ADAPTORS{$adpt}=1;
@@ -264,13 +264,13 @@ sub prepare {
    return $self->_db_handle->prepare($string);
 }
 
-=head2 get_ConverterAdaptor
+=head2 get_TransformerAdaptor
 
- Title   : get_ConverterAdaptor
- Usage   : $db->get_ConverterAdaptor
- Function: The Adaptor for Converter objects in this db
+ Title   : get_TransformerAdaptor
+ Usage   : $db->get_transformerAdaptor
+ Function: The Adaptor for Transformer objects in this db
  Example :
- Returns : Bio::Pipeline::SQL::ConverterAdaptor
+ Returns : Bio::Pipeline::SQL::TransformerAdaptor
  Args    : nothing
 
 =cut
