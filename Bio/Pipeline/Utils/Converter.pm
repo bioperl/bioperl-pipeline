@@ -10,7 +10,7 @@
 #
 =head1 NAME
 
-Bio::Pipeline::Utils::Converter input object
+Bio::Pipeline::Utils::Converter object
 
 The converter object for handling object conversion during io handling.
 
@@ -18,17 +18,32 @@ The converter object for handling object conversion during io handling.
 
   use Bio::Pipeline::Utils::Converter;
 
+  # an EnsEMBL analysis and raw contig objects are needed 
+  # when converting to EnsEMBL feature objects.
+  
+  my $ens_analysis; # a Bio::EnsEMBL::Analysis object
+  my $ens_contig; # a Bio::EnsEMBL:RawContig object
+  
+  my @objs; # an array of original objects.
+  
   my $converter = new Bio::Pipeline::Utils::Converter(
-        $in => 'Bio::Search::Hit::GenericHit',
+        -in => 'Bio::Search::Hit::GenericHit',
         -out => 'Bio::EnsEMBL::DnaPepAlignFeature',
-        -analysis => $ens_analysis,                                                         -contig => $ens_contig
+        -analysis => $ens_analysis,
+        -contig => $ens_contig
     }
-    
+  
+  # NOTE: Convensions, that convert method accepts an array ref 
+  # and returns an array ref.
+  
   my @converted_obj = @{$conveter->convert(\@objs)};
 
 =head1 DESCRIPTION
 
-  Module to encapsulate a converter object
+  A converter factory. Currently we implemented the conversions between:
+    1. Bio::Search::Hit::GenericHit -> Bio::EnsEMBL::BaseAlignFeature
+    2. Bio::SeqFeature::Generic -> Bio::EnsEMBL::SeqFeature, SimpleFeature
+    3. Bio::SeqFeature::FeaturePair -> Bio::EnsEMBL::FeaturePair
 
 =head1 FEEDBACK
 
@@ -57,8 +72,8 @@ Kiran <kiran@fugu-sg.org>
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal metho
-ds are usually preceded with a _
+The rest of the documentation details each of the object methods. 
+Internal methods are usually preceded with a _
 
 =cut
 
