@@ -53,32 +53,44 @@ and will store the feature information the pipeline generates.
 		<iohandler_type>INPUT</iohandler_type>
 		<!-- the method of adaptor, to fetch in INPUT or store in OUTPUT -->
 		<method>
-			<name>get_all_Contig_id</name>
+			<name>get_RawContigAdaptor</name>
 			<rank>1</rank>
 		</method>
+      <method>
+         <name>get_all_Contig_name</name>
+         <rank>2</rank>
+      </method>  
 
+         
 	</iohandler>
 	<iohandler id="2" type="INPUT">
 		<adaptor id="1" type="DB"/>
+      <method>
+         <name>get_RawContigAdaptor</name>
+         <rank>1</rank>
+      </method>   
 		<method>
-			<name>fetch_contigSequence_by_contigId</name>
-			<rank>1</rank>
+			<name>fetch_by_name</name>
+			<rank>2</rank>
 			<argument value="INPUT" type="SCALAR" rank="1"/>
 		</method>	
 	</iohandler>
 	<iohandler id="3" type="OUTPUT">
-		<adaptor id="2" type="DB"/>
-		<method name="store_repeat_feature_by_contig_id" rank="1">
-			<argument value="INPUT" type="SCALAR" rank="1"/>
-			<argument value="OUTPUT" type="ARRAY" rank="2"/>
+		<adaptor id="1" type="DB"/>
+      <method name="get_RepeatFeatureAdaptor" rank="1"/>
+      <method name="store" rank="2">
+			<!-- argument value="INPUT" type="SCALAR" rank="1"/ -->
+			<argument value="OUTPUT" type="ARRAY" rank="1"/>
 		</method>
 	</iohandler>
 	
 	<iohandler id="4" type="INPUT">
-		<adaptor id="2" type="DB"/>
-		<method name="fetch_repeatMaskedSeq_by_contig_id" rank="1">
+		<adaptor id="1" type="DB"/>
+      <method name="get_RawContigAdaptor" rank="1"/>
+		<method name="fetch_repeatMaskedSeq_by_contig_id" rank="2">
 			<argument value="INPUT" type="SCALAR" rank="1"/>
 		</method>
+      <method name="get_repeatmasked_seq" rank="3"/>
 	</iohandler>
 	
 	<iohandler id="5" type="OUTPUT">
@@ -90,13 +102,19 @@ and will store the feature information the pipeline generates.
 	</iohandler>
 
    <converter id="1" module="repeatmasker_2ens">
-      <method id="1" name="new" >
+      <method id="11" name="new" rank="1">
          <argument id = "11" tag = "-host" value = "mysql"/>
          <argument id = "12" tag = "-driver" value = "mysql"/>
          <argument id = "13" tag = "-dbname" value = "juguang_homo_core_9_30"/>
          <argument id = "14" tag = "-user" value = "root"/>
          <!-- argument id = "15" tag = "-passwd" value = ""/ -->
       </method >
+      <method id="12" name="contig_name" rank="2">
+         <argument id = "121" value="INPUT" type="SCALAR" rank="1"/>
+      </method>
+      <method id="13" name="convert" rank="3">
+         <argument id ="100" value="OK" rank=""/>
+      </method>   
   </converter>    
   <converter id="2" module="blastall_2ens">
       <method id="2" name="new" >
@@ -167,6 +185,7 @@ and will store the feature information the pipeline generates.
 		next - next_analysis_id
 		action - action
 	-->
+   <rule next="1" action="NOTHING"/>
 	<rule current="1" next="2" action="NOTHING"/>
 <!--
    <rule current="2" next="3" action="COPY_ID"/>

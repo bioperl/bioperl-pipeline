@@ -97,10 +97,10 @@ sub fetch_fixed_input_by_dbID {
     if($iohandler_id){
         $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
         # Attach converters to the iohandler if any for this iohandler of the analysis that this input is fed into.
-        my $converters = $self->db->get_AnalysisAdaptor->fetch_converters_by_iohandler($analysis_id, $iohandler_id);
+        my $converters_ref = $self->db->get_AnalysisAdaptor->fetch_converters_by_iohandler($analysis_id, $iohandler_id);
         my $analysis = $self->db->get_AnalysisAdaptor->fetch_by_dbID($analysis_id);
         
-        $input_handler->converters($converters);
+        $input_handler->converters($converters_ref);
         $input_handler->analysis($analysis);
     }
 

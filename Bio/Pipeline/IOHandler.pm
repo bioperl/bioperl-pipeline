@@ -525,10 +525,27 @@ sub write_output {
         my @converters = @{$self->converters};
         my $converter = shift @converters;
         if(defined $converter){
-            if(ref($object) eq "ARRAY"){
-                $object = $converter->convert($object);
-            }else{
-                ($object) = $converter->convert([$object]);
+            my @methods = sort {$a->rank <=> $b->rank} @{$converter->method};
+            my $i = 0;
+            foreach my $method (@methods){
+                my $method_name = $method->name;
+                next if($method_name eq 'new') ;
+
+                if($method_name eq 'convert'){
+                    if(ref($object) eq "ARRAY"){
+                        $object = $converter->convert($object);
+                    }else{
+                        ($object) = $converter->convert([$object]);
+                    }
+                    print "order of convert\t$i\n"
+                }else{
+                    my @arguments = sort { $a->rank <=> $b->rank} @{$method->arguments};
+                    my @args = $self->_format_output_args($input, $object, @arguments);
+                    print "$method_name, the order\t$i\n";
+                    print "@args\n";
+                    $converter->$method_name(@args);
+                }
+                $i++;
             }
         }
     }

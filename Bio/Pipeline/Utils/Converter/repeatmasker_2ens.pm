@@ -5,14 +5,17 @@ use vars qw(@ISA);
 
 use strict;
 use Bio::EnsEMBL::RepeatFeature;
+use Bio::EnsEMBL::RepeatConsensus;
+use Bio::EnsEMBL::RawContig;
 use Bio::Pipeline::Converter::_2ens;
 
 @ISA = qw(Bio::Pipeline::Converter::_2ens);
 
 
 sub new{
-    my($class, @args) = @_;
+    my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
+    
     return $self;
 }
 
@@ -27,7 +30,7 @@ sub convert{
     my @pairs = @{$arg};
     my @ens_repeatfeatures;
     
-    my $analysis = $self->ens_dbadaptor->get_AnalysisAdaptor->fetch_by_logic_name('repeatmasker');
+    my $analysis = $self->ens_dbadaptor->get_AnalysisAdaptor->fetch_by_logic_name('RepeatMask');
     
     foreach my $pair (@pairs){
         my $feature1 = $pair->feature1;
@@ -42,6 +45,27 @@ sub convert{
         $ens_repeatfeature->analysis($analysis);
         $ens_repeatfeature->hstart($feature2->start);
         $ens_repeatfeature->hend($feature2->end);
+
+        my $repeat_name = $feature2->seq_id;
+        my $repeat_class = $feature1->primary_tag;
+        $repeat_class ||= $feature2->primary_tag;
+        $repeat_class ||= "not sure";
+        my $ens_repeat_consensus = $self->_create_consensus($repeat_name, $repeat_class);
+        $ens_repeatfeature->repeat_consensus($ens_repeat_consensus);
+        
+        # Bio::EnsEMBL::DBSQL::RepeatFeatureAdaptor need RepeatFeature to have a RawContig in entire_seq()
+#        unless($self->contig_dbID()){
+            my $contig_dbID = $self->ens_dbadaptor->get_RawContigAdaptor->get_internal_id_by_id($self->contig_name());
+            $self->contig_dbID($contig_dbID);
+#        }
+        my $contig = new Bio::EnsEMBL::RawContig(
+            $self->contig_dbID()
+        );
+        
+        $ens_repeatfeature->attach_seq($contig);
+         
+        $ens_repeatfeature->analysis($analysis);
+
          push @ens_repeatfeatures, $ens_repeatfeature;
      }
 
@@ -49,4 +73,13 @@ sub convert{
 
 }
 
+sub _create_consensus{
+    my ($self, $repeat_name, $repeat_class) = @_;
+    
+    my $consensus = new Bio::EnsEMBL::RepeatConsensus;
+    $consensus->name($repeat_name);
+    $consensus->repeat_class($repeat_class);
+
+    return $consensus;
+}
 1;

@@ -272,15 +272,19 @@ my @pipeline_converter_objs;
 $iohandler_setup->children('converter') || goto PIPELINE_FLOW_SETUP;
 foreach my $converter ($iohandler_setup->children('converter')){
 #       print "".(defined($converter)?"defined":"not defined").(ref($converter))."\n";
+       next unless (defined $converter);
        my $id = &verify_attr($converter, 'id', 1);
        my $module = &verify_attr($converter, 'module');
        my @method_objs;
        foreach my $method ($converter->children('method')){
+           next unless(defined $method);
            my $method_id = &verify_attr($method, 'id', 1);
            my $method_name = &verify_attr($method, 'name', 1);
            my $method_rank = &verify_attr($method, 'rank', 0);
            my @method_arguments;
+           if(defined $method->children('argument')){
            foreach my $argument ($method->children('argument')){
+               next unless(defined $argument);
                my $argument_id = &verify_attr($argument, 'id', 1);
                my $argument_tag = &verify_attr($argument, 'tag', 0);
                my $argument_value = &verify_attr($argument, 'value', 1);
@@ -296,6 +300,9 @@ foreach my $converter ($iohandler_setup->children('converter')){
                push @method_arguments, $argument_obj;
                
            }
+           }else{
+#               print "i do not have arugmnts\n";
+           }
            my $method_obj = new Bio::Pipeline::Method(
                -dbID => $method_id,
                -name => $method_name,
@@ -303,13 +310,15 @@ foreach my $converter ($iohandler_setup->children('converter')){
                -argument => \@method_arguments
                );
            
-           push @method_objs, $method_obj;      
+           push @method_objs, $method_obj;
+           
        }
        my $converter_obj = new Bio::Pipeline::Converter(
          -dbID => $id,
          -module => $module,
          -method => \@method_objs
        );
+#       print "now , we got one converter\n";
        push @pipeline_converter_objs, $converter_obj;
 }       
 
@@ -585,15 +594,18 @@ print "Doing Rules\n";
 foreach my $rule ($pipeline_flow_setup->children('rule')) {
  if(ref($rule)) {
    my $current;
-   if (defined $rule->child('current_analysis_id')) {
+#   if (defined $rule->child('current_analysis_id')) {
 
        #should be optional?
        my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL', '', 'current');
        $current = _get_analysis($anal_id);
-     if (!defined($current)) {
-       print "current analysis not found for rule\n";
-     }
-   }
+#     if (!defined($current)) {
+#       print "current analysis not found for rule\n";
+#     }
+   
+#   }
+
+
    my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL', '', 'next');
    my $next = _get_analysis($next_anal_id);
    if (!defined($next)) {
@@ -717,9 +729,19 @@ sub verify {
 sub verify_attr{
     my $obj=shift;
     my ($attr_name, $required, $default) = @_;
-    my %obj_attrs = $obj->attributes;
+    my $obj_name = $obj->name;
+#    print "$obj_name\t$attr_name\n";
+
+    my %obj_attrs;
+#    eval{
+        %obj_attrs = $obj->attributes;
+#    };
+#    if($@){
+#        $self->throw($@);
+#    }
 
     if(defined $attr_name && exists $obj_attrs{$attr_name}){
+#        print $obj_attrs{$attr_name} . "\n";
         return $obj_attrs{$attr_name};
     }elsif(defined $required && $required){
         $default || return $default;
