@@ -147,6 +147,8 @@ use vars qw(@ISA);
 use strict;
 
 use Bio::Root::Root;
+use Bio::Pipeline::PipeConf qw(RELEASE_DBCONNECTION);
+
 @ISA = qw(Bio::Root::Root);
 
 =head1 Constructors
@@ -362,6 +364,10 @@ sub fetch_input {
           }
       }
     }
+    #destroy handle only if its a dbhandle
+    if($self->adaptor_type eq "DB" && $RELEASE_DBCONNECTION) {
+      $tmp->DESTROY;
+    };
   return $obj;
 }
 

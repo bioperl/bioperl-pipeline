@@ -66,25 +66,24 @@ use vars qw (%PipeConf);
     #bsub opt
     BATCH_PARAM => '-C0',
 
-    # no of jobs to fetch at a time and submit
-    MAX_INCOMPLETE_JOBS_BATCHSIZE => 1000,
- 
-    # no of completed jobs to fetch at a time and create next jobs 
-    MAX_CREATE_NEXT_JOBS_BATCHSIZE => 5,
-
-
     # number of times to retry a failed job
     RETRY       => '1000',
 
     # path to runner.pl, use by the BatchSubmission objects
     # to look for runner.pl. If not supplied it looks in the default 
-    # directory where PipelineManager lies
+    # scripts directory, bioperl-pipeline/scripts 
+
     RUNNER     => '',   
 
-    #sleep time in PipelineManager before waking up and looking for jobs to run 
+    #sleep time in seconds for  PipelineManager before waking up and looking for jobs to run 
     SLEEP      => 3,
 
+    #number of jobs to be fetched by PipelineManager at a time
     FETCH_JOB_SIZE => 100,
+
+    #tell IOHandler.pm to release dbconnections once fetch is done so that 
+    #number of connections is hopefully minimized
+    RELEASE_DBCONNECTION =>1,
 
     ##############################################
     # PARAMS FROM HERE ON NOT SUPPORTED CURRENTLY FOR FUTURE DEV
