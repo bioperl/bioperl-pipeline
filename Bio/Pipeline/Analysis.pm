@@ -216,10 +216,11 @@ sub set_program_version_if_needed {
    my ($self) = @_;
    if (!$self->program_version) {
     my $program = $self->program;
-    my $string = `$program -- >&/dev/null`; 
-    $string = $string || `$program -v >&/dev/null`;
+    my $string = `$program -- `; 
+    $string = $string || `$program -v `;
     $string =~ /([\d.]+)/;
     if($1){
+      print STDERR "Updating Program version to $1\n";
       $self->adaptor->update_prog_version($self->dbID,$1);
       return 1;
     }
