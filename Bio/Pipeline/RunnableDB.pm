@@ -371,7 +371,7 @@ sub runnable {
         require "${arg}.pm";
         $arg =~ s/\//\::/g;
 
-        my $runnable = "${arg}"->new();
+        my $runnable = "${arg}"->new($self->analysis->parameters);
 	      $self->{'_runnable'}=$runnable;
       }
 
