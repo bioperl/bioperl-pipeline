@@ -1,229 +1,780 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN">
-<HTML
-><HEAD
-><TITLE
->HOWTO-For Setting Up Biopipe</TITLE
-><META
-NAME="GENERATOR"
-CONTENT="Modular DocBook HTML Stylesheet Version 1.64
-"><LINK
-REL="NEXT"
-TITLE="Installation"
-HREF="installation.html"></HEAD
-><BODY
-CLASS="ARTICLE"
-BGCOLOR="#FFFFFF"
-TEXT="#000000"
-LINK="#0000FF"
-VLINK="#840084"
-ALINK="#0000FF"
-><DIV
-CLASS="ARTICLE"
-><DIV
-CLASS="TITLEPAGE"
-><H1
-CLASS="TITLE"
-><A
-NAME="AEN2"
->HOWTO-For Setting Up Biopipe</A
-></H1
-><DIV
-><TABLE
-BORDER="0"
-BGCOLOR="#E0E0E0"
-WIDTH="50%"
-CELLSPACING="0"
-CELLPADDING="0"
-ALIGN="CENTER"
-><TR
-><TD
-VALIGN="TOP"
-><B
->Abstract</B
-></TD
-></TR
-><TR
-><TD
-VALIGN="TOP"
-><P
->This is a HOWTO written in DocBook (SGML) for the installation of the biopipe,
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head><title>HOWTO-For Setting Up Biopipe</title><link rel="stylesheet" href="main.css" type="text/css"/><meta name="generator" content="DocBook XSL Stylesheets V1.50.0"/></head><body><div class="article"><div class="titlepage"><div><h1 class="title"><a id="d0e1"/>HOWTO-For Setting Up Biopipe</h1></div><div><div class="author"><h3 class="author">Shawn Hoon</h3><div class="affiliation"><div class="address"><p>
+      <tt>&lt;<a href="mailto:shawnh@fugu-sg.org">shawnh@fugu-sg.org</a>&gt;</tt>
+    </p></div></div></div></div><div><div class="revhistory"><table border="1" width="100%" summary="Revision history"><tr><th align="left" valign="top" colspan="3"><b>Revision History</b></th></tr><tr><td align="left">Revision 0.2</td><td align="left">2003-02-19</td><td align="left">savikalpa</td></tr><tr><td align="left" colspan="3">Second Draft(BioHackathon 2003)</td></tr></table></div></div><div><div class="abstract"><p class="title"><b>Abstract</b></p><p>
+This is a HOWTO written in DocBook (SGML) for the installation of the biopipe,
 its workings and definition.We will describe how to load and run a simple blast
-pipeline.</P
-></TD
-></TR
-></TABLE
-></DIV
-><HR
-WIDTH="75%"
-ALIGN="CENTER"
-COLOR="#000000"
-SIZE="1"></DIV
-><DIV
-CLASS="TOC"
-><DL
-><DT
-><B
->Table of Contents</B
-></DT
-><DT
-><A
-HREF="t1.html#INTRO"
->Introduction</A
-></DT
-><DT
-><A
-HREF="installation.html"
->Installation</A
-></DT
-><DT
-><A
-HREF="systemrequirements.html"
->System Requirements</A
-></DT
-><DT
-><A
-HREF="configuration.html"
->The Pipeline XML Format</A
-></DT
-><DT
-><A
-HREF="blast.html"
->The Simple Blast Pipeline</A
-></DT
-><DT
-><A
-HREF="configureblast2.html"
->The Simple Blast Pipeline</A
-></DT
-><DT
-><A
-HREF="loading.html"
->Loading the Pipeline</A
-></DT
-><DT
-><A
-HREF="configure2.html"
->Configuring the PipeConf</A
-></DT
-><DT
-><A
-HREF="running.html"
->Running your pipeline</A
-></DT
-><DT
-><A
-HREF="viewingyourresults.html"
->Viewing Your Results</A
-></DT
-></DL
-></DIV
-><DIV
-CLASS="SECTION"
-><H1
-CLASS="SECTION"
-><A
-NAME="INTRO"
->Introduction</A
-></H1
-><P
->  The bioperl pipeline framework is a flexible workflow system that complements the bioperl
+pipeline and a protein analysis pipeline.
+</p></div></div><hr/></div><div class="toc"><p><b>Table of Contents</b></p><dl><dt>1. <a href="#intro">Introduction</a></dt><dt>2. <a href="#installation">Installation</a></dt><dt>3. <a href="#configuration">The Pipeline XML Format</a></dt><dt>4. <a href="#blast">The Simple Blast Pipeline </a></dt><dt>5. <a href="#configureblast2">The Simple Blast Pipeline</a></dt><dt>6. <a href="#protein"> The Protein Analysis Pipeline</a></dt><dt>7. <a href="#configure2"> Configuring the PipeConf</a></dt><dt>8. <a href="#Loading and Running">Loading and Running your pipeline </a></dt><dt>9. <a href="#ViewingYourResults">Viewing Your Results</a></dt></dl></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="intro"/>1. Introduction</h2></div></div><a id="d0e43" class="indexterm"/><p>
+  The bioperl pipeline framework is a flexible workflow system that complements the bioperl
   package in providing job managment facilities for high throughput analysis. 
   This system is heavily inspired by the EnsEMBL Pipeline system. 
   This section describes the design of the bioperl pipeline. 
   Some features of the current system include:
-  </P
-><P
-></P
-><UL
-><LI
-><P
->      Handling of various input and output data formats from various databases.
-    </P
-></LI
-><LI
-><P
->    A bioperl interface to non-specific loadsharing software (LSF,PBS etc) to ensure that
+  </p><div class="itemizedlist"><ul type="disc"><li><p>
+      Handling of various input and output data formats from various databases.
+    </p></li><li><p>
+    A bioperl interface to non-specific loadsharing software (LSF,PBS etc) to ensure that
     the various analysis programs are run in proper order and are successfully completed 
     while re-running those that fail.
-    </P
-></LI
-><LI
-><P
->     A flexible pluggable bioperl interface that allows programs to be 'pipeline-enabled'.
-    </P
-></LI
-></UL
-><P
-> Setting up bioinformatics pipeline is not trivial. This tutorial introduces some aspects of 
- biopipe through setting up a very simple blast pipeline. It is hope that through this tutorial,
+    </p></li><li><p>
+     A flexible pluggable bioperl interface that allows programs to be 'pipeline-enabled'.
+    </p></li></ul></div><p>
+ Setting up bioinformatics pipeline is not trivial. This tutorial introduces some aspects of 
+ biopipe through setting up a very simple blast pipeline and a protein analysis pipeline.It is hope that through this tutorial,
  two objectives are achieved:
- <P
-></P
-><UL
-><LI
-><P
->  Iron out installation issues using a simple example. 
-  </P
-></LI
-><LI
-><P
->  Familiarization with the biopipe system and introduction of the XML system we have
+ <div class="itemizedlist"><ul type="disc"><li><p>
+  Iron out installation issues using a simple example. 
+  </p></li><li><p>
+  Familiarization with the biopipe system and introduction of the XML system we have
   develop to ameliorate some of the complexities involve in setting up.
-  </P
-></LI
-></UL
->
- </P
-></DIV
-></DIV
-><DIV
-CLASS="NAVFOOTER"
-><HR
-ALIGN="LEFT"
-WIDTH="100%"><TABLE
-WIDTH="100%"
-BORDER="0"
-CELLPADDING="0"
-CELLSPACING="0"
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
-><A
-HREF="installation.html"
->Next &#62;&#62;&#62;</A
-></TD
-></TR
-><TR
-><TD
-WIDTH="33%"
-ALIGN="left"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="34%"
-ALIGN="center"
-VALIGN="top"
->&nbsp;</TD
-><TD
-WIDTH="33%"
-ALIGN="right"
-VALIGN="top"
->Installation</TD
-></TR
-></TABLE
-></DIV
-></BODY
-></HTML
->
+  </p></li></ul></div>
+ </p></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="installation"/>2. Installation</h2></div></div><p>The following sections descibes how to install your pipeline from start to finish</p></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="configuration"/>3. The Pipeline XML Format</h2></div></div><p>This section describes the various sections of XML with Biopipe</p><p>
+  To describe this, we will use the demo xml template, blast_file_pipeline.xml. 
+  You may find this in the bioperl-pipeline/xml/templates directory.
+  </p><p>
+  <span class="emphasis"><em>XML Organization</em></span>
+  </p><pre class="screen">
+  &lt;pipeline_setup&gt;
+    &lt;database_setup&gt;
+    &lt;iohandler_setup&gt;
+    &lt;pipeline_flow_setup&gt;
+    &lt;job_setup&gt;(optional)
+  &lt;/pipeline_setup&gt;
+</pre><p> 
+  &lt;database_setup&gt;
+  </p><p>
+  This specifies the databases that the pipeline connects to and the
+  adaptor modules that intefaces with them.
+  </p><p>
+  &lt;iohandler_setup&gt;
+  </p><p>
+  This specifies the method calls that will be used by the pipeline
+  to access the databases. These methods are contained in the modules
+  specified by the database setup section above.
+  </p><p>
+  &lt;pipeline_flow_setup&gt;
+  </p><p>
+  This specifies the analysis and rules of the pipeline. Analysis
+  refers to the runnables that will be used in this pipeline while the
+  rules specify the order in which these analysis are to be run, including
+  any specific pre-processing actions that are to be carried out.
+  </p><p>
+  &lt;job_setup&gt;
+  </p><p>
+  This is an optional part that allows specific inputs to be inserted.
+  Usually, this is done using DataMongers and Input Create modules.
+  </p><p>You will need to modify some parts of this XML file to point files to non-default places.</p></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="blast"/>4. The Simple Blast Pipeline </h2></div></div><p> <span class="emphasis"><em>Use Case</em></span> </p><pre class="screen">
+    Given a file of sequences, split the files into smaller chunks, and blast
+    it against the database over a compute farm. Blast results files are stored
+    into a given results  directory, with one result file per blast job.
+    </pre><p>
+    This is a simple blast pipeline demo that allows one to pipeline a bunch of blast
+    jobs. It is stripped bare, assuming that the user has sequences in files and simply wishes
+    to organize and manage the blast jobs(executed serially in a single node/local environment). 
+    Additionaly the pipeline parallalizes the blast jobs if multiple compute nodes are available.
+    It doesn't utilize one of the main features of blast which is to allow inputs from different 
+    database sources.
+    </p><p><span class="emphasis"><em>Configuring the Pipeline</em></span></p><p> ANALYSIS 1: DataMonger </p><p>
+    This involves a DataMonger Analysis using the <span class="emphasis"><em>setup_file_blast</em></span> module.
+        The datamonger will split the input file specified into a specified number of chunks.
+        It will create a blast job in the pipeline for each chunk. It will also
+        create the specified working directory for storing these files and format the db file for
+        blasting if you are blasting against itself. If you are blasting against a different database file,
+        you can specify the formatting of the db as part of the analysis parameters. 
+    </p><p>
+    <pre class="programlisting">
+    262     &lt;analysis id="1"&gt;
+    263       &lt;data_monger&gt;
+    264         &lt;initial/&gt;
+    265         &lt;input&gt;
+    266           &lt;name&gt;input_file&lt;/name&gt;
+    267         &lt;/input&gt;
+    268         &lt;input_create&gt;
+    269            &lt;module&gt;setup_file_blast&lt;/module&gt;
+    270            &lt;rank&gt;1&lt;/rank&gt;
+    271             &lt;argument&gt;
+    272                 &lt;tag&gt;input_file&lt;/tag&gt;
+    273                 &lt;value&gt;../t/data/blast.fa&lt;/value&gt;
+    274                 &lt;type&gt;SCALAR&lt;/type&gt;
+    275             &lt;/argument&gt;
+    276             &lt;argument&gt;
+    277                 &lt;tag&gt;full_path&lt;/tag&gt;
+    278                 &lt;value&gt;1&lt;/value&gt;
+    279                 &lt;type&gt;SCALAR&lt;/type&gt;
+    280             &lt;/argument&gt;
+    281             &lt;argument&gt;
+    282                 &lt;tag&gt;chop_nbr&lt;/tag&gt;
+    283                 &lt;value&gt;5&lt;/value&gt;
+    284                 &lt;type&gt;SCALAR&lt;/type&gt;
+    285             &lt;/argument&gt;
+    286             &lt;argument&gt;
+    287                 &lt;tag&gt;workdir&lt;/tag&gt;
+    288                 &lt;value&gt;/tmp/blast_dir/&lt;/value&gt;
+    289                 &lt;type&gt;SCALAR&lt;/type&gt;
+    290             &lt;/argument&gt;
+    291             &lt;argument&gt;
+    292                 &lt;tag&gt;result_dir&lt;/tag&gt;
+    293                 &lt;value&gt;/tmp/blast_dir/blast_result/&lt;/value&gt;
+    294                 &lt;type&gt;SCALAR&lt;/type&gt;
+    295             &lt;/argument&gt;
+    296             &lt;argument&gt;
+    297                 &lt;tag&gt;runnable&lt;/tag&gt;
+    298                 &lt;value&gt;Bio::Pipeline::Runnable::Blast&lt;/value&gt;
+    299                 &lt;type&gt;SCALAR&lt;/type&gt;
+    300             &lt;/argument&gt;
+    301             &lt;argument&gt;
+    302                 &lt;tag&gt;informat&lt;/tag&gt;
+    303                 &lt;value&gt;fasta&lt;/value&gt;
+    304                 &lt;type&gt;SCALAR&lt;/type&gt;
+    305             &lt;/argument&gt;
+    306             &lt;argument&gt;
+    307                 &lt;tag&gt;outformat&lt;/tag&gt;
+    308                 &lt;value&gt;fasta&lt;/value&gt;
+    309                 &lt;type&gt;SCALAR&lt;/type&gt;
+    310             &lt;/argument&gt;
+    311             &lt;argument&gt;
+    312                 &lt;tag&gt;tag&lt;/tag&gt;
+    313                 &lt;value&gt;infile&lt;/value&gt;
+    314                 &lt;type&gt;SCALAR&lt;/type&gt;
+    315             &lt;/argument&gt;
+    316          &lt;/input_create&gt;
+    317       &lt;/data_monger&gt;
+    318     &lt;/analysis&gt;
+    
+    </pre>
+    </p><p>
+    line 269: This specifies the particular DataMonger to use that will prepare your file for
+    paralization. For this case, we will use setup_file_blast which will chop up your
+    input file specified below into smaller chunks. 
+    </p><p>
+    line 273: This specifies the name of the input file that will be split into smaller chunks.
+    Modify this accordingly.
+    </p><p>
+    line 283: This specifies the number of files to split the input file into which wil equal
+              the number of blast jobs. You will want to chose a reasonable number that will
+              utilize your compute farm best.
+    </p><p>
+    line 288: This specifies the working directory in which the blast chunks will be stored.
+    </p><p>
+    line: 293: This specifies where the blast result files will be stored.
+    </p></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="configureblast2"/>5. The Simple Blast Pipeline</h2></div></div><p> ANALYSIS 2: Blast</p><pre class="programlisting">
+    321     &lt;analysis id="2"&gt;
+    322       &lt;logic_name&gt;Blast&lt;/logic_name&gt;
+    323       &lt;runnable&gt;Bio::Pipeline::Runnable::Blast&lt;/runnable&gt;
+    324       &lt;db&gt;family&lt;/db&gt;
+    325       &lt;db_file&gt;..t/data/blast.fa&lt;/db_file&gt;
+    326       &lt;program&gt;blastall&lt;/program&gt;
+    327       &lt;program_file&gt;&lt;/program_file&gt;
+    328       &lt;analysis_parameters&gt;-p blastp -e 1-e05 &lt;/analysis_parameters&gt;
+    329       &lt;runnable_parameters&gt;-formatdb 1 -result_dir /tmp/blast_dir/blast_result/&lt;/runnable_parameters&gt;
+    330     &lt;/analysis&gt;
+    </pre><p>
+   This set of xml tags specify the blast analysis to run.
+   </p><p>
+   Line 323: This specifies the pipeline to use the <span class="emphasis"><em>Bio::Pipeline::Runnable::Blast</em></span> runnable.
+   </p><p>
+   Line 324: This is the name of the database to blast against
+   </p><p>
+   Line 325: This is the path to the database file to blast against.
+   </p><p>
+   Line 326: This is the name of the blast program.
+   </p><p>
+   Line 327: This is the location of the blast program
+   </p><p>
+   Line 328: These are the blast parameters.
+   </p><p>
+   Line 329: These are blast runnable parameters.
+   </p><div class="itemizedlist"><ul type="disc"><li><p>
+      <span class="emphasis"><em>-p blastp</em></span> This is a blastall parameter to specify using the  blastp alignment program.
+    </p></li><li><p>
+    <span class="emphasis"><em>-e 1-e05</em></span> Another blastall parameter to return hits with scores less than 0.00001
+    </p></li><li><p>
+    <span class="emphasis"><em>-formatdb 1</em></span> A Bio::Pipeline::Runnable::Blast parameter that tells it to format the db file specified in line 307 before
+    commencing blasting.
+    </p></li><li><p>
+    <span class="emphasis"><em>-result_dir /tmp/blast_dir/blast_reult/</em></span> This tells the Runnable where to store the blast output. 
+    </p></li></ul></div></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="protein"/>6.  The Protein Analysis Pipeline</h2></div></div><pre class="screen">
+    Given a file of protein sequences,obtain the seq objects using Bio::DB::Fasta and run 6 different protein analysis on them.
+    Results are dumped into a file in the gff format.
+  </pre><p><span class="emphasis"><em>Configuring the Pipeline</em></span></p><p> ANALYSIS 1: DataMonger </p><p>
+    This involves a DataMonger Analysis using the <span class="emphasis"><em>setup_file_blast</em></span> module.
+    The datamonger will split the input file specified into a specified number of chunks.
+    It will create a blast job in the pipeline for each chunk. It will also
+    create the specified working directory for storing these files and format the db file for
+    blasting if you are blasting against itself. If you are blasting against a different database file,
+    you can specify the formatting of the db as part of the analysis parameters.
+   </p><p>
+   <pre class="programlisting">
+111    <span class="ERROR">&lt;database_setup&gt;
+112     <span class="ERROR">&lt;streamadaptor&gt;
+113       <span class="ERROR">&lt;module&gt;Bio::Pipeline::Dumper&lt;/module&gt;</span>
+114     &lt;/streamadaptor&gt;</span>
+115     <span class="ERROR">&lt;streamadaptor&gt;
+116       <span class="ERROR">&lt;module&gt;Bio::DB::Fasta&lt;/module&gt;</span>
+117     &lt;/streamadaptor&gt;</span>
+118    &lt;/database_setup&gt;</span>
+   </pre> 
+  
+   <pre class="programlisting">
+119    <span class="ERROR">&lt;iohandler_setup&gt;
+120     <span class="ERROR">&lt;iohandler&gt;
+121      <span class="ERROR">&lt;adaptor_id&gt;2&lt;/adaptor_id&gt;</span>
+122      <span class="ERROR">&lt;adaptor_type&gt;STREAM&lt;/adaptor_type&gt;</span>
+123      <span class="ERROR">&lt;iohandler_type&gt;INPUT&lt;/iohandler_type&gt;</span>
+124     <span class="ERROR">&lt;method&gt;
+125        <span class="ERROR">&lt;name&gt;new&lt;/name&gt;</span>
+126        <span class="ERROR">&lt;rank&gt;1&lt;/rank&gt;</span>
+127        <span class="ERROR">&lt;argument&gt;
+128            <span class="ERROR">&lt;value&gt;../t/data/prot_input2.fa&lt;/value&gt;</span>
+129        &lt;/argument&gt;</span>
+130     &lt;/method&gt;</span>
+131     <span class="ERROR">&lt;method&gt;
+132        <span class="ERROR">&lt;name&gt;get_Seq_by_id&lt;/name&gt;</span>
+133        <span class="ERROR">&lt;argument&gt;
+134           <span class="ERROR">&lt;value&gt;INPUT&lt;/value&gt;</span>
+135        &lt;/argument&gt;</span>
+136        <span class="ERROR">&lt;rank&gt;2&lt;/rank&gt;</span>
+137     &lt;/method&gt;</span>
+138    &lt;/iohandler&gt;</span>
+    
+141     <span class="ERROR">&lt;iohandler&gt;
+142      <span class="ERROR">&lt;adaptor_id&gt;2&lt;/adaptor_id&gt;</span>
+143      <span class="ERROR">&lt;adaptor_type&gt;STREAM&lt;/adaptor_type&gt;</span>
+144      <span class="ERROR">&lt;iohandler_type&gt;INPUT&lt;/iohandler_type&gt;</span>
+145      <span class="ERROR">&lt;method&gt;
+146        <span class="ERROR">&lt;name&gt;new&lt;/name&gt;</span>
+147        <span class="ERROR">&lt;rank&gt;1&lt;/rank&gt;</span>
+148        <span class="ERROR">&lt;argument&gt;
+149          <span class="ERROR">&lt;value&gt;../t/data/prot_input2.fa&lt;/value&gt;</span>
+150        &lt;/argument&gt;</span>
+151      &lt;/method&gt;</span>
+152      <span class="ERROR">&lt;method&gt;
+153        <span class="ERROR">&lt;name&gt;get_all_ids&lt;/name&gt;</span>
+154        <span class="ERROR">&lt;rank&gt;2&lt;/rank&gt;</span>
+155      &lt;/method&gt;</span>
+156    &lt;/iohandler&gt;</span>
+
+158    <span class="ERROR">&lt;iohandler&gt;
+159      <span class="ERROR">&lt;adaptor_id&gt;1&lt;/adaptor_id&gt;</span>
+160      <span class="ERROR">&lt;adaptor_type&gt;STREAM&lt;/adaptor_type&gt;</span>
+161      <span class="ERROR">&lt;iohandler_type&gt;OUTPUT&lt;/iohandler_type&gt;</span>
+162      <span class="ERROR">&lt;method&gt;
+163        <span class="ERROR">&lt;name&gt;new&lt;/name&gt;</span>
+164        <span class="ERROR">&lt;rank&gt;1&lt;/rank&gt;</span>
+165        <span class="ERROR">&lt;argument&gt;
+166          <span class="ERROR">&lt;tag&gt;-dir&lt;/tag&gt;</span>
+167          <span class="ERROR">&lt;value&gt;../t/data/protein_analysis_results&lt;/value&gt;</span>
+168          SCALAR
+169          <span class="ERROR">&lt;rank&gt;1&lt;/rank&gt;</span>
+170        &lt;/argument&gt;</span>
+171        <span class="ERROR">&lt;argument&gt;
+172          <span class="ERROR">&lt;tag&gt;-module&lt;/tag&gt;</span>
+173          <span class="ERROR">&lt;value&gt;generic&lt;/value&gt;</span>
+174          SCALAR
+175          <span class="ERROR">&lt;rank&gt;1&lt;/rank&gt;</span>
+176        &lt;/argument&gt;</span>
+177        <span class="ERROR">&lt;argument&gt;
+178          <span class="ERROR">&lt;tag&gt;-prefix&lt;/tag&gt;</span>
+179          SCALAR
+180          <span class="ERROR">&lt;value&gt;INPUT&lt;/value&gt;</span>
+181          <span class="ERROR">&lt;rank&gt;2&lt;/rank&gt;</span>
+182        &lt;/argument&gt;</span>
+183        <span class="ERROR">&lt;argument&gt;
+184          <span class="ERROR">&lt;tag&gt;-format&lt;/tag&gt;</span>
+185          SCALAR
+186          <span class="ERROR">&lt;value&gt;gff&lt;/value&gt;</span>
+187          <span class="ERROR">&lt;rank&gt;3&lt;/rank&gt;</span>
+188        &lt;/argument&gt;</span>
+189        <span class="ERROR">&lt;argument&gt;
+190          <span class="ERROR">&lt;tag&gt;-file_suffix&lt;/tag&gt;</span>
+191          SCALAR
+192          <span class="ERROR">&lt;value&gt;gff&lt;/value&gt;</span>
+193          <span class="ERROR">&lt;rank&gt;4&lt;/rank&gt;</span>
+194        &lt;/argument&gt;</span>
+195      &lt;/method&gt;</span>
+196      <span class="ERROR">&lt;method&gt;
+197        <span class="ERROR">&lt;name&gt;dump&lt;/name&gt;</span>
+198        <span class="ERROR">&lt;rank&gt;2&lt;/rank&gt;</span>
+199        <span class="ERROR">&lt;argument&gt;
+200          <span class="ERROR">&lt;value&gt;OUTPUT&lt;/value&gt;</span>
+201          ARRAY
+202          <span class="ERROR">&lt;rank&gt;1&lt;/rank&gt;</span>
+203        &lt;/argument&gt;</span>
+204       &lt;/method&gt;</span>
+205      &lt;/iohandler&gt;</span>
+206   &lt;/iohandler_setup&gt;</span>
+   </pre>  
+   
+   <pre class="programlisting">
+209     <span class="ERROR">&lt;analysis&gt;
+210      <span class="ERROR">&lt;data_monger&gt;
+211        <span class="ERROR">&lt;initial&gt;&lt;/initial&gt;</span>
+212        <span class="ERROR">&lt;input&gt;
+213          <span class="ERROR">&lt;name&gt;protein_ids&lt;/name&gt;</span>
+214          <span class="ERROR">&lt;iohandler&gt;1&lt;/iohandler&gt;</span>
+215        &lt;/input&gt;</span>
+216        <span class="ERROR">&lt;input_create&gt;
+217           <span class="ERROR">&lt;module&gt;setup_initial&lt;/module&gt;</span>
+218           <span class="ERROR">&lt;rank&gt;1&lt;/rank&gt;</span>
+219           <span class="ERROR">&lt;argument&gt;
+220                <span class="ERROR">&lt;tag&gt;protein_ids&lt;/tag&gt;</span>
+221                <span class="ERROR">&lt;value&gt;2&lt;/value&gt;</span>
+222            &lt;/argument&gt;</span>
+223         &lt;/input_create&gt;</span>
+224      &lt;/data_monger&gt;</span>
+225      <span class="ERROR">&lt;input_iohandler&gt;&lt;/input_iohandler&gt;</span>
+226    &lt;/analysis&gt;</span>
+
+229    <span class="ERROR">&lt;analysis&gt;
+230      <span class="ERROR">&lt;logic_name&gt;Tmhmm&lt;/logic_name&gt;</span>
+231      <span class="ERROR">&lt;runnable&gt;Bio::Pipeline::Runnable::ProteinAnnotation&lt;/runnable&gt;</span>
+232      <span class="ERROR">&lt;program&gt;Tmhmm&lt;/program&gt;</span>
+233      <span class="ERROR">&lt;program_file&gt;/usr/users/pipeline/programs/TMHMM2.0b/bin/tmhmm&lt;/program_file&gt;</span>
+234      <span class="ERROR">&lt;runnable_parameters&gt;-program Tmhmm&lt;/runnable_parameters&gt;</span>
+235      
+236      <span class="ERROR">&lt;input_iohandler&gt;&lt;/input_iohandler&gt;</span>
+237       
+238      <span class="ERROR">&lt;output_iohandler&gt;&lt;/output_iohandler&gt;</span>
+239    &lt;/analysis&gt;</span>
+    
+     
+242   <span class="ERROR">&lt;analysis&gt;
+243      <span class="ERROR">&lt;logic_name&gt;Seg&lt;/logic_name&gt;</span>
+244      <span class="ERROR">&lt;runnable&gt;Bio::Pipeline::Runnable::ProteinAnnotation&lt;/runnable&gt;</span>
+245      <span class="ERROR">&lt;program&gt;Seg&lt;/program&gt;</span>
+246      <span class="ERROR">&lt;program_file&gt;/usr/users/pipeline/programs/seg_dir/seg&lt;/program_file&gt;</span>
+247      <span class="ERROR">&lt;runnable_parameters&gt;-program Seg&lt;/runnable_parameters&gt;</span>
+248      <span class="ERROR">&lt;input_iohandler&gt;&lt;/input_iohandler&gt;</span>
+249      <span class="ERROR">&lt;output_iohandler&gt;&lt;/output_iohandler&gt;</span>
+250    &lt;/analysis&gt;</span>
+
+    !--Analysis 3 Prints --&gt;
+253    <span class="ERROR">&lt;analysis&gt;
+254      <span class="ERROR">&lt;logic_name&gt;Prints&lt;/logic_name&gt;</span>
+255      <span class="ERROR">&lt;runnable&gt;Bio::Pipeline::Runnable::ProteinAnnotation&lt;/runnable&gt;</span>
+256      <span class="ERROR">&lt;db&gt;prints.dat&lt;/db&gt;</span>
+257      <span class="ERROR">&lt;db_file&gt;../t/data/prints.dat&lt;/db_file&gt;</span>
+258      <span class="ERROR">&lt;program&gt;Prints&lt;/program&gt;</span>
+259      <span class="ERROR">&lt;program_file&gt;/usr/users/pipeline/programs/Prints&lt;/program_file&gt;</span>
+260     <span class="ERROR">&lt;runnable_parameters&gt;-program Prints&lt;/runnable_parameters&gt;</span>
+261      <span class="ERROR">&lt;input_iohandler&gt;&lt;/input_iohandler&gt;</span>
+262      <span class="ERROR">&lt;output_iohandler&gt;&lt;/output_iohandler&gt;</span>
+263   &lt;/analysis&gt;</span>
+    
+    
+266    <span class="ERROR">&lt;analysis&gt;
+267      <span class="ERROR">&lt;logic_name&gt;Profile&lt;/logic_name&gt;</span>
+268      <span class="ERROR">&lt;runnable&gt;Bio::Pipeline::Runnable::ProteinAnnotation&lt;/runnable&gt;</span>
+269      <span class="ERROR">&lt;db&gt;prosite.dat&lt;/db&gt;</span>
+270      <span class="ERROR">&lt;db_file&gt;../t/data/prosite.dat&lt;/db_file&gt;</span>
+271      <span class="ERROR">&lt;program&gt;Profile&lt;/program&gt;</span>
+272      <span class="ERROR">&lt;program_file&gt;/usr/users/pipeline/programs/pfscan&lt;/program_file&gt;</span>
+273      <span class="ERROR">&lt;runnable_parameters&gt;-program Profile&lt;/runnable_parameters&gt;</span>
+274      <span class="ERROR">&lt;input_iohandler&gt;&lt;/input_iohandler&gt;</span>
+275      <span class="ERROR">&lt;output_iohandler&gt;&lt;/output_iohandler&gt;</span>
+276    &lt;/analysis&gt;</span>
+
+     
+279    <span class="ERROR">&lt;analysis&gt;
+280      <span class="ERROR">&lt;logic_name&gt;Signalp&lt;/logic_name&gt;</span>
+281      <span class="ERROR">&lt;runnable&gt;Bio::Pipeline::Runnable::ProteinAnnotation&lt;/runnable&gt;</span>
+282      <span class="ERROR">&lt;program&gt;SignalP&lt;/program&gt;</span>
+283      <span class="ERROR">&lt;program_file&gt;/usr/users/pipeline/programs/signalp_2.0/signalp&lt;/program_file&gt;</span>
+284      <span class="ERROR">&lt;runnable_parameters&gt;-program Signalp&lt;/runnable_parameters&gt;</span>
+285     <span class="ERROR">&lt;input_iohandler&gt;&lt;/input_iohandler&gt;</span>
+286      <span class="ERROR">&lt;output_iohandler&gt;&lt;/output_iohandler&gt;</span>
+287    &lt;/analysis&gt;</span>
+    
+    
+290    <span class="ERROR">&lt;analysis&gt;
+291      <span class="ERROR">&lt;logic_name&gt;Hmmpfam&lt;/logic_name&gt;</span>
+292      <span class="ERROR">&lt;runnable&gt;Bio::Pipeline::Runnable::ProteinAnnotation&lt;/runnable&gt;</span>
+293      <span class="ERROR">&lt;db&gt;Pfam_ls_7.4&lt;/db&gt;</span>
+294      <span class="ERROR">&lt;db_file&gt;../t/data/pfam_sample_R11&lt;/db_file&gt;</span>
+295      <span class="ERROR">&lt;program&gt;hmmpfam&lt;/program&gt;</span>
+296      <span class="ERROR">&lt;program_file&gt;/usr/local/bin/hmmpfam&lt;/program_file&gt;</span>
+297      <span class="ERROR">&lt;runnable_parameters&gt;-program Hmmpfam&lt;/runnable_parameters&gt;</span>
+298      <span class="ERROR">&lt;input_iohandler&gt;&lt;/input_iohandler&gt;</span>
+299      <span class="ERROR">&lt;output_iohandler&gt;&lt;/output_iohandler&gt;</span>
+300    &lt;/analysis&gt;</span>
+
+   </pre>
+   
+   <pre class="programlisting">
+306    <span class="ERROR">&lt;rule&gt;
+307      <span class="ERROR">&lt;current_analysis_id&gt;1&lt;/current_analysis_id&gt;</span>
+308     <span class="ERROR">&lt;next_analysis_id&gt;2&lt;/next_analysis_id&gt;</span>
+309      NOTHING
+310    &lt;/rule&gt;</span>
+311    <span class="ERROR">&lt;rule&gt;
+312      <span class="ERROR">&lt;current_analysis_id&gt;2&lt;/current_analysis_id&gt;</span>
+313     <span class="ERROR">&lt;next_analysis_id&gt;3&lt;/next_analysis_id&gt;</span>
+314      COPY_ID
+315    &lt;/rule&gt;</span>
+316    <span class="ERROR">&lt;rule&gt;
+317      <span class="ERROR">&lt;current_analysis_id&gt;3&lt;/current_analysis_id&gt;</span>
+318     <span class="ERROR">&lt;next_analysis_id&gt;4&lt;/next_analysis_id&gt;</span>
+319      COPY_ID
+320    &lt;/rule&gt;</span>
+321    <span class="ERROR">&lt;rule&gt;
+322      <span class="ERROR">&lt;current_analysis_id&gt;4&lt;/current_analysis_id&gt;</span>
+323     <span class="ERROR">&lt;next_analysis_id&gt;5&lt;/next_analysis_id&gt;</span>
+324      COPY_ID
+325    &lt;/rule&gt;</span>
+326    <span class="ERROR">&lt;rule&gt;
+327      <span class="ERROR">&lt;current_analysis_id&gt;5&lt;/current_analysis_id&gt;</span>
+328     <span class="ERROR">&lt;next_analysis_id&gt;6&lt;/next_analysis_id&gt;</span>
+329      COPY_ID
+330    &lt;/rule&gt;</span>
+331    <span class="ERROR">&lt;rule&gt;
+332      <span class="ERROR">&lt;current_analysis_id&gt;6&lt;/current_analysis_id&gt;</span>
+333     <span class="ERROR">&lt;next_analysis_id&gt;7&lt;/next_analysis_id&gt;</span>
+334      COPY_ID
+335    &lt;/rule&gt;</span>
+
+   </pre>
+
+  </p></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="configure2"/>7.  Configuring the PipeConf</h2></div></div><p>
+  Hangon. You may want to configure any pipeline management parameters before running. This is done via
+  the PipeConf.pm module located at <span class="emphasis"><em>bioperl-pipeline/Bio/Pipeline/PipeConf.pm</em></span>.
+  Various parameters may be set here:
+  </p><pre class="programlisting">must be changed
+     39 %PipeConf = (
+     40
+     41     # You will need to modify these variables
+     42
+     43     # working directory for err/outfiles
+     44     NFSTMP_DIR =&gt; '/tmp/',
+     45
+     46     # database specific variables
+     47
+     48     DBI_DRIVER =&gt; 'mysql',
+     49     DBHOST     =&gt; 'mysql',
+     50     DBNAME     =&gt; 'test_xml',
+     51     DBUSER     =&gt; 'root',
+     52     DBPASS     =&gt; '',
+     53
+     54     # Batch Management system module
+     55     # Currently supports PBS and LSF
+     56     # ignored if run in local mode
+     57     BATCH_MOD   =&gt;  'LSF',
+     58
+     59     # farm queue
+     60     QUEUE      =&gt; 'normal3',
+     61
+     62     # no of jobs to send to Batch Management system at one go
+     63     BATCHSIZE  =&gt; 3,
+     64
+     65     #bsub opt
+     66     BATCH_PARAM =&gt; '-C0',
+     67
+     68     # no of jobs to fetch at a time and submit
+     69     MAX_INCOMPLETE_JOBS_BATCHSIZE =&gt; 1000,
+     70
+     71     # no of completed jobs to fetch at a time and create next jobs
+     72     MAX_CREATE_NEXT_JOBS_BATCHSIZE =&gt; 5,
+     73
+     74
+     75     # number of times to retry a failed job
+     76     RETRY       =&gt; '5',
+     77
+     78     # path to runner.pl, use by the BatchSubmission objects
+     79     # to look for runner.pl. If not supplied it looks in the default
+     80     # directory where PipelineManager lies
+     81     RUNNER     =&gt; '',
+     82
+     83     #sleep time (seconds) in PipelineManager before waking up and looking for jobs to run
+     84     SLEEP      =&gt; 30,
+     85     #number of jobs to fetch at a time
+     86     FETCH_JOB_SIZE =&gt; 100,
+
+    </pre></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="Loading and Running"/>8. Loading and Running your pipeline </h2></div></div><p>
+    To load and run the pipeline, cd to the <span class="emphasis"><em>bioperl-pipeline/scripts/</em></span> directory.
+    </p><p> 
+    Run the PipelineManger with the -h option to check the options available: 
+    </p><pre class="programlisting">
+shawnh@pulse1 ~/src/bioperl-pipeline/scripts&gt; perl PipelineManager -h
+************************************
+*PipelineManager
+************************************
+This is the central script used to run the pipeline.
+
+Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local
+
+Options:
+Default values are read from PipeConf.pm
+
+     -dbhost    The database host name (localhost)
+     -dbname    The pipeline database name
+     -dbuser    User for connecting to db (root)
+     -dbpass    The password to mysql database
+     -dbdriver  Database driver (mysql)
+     -schema    The Biopipe database schema (../sql/schema)
+     -xml       The xml pipeline template file. It will run XMLImporter if provided
+     -xf        Force drop of any existing Biopipe database with the same name
+     -flush     flush all locks on pipeline and remove any that exists.
+                Should only be used for debugging or development.
+     -batchsize The number ofjobs to be batched to one node
+     -local     Whether to run jobs in local mode
+                (on the node where this script is run)
+     -jobnbr    Number of jobs to run (for testing)
+     -queue     Specify the queue on which to submit jobs
+     -retry     Number of times to retry failed jobs
+     -notest    Don't run pre-pipeline checks
+     -norun     Use when you just want to load the XML without running
+     -verbose   Whether to show warning during test and setup
+     -help      Display this help
+
+    </pre><p>
+    If you run the script in local(-l) mode(shown below for the blast pipeline), the script will not be batched to LSF or PBS. Jobs are executed
+    sequentially in this way This is usually a recommended way of testing your pipeline before batching all the jobs. 
+    You may also specify the number of jobs to run with the -jobnbr option.
+    </p><pre class="programlisting">
+    savikalpa@pulse1 ~/src/bioperl-pipeline/scripts&gt; perl PipelineManager -dbname blast_pipe -xml ../xml/templates/blast_file_pipeline.xml -loca    l -flush
+    
+    A database called blast_pipe already exists.
+    Continuing would involve dropping this database and loading a fresh one using ../xml/templates/blast_file_pipeline.xml.
+    Would you like to continue? y/n [n] y
+    Dropping Databases
+    Creating blast_pipe
+    Loading Schema...
+    Reading Data_setup xml   : ../xml/templates/blast_file_pipeline.xml
+    Doing DBAdaptor and IOHandler setup
+    Doing Pipeline Flow Setup
+    Doing Analysis..
+    Doing Rules
+    Doing Job Setup...
+    Loading of pipeline blast_pipe completed
+    Removing Lock File...
+    Done
+    ///////////////////////////////////////////////////////////
+    2 analysis found.
+    Running test and setup..
+
+    //////////// Analysis Test ////////////
+    Checking Analysis 1 DataMonger
+    -------------------- WARNING ---------------------
+    MSG: Skipping test for DataMonger
+    ---------------------------------------------------
+    ok
+    Checking Analysis 2 Blast ok
+    Fetching Jobs...
+    Fetched 1 incomplete jobs
+    Running job /tmp/blast_pipe_DataMonger.1045639141.463.out /tmp/blast_pipe_DataMonger.1045639141.463.err
+    Fetched 1 completed jobs
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Fetching Jobs...
+    Fetched 5 incomplete jobs
+    Running job /tmp/blast_pipe_Blast.1045639141.786.out /tmp/blast_pipe_Blast.1045639141.786.err
+    Running job /tmp/blast_pipe_Blast.1045639141.58.out /tmp/blast_pipe_Blast.1045639141.58.err
+    Running job /tmp/blast_pipe_Blast.1045639141.346.out /tmp/blast_pipe_Blast.1045639141.346.err
+    Running job /tmp/blast_pipe_Blast.1045639141.817.out /tmp/blast_pipe_Blast.1045639141.817.err
+    Running job /tmp/blast_pipe_Blast.1045639141.710.out /tmp/blast_pipe_Blast.1045639141.710.err
+    Fetched 5 completed jobs
+    Updating Completed Jobs and creating new ones
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Nothing left to run.
+
+    ///////////////Shutting Down Pipeline//////////////////////
+    Removing Lock File...
+    Done
+    ///////////////////////////////////////////////////////////
+
+</pre><p>
+  The following example below shows the output one might get when running the protein analysis pipeline. Two sequence are used 
+  for the following example and 6 protein analysis are performed on them. This also gives an idea of the possible output when using the pipeline  to run multiple analysis.
+  </p><pre class="programlisting">
+    savikalpa@pulse1 ~/src/bioperl-pipeline/scripts&gt; perl  PipelineManager -dbname protein_analysis_pipe -xml ../xml/templates/protein_file_pipe    line.xml -l -f
+    A database called protein_analysis_pipe already exists.
+    Continuing would involve dropping this database and loading a fresh one using ../xml/templates/protein_file_pipeline.xml.
+    Would you like to continue? y/n [n] y
+    Dropping Databases
+    Creating protein_analysis_pipe
+    Loading Schema...
+    Reading Data_setup xml   : ../xml/templates/protein_file_pipeline.xml
+    Doing DBAdaptor and IOHandler setup
+    Doing Converters..
+    Doing Pipeline Flow Setup
+    Doing Analysis..
+    Doing Rules
+    Doing Job Setup...
+    Loading of pipeline protein_analysis_pipe completed
+    Removing Lock File...
+    Done
+    ///////////////////////////////////////////////////////////
+    7 analysis found.
+    Running test and setup..
+
+    //////////// Analysis Test ////////////
+    Checking Analysis 1 DataMonger
+    -------------------- WARNING ---------------------
+    MSG: Skipping test for DataMonger
+    ---------------------------------------------------
+    ok
+    Checking Analysis 2 Tmhmm ok
+    Checking Analysis 3 Seg ok
+    Checking Analysis 4 Prints ok
+    Checking Analysis 5 Profile ok
+    Checking Analysis 6 Signalp ok
+    Checking Analysis 7 Hmmpfam ok
+    Fetching Jobs...
+    Fetched 1 incomplete jobs
+    Running job /tmp/protein_analysis_pipe_DataMonger.1045801650.61.out /tmp/protein_analysis_pipe_DataMonger.1045801650.61.err
+    Fetched 1 completed jobs
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Fetching Jobs...
+    Fetched 2 incomplete jobs
+    Running job /tmp/protein_analysis_pipe_Tmhmm.1045801651.1.out /tmp/protein_analysis_pipe_Tmhmm.1045801651.1.err
+    Running job /tmp/protein_analysis_pipe_Tmhmm.1045801651.807.out /tmp/protein_analysis_pipe_Tmhmm.1045801651.807.err
+    Fetched 2 completed jobs
+    Updating Completed Jobs and creating new ones
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_4.Seg.1045801652.736.out /tmp/protein_analysis_pipe_.job_4.Seg.1045801652.736.err
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_5.Seg.1045801652.252.out /tmp/protein_analysis_pipe_.job_5.Seg.1045801652.252.err
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Fetching Jobs...
+    Fetched 0 incomplete jobs
+    Fetched 2 completed jobs
+    Updating Completed Jobs and creating new ones
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_6.Prints.1045801652.27.out /tmp/protein_analysis_pipe_.job_6.Prints.1045801652.27.err
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_7.Prints.1045801652.365.out /tmp/protein_analysis_pipe_.job_7.Prints.1045801652.365.err
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Fetching Jobs...
+    Fetched 0 incomplete jobs
+    Fetched 2 completed jobs
+    Updating Completed Jobs and creating new ones
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_8.Profile.1045801655.151.out /tmp/protein_analysis_pipe_.job_8.Profile.1045801655.151.err
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_9.Profile.1045801655.710.out /tmp/protein_analysis_pipe_.job_9.Profile.1045801655.710.err
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Fetching Jobs...
+    Fetched 0 incomplete jobs
+    Fetched 2 completed jobs
+    Updating Completed Jobs and creating new ones
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_10.Signalp.1045801658.115.out /tmp/protein_analysis_pipe_.job_10.Signalp.1045801658.115.err
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_11.Signalp.1045801661.890.out /tmp/protein_analysis_pipe_.job_11.Signalp.1045801661.890.err
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Fetching Jobs...
+    Fetched 0 incomplete jobs
+    Fetched 2 completed jobs
+    Updating Completed Jobs and creating new ones
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_12.Hmmpfam.1045801665.497.out /tmp/protein_analysis_pipe_.job_12.Hmmpfam.1045801665.497.err
+    Creating 1 jobs
+    Running job /tmp/protein_analysis_pipe_.job_13.Hmmpfam.1045801665.427.out /tmp/protein_analysis_pipe_.job_13.Hmmpfam.1045801665.427.err
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Fetching Jobs...
+    Fetched 0 incomplete jobs
+    Fetched 2 completed jobs
+    Updating Completed Jobs and creating new ones
+    Going to snooze for 3 seconds...
+    Waking up and run again!
+    Nothing left to run.
+
+    ///////////////Shutting Down Pipeline//////////////////////
+    Removing Lock File...
+    Done
+    ///////////////////////////////////////////////////////////
+    savikalpa@pulse1 ~/src/bioperl-pipeline/scripts&gt;                                                                             
+   </pre><p>
+   Once you are ready to run on the node, submit the jobs to the compute nodes now by running the PipelineManger without the -l option.
+   It is recommended for those who is running this on a desktop setup to use the nice command to set a lower priority like 15 so that
+   your computer doesn't hang up on a large process.
+  </p><pre class="programlisting">
+   savikalpa@pulse2 ~/src/bioperl-pipeline/scripts&gt; perl PipelineManager -dbname blast_pipe -xml ../xml/templates/blast_file_pipeline.xml -queue   priority -batchsize 1
+   A database called blast_pipe already exists.
+   Continuing would involve dropping this database and loading a fresh one using ../xml/templates/blast_file_pipeline.xml.
+   Would you like to continue? y/n [n] y
+   Dropping Databases
+   Creating blast_pipe
+   Loading Schema...
+   Reading Data_setup xml   : ../xml/templates/blast_file_pipeline.xml
+   Doing DBAdaptor and IOHandler setup
+   Doing Pipeline Flow Setup
+   Doing Analysis..
+   Doing Rules
+   Doing Job Setup...
+   Loading of pipeline blast_pipe completed
+   2 analysis found.
+   Running test and setup..
+
+   //////////// Analysis Test ////////////
+   Checking Analysis 1 DataMonger
+   -------------------- WARNING ---------------------
+   MSG: Skipping test for DataMonger
+   ---------------------------------------------------
+    ok
+   Checking Analysis 2 Blast ok
+   Fetching Jobs...
+   Fetched 1 incomplete jobs
+   opening bsub command line:
+    bsub -o /tmp/blast_pipe_DataMonger.1046052341.189.out -e /tmp/blast_pipe_DataMonger.1046052341.189.err -q priority -C0  /usr/users/savikalpa   /src/bioperl-pipeline//scripts/runner.pl -dbname blast_pipe -host mysql -port 3306 -dbuser root 1
+   Fetched 0 completed jobs
+   Going to snooze for 3 seconds...
+   Waking up and run again!
+   Fetching Jobs...
+   Fetched 0 incomplete jobs
+   Fetched 0 completed jobs
+   Going to snooze for 3 seconds...
+   Waking up and run again!
+   Fetching Jobs...
+   Fetched 0 incomplete jobs
+   Fetched 0 completed jobs
+   Going to snooze for 3 seconds...
+   Waking up and run again!
+ 
+
+</pre><p> At any one time, you may check in the job table for the status of your jobs. The following shows
+an example mysql session</p><pre class="programlisting">must be changed
+   savikalpa@pulse2 ~&gt; mysql -u root blast_pipe
+   Reading table information for completion of table and column names
+   You can turn off this feature to get a quicker startup with -A
+
+   Welcome to the MySQL monitor.  Commands end with ; or \g.
+   Your MySQL connection id is 4757040 to server version: 3.23.36
+
+   Type 'help;' or '\h' for help. Type '\c' to clear the buffer
+
+   mysql&gt; select * from job;
+--------+------------+-------------+----------+------------------------------------------+------------------------------------------+------------------------------------------+-----------+----------+---------------------+-------------+
+| job_id | process_id | analysis_id | queue_id | stdout_file                              | stderr_file                              | object_file                              | status    | stage    | time                | retry_count |
++--------+------------+-------------+----------+------------------------------------------+------------------------------------------+------------------------------------------+-----------+----------+---------------------+-------------+
+|      2 | NEW        |           2 |        0 | /tmp/blast_pipe_Blast.1046052808.573.out | /tmp/blast_pipe_Blast.1046052808.573.err | /tmp/blast_pipe_Blast.1046052808.573.obj | COMPLETED | UPDATING | 2003-02-24 10:13:35 |           0 |
+|      3 | NEW        |           2 |        0 | /tmp/blast_pipe_Blast.1046052808.73.out  | /tmp/blast_pipe_Blast.1046052808.73.err  | /tmp/blast_pipe_Blast.1046052808.73.obj  | SUBMITTED | RUNNING  | 2003-02-24 10:13:36 |           0 |
+|      4 | NEW        |           2 |        0 | /tmp/blast_pipe_Blast.1046052808.170.out | /tmp/blast_pipe_Blast.1046052808.170.err | /tmp/blast_pipe_Blast.1046052808.170.obj | NEW       |          | 2003-02-24 10:13:36 |           0 |
+|      5 | NEW        |           2 |        0 | /tmp/blast_pipe_Blast.1046052809.698.out | /tmp/blast_pipe_Blast.1046052809.698.err | /tmp/blast_pipe_Blast.1046052809.698.obj | NEW       |          | 2003-02-24 10:13:36 |           0 |
+|      6 | NEW        |           2 |        0 | /tmp/blast_pipe_Blast.1046052809.264.out | /tmp/blast_pipe_Blast.1046052809.264.err | /tmp/blast_pipe_Blast.1046052809.264.obj | NEW       |          | 2003-02-24 10:13:36 |           0 |
++--------+------------+-------------+----------+------------------------------------------+------------------------------------------+------------------------------------------+-----------+----------+---------------------+-------------+
+5 rows in set (0.05 sec)
+
+mysql&gt; 
+ 
+</pre><p>
+  Here we can see that one blast job has been created and is currently having status <span class="emphasis"><em>SUBMITTED</em></span> and stage
+  <span class="emphasis"><em>RUNNING</em></span>. The status available are NEW|SUBMITTED|FAILED|COMPLETED and for stage are BATCHED|READING|RUNNING|WRITING.
+  Once a job is completed, the jobs will be move to the completed_jobs table.
+  If the job fails, you may view the error log specified by stderr_file.
+  Currently stderr_file and stdout_files are removed only if a job is completed. 
+  </p></div><div class="section"><div class="titlepage"><div><h2 class="title" style="clear: both"><a id="ViewingYourResults"/>9. Viewing Your Results</h2></div></div><p>You may now check the <span class="emphasis"><em>resultdir</em></span> specified in the Blast Analysis to 
+  see if your blast results are stored properly.
+  </p><p>Congratulations at this point you have managed to setup the biopipe successfully. It is
+  hoped that you have a feel of how the biopipe works. You may now try out more complex examples of 
+  through the other XML templates that we have. More documentation for this will come in the future.
+  </p></div></div></body></html>
