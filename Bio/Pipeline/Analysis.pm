@@ -632,6 +632,24 @@ sub output_handler{
     }
 }
 
+sub new_input_handler{
+    my ($self) = @_;
+    #search from list of iohandlers, cache if found
+    if($self->{_new_input_handler}){
+        return $self->{_new_input_handler};
+    }
+    else {
+        my @ioh = @{$self->iohandler};
+        foreach my $io (@ioh) {
+            if ($io->type eq "NEW_INPUT"){
+                $self->{_new_input_handler} = $io;
+                return $self->{_new_input_handler};
+            }
+        }
+        return undef;
+    }
+}
+
 =head2 create_input_handler
 
   Title   : create_input_handler
@@ -652,13 +670,14 @@ sub create_input_iohandler{
     }
     else {
         my @ioh = @{$self->iohandler};
+        my @cre_ioh =();
         foreach my $io (@ioh) {
             if ($io->type eq "CREATE_INPUT"){
-                $self->{_create_input_handler} = $io;
-                return $self->{_create_input_handler};
+                push @cre_ioh, $io;
             }
         }
-        return undef;
+        $self->{_create_input_handler} = \@cre_ioh;
+        return $self->{_create_input_handler};
     }
 }
 
