@@ -89,11 +89,15 @@ sub new {
       my %param = @args;
       @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
       my $module= $param{'-module'};
+      my $rank= $param{'-rank'};
       $module || Bio::Root::Root->throw("Must you must provided a filter module found in Bio::Pipeline::Filter::*");
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_filter_module($module));
-      return "Bio::Pipeline::Filter::$module"->new(@args);
+      my ($self) =  "Bio::Pipeline::Filter::$module"->new(@args);
+      $self->module($module);
+      $self->rank($rank);
+      return $self;
     }
 }
 
@@ -162,6 +166,84 @@ sub run {
   my ($self) = @_;
   $self->throw_not_implemented();
 }
+
+=head2 dbID
+
+  Title   : dbID
+  Usage   : $inc->dbID
+  Function: get set method for the dbID that the inputcreate dbID takes
+  Returns :
+  Args    :
+
+=cut
+
+sub dbID {
+  my ($self,$dbID) = @_;
+
+  if($dbID){
+    $self->{'_dbID'} = $dbID;
+  }
+  return $self->{'_dbID'};
+}
+
+
+=head2 module
+
+  Title   : module
+  Usage   : $inc->module
+  Function: get set method for the module that the inputcreate module takes
+  Returns :
+  Args    :
+
+=cut
+
+sub module {
+  my ($self,$module) = @_;
+
+  if($module){
+    $self->{'_module'} = $module;
+  }
+  return $self->{'_module'};
+}
+
+=head2 rank
+
+  Title   : rank
+  Usage   : $inc->rank
+  Function: get set method for the rank that the inputcreate module takes
+  Returns :
+  Args    :
+
+=cut
+
+sub rank {
+  my ($self,$rank) = @_;
+
+  if($rank){
+    $self->{'_rank'} = $rank;
+  }
+  return $self->{'_rank'};
+}
+
+=head2 arguments
+
+  Title   : arguments
+  Usage   : $inc->arguments
+  Function: get set method for the arguments that the inputcreate module takes
+  Returns :
+  Args    :
+
+=cut
+
+sub arguments {
+  my ($self,$arguments) = @_;
+
+  if($arguments){
+    $self->{'_arguments'} = $arguments;
+  }
+  return $self->{'_arguments'};
+}
+
 
 =head2 threshold
 
