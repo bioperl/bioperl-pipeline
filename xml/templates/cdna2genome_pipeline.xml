@@ -380,25 +380,32 @@ choice (for example BioSQL database)
       <runnable>$analysis_runnable</runnable>
       <program>$analysis_program</program>
       <program_file>$analysis_program_file</program_file>
-      <analysis_parameters>$analysis_param</analysis_parameters>
+      <analysis_parameters>$analysis_parameters</analysis_parameters>
       <output_iohandler id="1"/>
     </analysis>
 
+    <rule_group id="1">
     <rule>
       <current_analysis_id>1</current_analysis_id>
       <next_analysis_id>2</next_analysis_id>
       <action>NOTHING</action>
     </rule>
+    </rule_group>
+   
+    <rule_group id="2"> 
     <rule>
       <current_analysis_id>2</current_analysis_id>
       <next_analysis_id>3</next_analysis_id>
       <action>COPY_ID_FILE</action>
     </rule>
+    </rule_group>
+    <rule_group id="3">
     <rule>
       <current_analysis_id>3</current_analysis_id>
       <next_analysis_id>4</next_analysis_id>
       <action>NOTHING</action>
     </rule> 
+    </rule_group>
 
   </pipeline_flow_setup>
 

@@ -366,17 +366,21 @@ is to allow inputs from different database sources.
       <runnable_parameters>-formatdb 1 -result_dir $resultdir2</runnable_parameters>
     </analysis>
 
+    <rule_group id="1">
     <rule>
       <current_analysis_id>1</current_analysis_id>
       <next_analysis_id>2</next_analysis_id>
       <action>NOTHING</action>
     </rule>
 
+    </rule_group>
+    <rule_group id="2">
     <rule>
       <current_analysis_id>2</current_analysis_id>
       <next_analysis_id>3</next_analysis_id>
       <action>COPY_ID_FILE</action>
     </rule>
+    </rule_group>
   </pipeline_flow_setup>
 
   <job_setup>

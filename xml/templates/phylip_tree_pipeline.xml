@@ -469,36 +469,49 @@ both to database or files depending on one's specification.
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
       <runnable_parameters>-program DrawTree -infile_suffix con -infile_dir 	$resultdir</runnable_parameters>
     </analysis>
-    <rule>
-      <current_analysis_id>1</current_analysis_id>
-     <next_analysis_id>2</next_analysis_id>
-      <action>NOTHING</action>
-    </rule>
-    <rule>
-      <current_analysis_id>2</current_analysis_id>
-     <next_analysis_id>3</next_analysis_id>
-      <action>COPY_ID_FILE</action>
-    </rule>
-    <rule>
-      <current_analysis_id>3</current_analysis_id>
-     <next_analysis_id>4</next_analysis_id>
-      <action>COPY_ID_FILE</action>
-    </rule>
-    <rule>
-      <current_analysis_id>4</current_analysis_id>
-     <next_analysis_id>5</next_analysis_id>
-      <action>COPY_ID_FILE</action>
-    </rule>
-    <rule>
-      <current_analysis_id>5</current_analysis_id>
-     <next_analysis_id>6</next_analysis_id>
-      <action>COPY_ID_FILE</action>
-    </rule>
-    <rule>
-      <current_analysis_id>6</current_analysis_id>
-     <next_analysis_id>7</next_analysis_id>
-      <action>COPY_ID_FILE</action>
-    </rule>
+    <rule_group id="1">
+      <rule>
+       <current_analysis_id>1</current_analysis_id>
+       <next_analysis_id>2</next_analysis_id>
+       <action>NOTHING</action>
+      </rule>
+    </rule_group>
+    <rule_group id="2">
+      <rule>
+        <current_analysis_id>2</current_analysis_id>
+        <next_analysis_id>3</next_analysis_id>
+        <action>COPY_ID_FILE</action>
+      </rule>
+    </rule_group>
+
+    <rule_group id="3">
+      <rule>
+        <current_analysis_id>3</current_analysis_id>
+        <next_analysis_id>4</next_analysis_id>
+        <action>COPY_ID_FILE</action>
+      </rule>
+    </rule_group>
+    <rule_group id="4">
+      <rule>
+        <current_analysis_id>4</current_analysis_id>
+        <next_analysis_id>5</next_analysis_id>
+        <action>COPY_ID_FILE</action>
+      </rule>
+    </rule_group>
+    <rule_group id="5">
+      <rule>
+        <current_analysis_id>5</current_analysis_id>
+        <next_analysis_id>6</next_analysis_id>
+        <action>COPY_ID_FILE</action>
+      </rule>
+    </rule_group>
+    <rule_group id="6">
+      <rule>
+        <current_analysis_id>6</current_analysis_id>
+        <next_analysis_id>7</next_analysis_id>
+        <action>COPY_ID_FILE</action>
+      </rule>
+    </rule_group>
 
   </pipeline_flow_setup>
 
