@@ -18,25 +18,64 @@ sub _initialize {
     $threshold && $self->threshold($threshold);
 }
 
+
+=head2 datatypes
+
+  Title   : datatypes
+  Usage   : $self->datatypes()
+  Function: specifies the datatype expected by this module 
+  Returns : the hash reference of of datatypes.
+  Args    : 
+
+=cut
+
 sub datatypes {
     my ($self) = @_;
     my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqFeatureI',
                                           '-name'=>'sequence',
-                                          '-reftype'=>'ARRAY');
+                                          '-reftype'=>'HASH');
 
     my %dts;
     $dts{input} = $dt;
     return %dts;
 }
 
+
+=head2 run 
+
+  Title   : run 
+  Usage   : $self->run($input)
+  Function: run the filter 
+  Returns : the hash reference of filtered objects.
+  Args    : A hash reference of inputs objects 
+
+=cut
+
 sub run {
-    my ($self,@output) = @_;
+    my ($self,$input) = @_;
 
-    #dummy for now, just return sub set. to be replaced with jerm's filter logic
-    $#output > 0 || return;
-
-    return $self->_select_hits(@output);
+    (ref($input) eq "HASH") || $self->throw("Expecting a hash reference");
+    foreach my $key(keys %{$input}){
+      if (ref($input->{$key}) eq "ARRAY"){
+        $input->{$key} = $self->_select_hits(@{$input->{$key}});
+      }
+      else {
+        $input->{$key} =  $self->_select_hits($input->{$key});
+      }
+    }
+      
+    return $input;
 }
+
+=head2 _set_coverage 
+
+  Title   : _set_coverage 
+  Usage   : $self->_set_coverage(@hits)
+  Function: run the filter
+  Returns : the hash reference of filtered objects.
+  Args    : A hash reference of inputs objects
+
+=cut
 
 sub _set_coverage {
     my ($self,@hits) = @_;
