@@ -1,0 +1,128 @@
+<!--
+Organization of this file
+
+<pipeline_setup>
+  <database_setup>
+  <iohandler_setup>
+  <pipeline_flow_setup>
+  <job_setup>(optional)
+</pipeline_setup>
+
+<database_setup>
+This specifies the databases that the pipeline connects to and the
+adaptor modules that intefaces with them.
+
+<iohandler_setup>
+This specifies the method calls that will be used by the pipeline
+to access the databases. These methods are contained in the modules
+specified by the database setup section above.
+
+<pipeline_flow_setup>
+This specifies the analysis and rules of the pipeline. Analysis
+refer to the runnables that will be used in this pipeline while the
+rules specify the order in which these analysis are to be run, including
+any specific pre-processing actions that are to be carried out.
+
+<job_setup>
+This is an optional part that allows specific inputs to be inserted.
+A much easier method would be to use the input_create option which
+takes in an iohandler that returns an array of ids and setup up the input and job
+tables. 
+================================================================
+Created: 29 Aug 2002
+Contact:
+FuguTeam
+  fugui@fugu-sg.org
+bioperl-pipeline Mailing List
+  bioperl-pipeline@bioperl.org
+
+Log:
+29 Aug 2002
+  Schema to unify the previous 3 separate dtds.(shawn)
+
+-->
+
+
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE pipeline_setup [
+ <!ELEMENT pipeline_setup (database_setup,iohandler_setup,pipeline_flow_setup,job_setup?)>
+
+   <!-- Database Setup -->
+   <!ELEMENT database_setup (dbadaptor*,streamadaptor*)>
+    <!ELEMENT dbadaptor (dbname, driver, host, user, password, module)>
+     <!ATTLIST dbadaptor id CDATA #REQUIRED>
+     <!ELEMENT dbname (#PCDATA)>
+     <!ELEMENT driver (#PCDATA)>
+     <!ELEMENT host (#PCDATA)>
+     <!ELEMENT user (#PCDATA)>
+     <!ELEMENT password (#PCDATA)>
+     <!ELEMENT module (#PCDATA)>
+
+   <!ELEMENT streamadaptor (module)>
+     <!ATTLIST streamadaptor id CDATA #REQUIRED>
+
+   <!-- IOHandler Setup -->
+   <!ELEMENT iohandler_setup (iohandler+)>
+     <!ELEMENT iohandler (adaptor_id, iohandler_type,adaptor_type, method+)>
+      <!ATTLIST iohandler id CDATA #REQUIRED>
+
+      <!ELEMENT adaptor_id (#PCDATA)>
+      <!ELEMENT iohandler_type (#PCDATA)>
+      <!ELEMENT adaptor_type (#PCDATA)>
+
+      <!ELEMENT method (name,rank,argument*)>
+        <!ELEMENT name (#PCDATA)>
+        <!ELEMENT rank (#PCDATA)>
+
+        <!ELEMENT argument (tag?, value,rank,type)>
+          <!ELEMENT rank (#PCDATA)>
+          <!ELEMENT value (#PCDATA)>
+          <!ELEMENT tag (#PCDATA)>
+          <!ELEMENT type (#PCDATA)>
+
+    <!-- Pipeline flow setup -->
+   <!ELEMENT pipeline_flow_setup (analysis+, rule*, node_group*)>
+
+    <!ELEMENT analysis (logic_name,runnable,output_iohandler_id,input_iohandler_mapping?,create_input_setup?,new_input_iohandler_id?,program?,program_file?,db?,db_file?,parameters?,node_group_id?)>
+      <!ATTLIST analysis id CDATA #REQUIRED>
+      <!ELEMENT logic_name(#PCDATA)>
+      <!ELEMENT runnable (#PCDATA)>
+      <!ELEMENT output_iohandler_id (#PCDATA)>
+      <!ELEMENT input_iohandler_id (#PCDATA)>
+      <!ELEMENT create_input_setup (#PCDATA)>
+      <!ELEMENT new_input_iohandler_id (#PCDATA)>
+      <!ELEMENT program (#PCDATA)>
+      <!ELEMENT program_file (#PCDATA)>
+      <!ELEMENT db (#PCDATA)>
+      <!ELEMENT dbfile (#PCDATA)>
+      <!ELEMENT parameters (#PCDATA)>
+      <!ELEMENT nodegroup_id (#PCDATA)>
+
+    <!ELEMENT rule (current_analysis_id, next_analysis_id, action)>
+     <!ELEMENT current_analysis_id (#PCDATA)>
+     <!ELEMENT next_analysis_id (#PCDATA)>
+     <!ELEMENT action (#PCDATA)>
+
+    <!ELEMENT node_group (name, description, node+)>
+     <!ELEMENT name (#PCDATA)>
+     <!ELEMENT description (#PCDATA)>
+     <!ATTLIST node_group id CDATA #REQUIRED>
+     <!ELEMENT node EMPTY>
+      <!ATTLIST node name CDATA #REQUIRED>
+
+    <!-- Job setup (Optional) -->
+    <!ELEMENT job_setup (job+, fixed_input+)>
+     <!ELEMENT job (process_id, analysis_id, queue_id, retry_count, fixed_input+)>
+      <!ATTLIST job id CDATA #REQUIRED>
+      <!ELEMENT analyis_id (#PCDATA)>
+      <!ELEMENT process_id (#PCDATA)>
+      <!ELEMENT queue_id (#PCDATA)>
+      <!ELEMENT retry_count (#PCDATA)>
+
+      <!ELEMENT fixed_input (name, input_iohandler_id)>
+        <!ELEMENT name (#PCDATA)>
+        <!ELEMENT input_iohandler_id (#PCDATA)>
+
+
+]>
+
