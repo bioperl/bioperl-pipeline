@@ -84,6 +84,8 @@ my $db = Bio::Pipeline::SQL::DBAdaptor->new(
     -pass   => $DBPASS,
 );
 
+$QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
+
 my $ruleAdaptor = $db->get_RuleAdaptor;
 my $jobAdaptor  = $db->get_JobAdaptor;
 my $inputAdaptor  = $db->get_InputAdaptor;
