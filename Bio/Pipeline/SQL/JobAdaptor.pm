@@ -204,6 +204,17 @@ sub fetch_jobs{
      # getting the inputs
       my @inputs= $self->db->get_InputAdaptor->fetch_inputs_by_jobID($job_id);
 
+      # gettting the outputs if any
+      my $query1 = "SELECT output_name
+              FROM output
+              WHERE job_id = $job_id";
+      my $sth1 = $self->prepare($query1);
+      $sth1->execute;
+      my @outputs;
+      while (my ($output_id) = $sth1->fetchrow_array){
+         push (@outputs,$output_id);
+      }
+
       my $job = Bio::Pipeline::Job->new
        (
        '-dbobj'       => $self->db,
@@ -219,6 +230,7 @@ sub fetch_jobs{
        '-retry_count' => $retry_count,
        '-stage'       => $stage,
        '-status'      => $status,
+       '-output_ids'   => \@outputs
       );
       push (@jobs,$job);
     }
