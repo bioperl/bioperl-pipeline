@@ -25,7 +25,7 @@ sub new {
 
 sub run {
     my ($self,$contig) = @_;
-    $self->throw("Not an Ensembl Contig") unless $contig->isa("Bio::EnsEMBL::RawContig");
+    $self->throw("Not an Ensembl Contig") unless ($contig->isa("Bio::EnsEMBL::RawContig") || $contig->isa("Bio::EnsEMBL::Slice"));
     return $contig->get_repeatmasked_seq;
 }
 1;
