@@ -248,7 +248,7 @@ sub fetch_input {
         #$obj = $obj->$tmp1(@args);
     }
     #destroy handle only if its a dbhandle
-    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
+#    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
 
   return $obj;
 }
