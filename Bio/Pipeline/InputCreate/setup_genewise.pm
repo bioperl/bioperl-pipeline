@@ -22,7 +22,12 @@ Bio::Pipeline::Input::setup_genewise
 
 =head1 DESCRIPTION
 
-The input/output object for reading input and writing output.
+This module setsup genewise jobs. It is really meant to work with ensembl
+objects for it takes in DnaPepAlignFeatures, group them by the hseqname and
+creates one genewise job per hit. Each job will consist of two inputs, a target
+dna and a peptide query. The target dna is a slice and its defined as the
+range of the peptide hit + padding on either side.
+  
 
 =head1 FEEDBACK
 
@@ -69,16 +74,16 @@ sub _initialize {
     my ($self,@args) = @_;
     $self->SUPER::_initialize(@args);
 
-    my ($contig_ioh,$protein_ioh,$dh_ioh,$padding) = $self->_rearrange([qw(CONTIG_IOH PROTEIN_IOH DATA_HANDLER_ID PADDING)],@args);
+    my ($slice_ioh,$protein_ioh,$dh_name,$padding) = $self->_rearrange([qw(SLICE_IOH PROTEIN_IOH DYN_ARG_DATAHANDLER_NAME PADDING)],@args);
 
-    $contig_ioh || $self->throw("Need an iohandler for the contig");
-    $self->contig_ioh($contig_ioh);
+    $slice_ioh || $self->throw("Need an iohandler for the slice");
+    $self->slice_ioh($slice_ioh);
 
     $protein_ioh || $self->throw("Need an iohandler for the protein");
     $self->protein_ioh($protein_ioh);
 
-    $dh_ioh || $self->throw("Need an datahandler id for fetch_contig_start_end method");
-    $self->dhid($dh_ioh);
+    $dh_name || $self->throw("Need an datahandler id for fetch_contig_start_end method");
+    $self->dhid($dh_name);
 
     $padding = $padding || 1000;
     $self->padding($padding);
@@ -114,12 +119,19 @@ sub padding{
 
 =cut
 
-sub contig_ioh {
+sub slice_ioh {
     my ($self,$arg) = @_;
     if($arg){
-        $self->{'_contig_ioh'} = $arg;
+        $self->{'_slice_ioh'} = $arg;
     }
-    return $self->{'_contig_ioh'};
+    return $self->{'_slice_ioh'};
+}
+sub genewise_ioh {
+    my ($self,$arg) = @_;
+    if($arg){
+        $self->{'_genewise_ioh'} = $arg;
+    }
+    return $self->{'_genewise_ioh'};
 }
 
 =head2 protein_ioh
@@ -192,63 +204,67 @@ sub datatypes {
 sub run {
     my ($self,$next_anal,$input) = @_;
 
+    my $ioh = $self->dbadaptor->get_IOHandlerAdaptor->fetch_by_dbID($self->slice_ioh);
+    my $dh_name = $self->dhid;
+IOH:    foreach my $dh($ioh->datahandlers){
+      if($dh->method eq $dh_name){
+        $self->dhid($dh->dbID);
+         last IOH;
+      }
+    }
+    my @gw_ioh = @{$next_anal->iohandler};
+
     (ref($input) eq "HASH") || $self->throw("Expecting a hash reference");
     keys %{$input} > 1 ? $self->throw("Expecting only one entry for setup_genewise"):{};
 
     my ($key) = keys %{$input};
     my @output = @{$input->{$key}};
+    my %hash;
+
+    #group the hsps by hit seqname (one gw job per hit)
+    foreach my $hsp (@output){
+      push @{$hash{$hsp->hseqname}},$hsp;
+    }
  
-    #check the first is enuff?
     $#output >= 0 || return;
     $output[0]->isa("Bio::SeqFeatureI") || $self->throw("Need a SeqFeatureI object to setup_genewise");
-    my @sub = $output[0]->sub_SeqFeature;
-    my ($first_sub)= $sub[0];
-    my $chr = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->chromosome;
-    my $contig_id = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->internal_id;
-    my ($chr_name,$chr_start,$chr_end) = $first_sub->entire_seq->db_handle->get_StaticGoldenPathAdaptor->get_chr_start_end_of_contig($first_sub->entire_seq->display_id);
-
-    my $contig_length = $first_sub->entire_seq->length;
+    my $chr_name = $output[0]->entire_seq->chr_name;
+    my $chr_start = $output[0]->entire_seq->chr_start;
+    my $slice_length = $output[0]->entire_seq->length;
     my $padding = $self->padding; 
     #shawn to fix--creating input for contig_start_end
-    foreach my $output(@output){
-        my @sub = $output->sub_SeqFeature;
-        my $contig_name  = $sub[0]->seqname;
-        my $contig_start = $output->start;
-        if ($contig_start > $padding){
-            $contig_start -= $padding;
+    foreach my $key(keys %hash){
+        my @hsp = sort {$a->start<=>$b->start}@{$hash{$key}};
+
+        my $slice_start = $hsp[0]->start;
+        if ($slice_start > $padding){
+            $slice_start -= $padding;
         }
         else {
-            $contig_start = 1;
+            $slice_start = 1;
         }
-        my $contig_end   = $output->end;
-        if ($contig_end < ($contig_length - $padding)){
-            $contig_end += $padding;
+        my $slice_end   = $hsp[$#hsp]->end;
+        if ($slice_end < ($slice_length - $padding)){
+            $slice_end += $padding;
         }
 
        #offset to change to chromosomal coordinates
-        $contig_start += $chr_start;
-        $contig_end   += $chr_start;
+        $slice_start += $chr_start;
+        $slice_end   += $chr_start;
 
-        my $protein_id   = $sub[0]->hseqname;
-        my $strand       = $output->strand;
+        my $protein_id   = $hsp[0]->hseqname;
+        my $strand       = $hsp[0]->strand;
         
         my $input1 = Bio::Pipeline::Input->new(-name=>$protein_id,-tag=>"query_pep",-input_handler=>$self->protein_ioh);
 
         my @arg;
-        my $arg = Bio::Pipeline::Argument->new(-rank=>1,-value=>$chr,-dhid=>$self->dhid,-type=>"SCALAR");
+        my $arg = Bio::Pipeline::Argument->new(-rank=>1,-value=>$slice_start,-dhid=>$self->dhid,-type=>"SCALAR");
         push @arg, $arg;
-        $arg = Bio::Pipeline::Argument->new(-rank=>2,-value=>$contig_start,-dhid=>$self->dhid,-type=>"SCALAR");
-        push @arg, $arg;
-        $arg = Bio::Pipeline::Argument->new(-rank=>3,-value=>$contig_end,-dhid=>$self->dhid,-type=>"SCALAR");
+        $arg = Bio::Pipeline::Argument->new(-rank=>2,-value=>$slice_end,-dhid=>$self->dhid,-type=>"SCALAR");
         push @arg, $arg;
 
-        my $cigar_line = "$strand,$contig_start-$contig_end"; 
-        my $input2 = Bio::Pipeline::Input->new(-name=>$contig_name,-tag=>"target_dna",-input_handler=>$self->contig_ioh,-dynamic_arguments=>\@arg);
-        my $input3 = Bio::Pipeline::Input->new(-name=>$cigar_line,-tag=> "cigar");
-        my $input4 = Bio::Pipeline::Input->new(-name=>$contig_id,-tag=> "contig_id");
-
-
-        my $job = $self->create_job($next_anal,[$input1,$input2,$input3,$input4]);
+        my $input2 = Bio::Pipeline::Input->new(-name=>$chr_name,-tag=>"target_dna",-input_handler=>$self->slice_ioh,-dynamic_arguments=>\@arg);
+        my $job = $self->create_job($next_anal,[$input1,$input2]);
 
         $self->dbadaptor->get_JobAdaptor->store($job);
         

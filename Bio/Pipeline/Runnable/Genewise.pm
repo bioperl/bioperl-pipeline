@@ -96,22 +96,6 @@ sub datatypes {
     return %dt;
 }
 
-sub cigar {
-    my ($self,$value) = @_;
-    if($value){
-        $self->{'_cigar'} = $value;
-    }
-    return $self->{'_cigar'};
-}
-
-sub contig_id {
-    my ($self,$value) = @_;
-    if($value){
-        $self->{'_contig_id'} = $value;
-    }
-    return $self->{'_contig_id'};
-}
-
 sub query_pep {
     my ($self, $seq) = @_;
     if ($seq)
@@ -167,41 +151,11 @@ sub run {
     eval {
      @genes = $factory->predict_genes($seq1, $seq2);
     };
-    @genes = $self->_map_genes(@genes);
 
     $self->output(\@genes);
     return \@genes;
 }
 
-
-sub _map_genes {
-    my ($self,@genes) = @_;
-    $self->cigar || return @genes;
-
-    my $str = $self->cigar;
-    my ($strand,$coord) = split(',',$str);
-    my ($start,$end)    = split('-',$coord);
-    my $match1 = Bio::Location::Simple->new ( -start => 1, -end => ($end-$start+1), -strand=>$strand );
-    my $match2 = Bio::Location::Simple->new ( -start => $start, -end => $end, -strand=>$strand );
-    my $pair = Bio::Coordinate::Pair->new(-in => $match1, -out => $match2);
-
-    foreach my $g(@genes){
-      $self->contig_id && $g->add_tag_value('contig_id'=>$self->contig_id);
-      $g->location($pair->map($g->location)->each_location);
-      foreach my $t($g->transcripts){
-        $t->location($pair->map($t->location)->each_location);
-        foreach my $e($t->exons){
-          $e->location($pair->map($e->location)->each_location);
-          my ($support_feature) = $e->each_tag_value('supporting_feature');
-          $support_feature->location($pair->map($support_feature->location)->each_location);
-        }
-      }
-   }
-    return @genes;
-}
-
-        
-  
 =head2 output
 
 Title   :   output
