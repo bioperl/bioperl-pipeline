@@ -325,7 +325,7 @@ is to allow inputs from different database sources.
       <program>blastall</program>
       <program_file>/usr/local/bin/blastall</program_file>
       <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>
-      <runnable_parameters>-formatdb 1 -infile_dir t/data/blast_dir -result_dir t/data/blast_result </runnable_parameters>
+      <runnable_parameters>-formatdb 1 -result_dir t/data/blast_result </runnable_parameters>
     </analysis>
 
     <rule>
