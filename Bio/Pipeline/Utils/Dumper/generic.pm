@@ -123,7 +123,13 @@ sub dump {
     my ($io,$method) = $self->_get_io_module($obj[0],$self->format);
     if(ref($io) eq "GLOB"){#just a file handle
       foreach my $obj(@obj){
-        print $io $obj->$method();
+        print $io $obj->$method."\n";
+        #print sub features if exist
+        if($obj->can('sub_SeqFeature') && $obj->sub_SeqFeature){
+            foreach my $sub($obj->sub_SeqFeature){
+                print $io $sub->$method."\n";
+            }
+        }
       }
     }
     else {
