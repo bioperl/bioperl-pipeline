@@ -13,7 +13,7 @@
 
 =head1 NAME
 
-Bio::Pipeline::DataType - small object storing job status tags
+Bio::Pipeline::DataType 
 
 =head1 SYNOPSIS
 
@@ -30,15 +30,37 @@ Bio::Pipeline::DataType - small object storing job status tags
 
 =head1 DESCRIPTION
 
-Stores the status of a job at a certain time
+Object to represent a class of objects, used by Runnables for
+matching inputs to get/sets
 
-=head1 CONTACT
+=head1 FEEDBACK
 
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html     - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - FuguI Team
+
+Email fugui@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object
-methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
 
@@ -53,6 +75,22 @@ use Bio::Root::Root;
 
 @ISA = qw(Bio::Root::Root);
 
+=head1 Constructors
+
+=head2 new
+
+  Title   : new
+  Usage   : my $obj    = new Bio::Pipeline::DataType
+                                            ('-objecttype'=> "Bio::SeqI",
+                                             '-name'      => "-sequence",
+                                             '-reftype'   => "ARRAY",
+                                             );
+  Function: this constructor should only be used in the IO_adaptor or IO objects.
+            generates a new Bio::Pipeline::DataHandler
+  Returns : L<Bio::Pipeline::DataType>
+  Args    :
+
+=cut
 
 sub new {
   my($class,@args) = @_;
@@ -81,6 +119,7 @@ sub new {
   Args    : an object 
 
 =cut
+
 sub create_from_input {
   my $dummy = shift;
   my $input = shift;
@@ -124,6 +163,7 @@ sub create_from_input {
   Args    : Bio::Pipeline::DataType 
 
 =cut
+
 sub match {
     my ($self,$data_type) = @_;
     $data_type->isa("Bio::Pipeline::DataType") || $self->throw("Need a Bio::Pipeline::DataType to check");

@@ -10,18 +10,20 @@
 #
 
 =head1 NAME
-Bio::Pipeline::Filter 
-Filter object used for filtering various features.
-Part of DataMonger Object.
 
+Bio::Pipeline::Filter 
 
 =head1 SYNOPSIS
+
+  use Bio::Pipeline::Filter;
+  my $filter = Bio::Pipeline::Filter->new('-module'=>$module,'-rank'=>$rank);
+  my @filtered = $filter->run(@inputs)
 
 =head1 DESCRIPTION
 
 Filter object plugged into DataMonger to be carried out between analysis.
 List of filter modules may be found in Bio::Pipeline::Filter::*
-
+Filters do not modify the objects, only returns a subset of the objects
 
 =head1 FEEDBACK
 
@@ -31,8 +33,8 @@ User feedback is an integral part of the evolution of this and other
 Bioperl modules. Send your comments and suggestions preferably to one
 of the Bioperl mailing lists.  Your participation is much appreciated.
 
-  bioperl-l@bioperl.org          - General discussion
-  http://bio.perl.org/MailList.html             - About the mailing lists
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html     - About the mailing lists
 
 =head2 Reporting Bugs
 
@@ -41,7 +43,7 @@ the bugs and their resolution.  Bug reports can be submitted via email
 or the web:
 
   bioperl-bugs@bio.perl.org
-  http://bio.perl.org/bioperl-bugs/
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR - Shawn Hoon
 
@@ -54,6 +56,7 @@ ds are usually preceded with a _
 
 =cut
 
+# Let the code begin...
 
 package Bio::Pipeline::Filter;
 use vars qw(@ISA);

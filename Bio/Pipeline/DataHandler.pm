@@ -7,20 +7,22 @@
 #
 
 =head1 NAME
-Bio::Pipeline::DataHandler 
 
+Bio::Pipeline::DataHandler 
 
 =head1 SYNOPSIS
 
-This object is used by the IO adaptors to fetch data.
-
-my $data_adaptor = Bio::Pipeline::DataHandler->new(-d
-
+  my $data_handler = Bio::Pipeline::DataHandler->new(-dbid=>1,
+                                                   -method=>"fetch_by_dbID,
+                                                   -argument=>\@arguments,
+                                                   -rank=>1);
 
 =head1 DESCRIPTION 
 
 DataHandlers specifiy the adaptor methods and the correspoding 
 arguments needed by a IO to fetch or store output. 
+The rank represents the order in which they are called by IOHandler methods
+fetch_input, write_output
 
 =head1 FEEDBACK
 
@@ -30,8 +32,8 @@ User feedback is an integral part of the evolution of this and other
 Bioperl modules. Send your comments and suggestions preferably to one
 of the Bioperl mailing lists.  Your participation is much appreciated.
 
-  bioperl-l@bioperl.org          - General discussion
-  http://bio.perl.org/MailList.html             - About the mailing lists
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html     - About the mailing lists
 
 =head2 Reporting Bugs
 
@@ -40,11 +42,11 @@ the bugs and their resolution.  Bug reports can be submitted via email
 or the web:
 
   bioperl-bugs@bio.perl.org
-  http://bio.perl.org/bioperl-bugs/
+  http://bugzilla.bioperl.org/
 
-=head1 AUTHOR 
+=head1 AUTHOR - FuguI Team
 
-Email fugui@fugu-sg.org 
+Email fugui@fugu-sg.org
 
 =head1 APPENDIX
 
@@ -52,6 +54,8 @@ The rest of the documentation details each of the object methods. Internal metho
 ds are usually preceded with a _
 
 =cut
+
+# Let the code begin...
 
 package Bio::Pipeline::DataHandler;
 use vars qw(@ISA);
@@ -65,13 +69,15 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : my $io = Bio::Pipeline::DataHandler->new(
- 
+  Usage   : my $data_handler = Bio::Pipeline::DataHandler->new(-dbid=>1,
+                                                   -method=>"fetch_by_dbID,
+                                                   -argument=>\@arguments,
+                                                   -rank=>1);
   Function: this constructor should only be used in the IO_adaptor or IO objects.
             generates a new Bio::Pipeline::DataHandler
   Returns : a new DataHandler object 
   Args    : 
-  
+
 =cut
 
 sub new {
@@ -107,7 +113,7 @@ These methods let you get at and set the member variables
   Args     : 
 
 =cut
- 
+
 sub dbID {
     my ($self) = @_;
     return $self->{'_dbid'};
@@ -122,7 +128,7 @@ sub dbID {
   Args     : 
 
 =cut
- 
+
 sub method{
     my ($self) = @_;
     return $self->{'_method'};
@@ -137,12 +143,11 @@ sub method{
   Args     : 
 
 =cut
- 
+
 sub argument{
     my ($self) = @_;
     return $self->{'_argument'};
 }
-
 
 =head2 rank
 
@@ -153,7 +158,7 @@ sub argument{
   Args     : 
 
 =cut
- 
+
 sub rank{
     my ($self) = @_;
     return $self->{'_rank'};
