@@ -250,7 +250,7 @@ sub method {
     if (defined($arg)) {
 	    $self->{'_method'} = $arg;
     }
-    return @{$self->{'_method'}};
+    return $self->{'_method'};
 }
 
 
