@@ -1,10 +1,67 @@
-##############################################################
-#Xml2Db.pl
-#This script is used to load the pipeline up from the 
-#pipeline_setup.xml
-#You will need to have XML::SimpleObject installed for this script
-#to work.
-##############################################################
+#
+# BioPerl module for Bio::Pipeline::XMLImporter
+#
+# Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+#
+#
+# You may distribute this module under the same terms as perl itself
+#
+# POD documentation - main docs before the code
+#
+
+=head1 NAME
+
+Bio::Pipeline::XMLImporter
+
+=head1 SYNOPSIS
+
+use Bio::Pipeline::XMLImporter;
+
+my $importer = Bio::Pipeline::XMLImporter->new (
+                                                -dbhost=>$DBHOST,
+                                                -dbname=>$DBNAME,
+                                                -dbuser=>$DBUSER,
+                                                -dbpass=>$DBPASS,
+                                                -schema=>$SCHEMA,
+                                                -xml   =>$XML); 
+
+my $loaded = $importer->run($XMLFORCE);
+
+=head1 DESCRIPTION
+
+Module for importing pipeline configuration in xml to biopipe
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - Shawn Hoon
+
+Email shawnh@fugu-sg.org
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
+
+=cut
+
 
 package Bio::Pipeline::XMLImporter;
 
@@ -33,23 +90,50 @@ use vars qw(@ISA);
 use Bio::Root::Root;
 @ISA = qw(Bio::Root::Root);
 
+=head2 new
+
+  Title   : new
+  Usage   :my $importer = Bio::Pipeline::XMLImporter->new (
+                                                -dbhost=>$DBHOST,
+                                                -dbname=>$DBNAME,
+                                                -dbuser=>$DBUSER,
+                                                -dbpass=>$DBPASS,
+                                                -schema=>$SCHEMA,
+                                                -xml   =>$XML);  
+  Function: constructor for XMLImporter object 
+  Returns : a new XMLImporter object
+  Args    : db parameters
+	    xml the xml template file
+
+=cut
+
 sub new{
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
     
-    $self->_autoload_methods([qw(dbhost dbname dbuser dbpass schema datasetup dba)]);
+    $self->_autoload_methods([qw(dbhost dbname dbuser dbpass schema xml dba)]);
     
-    my ($dbhost, $dbname, $dbuser, $dbpass, $schema, $datasetup) = 
-        $self->_rearrange([qw(DBHOST DBNAME DBUSER DBPASS SCHEMA DATASETUP)], @args);
+    my ($dbhost, $dbname, $dbuser, $dbpass, $schema, $xml) = 
+        $self->_rearrange([qw(DBHOST DBNAME DBUSER DBPASS SCHEMA XML)], @args);
     $self->dbhost($dbhost);
     $self->dbname($dbname);
     $self->dbuser($dbuser);
     $self->dbpass($dbpass);
     $self->schema($schema);
-    $self->datasetup($datasetup);
+    $self->xml($xml);
 
     return $self;
 }
+
+=head2 run
+
+  Title   : run
+  Usage   : $self->run();
+  Function: load the xml template up 
+  Returns : 1 if successful
+  Args    : $FORCE 1/0 whether to prompt for dropping database
+
+=cut
 
 sub run{
     my ($self, $FORCE) = @_;
@@ -58,7 +142,7 @@ sub run{
     my $DBUSER = $self->dbuser;
     my $DBPASS = $self->dbpass;
     my $SCHEMA = $self->schema;
-    my $DATASETUP = $self->datasetup;
+    my $XML    = $self->xml;
     my $dba;
     eval{
         $dba = Bio::Pipeline::SQL::DBAdaptor->new(
@@ -86,7 +170,7 @@ sub run{
     if($db_exist){
         my $create; 
         if(!$FORCE){
-            $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $DATASETUP.\nWould you like to continue? y/n","n");
+            $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $XML.\nWould you like to continue? y/n","n");
         }else {
             $create="y";
         }
@@ -95,13 +179,13 @@ sub run{
             system("mysqladmin $str -f drop $DBNAME > /dev/null ");
         }else {
             print STDERR "Please select another database before running this script. Good bye.\n";
-            exit(1);
+            return 0;
         }
     }
 
     if (!-e $SCHEMA){
         warn("$SCHEMA doesn't seem to exist. Please use the -schema option to specify where the biopipeline schema is");
-        exit(1);
+        return 0;
     }else {
         print STDERR "Creating $DBNAME\n   ";
         system("mysqladmin $str -f create $DBNAME");
@@ -118,9 +202,9 @@ sub run{
 ##############################################
     my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
 
-    print "Reading Data_setup xml   : $DATASETUP\n";
+    print "Reading Data_setup xml   : $XML\n";
 
-my $xso1 = XML::SimpleObject->new( $parser->parsefile($DATASETUP) );
+my $xso1 = XML::SimpleObject->new( $parser->parsefile($XML) );
 
 my @iohandler_objs;
 my $method_id = 1;
@@ -671,6 +755,8 @@ foreach my $rule (@rule_objs) {
 }
 
 print STDERR "Loading of pipeline $DBNAME completed\n";
+
+return 1;
 
 } # End of run
 ####################################################################
