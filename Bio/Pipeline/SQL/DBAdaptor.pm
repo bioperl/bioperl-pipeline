@@ -1,62 +1,68 @@
+# BioPerl module for Bio::Pipeline::SQL::DBAdaptor
 #
-# Object for storing the connection to the analysis database
-#
-# Written by Simon Potter <scp@sanger.ac.uk>
-# Based on Michele Clamp's Bio::Pipeline::SQL::Obj
-#
-# Copyright GRL/EBI
 #
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
 
-
-=pod
-
 =head1 NAME
 
-Bio::Pipeline::SQL::DBAdaptor -
-adapter class for EnsEMBL Pipeline DB
+Bio::Pipeline::SQL::DBAdaptor
 
 =head1 SYNOPSIS
 
-    my $dbobj = new Bio::Pipeline::SQL::DBAdaptor;
-    $dbobj->do_funky_db_stuff;
+  $DBAdaptor = Bio::Pipeline::SQL::DBAdaptor->new(-dbname =>"my_db",
+                                                  -user   =>"root",
+                                                  -host   =>"localhost",
+                                                  -driver =>"mysql"):
+  my $jobadaptor - $DBAdaptor->get_JobAdaptor;
+  my $ioadaptor - $DBAdaptor->get_IOHandlerAdaptor;
 
 =head1 DESCRIPTION
 
-Interface for the connection to the analysis database
+The object representing the pipeline database. From this object,
+you are able to access various pipeline objects via the adaptor
+objects which you can retrieve via a get_XXXAdaptor call.
 
-=head1 CONTACT
+=head1 FEEDBACK
 
-Describe contact details here
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://www.biopipe.org
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - Shawn Hoon
+
+Email shawnh@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods.
-Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
-
 
 # Let the code begin...
 
 package Bio::Pipeline::SQL::DBAdaptor;
 
 
-use vars qw(@ISA);
+use vars qw(@ISA %ADAPTORS $AUTOLOAD @ALLOWED);
 use strict;
 use DBI;
-
-use Bio::Pipeline::SQL::IOHandlerAdaptor;
-use Bio::Pipeline::SQL::RuleAdaptor;
-use Bio::Pipeline::SQL::BaseAdaptor;
-use Bio::Pipeline::SQL::AnalysisAdaptor;
-use Bio::Pipeline::SQL::JobAdaptor;
-use Bio::Pipeline::SQL::NodeAdaptor;
-use Bio::Pipeline::SQL::NodeGroupAdaptor;
-use Bio::Pipeline::SQL::DataMongerAdaptor;
-use Bio::Pipeline::SQL::ConverterAdaptor;
 
 use Bio::Root::Root;
 
@@ -64,6 +70,40 @@ use Bio::Root::Root;
 
 @ISA = qw(Bio::Root::Root);
 
+BEGIN {
+
+  @ALLOWED  = qw (  IOHandlerAdaptor
+                    RuleAdaptor
+                    AnalysisAdaptor
+                    JobAdaptor
+                    NodeAdaptor
+                    InputAdaptor
+                    NodeGroupAdaptor
+                    DataMongerAdaptor
+                    ConverterAdaptor);
+
+  foreach my $adpt (@ALLOWED){
+    $ADAPTORS{$adpt}=1;
+  }
+}
+
+=head2 new 
+
+  Title   : new 
+  Usage   :  $DBAdaptor = Bio::Pipeline::SQL::DBAdaptor->new(-dbname =>"my_db",
+                                                  -user   =>"root",
+                                                  -host   =>"localhost",
+                                                  -driver =>"mysql"):
+  Function: Constructor 
+  Returns : L<Bio::Pipeline::SQL::DBAdaptor> 
+  Args    : -dbname: the database name 
+            -user  : the user name
+            -host  : the hostname
+            -driver : the DBI driver
+            -port   : the port of the database
+            -pass   : the password
+
+=cut
 
 sub new {
   my($pkg, @args) = @_;
@@ -117,6 +157,16 @@ sub new {
   return $self; # success - we hope!
 }
 
+=head2 dbname
+
+ Title   : dbname
+ Function: get/set for dbname
+ Example :
+ Returns : a string 
+ Args    : a string specifying the dbname 
+
+=cut
+
 sub dbname {
   my ($self, $arg ) = @_;
   ( defined $arg ) &&
@@ -124,11 +174,31 @@ sub dbname {
   $self->{_dbname};
 }
 
+=head2 port
+
+ Title   : port
+ Function: get/set for port
+ Example :
+ Returns : a string
+ Args    : a string specifying the port number
+
+=cut
+
 sub port {
     my ($self,$port) = @_;
     (defined $port ) && ($self->{_port} = $port);
     return $self->{_port};
 }
+
+=head2 username
+
+ Title   : username
+ Function: get/set for username
+ Example :
+ Returns : a string
+ Args    : a string specifying the username
+
+=cut
 
 sub username {
   my ($self, $arg ) = @_;
@@ -136,12 +206,33 @@ sub username {
     ( $self->{_username} = $arg );
   $self->{_username};
 }
+
+=head2 password
+
+ Title   : password
+ Function: get/set for password
+ Example :
+ Returns : a string
+ Args    : a string specifying the password
+
+=cut
+
 sub password{
   my ($self, $arg ) = @_;
   ( defined $arg ) &&
     ( $self->{_password} = $arg );
   $self->{_password};
 }
+
+=head2 host
+
+ Title   : host
+ Function: get/set for host
+ Example :
+ Returns : a string
+ Args    : a string specifying the host
+
+=cut
 
 sub host {
   my ($self, $arg ) = @_;
@@ -159,7 +250,6 @@ sub host {
  Returns : A DBI statement handle object
  Args    : a SQL string
 
-
 =cut
 
 sub prepare {
@@ -174,20 +264,6 @@ sub prepare {
    return $self->_db_handle->prepare($string);
 }
 
-=head2 prepare_execute
-
-
-=cut
-
-sub prepare_execute{
-	my ($self, $query) = @_;
-	my $sth = $self->prepare($query);
-	$sth->execute;
-	if($@){
-		$self->throw("Attempt to '$query', but failed. \n$@");
-	}
-}
-
 =head2 get_ConverterAdaptor
 
  Title   : get_ConverterAdaptor
@@ -199,18 +275,6 @@ sub prepare_execute{
 
 =cut
 
-
-sub get_ConverterAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_ConverterAdaptor} ) {
-    $self->{_ConverterAdaptor} = Bio::Pipeline::SQL::ConverterAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_ConverterAdaptor};
-}
-
 =head2 get_JobAdaptor
 
  Title   : get_JobAdaptor
@@ -221,18 +285,6 @@ sub get_ConverterAdaptor {
  Args    : nothing
 
 =cut
-
-
-sub get_JobAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_JobAdaptor} ) {
-    $self->{_JobAdaptor} = Bio::Pipeline::SQL::JobAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_JobAdaptor};
-}
 
 =head2 get_IOHandlerAdaptor
 
@@ -246,18 +298,6 @@ sub get_JobAdaptor {
 
 =cut
 
-sub get_IOHandlerAdaptor{
-  my ($self) = @_;
-
-  if( ! defined $self->{_IOHandlerAdaptor} ) {
-    $self->{_IOHandlerAdaptor} = Bio::Pipeline::SQL::IOHandlerAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_IOHandlerAdaptor};
-}
-
-
 =head2 get_InputAdaptor
 
  Title   : get_InputAdaptor
@@ -268,17 +308,6 @@ sub get_IOHandlerAdaptor{
  Args    : nothing
 
 =cut
-
-sub get_InputAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_InputAdaptor} ) {
-    require Bio::Pipeline::SQL::InputAdaptor;
-    $self->{_InputAdaptor} = Bio::Pipeline::SQL::InputAdaptor->new
-      ( $self );
-  }
-  return $self->{_InputAdaptor};
-}
 
 =head2 get_AnalysisAdaptor
 
@@ -291,19 +320,6 @@ sub get_InputAdaptor {
 
 =cut
 
-sub get_AnalysisAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_AnalysisAdaptor} ) {
-    require Bio::Pipeline::SQL::AnalysisAdaptor;
-    $self->{_AnalysisAdaptor} = Bio::Pipeline::SQL::AnalysisAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_AnalysisAdaptor};
-}
-
-
 =head2 get_RuleAdaptor
 
  Title   : get_RuleAdaptor
@@ -314,17 +330,6 @@ sub get_AnalysisAdaptor {
  Args    : nothing
 
 =cut
-
-sub get_RuleAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_RuleAdaptor} ) {
-    $self->{_RuleAdaptor} = Bio::Pipeline::SQL::RuleAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_RuleAdaptor};
-}
 
 =head2 get_DataMongerAdaptor;
 
@@ -337,28 +342,8 @@ sub get_RuleAdaptor {
 
 =cut
 
-sub get_DataMongerAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_DataMongerAdaptor} ) {
-    $self->{_DataMongerAdaptor} = Bio::Pipeline::SQL::DataMongerAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_DataMongerAdaptor};
-}
-
-
-sub delete_Job {
-    my ($self,$id) = @_;
-
-    $self->warn(q/You really should use "$job->remove" :)/);
-
-    $self->get_JobAdaptor->fetch_by_dbID($id)->remove
-     or $self->warn("Can't recreate job with ID $id");
-}
-
 =head2 get_NodeAdaptor
+
  Title   : get_NodeAdaptor
  Usage   : $db->get_NodeAdaptor
  Function: The Adaptor for Node objects in this db
@@ -368,18 +353,8 @@ sub delete_Job {
 
 =cut
 
-sub get_NodeAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_NodeAdaptor} ) {
-    $self->{_NodeAdaptor} = Bio::Pipeline::SQL::NodeAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_NodeAdaptor};
-}
-
 =head2 get_NodeGroupAdaptor
+
  Title   : get_NodeGroupAdaptor
  Usage   : $db->get_NodeGroupAdaptor
  Function: The Adaptor for NodeGroup objects in this db
@@ -388,18 +363,6 @@ sub get_NodeAdaptor {
  Args    : nothing
 
 =cut
-
-sub get_NodeGroupAdaptor {
-  my ($self) = @_;
-
-  if( ! defined $self->{_NodeGroupAdaptor} ) {
-    $self->{_NodeGroupAdaptor} = Bio::Pipeline::SQL::NodeGroupAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_NodeGroupAdaptor};
-}
-
 
 =head2 _db_handle
 
@@ -474,12 +437,43 @@ sub _unlock_tables{
    %{$self->{'_lock_table_hash'}} = ();
 }
 
+=head2 get_XXXAdaptor
+
+ Title   : get_XXXAdaptor
+ Usage   : my $feat = $dba->get_SeqFeatureAdaptor->fetch_by_entity_id
+ Function: Fetches the adaptor for objects
+           Uses the AUTOLOAD function to get the adaptor
+           The available adaptors are specified in the ADAPTORS array
+           specified in the BEGIN block
+           Throws an exception if the adpator name is not found
+           the array
+ Returns : Bio::GFD::SQL::XXXAdaptor
+ Args    : nothing
+
+=cut
+
+sub AUTOLOAD {
+  my ($self) = @_;
+  my $loader = $AUTOLOAD;
+  if (($loader =~ /get_(\D+Adaptor)$/) && exists $ADAPTORS{$1}){
+    my $adaptor = $1;
+    if (! defined $self->{"_$adaptor"}){
+      $self->{"_$adaptor"} = '';
+      my $module = "Bio/Pipeline/SQL/$adaptor";
+      require "$module.pm";
+      $module =~ s/\//\::/g;
+      $self->{"_$adaptor"} = (${module}->new($self));
+    }
+    return $self->{"_$adaptor"};
+  }else{
+    $self->throw("Calling unknown method $loader");
+  }
+}
 
 =head2
+
  Title   : DESTROY
- Usage   :
- Function:
- Example :
+ Function: Disconnect from the database
  Returns :
  Args    :
 
@@ -494,21 +488,6 @@ sub DESTROY {
        $obj->{'_db_handle'}->disconnect;
        $obj->{'_db_handle'} = undef;
    }
-}
-
-=head2 _get_adaptor
-
-=cut
-
-sub _get_adaptor{
-	my ($self, $adaptor_name) = @_;
-	
-	unless( defined $self->{"_$adaptor_name"}){
-		$self->{"_$adaptor_name"} = "Bio::Pipeline::SQL::$adaptor_name"->new($self);
-	}
-
-	return $self->{"_$adaptor_name"};
-
 }
 
 1;
