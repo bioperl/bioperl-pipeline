@@ -80,6 +80,7 @@ sub new {
             DRIVER
             USER
             PASS
+            PORT
             )],@args);
     $db   || $self->throw("Database object must have a database name");
     $user || $self->throw("Database object must have a user");
@@ -104,6 +105,7 @@ sub new {
   $self->username( $user );
   $self->host( $host );
   $self->dbname( $db );
+  $self->port($port);
 
   return $self; # success - we hope!
 }
@@ -113,6 +115,12 @@ sub dbname {
   ( defined $arg ) &&
     ( $self->{_dbname} = $arg );
   $self->{_dbname};
+}
+
+sub port {
+    my ($self,$port) = @_;
+    (defined $port ) && ($self->{_port} = $port);
+    return $self->{_port};
 }
 
 sub username {
