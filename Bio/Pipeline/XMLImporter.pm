@@ -6,6 +6,8 @@
 #to work.
 ##############################################################
 
+package Bio::Pipeline::XMLImporter;
+
 use strict;
 
 use XML::Parser;
@@ -26,124 +28,99 @@ use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Filter;
 use Bio::Pipeline::Converter;
-use Getopt::Long;
-use ExtUtils::MakeMaker;
 
+use vars qw(@ISA);
+use Bio::Root::Root;
+@ISA = qw(Bio::Root::Root);
 
-use vars qw($DBHOST $DBNAME $DEBUG $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT $HELP $FORCE);
+sub new{
+    my ($class, @args) = @_;
+    my $self = $class->SUPER::new(@args);
+    
+    $self->_autoload_methods([qw(dbhost dbname dbuser dbpass schema datasetup dba)]);
+    
+    my ($dbhost, $dbname, $dbuser, $dbpass, $schema, $datasetup) = 
+        $self->_rearrange([qw(DBHOST DBNAME DBUSER DBPASS SCHEMA DATASETUP)], @args);
+    print "in new: $dbhost|$dbname\n";
+    $self->dbhost($dbhost);
+    $self->dbname($dbname);
+    $self->dbuser($dbuser);
+    $self->dbpass($dbpass);
+    $self->schema($schema);
+    $self->datasetup($datasetup);
 
-$DBHOST ||= "mysql";
-$DBNAME ||= "test_XML";
-$DBUSER ||= "root";
-$SCHEMA = $SCHEMA || "../sql/schema.sql";
-
-my $USAGE =<<END;
-******************************
-*Xml2DB.pl
-******************************
-This script configures and creates a pipeline based on xml definitions.
-
-Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
-
-Default values in ()
--dbhost host (mysql)
--dbname name of pipeline database (test_XML)
--dbuser user name (root)
--dbpass db password()
--schema The path to the bioperl-pipeline schema.
-        Needed if you want to create a new db.
-        ($SCHEMA)
--verbose For debugging
--help   This message
--p      the pipeline setup xml file (required)
-
-
-END
-
-GetOptions(
-    'dbhost=s'      => \$DBHOST,
-    'dbname=s'    => \$DBNAME,
-    'dbuser=s'    => \$DBUSER,
-    'dbpass=s'    => \$DBPASS,
-    'schema=s'    => \$SCHEMA,
-    'verbose'     => \$DEBUG,
-    'force'       => \$FORCE,
-    'p=s'         => \$DATASETUP,
-	'h'           => \$HELP
-)
-or die ($USAGE);
-
-$HELP && die($USAGE);
-$DATASETUP || die($USAGE);
-
-################################
-#Setting up the pipeline database
-################################
-
-my $dba;
-
-eval{
-  $dba = Bio::Pipeline::SQL::DBAdaptor->new(
-    -host   => $DBHOST,
-    -dbname => $DBNAME,
-    -user   => $DBUSER,
-    -pass   => $DBPASS,
-  );
-};
-
-my $db_exist;
-if(ref $dba){ #able to connect 
-    $db_exist=1;
-}
-else {
-    $db_exist=0;
+    return $self;
 }
 
-#connect string
-my $str;
-$str .= defined $DBHOST ? "-h $DBHOST " : "";
-$str .= defined $DBPASS ? "-p$DBPASS " : "";
-$str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
+sub run{
+    my ($self, $FORCE) = @_;
+    my $DBHOST = $self->dbhost;
+    my $DBNAME = $self->dbname;
+    my $DBUSER = $self->dbuser;
+    my $DBPASS = $self->dbpass;
+    my $SCHEMA = $self->schema;
+    my $DATASETUP = $self->datasetup;
+    print "DB:$DBHOST\t$DBNAME\t$DBUSER\n";
+    my $dba;
+    eval{
+        $dba = Bio::Pipeline::SQL::DBAdaptor->new(
+            -host   => $DBHOST,
+            -dbname => $DBNAME,
+            -user   => $DBUSER,
+            -pass   => $DBPASS,
+        );
+    };
+    $self->dba($dba);
+    
+    my $db_exist;
+    if(ref $dba){ #able to connect 
+        $db_exist=1;
+    }else {
+        $db_exist=0;
+    }
 
-if($db_exist){
-  my $create; 
-  if(!$FORCE){
-     $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $DATASETUP.\nWould you like to continue? y/n","n");
-  }
-  else {
-      $create="y";
-  }
-  if($create =~/^[yY]/){
-      print STDERR "Dropping Databases\n";      
-      system("mysqladmin $str -f drop $DBNAME > /dev/null ");
-   }
-  else {
-    print STDERR "Please select another database before running this script. Good bye.\n";
-    exit(1);
-  }
-}
+    #connect string
+    my $str;
+    $str .= defined $DBHOST ? "-h $DBHOST " : "";
+    $str .= defined $DBPASS ? "-p $DBPASS " : "";
+    $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
 
-if (!-e $SCHEMA){
-  warn("$SCHEMA doesn't seem to exist. Please use the -schema option to specify where the biopipeline schema is");
-  exit(1);
-}
-else {
-    print STDERR "Creating $DBNAME\n   ";
-    system("mysqladmin $str -f create $DBNAME");
-    print STDERR "Loading Schema...\n";
-    system("mysql $str $DBNAME < $SCHEMA");
-    $dba = Bio::Pipeline::SQL::DBAdaptor->new(-host   => $DBHOST,
+    if($db_exist){
+        my $create; 
+        if(!$FORCE){
+            $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $DATASETUP.\nWould you like to continue? y/n","n");
+        }else {
+            $create="y";
+        }
+        if($create =~/^[yY]/){
+            print STDERR "Dropping Databases\n";      
+            system("mysqladmin $str -f drop $DBNAME > /dev/null ");
+        }else {
+            print STDERR "Please select another database before running this script. Good bye.\n";
+            exit(1);
+        }
+    }
+
+    if (!-e $SCHEMA){
+        warn("$SCHEMA doesn't seem to exist. Please use the -schema option to specify where the biopipeline schema is");
+        exit(1);
+    }else {
+        print STDERR "Creating $DBNAME\n   ";
+        system("mysqladmin $str -f create $DBNAME");
+        print STDERR "Loading Schema...\n";
+        system("mysql $str $DBNAME < $SCHEMA");
+        $dba = Bio::Pipeline::SQL::DBAdaptor->new(-host   => $DBHOST,
                                               -dbname => $DBNAME,
                                               -user   => $DBUSER,
                                               -pass   => $DBPASS);
-}
+    }
 
 ##############################################
 #Start the Parsing and loading of the pipeline
 ##############################################
-my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
+    my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
 
-print "Reading Data_setup xml   : $DATASETUP\n";
+    print "Reading Data_setup xml   : $DATASETUP\n";
 
 my $xso1 = XML::SimpleObject->new( $parser->parsefile($DATASETUP) );
 
@@ -279,13 +256,13 @@ $iohandler_setup->children('converter') || goto PIPELINE_FLOW_SETUP;
 foreach my $converter ($iohandler_setup->children('converter')){
 #       print "".(defined($converter)?"defined":"not defined").(ref($converter))."\n";
        next unless (defined $converter);
-       next unless (ref $converter);
+       next unless ref $converter;
        my $id = &verify_attr($converter, 'id', 1);
        my $module = &verify_attr($converter, 'module');
        my @method_objs;
        foreach my $method ($converter->children('method')){
            next unless(defined $method);
-           next unless(ref($method));
+           next unless ref $method;
            my $method_id = &verify_attr($method, 'id', 1);
            my $method_name = &verify_attr($method, 'name', 1);
            my $method_rank = &verify_attr($method, 'rank', 0);
@@ -293,7 +270,7 @@ foreach my $converter ($iohandler_setup->children('converter')){
            if(defined $method->children('argument')){
            foreach my $argument ($method->children('argument')){
                next unless(defined $argument);
-               next unless(ref($argument));
+               next unless ref $argument;
                my $argument_id = &verify_attr($argument, 'id', 1);
                my $argument_tag = &verify_attr($argument, 'tag', 0);
                my $argument_value = &verify_attr($argument, 'value', 1);
@@ -399,7 +376,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
            my $input_iohandler_id = &verify($input,'iohandler','OPTIONAL','0');
 
            my $tag = &verify($input,'tag','OPTIONAL','input');
-           my $input_iohandler_obj = _get_iohandler($input_iohandler_id) if $input_iohandler_id;
+           my $input_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $input_iohandler_id) if $input_iohandler_id;
 
            push @datamonger_iohs, $input_iohandler_obj if $input_iohandler_obj;
 
@@ -411,7 +388,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          }
         }
         if ($input_present_flag) {
-          _create_initial_input_and_job($analysis_obj,@initial_input_objs); 
+          $self->_create_initial_input_and_job($analysis_obj,@initial_input_objs); 
         }
 
 
@@ -494,7 +471,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
     }
    my $nodegroup_id = $analysis->child('nodegroup_id');
    if (defined($nodegroup_id)){
-      my $node_group = _get_nodegroup($nodegroup_id->value);
+      my $node_group = $self->_get_nodegroup(\@nodegroup_objs, $nodegroup_id->value);
       if (!defined($node_group)) {
 #        print "node_group for analysis not found\n";
       }
@@ -507,13 +484,13 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
    foreach my $input_iohandler ($analysis->child('input_iohandler')) {
      if (defined($input_iohandler)){
-         my $input_iohandler_obj = _get_iohandler($input_iohandler->attribute("id"));
+         my $input_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $input_iohandler->attribute("id"));
          if(!defined($input_iohandler_obj)){
             print "input iohandler for analysis $analysis->dbID not found\n";
          } else {
             my @converter_objs;
             foreach my $converter ($input_iohandler->child('converter')) {
-              my $converter_obj = _get_converter($converter->attribute("id")); 
+              my $converter_obj = $self->_get_converter(\@pipeline_converter_objs, $converter->attribute("id")); 
               if(defined($converter_obj)){
                  $converter_obj->rank($converter->attribute("rank"));
                  push @converter_objs, $converter_obj;
@@ -529,12 +506,12 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
    }
    foreach my $output_iohandler ($analysis->child('output_iohandler')) {
      if (defined($output_iohandler)){
-         my $output_iohandler_obj = _get_iohandler($output_iohandler->attribute("id"));
+         my $output_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $output_iohandler->attribute("id"));
          if(!defined($output_iohandler_obj)){
             print "output iohandler for analysis $analysis->dbID not found\n";
          } else {
             my @converter_objs;
-            my $converter_obj = _get_converter(&verify_attr($output_iohandler, 'converter_id', 0));
+            my $converter_obj = $self->_get_converter(\@pipeline_converter_objs, &verify_attr($output_iohandler, 'converter_id', 0));
             push @converter_objs, $converter_obj if $converter_obj;
             $output_iohandler_obj->converters(\@converter_objs) if $#converter_objs >= 0;
             $output_iohandler_obj->type('OUTPUT');
@@ -548,7 +525,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
           my $prev_iohandler_id = $map->child('prev_analysis_iohandler_id');
           my $current_iohandler_id = $map->child('current_analysis_iohandler_id');
           if ($prev_iohandler_id && $current_iohandler_id){
-                  my $current_iohandler = _get_iohandler($current_iohandler_id->value);
+                  my $current_iohandler = $self->_get_iohandler(\@iohandler_objs, $current_iohandler_id->value);
                   if (!defined($current_iohandler)) {
                      print "current input iohandler for analysis not found\n";
                   }
@@ -561,13 +538,13 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
    foreach my $new_input_iohandler ($analysis->child('new_input_iohandler')) {
      if (defined($new_input_iohandler)){
-         my $new_input_iohandler_obj = _get_iohandler($new_input_iohandler->attribute("id"));
+         my $new_input_iohandler_obj = $self->_get_iohandler(\@iohandler_objs, $new_input_iohandler->attribute("id"));
          if(!defined($new_input_iohandler_obj)){
             print "new_input iohandler for analysis $analysis->dbID not found\n";
          } else {
             my @converter_objs;
             foreach my $converter ($new_input_iohandler->child('converter')) {
-              my $converter_obj = _get_converter($converter->attribute("id"));
+              my $converter_obj = $self->_get_converter(\@pipeline_converter_objs, $converter->attribute("id"));
               if(defined($converter_obj)){
                  $converter_obj->rank($converter->attribute("rank"));
                  push @converter_objs, $converter_obj;
@@ -599,7 +576,7 @@ foreach my $rule ($pipeline_flow_setup->children('rule')) {
 
        #should be optional?
        my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL', '', 'current');
-       $current = _get_analysis($anal_id);
+       $current = $self->_get_analysis(\@analysis_objs, $anal_id);
 #     if (!defined($current)) {
 #       print "current analysis not found for rule\n";
 #     }
@@ -608,7 +585,7 @@ foreach my $rule ($pipeline_flow_setup->children('rule')) {
 
 
    my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL', '', 'next');
-   my $next = _get_analysis($next_anal_id);
+   my $next = $self->_get_analysis(\@analysis_objs, $next_anal_id);
    if (!defined($next)) {
      print "next analysis not found for rule\n";
    }
@@ -648,7 +625,7 @@ foreach my $job ($job_setup->children('job')) {
    my @input_objs;
    foreach my $input ($job->children('fixed_input')) {
 
-     my $input_iohandler = _get_iohandler($input->child('input_iohandler_id')->value);
+     my $input_iohandler = $self->_get_iohandler(\@iohandler_objs, $input->child('input_iohandler_id')->value);
      if (!defined($input_iohandler)) {
        #$self->throw("Iohandler for input not found\n");
        print "Iohandler for input not found\n";
@@ -697,6 +674,7 @@ foreach my $rule (@rule_objs) {
 
 print STDERR "Loading of pipeline $DBNAME completed\n";
 
+} # End of run
 ####################################################################
 #Utility Methods
 ####################################################################
@@ -751,55 +729,105 @@ sub verify_attr{
 }
 
 sub _create_initial_input_and_job {
-  my ($analysis_obj, @initial_input_objs)= @_;
+  my ($self, $analysis_obj, @initial_input_objs)= @_;
   my $job_obj = Bio::Pipeline::Job->new(-analysis => $analysis_obj,
                                          -retry_count => 3,
-                                         -adaptor => $dba->get_JobAdaptor,
+                                         -adaptor => $self->dba->get_JobAdaptor,
                                          -inputs => \@initial_input_objs);
-  $dba->get_JobAdaptor->store($job_obj);
+  $self->dba->get_JobAdaptor->store($job_obj);
 }
 
 sub _get_converter {
-  my ($id) = @_;
-
-  foreach my $converter(@pipeline_converter_objs) {
-    if ($converter->dbID == $id) {
-      return $converter;
-    }
-  }
-  return undef;
+    my ($self, $pipeline_converter_objs, $id) = @_;
+    return $self->_search_array_by($pipeline_converter_objs, 'dbID', $id);
 }
 
-sub _get_analysis {
-  my ($id) = @_;
 
-  foreach my $analysis(@analysis_objs) {
-    if ($analysis->dbID == $id) {
-      return $analysis;
-    }
-  }
-  return undef;
+sub _get_analysis {
+    my ($self, $analysis_objs, $id) = @_;
+    return $self->_search_array_by($analysis_objs, 'dbID', $id);
 }
 
 sub _get_iohandler {
-  my ($id) = @_;
+    my ($self, $iohandler_objs, $id) = @_;
 
-  foreach my $iohandler(@iohandler_objs) {
-    if ($iohandler->dbID == $id) {
-      return $iohandler;
+    foreach my $iohandler(@{$iohandler_objs}) {
+        if ($iohandler->dbID == $id) {
+            return $iohandler;
+        }
     }
-  }
-  return undef;
+    return undef;
 }
 
 sub _get_nodegroup {
-  my ($id) = @_;
+    my ($self, $nodegroup_objs, $id) = @_;
 
-  foreach my $nodegroup(@nodegroup_objs) {
-    if ($nodegroup->id == $id) {
-      return $nodegroup;
+    foreach my $nodegroup(@{$nodegroup_objs}) {
+        if ($nodegroup->id == $id) {
+            return $nodegroup;
+        }
     }
-  }
-  return undef;
+    return undef;
 }
- 
+
+sub _search_array_by{
+    my ($self, $array, $field, $value) = @_;
+    print ref $array . "\n";
+    foreach(@{$array}){
+        if($_->$field == $value){
+            return $_;
+        }
+    }
+    return undef;
+}
+
+
+=head2 _autoload_methods
+
+This subroutine is usually invoked at the very beginning line of constructor,
+to set subroutine names for getter and setters.
+
+SYNOPSIS
+
+sub new{
+    my ($class, @args) = @_;
+    my $self = $class->SUPER::new(@args);
+
+    $self->_autoload_methods([qw(dbhost dbname dbuser dbpass)]); # Don't add if unnecessary.
+
+    # Then, say
+
+    my ($dbhost) = $self->_rearrange([qw(DBHOST)], @args);
+    $self->dbhost($dbhost);
+
+    return $self;
+}
+
+=cut
+
+sub _autoload_methods {
+    my ($self, $arg) = @_;
+    if(defined $arg && ref($arg) eq 'ARRAY'){
+#        $self->{_autoload_methods} = $arg;
+        push @{$self->{_autoload_methods}}, @{$arg};
+
+        # equally explicitly declare the subs !!!
+        use subs @{$self->{_autoload_methods}};
+    }
+    return $self->{_autoload_methods};
+}
+
+sub AUTOLOAD{
+    return if our $AUTOLOAD =~ /::DESTROY$/;
+    my ($self, $arg) = @_;
+    my $field = $AUTOLOAD;
+    $field =~ /::([\w\d]+)$/;
+    if($self->_autoload_methods && grep /$1/, @{$self->_autoload_methods}){
+        $self->{$field} = $arg if defined $arg;
+        return $self->{$field};
+    }else{
+        $self->throw("Can't find the method '$field'");
+    }
+}
+
+1;

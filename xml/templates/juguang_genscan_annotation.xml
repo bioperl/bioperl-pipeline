@@ -94,7 +94,14 @@ LOADING PIPELINE:
             <input_iohandler_mapping current="" next=""/>
             <output_iohandler id="3" converter_id="1"/>
         </analysis>
-        <rule next="1" action="NOTHING"/>
+        <!-- rule next="1" action="NOTHING"/ -->
         <rule current="1" next="2" action="NOTHING"/>
+<!--
+        <rule>
+            <current_analysis_id>1</current_analysis_id>
+            <next_analysis_id>2</next_analysis_id>
+            <action>NOTHING</action>
+        </rule>
+-->
     </pipeline_flow_setup>
 </pipeline_setup>

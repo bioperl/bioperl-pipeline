@@ -42,7 +42,7 @@ use vars qw (%PipeConf);
     # You will need to modify these variables
 
     # working directory for err/outfiles
-    NFSTMP_DIR => '/data0/tmp/',
+    NFSTMP_DIR => '/usr/users/juguang/tmp/',
 
     # database specific variables
     
@@ -83,7 +83,7 @@ use vars qw (%PipeConf);
 
     #tell IOHandler.pm to release dbconnections once fetch is done so that 
     #number of connections is hopefully minimized
-    RELEASE_DBCONNECTION =>1,
+    RELEASE_DBCONNECTION =>0,
 
     ##############################################
     # PARAMS FROM HERE ON NOT SUPPORTED CURRENTLY FOR FUTURE DEV

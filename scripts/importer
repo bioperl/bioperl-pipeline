@@ -1,0 +1,73 @@
+#!/usr/bin/perl
+
+##############################################################
+#Xml2Db.pl
+#This script is used to load the pipeline up from the 
+#pipeline_setup.xml
+#You will need to have XML::SimpleObject installed for this script
+#to work.
+##############################################################
+
+use strict;
+
+use Getopt::Long;
+use Bio::Pipeline::XMLImporter;
+
+use vars qw($DBHOST $DBNAME $DEBUG $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT $HELP $FORCE);
+
+$DBHOST ||= "mysql";
+$DBNAME ||= "test_XML";
+$DBUSER ||= "root";
+$SCHEMA = $SCHEMA || "../sql/schema.sql";
+
+my $USAGE =<<END;
+******************************
+*Xml2DB.pl
+******************************
+This script configures and creates a pipeline based on xml definitions.
+
+Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+
+Default values in ()
+-dbhost host (mysql)
+-dbname name of pipeline database (test_XML)
+-dbuser user name (root)
+-dbpass db password()
+-schema The path to the bioperl-pipeline schema.
+        Needed if you want to create a new db.
+        ($SCHEMA)
+-verbose For debugging
+-help   This message
+-p      the pipeline setup xml file (required)
+
+
+END
+
+GetOptions(
+    'dbhost=s'      => \$DBHOST,
+    'dbname=s'    => \$DBNAME,
+    'dbuser=s'    => \$DBUSER,
+    'dbpass=s'    => \$DBPASS,
+    'schema=s'    => \$SCHEMA,
+    'verbose'     => \$DEBUG,
+    'force'       => \$FORCE,
+    'p=s'         => \$DATASETUP,
+	'h'           => \$HELP
+)
+or die ($USAGE);
+
+$HELP && die($USAGE);
+$DATASETUP || die($USAGE);
+
+print "\nmy report; $DBHOST|$DBNAME\n";
+my $importer = Bio::Pipeline::XMLImporter->new(
+    -dbhost => $DBHOST,
+    -dbname => $DBNAME,
+    -dbuser => $DBUSER,
+    -dbpass => $DBPASS,
+    -schema => $SCHEMA,
+    -datasetup => $DATASETUP
+);
+
+$importer->run($FORCE);
+

@@ -72,7 +72,6 @@ and will store the feature information the pipeline generates.
 		<adaptor id="1" type="DB"/>
       <method name="get_RepeatFeatureAdaptor" rank="1"/>
       <method name="store" rank="2">
-			<!-- argument value="INPUT" type="SCALAR" rank="1"/ -->
 			<argument value="OUTPUT" type="ARRAY" rank="1"/>
 		</method>
 	</iohandler>
@@ -90,7 +89,6 @@ and will store the feature information the pipeline generates.
 		<adaptor id="1" type="DB"/>
       <method name="get_ProteinAlignFeatureAdaptor" rank="1"/>
 		<method name="store" rank="2">
-			<!-- argument value="INPUT" type="SCALAR" rank="1"/ -->
 			<argument value="OUTPUT" type="ARRAY" rank="1"/>
 		</method>
 	</iohandler>
@@ -101,7 +99,6 @@ and will store the feature information the pipeline generates.
          <argument tag = "-driver" value = "mysql"/>
          <argument tag = "-dbname" value = "juguang_homo_core_9_30"/>
          <argument tag = "-user" value = "root"/>
-         <!-- argument id = "15" tag = "-passwd" value = ""/ -->
          <!-- I think to make the analysis logic name build in the converter instance module, but gave up since that will decrease the flexibility. 
          -->
          <argument tag="-analysis_logic_name" value="RepeatMask"/>

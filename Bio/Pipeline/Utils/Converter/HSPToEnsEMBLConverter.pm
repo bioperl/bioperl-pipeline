@@ -77,7 +77,7 @@ sub _convert_single{
     my ($self, $hsp) = @_;
     
     $hsp || $self->throw("a input object needed");
-    unless($hsp->isa("Bio::Search::HSP::GenericHSP"){
+    unless($hsp->isa("Bio::Search::HSP::GenericHSP")){
         $self->throw("a Bio::Search::HSP::GenericHSP object needed");
     }
     
