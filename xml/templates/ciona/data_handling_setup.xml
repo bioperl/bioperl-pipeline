@@ -100,7 +100,7 @@
 <iohandler id="5">
     <adaptor_id>2</adaptor_id>
     <adaptor_type>DB</adaptor_type>
-    <iohandler_type>INPUT_CREATE</iohandler_type>
+    <iohandler_type>CREATE_INPUT</iohandler_type>
    <method>
       <name>get_all_Contig_id</name>
       <rank>1</rank>
