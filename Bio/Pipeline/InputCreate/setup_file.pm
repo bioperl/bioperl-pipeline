@@ -515,6 +515,7 @@ NEW_FILE:
         }
         my $seq = shift @seq;
         $sio->write_seq($seq);
+        last if $#seq < 0; #no more seq
         $count++;
     }
     #write out the remaining ones to last file
