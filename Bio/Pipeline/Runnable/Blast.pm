@@ -96,9 +96,10 @@ use Bio::AlignIO;
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($return_type,$formatdb) = $self->_rearrange([qw(RETURN_TYPE FORMATDB)],@args);
+  my ($return_type,$formatdb, $formatdb_alphabet) = $self->_rearrange([qw(RETURN_TYPE FORMATDB FORMATDB_ALPHABET)],@args);
   $return_type && $self->return_type($return_type);
   $formatdb && $self->formatdb($formatdb);
+  $formatdb_alphabet && $self->formatdb_alphabet($formatdb_alphabet);
 
   return $self;
 
@@ -182,6 +183,13 @@ sub return_type {
     return $self->{'_return_type'};
 }
 
+sub formatdb_alphabet {
+    my ($self,$val) = @_;
+    if(defined($val)){
+        $self->{'_formatdb_alphabet'} = $val;
+    }
+    return $self->{'_formatdb_alphabet'};
+}
 sub formatdb {
     my ($self,$val) = @_;
     if(defined($val)){
@@ -353,6 +361,7 @@ sub _setup_blastdb {
     Bio::Root::IO->exists_exe('formatdb') || return;
 
     my $cmd = "formatdb -i ".$file;
+    $cmd .= " -p F " if ($self->formatdb_alphabet =~/dna/i);
     my $status = system($cmd);
     $self->throw("Problems formatting db $file $!") if $status > 0;
     return;
