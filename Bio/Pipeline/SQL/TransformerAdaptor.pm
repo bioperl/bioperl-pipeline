@@ -66,9 +66,11 @@ use strict;
 sub store {
     my ($self, $transformer) = @_;
 
-    $self->throw("A ref of array of object wanted in TransformerAdaptor::store")
-        unless(ref($transformer) eq 'ARRAY');
-
+    unless(ref($transformer) eq 'ARRAY'){
+        $self->warn("A ref of array of object wanted in TransformerAdaptor::store");
+        return $self->_store_single($transformer);
+    }
+    
     foreach(@{$transformer}){
         $self->_store_single($_);
     }
