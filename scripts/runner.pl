@@ -116,6 +116,7 @@ $db->{'_db_handle'}->disconnect();
 sub create_new_job{
     my ($job_id) = @_;
     my $job = $job_adaptor->fetch_by_dbID($job_id);
+    $job || return undef;
     my @rules       = $job_adaptor->db->get_RuleAdaptor->fetch_all;
     my $action = _get_action_by_next_anal($job,@rules);
     if ($action eq 'WAITFORALL_AND_UPDATE'){
