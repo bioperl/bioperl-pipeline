@@ -18,12 +18,13 @@ The converter object for handling object conversion during io handling.
 
   use Bio::Pipeline::Utils::Converter;
 
-  my $converter = new Bio::Pipeline::Utils::Converter( -dbID => $converter_id,
-                                                -module => $module,
-                                                -method => $method,
-                                                -argument => $argument);
-
-  my $converted_obj = $conveter->convert($obj);
+  my $converter = new Bio::Pipeline::Utils::Converter(
+        $in => 'Bio::Search::Hit::GenericHit',
+        -out => 'Bio::EnsEMBL::DnaPepAlignFeature',
+        -analysis => $ens_analysis,                                                         -contig => $ens_contig
+    }
+    
+  my @converted_obj = @{$conveter->convert(\@objs)};
 
 =head1 DESCRIPTION
 
@@ -75,9 +76,11 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : my $converter = Bio::Pipeline::Utils::Converter->new('-module'=>'Bio::SeqFeatureIO',
-                                                          '-method'=>"convert",
-                                                          '-rank'  => 1);
+  Usage   : my $converter = Bio::Pipeline::Utils::Converter->new(
+                '-module'=>'Bio::SeqFeatureIO',
+                '-method'=>"convert",
+                '-rank'  => 1
+            );
   Function: constructor for converter object
   Returns : L<Bio::Pipeline::Utils::Converter>
   Args    : module the module name
@@ -88,38 +91,37 @@ use Bio::Root::Root;
 =cut
 
 sub new {
-  my($class,@args) = @_;
-  
-  my $self = $class->SUPER::new(@args);
-
-  my ($dbID, $module,$method, $analysis, $ioh)  =
-      $self->_rearrange([qw(DBID
-                            MODULE
-                            METHOD
-                            ANALYSIS
-                            IOHANDLER
-                        )],@args);
-
-  $self->dbID($dbID);
-  $self->module($module);
-  $self->method($method);
-#  $self->rank($rank);
-
-    if(defined $analysis){
-        $self->warn("a Bio::Pipeline::Analysis object expected") unless($analysis->isa('Bio::Pipeline::Analysis'));
-        $self->analysis($analysis);
-    }else{
-        $self->warn("analysis object is not defined");
-    }
+    my($caller, @args) = @_;
+    my $class = ref($caller) || $caller;
     
-    if(defined $ioh){
-        $self->warn("a Bio::Pipeline::IOHandler object expected") unless($ioh->isa('Bio::Pipeline::IOHandler'));
-        $self->iohandler($ioh);
+    if($class =~ /Bio::Pipeline::Utils::Converter::(\S+)/){
+        my ($self) = $class->SUPER::new(@args);
+        $self->_initialize(@args);
+        return $self;
     }else{
-        $self->warn("iohandler object is not defined");
+        my %params = @args;
+        @params{map {lc $_} keys %params} = values %params; 
+
+        my $instance = $class->_parse_instance($params{-in}, $params{-out});
+
+        return undef unless($class->_load_module($instance));
+        return "$instance"->new(@args);
+    }   
+}
+
+=head2 _parse_instance
+
+
+  Return  : a full package name
+=cut 
+
+sub _parse_instance {
+    my ($self, $in, $out) = @_;
+    if($out =~ /^Bio::EnsEMBL::(\S+)/){
+        return 'Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter';
+    }else{
+        $self->throw("[$in] to [$out], not supported");
     }
-    
-    return $self;
 }
 
 sub _initialize{
@@ -138,45 +140,27 @@ sub _initialize{
 =cut
 
 sub convert {
-	 my ($self, $input_ref) = @_;
+	 my ($self, $input) = @_;
 
-	 $input_ref || $self->throw("Need a ref of array of input objects to convert");
-    unless(ref($input_ref) eq "ARRAY"){
-        $self->throw("The input of convert is supposed to be a ref of array");
+	 $input || $self->throw("Need a ref of array of input objects to convert");
+    unless(ref($input) eq "ARRAY"){
+        return $self->_convert_single($input);
+        $self->warn("The input of convert is supposed to be a ref of array");
     }
 
-    my @inputs = @{$input_ref};
-    my @outputs;
-    foreach my $input (@inputs){
-        my $output = $self->_convert_single($input);
+    my @outputs = ();
+    foreach(@{$input}){
+        my $output = $self->_convert_single($_);
         push @outputs, $output;
     }
     
     return \@outputs;
 }
 
-
 sub _convert_single{
-    my ($self) = @_;    
+    my ($self) = @_;
     $self->throw("Not implemented. Please check the instance subclass.");
     
-}
-
-sub _load_converter_module{
-	my ($self, $module) = @_;
-	$module = "Bio::Pipeline::Utils::Converter::$module";
-	my $ok;
-	#eval{
-	#	$ok = $self->_load_module($module);
-	#};
-
-	if($@){
-		print STDERR <<END
-$self: $module cannot be found
-END
-;
-	}
-	return $ok;
 }
 
 =head2 _create_obj
@@ -197,95 +181,6 @@ sub _create_obj {
     my $obj = "${module}"->new(@args);
 
     return $obj;
-}
-
-
-=head2 module
-
-  Title   : module
-  Usage   : $conv->module($module);
-  Function: get/set for the module
-  Returns :
-  Args    :
-
-=cut
-
-sub module {
-    my ($self,$arg) = @_;
-    if (defined($arg)) {
-	    $self->{'_module'} = $arg;
-    }
-    return $self->{'_module'};
-}
-
-=head2 method
-
-  Title   : method
-  Usage   : $conv->method($method);
-  Function: get/set for the module
-  Returns :
-  Args    :
-
-=cut
-
-sub method {
-    my ($self,$arg) = @_;
-    if (defined($arg)) {
-	    $self->{'_method'} = $arg;
-    }
-    return $self->{'_method'};
-}
-
-sub add_argument{
-	my ($self, $arg) = @_;
-	if(!defined($self->{'_argument'})){
-		$self->{'_argument'} =();
-	}
-	push @{$self->{'_argument'}}, $arg;
-}
- 
-=head2 argument
-
-  Title   : argument
-  Usage   : $conv->argument($argument);
-  Function: get/set for the argument
-  Returns :
-  Args    :
-
-=cut
-
-sub arguments{
-	my($self, $arg) = @_;
-  if (defined($arg)) {
-      $self->{'_argument'}= $arg;
-   }
-    return $self->{'_argument'};
-}
-
-=head2 analysis
-
-The getter/setter of analysis
-
-=cut 
-
-sub analysis{
-    my ($self, $anal) = @_;
-    if(defined $anal){
-        $self->throw(" a Bio::Pipeline::Analysis obj is wanted") 
-            unless(ref $anal eq 'Bio::Pipeline::Analysis');
-        $self->{_Bio_Pipeline_Converter_analysis} = $anal;
-    }
-    return $self->{_Bio_Pipeline_Converter_analysis};
-}
-
-sub iohandler{
-    my ($self, $ioh) = @_;
-    if(defined $ioh){
-        $self->throw(" a Bio::Pipeline::IOHandler obj is wanted")
-            unless(ref $ioh eq 'Bio::Pipeline::IOHandler');
-        $self->{_Bio_Pipeline_Converter_iohandler} = $ioh;
-    }
-    return $self->{_Bio_Pipeline_Converter_iohandler};
 }
 
 1;

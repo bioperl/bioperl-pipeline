@@ -1,3 +1,35 @@
+# Bio::Pipeline::Utils::Converter::HSPToEnsEMBLConverter
+#
+# Created and Cared by Juguang Xiao <juguang@fugu-sg.org>
+#
+# You may distribute this module under the same terms as perl itself
+#
+# POD documentation
+#
+
+=head1 NAME
+
+Bio::Pipeline::Utils::Converter::HSPToEnsEMBLConverter
+
+=head1 DESCRIPTION
+
+There is not public method in this module. You are not supposed to use this modu
+le directly. Please see Bio::Pipeline::Utils::Converter, for the information of 
+how to use converter.
+
+The only methods here, _initialize and _convert_single, are invoked by the converter factory.
+
+=head1 AUTHOR Juguang Xiao
+
+Juguang Xiao <juguang@fugu-sg.org>
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. Internal method
+s are usually preceded with a _
+
+=cut
+
 
 package Bio::Pipeline::Utils::Converter::HSPToEnsEMBLConverter;
 
@@ -14,37 +46,15 @@ use Bio::EnsEMBL::FeaturePair;
 
 @ISA = qw(Bio::Pipeline::Utils::Converter::BaseEnsEMBLConverter);
 
-sub new{
-    my($class, @args) = @_;
-    my $self = $class->SUPER::new(@args);  
-    my($return_type,$program) =
-      $self->_rearrange([qw( RETURNTYPE PROGRAM)], @args);
-
-    unless(defined $return_type){
-        $self->{_return_type} = 'hsp';
-    }else{
-        $self->{_return_type} = $return_type;
-    }
+sub _initialize {
+    my ($self, @args) = @_;
+    $self->SUPER::_initialize(@args);
+    my ($return_type, $program) =
+        $self->_rearrange([qw( RETURNTYPE PROGRAM)], @args);
     
-    $self->{_program} = $program;
-
-    return $self;
-}
-
-sub convert{
-   my ($self, $arg) = @_;
-   
-   if($self->return_type =~ /hit/i){
-       $self->throw("currently not supported");
-   }else{
-      my @hsps = @{$arg};
-      my @align_features;
-      foreach my $hsp (@hsps){
-          my $align_feature = $self->_convert_single($hsp);
-          push @align_features, $align_feature;
-      }
-      return \@align_features;
-   }
+    $return_type ||= 'hsp';
+    $self->return_type($return_type);
+    $self->program($program);
 }
 
 sub return_type{
@@ -64,7 +74,7 @@ sub program{
 }
 
 
-=head2 _hsp_2ens
+=head2 _convert_single
 
    From Bio::Search::HSP::GenericHSP to Bio::EnsEMBL::BaseAlignFeature
 
@@ -82,15 +92,13 @@ sub _convert_single{
     my $align_feature;
     
     $self->analysis || $self->throw("an analysis is needed");
-    my $ens_analysis = $self->ensembl_analysis;
     
     # create cigar string. Ensembl BaseAlignFeature needs it.
     # Since the HSP object does not have cigar string. 
     # So we need to parse it from query and hit string.
     
-    my $cigar_string = "";
-    my $ens_feature1 = $self->_similarity_2_ens_seqFeature($hsp->feature1, $ens_analysis);
-    my $ens_feature2 = $self->_similarity_2_ens_seqFeature($hsp->feature2, $ens_analysis);
+    my $ens_feature1 = $self->_similarity_2_ens_seqFeature($hsp->feature1, $self->analysis);
+    my $ens_feature2 = $self->_similarity_2_ens_seqFeature($hsp->feature2, $self->analysis);
     
     $ens_feature1->p_value($hsp->evalue);
     $ens_feature1->score($hsp->score);
@@ -104,7 +112,10 @@ sub _convert_single{
         -feature1 => $ens_feature1,
         -feature2 => $ens_feature2
     );
-    
+
+# I comment out the line below, since Bio::EnsEMBL::BaseAlignFeature is only
+# able to generate cigar string for ungapped alignment.
+    my $cigar_string = "";
     my @args = (
 #        -features => [$ens_featurePair]
         -feature1 => $ens_feature1,
@@ -112,9 +123,7 @@ sub _convert_single{
         -cigar_string => $cigar_string
     );
 
-    my $contig = new Bio::EnsEMBL::RawContig(
-        $self->contig_dbID()
-    );
+    my $contig = $self->contig;
 
     if($self->program =~ /blastn/i){
         
@@ -160,7 +169,10 @@ sub _generic_2_ens_seqFeature{
     
     # Bio::EnsEMBL::SeqFeature has a special requirement on frame.
     # The value must be one of (0, 1, 2).
-    # $ens_seqFeature->frame($generic->frame);
+    $generic->frame =~ /()(\d+)/;
+    my ($symbol, $frame) = ($1, $2);
+    $frame = 3 if $frame == 0;
+    $ens_seqFeature->frame($frame);
     return $ens_seqFeature;
 }
     
