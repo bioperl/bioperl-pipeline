@@ -110,30 +110,29 @@ our @ISA = qw(Bio::Pipeline::AbstractXMLImporter);
 
 =cut
 
+sub _parse_global{
+    my ($self, $pipeline_setup)=@_;
+    $pipeline_setup->child('global') or return;
+    %global = $pipeline_setup->child('global')->attributes;
+    foreach my $key (keys %global){$global{$key} = &set_global($global{$key});}
+}
+
 sub run{
     my ($self, $FORCE) = @_;
     my $dba=$self->_prepare_dba($FORCE);
     my $xso1 = $self->_prepare_xso;
-
 my @iohandler_objs;
 my $method_id = 1;
-
 ############################################
 #Load DBAdaptor and IOHandler information
 ############################################
-
 print "Doing DBAdaptor and IOHandler setup\n";
 
 my $pipeline_setup  = $xso1->child('pipeline_setup') || die("Pipeline template missing <pipeline_setup>\n Please provide a valid one");
 
 #setting global hash
-if($pipeline_setup->child('global')){
-  %global = $pipeline_setup->child('global')->attributes;
-  #a global var may have variables itself
-  foreach my $key (keys %global){
-   $global{$key} = &set_global($global{$key});
-  }
-}
+$self->_parse_global($pipeline_setup);
+
 my $iohandler_setup = $pipeline_setup->child('iohandler_setup') || goto PIPELINE_FLOW_SETUP;
 
 #die("Pipeline template missing <iohandler_setup>\n Please provide a valid one");
@@ -381,8 +380,6 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
         if ($input_present_flag) {
           $self->_create_initial_input_and_job($analysis_obj,@initial_input_objs); 
         }
-
-
         my $datamonger_obj = Bio::Pipeline::Runnable::DataMonger->new();
 
         foreach my $input_create ($datamonger->children('input_create')){
@@ -449,10 +446,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
       if (!defined($node_group)) {
 #        print "node_group for analysis not found\n";
       }
-      else {
-        $analysis_obj->node_group($node_group);
-      }
-        
+      else { $analysis_obj->node_group($node_group); }
    }
    my @ioh;
 
@@ -469,9 +463,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
                  my $rank = &verify($transformer,'rank',0,1); 
                  $transformer_obj->rank($rank);
                  push @transformer_objs, $transformer_obj;
-              } else {
-                 print "transformer for analysis  not found\n";
-              }
+              } else { print "transformer for analysis  not found\n"; }
             }
             $input_iohandler_obj->transformers(\@transformer_objs);
             $input_iohandler_obj->type('INPUT');;
@@ -492,9 +484,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
                  my $rank = &verify($transformer,'rank',0,1); 
                  $transformer_obj->rank($rank);
                  push @transformer_objs, $transformer_obj;
-              } else {
-                 print "transformer for analysis  not found\n";
-              }
+              } else { print "transformer for analysis  not found\n"; }
             }
             $output_iohandler_obj->transformers(\@transformer_objs) if $#transformer_objs >=0;
             $output_iohandler_obj->type('OUTPUT');
@@ -532,9 +522,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
               if(defined($transformer_obj)){
                  $transformer_obj->rank($transformer->attribute("rank"));
                  push @transformer_objs, $transformer_obj;
-              } else {
-                 print "transformer for analysis  not found\n";
-              }
+              } else { print "transformer for analysis  not found\n"; }
             }
             $new_input_iohandler_obj->transformers(\@transformer_objs);
             $new_input_iohandler_obj->type('NEW_INPUT');
@@ -683,9 +671,7 @@ sub verify_attr{
 #    eval{
         %obj_attrs = $obj->attributes;
 #    };
-#    if($@){
-#        $self->throw($@);
-#    }
+#    if($@){$self->throw($@);}
 
     if(defined $attr_name && exists $obj_attrs{$attr_name}){
 #        print $obj_attrs{$attr_name} . "\n";
