@@ -94,8 +94,6 @@ sub new {
   my ($dbID, $module,$method, $rank)  =
       $self->_rearrange([qw(DBID
                             MODULE
-#			    METHOD 
-#                            RANK 
                         )],@args);
 
   $self->dbID($dbID);
