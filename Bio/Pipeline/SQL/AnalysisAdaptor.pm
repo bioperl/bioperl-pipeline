@@ -304,17 +304,15 @@ sub store {
     	     }
      }
 
-#=head
-     if (defined ($new_input_handler)) {
-         my $sth = $self->prepare( q{
-            INSERT INTO IOHandler 
-                SET
-                analysis_id = ?,
-                iohandler_id = ? } );
-         $sth->execute
-            ( $analysis->dbID, $new_input_handler->dbID);
-     }
-#=cut
+     #     if (defined ($new_input_handler)) {
+         #   my $sth = $self->prepare( q{
+             #            INSERT INTO IOHandler 
+             #  SET
+             #   analysis_id = ?,
+             #   iohandler_id = ? } );
+             # $sth->execute
+             #( $analysis->dbID, $new_input_handler->dbID);
+             #}
 
       return $analysis->dbID;
 }
