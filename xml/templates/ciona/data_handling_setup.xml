@@ -82,7 +82,7 @@
     <adaptor_type>DB</adaptor_type>
     <iohandler_type>OUTPUT</iohandler_type>
    <method>
-      <name>store_BlastFeatures_by_contigId</name>
+      <name>store_BlastFeature_by_contigId</name>
       <rank>1</rank>
       <argument>
           <value>INPUT</value>

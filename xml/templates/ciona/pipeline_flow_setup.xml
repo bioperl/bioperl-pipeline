@@ -14,7 +14,7 @@
     <program>blastall</program>
     <parameters>-p blastx -e 0.00001</parameters>
     <input_iohandler_id>1</input_iohandler_id>
-    <output_iohandler_id>2</output_iohandler_id>
+    <output_iohandler_id>4</output_iohandler_id>
     <map_iohandler>
         <prev_iohandler_id>1</prev_iohandler_id>
         <map_iohandler_id>3</map_iohandler_id>
