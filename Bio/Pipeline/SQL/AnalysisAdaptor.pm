@@ -105,11 +105,8 @@ sub fetch_by_dbID {
       push @iohs, $self->db->get_IOHandlerAdaptor->fetch_by_dbID($ioid);
   }
 
-  foreach my $ioh(@iohs) {
-     my $iohid = $ioh->dbID;
-     my $converters_ref = $self->fetch_converters_by_iohandler($id, $iohid);
-     $ioh->converters($converters_ref) if ref $converters_ref;
-  }
+#   Th original place that fetches the converters.
+#   
 
   $query = " SELECT  prev_iohandler_id, map_iohandler_id
                 FROM    iohandler_map  
@@ -124,8 +121,6 @@ sub fetch_by_dbID {
       $iomap{$prev_ioid} = $map_ioh;
   }
 
-  
-    
   my $anal = new Bio::Pipeline::Analysis (  -ID             => $analysis_id,
                                             -ADAPTOR        => $self,
                                             -DB             => $db,
@@ -147,29 +142,38 @@ sub fetch_by_dbID {
                                             -IO_MAP         => \%iomap);
 
   $self->{'_cache'}->{$id} = $anal;
-
+    # I moved the converter code below the  analysis creation because it wants 
+    # the analysis as the parameter of converter, 
+    # and the analysis object, not id, must be assigned into converter when the converter is created. 
+    # - Juguang
+    foreach my $ioh(@iohs) {
+        my $converters_ref = $self->_fetch_converters_by_analysis_iohandler($anal, $ioh);
+        $ioh->converters($converters_ref) if ref $converters_ref;
+    }
   return $anal;
 }
 
-sub fetch_converters_by_iohandler {
-   my ($self, $analid, $iohid) = @_;
+sub _fetch_converters_by_analysis_iohandler {
+    my ($self, $anal, $ioh) = @_;
 
-     my $query = " SELECT  ai.converter_id, ai.converter_rank
+    my $query = " SELECT  ai.converter_id, ai.converter_rank
                    FROM    analysis_iohandler ai
                    WHERE   ai.analysis_id = ? AND ai.iohandler_id = ? ";
 
-     my $sth = $self->prepare($query);
-     $sth->execute ($analid,$iohid);
+    my $sth = $self->prepare($query);
+    $sth->execute ($anal->dbID, $ioh->dbID);
 
-     my @converters;
-     while (my ($converter_id,$rank) = $sth->fetchrow_array){
+    my @converters;
+    while (my ($converter_id,$rank) = $sth->fetchrow_array){
         if (defined $converter_id){
-          my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id);
-
-          push @converters, $converter;
+            my $converter = $self->db->get_ConverterAdaptor->fetch_by_dbID($converter_id, -analysis => $anal, -iohandler => $ioh);
+            push @converters, $converter;
+        }else{
+            $self->warn("there is a converter not having a dbID");
         }
-     }
-     return \@converters;
+        
+    }
+    return \@converters;
 }
 
 

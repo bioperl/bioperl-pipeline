@@ -1,10 +1,9 @@
-
-
 package Bio::Pipeline::Converter::ExonToEnsEMBLConverter;
 
 use Bio::EnsEMBL::Analysis;
 use Bio::EnsEMBL::RawContig;
 use Bio::EnsEMBL::Exon;
+use vars qw(@ISA);
 
 use Bio::Pipeline::Converter::BaseEnsEMBLConverter;
 
@@ -24,7 +23,7 @@ sub _convert_single{
     my ($self, $input) = @_;
     
     $input || $self->throw("a input object needed");
-    unless($input->isa("Bio::SeqFeature::Gene::Exon")){
+    unless(defined $input && ref $input && $input->isa("Bio::SeqFeature::Gene::Exon")){
         $self->throw("a Bio::SeqFeature::Gene::Exon object needed");
     }
 
@@ -37,9 +36,10 @@ sub _convert_single{
     $output->contig($self->contig);
     $output->score($input->score);
     
-    my $phase;
-    my $phase_end;
-    my $p_value;
+    # The following 3 lines are copied from PredictionExonToEnsEMBLConverter
+    my ($phase) = $input->get_tag_values("phase");
+    my ($end_phase) = $input->get_tag_values("end_phase");
+    my $p_value = $input->significance;
     
     $output->phase($phase);
     $output->phase_end($phase_end);

@@ -139,8 +139,13 @@ sub _store_converter_argument{
 	}
 }
 
+=head2 fetch_by_dbID 
+
+
+=cut
+
 sub fetch_by_dbID{
-	my ($self, $id) = @_;
+	my ($self, $id, @other_params) = @_;
 	if(defined $self->{_cache}->{$id}){
 		return $self->{_cache}->{$id};
 	}
@@ -148,15 +153,15 @@ sub fetch_by_dbID{
 	my $query = "SELECT converter_id, module FROM converters WHERE converter_id = $id";
 	
 	my $sth = $self->prepare($query);
-   $sth->execute();
+    $sth->execute();
 #	my ($converter_id, $module, $method, $rank, $argument) = $sth->fetchrow_array;
 	my ($converter_id, $module) = $sth->fetchrow_array;	
 
-   $module = "Bio::Pipeline::Converter::$module";
+    $module = "Bio::Pipeline::Converter::$module";
    
-   $self->_load_module($module);   
+    $self->_load_module($module);   
 
-   my $methods_ref = $self->_fetch_converter_method_by_converter_dbID($converter_id);
+    my $methods_ref = $self->_fetch_converter_method_by_converter_dbID($converter_id);
 
     my @new_arguments = ();
     my @methods = @{$methods_ref};
@@ -165,17 +170,14 @@ sub fetch_by_dbID{
        @new_arguments = @{$self->_format_converter_new_arguments($first_method->arguments)};
     }
 
-#    print "\nsize of args" . scalar @new_arguments . "\n";
+    my @new_params = ();
+    push @new_params, -dbID => $converter_id;
+    push @new_params, -module => $module;
+    push @new_params, -method => $methods_ref;
+    push @new_params, @other_params;
+    push @new_params, @new_arguments;
     
-#    push @new_arguments, 
-	my $converter = "$module"->new (
-		-dbID => $converter_id,
-		-module => $module,
-		-method => $methods_ref,
-      @new_arguments
-#		-rank => $rank,
-#		-argument => $argument
-	);
+	my $converter = "$module"->new(@new_params);
 
 	$self->{_cache}->{$id} = $converter;
 
@@ -198,10 +200,8 @@ sub _fetch_converter_method_by_converter_dbID{
 			-rank => $rank,
 			-argument => $arguments_ref
 		);
-		
 		push  @methods , $converter_method;
 	}	
-
 	return \@methods;
 }
 
@@ -221,10 +221,8 @@ sub _fetch_arguments_by_method_dbID{
 			-value => $value,
 			-rank => $rank
 		);
-
 		push @arguments, $converter_argument;
 	}
-
 	return \@arguments;
 }
 

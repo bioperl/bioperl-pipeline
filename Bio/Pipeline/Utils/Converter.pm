@@ -1,7 +1,7 @@
 #
 # BioPerl module for Bio::Pipeline::Converter
 #
-# Cared for by Kiran <kiran@fugu-sg.org>
+# Cared for by Juguang Xiao  <juguang@fugu-sg.org> ,Kiran <kiran@fugu-sg.org>
 #
 #
 # You may distribute this module under the same terms as perl itself
@@ -92,10 +92,12 @@ sub new {
   
   my $self = $class->SUPER::new(@args);
 
-  my ($dbID, $module,$method, $rank)  =
+  my ($dbID, $module,$method, $analysis, $ioh)  =
       $self->_rearrange([qw(DBID
                             MODULE
                             METHOD
+                            ANALYSIS
+                            IOHANDLER
                         )],@args);
 
   $self->dbID($dbID);
@@ -103,7 +105,21 @@ sub new {
   $self->method($method);
 #  $self->rank($rank);
 
-  return $self;
+    if(defined $analysis){
+        $self->warn("a Bio::Pipeline::Analysis object expected") unless($analysis->isa('Bio::Pipeline::Analysis'));
+        $self->analysis($analysis);
+    }else{
+        $self->warn("analysis object is not defined");
+    }
+    
+    if(defined $ioh){
+        $self->warn("a Bio::Pipeline::IOHandler object expected") unless($ioh->isa('Bio::Pipeline::IOHandler'));
+        $self->iohandler($ioh);
+    }else{
+        $self->warn("iohandler object is not defined");
+    }
+    
+    return $self;
 }
 
 =head2 _initialize
@@ -230,11 +246,9 @@ sub _create_obj {
 
 sub dbID {
     my ($self,$arg) = @_;
-
     if (defined($arg)) {
       $self->{'_dbID'} = $arg;
     }
-
     return $self->{'_dbID'};
 }
 
@@ -251,14 +265,11 @@ sub dbID {
 
 sub module {
     my ($self,$arg) = @_;
-
     if (defined($arg)) {
 	    $self->{'_module'} = $arg;
     }
-
     return $self->{'_module'};
 }
-
 
 =head2 method
 
@@ -272,11 +283,9 @@ sub module {
 
 sub method {
     my ($self,$arg) = @_;
-
     if (defined($arg)) {
 	    $self->{'_method'} = $arg;
     }
-
     return $self->{'_method'};
 }
 
@@ -329,6 +338,32 @@ sub arguments{
       $self->{'_argument'}= $arg;
    }
     return $self->{'_argument'};
+}
+
+=head2 analysis
+
+The getter/setter of analysis
+
+=cut 
+
+sub analysis{
+    my ($self, $anal) = @_;
+    if(defined $anal){
+        $self->throw(" a Bio::Pipeline::Analysis obj is wanted") 
+            unless(ref $anal eq 'Bio::Pipeline::Analysis');
+        $self->{_Bio_Pipeline_Converter_analysis} = $anal;
+    }
+    return $self->{_Bio_Pipeline_Converter_analysis};
+}
+
+sub iohandler{
+    my ($self, $ioh) = @_;
+    if(defined $ioh){
+        $self->throw(" a Bio::Pipeline::IOHandler obj is wanted")
+            unless(ref $ioh eq 'Bio::Pipeline::IOHandler');
+        $self->{_Bio_Pipeline_Converter_iohandler} = $ioh;
+    }
+    return $self->{_Bio_Pipeline_Converter_iohandler};
 }
 
 1;

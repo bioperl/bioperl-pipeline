@@ -34,7 +34,6 @@ sub new{
 sub convert{
    my ($self, $arg) = @_;
    
-   
    if($self->return_type =~ /hit/i){
        $self->throw("currently not supported");
    }else{
@@ -53,7 +52,6 @@ sub return_type{
     if(defined $arg){
         $self->{_return_type} = $arg;
     }
-
     return $self->{_return_type};
 }
 
@@ -62,7 +60,6 @@ sub program{
     if(defined $program){
         $self->{_program} = $program;
     }
-
     return $self->{_program};
 }
 
@@ -85,15 +82,15 @@ sub _convert_single{
     my $align_feature;
     
     $self->analysis || $self->throw("an analysis is needed");
-    my $analysis = $self->analysis;
+    my $ens_analysis = $self->ensembl_analysis;
     
     # create cigar string. Ensembl BaseAlignFeature needs it.
     # Since the HSP object does not have cigar string. 
     # So we need to parse it from query and hit string.
     
     my $cigar_string = "";
-    my $ens_feature1 = $self->_similarity_2_ens_seqFeature($hsp->feature1, $analysis);
-    my $ens_feature2 = $self->_similarity_2_ens_seqFeature($hsp->feature2, $analysis);
+    my $ens_feature1 = $self->_similarity_2_ens_seqFeature($hsp->feature1, $ens_analysis);
+    my $ens_feature2 = $self->_similarity_2_ens_seqFeature($hsp->feature2, $ens_analysis);
     
     $ens_feature1->p_value($hsp->evalue);
     $ens_feature1->score($hsp->score);
