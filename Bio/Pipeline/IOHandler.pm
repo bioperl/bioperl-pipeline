@@ -78,9 +78,10 @@ use Bio::Root::Root;
 sub new_ioh_db {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($dbID,$dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
+  my ($dbID,$type,$dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
       $dbadaptor_user,$dbadaptor_pass,$dbadaptor_module,$dbadaptor_port,
       $datahandlers) = $self->_rearrange([ qw( DBID
+                                               TYPE
                                                 DBADAPTOR_DBNAME
                                                 DBADAPTOR_DRIVER
                                                 DBADAPTOR_HOST
@@ -107,7 +108,8 @@ sub new_ioh_db {
   $self->dbadaptor_pass($dbadaptor_pass);
   $self->dbadaptor_port($dbadaptor_port);
   $self->dbadaptor_module($dbadaptor_module);
-  $self->type("DB");
+  $self->adaptor_type("DB");
+  $self->type($type);
   @{$self->{'_datahandlers'}} = @{$datahandlers}; 
   
   return $self;
@@ -129,7 +131,8 @@ sub new_ioh_db {
 sub new_ioh_stream{
     my ($class,@args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($dbID,$module,$datahandlers) = $self->_rearrange([qw(DBID
+    my ($dbID,$type,$module,$datahandlers) = $self->_rearrange([qw(DBID
+                                                       TYPE
                                                        MODULE
                                                        DATAHANDLERS)],@args);
 
@@ -138,7 +141,8 @@ sub new_ioh_stream{
     $self->dbID($dbID);
     $self->stream_module($module);
 
-    $self->type("STREAM");
+    $self->adaptor_type("STREAM");
+    $self->type($type);
     @{$self->{'_datahandlers'}} = @{$datahandlers};
 
     return $self;
@@ -196,7 +200,7 @@ sub fetch_input {
     #   
     my $obj; 
     #create the handler fetcher differently depending on whether its a DB or a Stream
-    if($self->type eq "DB"){
+    if($self->adaptor_type eq "DB"){
         $obj = $self->_fetch_dbadaptor();
     }
     else {
@@ -215,7 +219,7 @@ sub fetch_input {
         $obj = $obj->$tmp1(@args);
     }
     #destroy handle only if its a dbhandle
-    if($self->type eq "DB") {$tmp->DESTROY};
+    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
 
   return $obj;
 }
@@ -421,7 +425,7 @@ sub stream_module{
     return $self->{'_filemodule'};
 }
 
-sub type {
+sub adaptor_type {
     my ($self,$value) = @_;
     if($value) {
         $self->{'_dbtype'} = $value;
@@ -429,6 +433,13 @@ sub type {
     return $self->{'_dbtype'};
 }
 
+sub type {
+    my ($self,$value) = @_;
+    if($value) {
+        $self->{'_iotype'} = $value;
+    }
+    return $self->{'_iotype'};
+}
 sub _fetch_dbadaptor {
     my ($self,) = @_;
     my $dbname = $self->dbadaptor_dbname();
