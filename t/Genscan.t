@@ -22,13 +22,10 @@ use Bio::Root::IO;
                 skip("Genscan program not found. Skipping.\n",1);
           }
   }
+  unless (Bio::Root::IO->exists_exe('genscan')){
+   exit(0);
+  }
 
-  
-  
-  
-  
-  
-  
    # create and fill Bio::Seq object
    my $seqfile = Bio::Root::IO->catfile("t/data","Genscan.FastA");
    my $seq1 = Bio::Seq->new();
@@ -51,11 +48,6 @@ use Bio::Root::IO;
        $genscan->run();
    };
    $@ && exit(0);
-   END {
-       foreach ( $Test::ntest .. $NTESTS ) {
-        skip("unable to run all of the Genscan tests",1);
-      }
-   }
    my @feat = $genscan->output();
    my $no = scalar(@feat);
    print "No of genes $no\n";
