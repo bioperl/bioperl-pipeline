@@ -32,16 +32,24 @@ sub fetch_inputs_by_jobID {
   # getting the inputs
   my @inputs=() ;
 
+  # Get the analysis to which this job belongs. do not call jobAdaptor->fetch_by_dbId and then analysis, goes into infinite loop
+  my $query = "SELECT analysis_id
+               FROM job 
+               WHERE job_id = $job_id";
+  my $sth = $self->prepare($query);
+  $sth->execute;
+
+  my ($analysis_id) = $sth->fetchrow_array;
   # Get the fixed inputs
-  my $query = "SELECT input_id
+  $query = "SELECT input_id
                FROM input
                WHERE job_id = $job_id"; 
-  my $sth = $self->prepare($query);
+  $sth = $self->prepare($query);
   $sth->execute;
 
   while (my ($input_id) = $sth->fetchrow_array){
       my $input = $self->db->get_InputAdaptor->
-                         fetch_fixed_input_by_dbID($input_id);
+                         fetch_fixed_input_by_dbID($input_id, $analysis_id);
       push (@inputs,$input);
   }
 
@@ -74,7 +82,7 @@ sub fetch_inputs_by_jobID {
 =cut
 
 sub fetch_fixed_input_by_dbID {
-    my ($self,$id) = @_;
+    my ($self,$id,$analysis_id) = @_;
     $id || $self->throw("Need a db ID");
     
     my $sth = $self->prepare("SELECT name, tag,iohandler_id, job_id
@@ -88,7 +96,10 @@ sub fetch_fixed_input_by_dbID {
     
     my $input_handler;
     if($iohandler_id){
-        $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id,$job_id);
+        $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
+        # Attach converters to the iohandler if any for this iohandler of the analysis that this input is fed into.
+        my @converters = $self->db->get_AnalysisAdaptor->fetch_converters_by_iohandler($analysis_id, $iohandler_id);
+        $input_handler->converters(\@converters);
     }
 
     #fetch dynamic arguments if any
