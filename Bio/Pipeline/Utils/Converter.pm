@@ -122,12 +122,6 @@ sub new {
     return $self;
 }
 
-=head2 _initialize
-
-Doing nothing here.
-
-=cut
-
 sub _initialize{
 	my ($self) = @_;
 	return;
@@ -168,34 +162,6 @@ sub _convert_single{
     
 }
 
-=head2 ens_dbadaptor
-
-converter sometimes needs to access database to fetch the relevant informations, such as analysis id
-
-=cut
-
-# sub ens_dbadaptor{
-#   my ($self, @args) = @_;
-#
-#   my ($dbname, $host, $driver, $user, $pass) =
-#     $self->_rearrange([qw( DBNAME HOST DRIVER USER PASS )], @args);
-
-#   my $dba = new Bio::EnsEMBL::DBSQL::DBAdaptor->new(
-#      -user => $user,
-#      -dbname => $dbname,
-#      -host => $host,
-#      -driver => $driver
-#   );
-
-#  $self->{"_ens_dba"} = $dba;
-
-#   return $dba;
-# }
-
-=head2 _load_converter_module
-
-=cut
-
 sub _load_converter_module{
 	my ($self, $module) = @_;
 	$module = "Bio::Pipeline::Utils::Converter::$module";
@@ -234,25 +200,6 @@ sub _create_obj {
 }
 
 
-=head2 dbID
-
-  Title   : dbID
-  Usage   : $conv->dbID($id);
-  Function: get/set for the dbID 
-  Returns : 
-  Args    : 
-
-=cut
-
-sub dbID {
-    my ($self,$arg) = @_;
-    if (defined($arg)) {
-      $self->{'_dbID'} = $arg;
-    }
-    return $self->{'_dbID'};
-}
-
-
 =head2 module
 
   Title   : module
@@ -288,31 +235,6 @@ sub method {
     }
     return $self->{'_method'};
 }
-
-
-=head2 rank
-
-  Title   : rank
-  Usage   : $conv->rank($rank);
-  Function: get/set for the rank
-  Returns :
-  Args    :
-
-=cut
-
-sub rank{
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-	    $self->{'_rank'} = $arg;
-    }
-
-    return $self->{'_rank'};
-}
-
-=head2 add_argument
-
-=cut
 
 sub add_argument{
 	my ($self, $arg) = @_;
