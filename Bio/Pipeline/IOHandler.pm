@@ -18,6 +18,12 @@ Bio::Pipeline::IOHandler input/output object for pipeline
 =head1 DESCRIPTION
 
 The input/output handler for reading input and writing output.
+Basically the goal of the IOHandler object is to represent a
+series of method calls that are needed to fetch a particular input. 
+Methods are represented by DataHandler objects which in term have
+argument objects. Datahandlers are rank in the order that they
+are cascaded, likewise for arguments.
+
 
 =head1 FEEDBACK
 
@@ -239,16 +245,12 @@ sub fetch_input {
         my $tmp1 = $datahandler->method;
         my @obj = $obj->$tmp1(@args);
         if(scalar(@obj) == 1){
-            $obj = $obj[0];
+          $obj = $obj[0];
         }
         else {
-            $obj = \@obj;
+          $obj = \@obj;
         }
-            
-        #$obj = $obj->$tmp1(@args);
     }
-    #destroy handle only if its a dbhandle
-    if($self->adaptor_type eq "DB") {$tmp->DESTROY};
 
     if (defined $self->converters) {
       my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
@@ -381,12 +383,9 @@ sub write_output {
         $obj = $self->_create_obj($self->stream_module,$constructor,@args);
     }
 
-#    my $obj = $self->_fetch_dbadaptor();
-
-
     # safety check ? Maybe this check should be made before the runnable is even ran
-#    $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
- #       unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
+    #    $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
+    #       unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
 
     my @output_ids;
     my $output_flag = 0;
@@ -454,13 +453,7 @@ sub _format_output_args {
             }
         }
         else {
-          #if your method expects a single variable (array ref)
-          if(ref($value) eq "ARRAY"){
-            push @args, ($arguments[$i]->tag => @{$value});
-          } 
-          else {
             push @args, ($arguments[$i]->tag => $value);
-          }
         }
       } 
       #no tags needed
@@ -474,12 +467,7 @@ sub _format_output_args {
           }
         }
         else {
-          if(ref($value) eq "ARRAY"){
-            push @args, @{$value};
-          }
-          else {
               push @args, $value;
-          }
         }
       }
     }
