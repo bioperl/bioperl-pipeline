@@ -1,0 +1,100 @@
+<!--
+juguang_genscan_annotation.xml
+
+INTRODUCTION:
+    An annotation pipeline with only one single analysis, genscan, in this case.
+
+    Input data is from EnsEMBL core database, while the output will be stored in the same db.
+
+DATA REQUIREMENT:
+
+    You need to have a copy of EnsEMBL core database for one species, if you want to use this pipeline. 
+    Here I got a local copy of homo_sapiens_core_9_30 
+    and used a script to setup a ensembl core database, juguang_homo_core_9_30.
+
+    ./copy_ens_core_9_30.sh juguang_homo_core_9_30
+
+    Please check out the script and know the more details.
+    
+LOADING PIPELINE:
+    The pipeline is loaded up using this xml file.
+    
+-->
+
+<pipeline_setup>
+    <database_setup>
+        <dbadaptor id="1">
+            <dbname>juguang_homo_core_9_30</dbname>
+            <driver>mysql</driver>
+            <host>mysql</host>
+            <user>root</user>
+            <module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
+        </dbadaptor>
+    </database_setup>
+    <iohandler_setup>
+        <iohandler id="1" type="INPUT">
+            <adaptor id="1" type="DB"/>
+            <method name="get_RawContigAdaptor" rank="1"/>
+            <method rank="2" name="get_all_Contig_name">
+                <argument value="5" type="SCALAR" rank="1"/>
+            </method>
+        </iohandler>
+        <iohandler id="2" type="INPUT">
+            <adaptor id="1" type="DB"/>
+            <method rank="1" name="get_RawContigAdaptor"/>
+            <method rank="2" name="fetch_by_name">
+                <argument value="INPUT" type="SCALAR" rank="1"/>
+            </method>
+            <method name="get_repeatmasked_seq" rank="3"/>
+        </iohandler>
+        <iohandler id="3" type="OUTPUT">
+            <adaptor id="1" type="DB"/>
+            <method rank="1" name="get_PredictionTranscriptAdaptor"/>
+            <method rank="2" name="store">
+                <argument value="OUTPUT" type="ARRAY" rank="1"/>
+            </method>
+        </iohandler>
+        <converter id="1" module="PredictionGeneToEnsEMBLConverter">
+            <method name="new" rank="1">
+                <argument tag="-driver" value="mysql"/>
+                <argument tag="-host" value="mysql"/>
+                <argument tag="-dbname" value="juguang_homo_core_9_30"/>
+                <argument tag="-user" value="root"/>
+                <argument tag="-analysis_logic_name" value="genscan"/>
+            </method>
+            <method rank="2" name="contig_name">
+                <argument value="INPUT" type="SCALAR" rank="1"/>
+            </method>
+            <method rank="3" name="convert"/>
+        </converter>
+    </iohandler_setup>
+    <pipeline_flow_setup>
+        <analysis id="1">
+            <data_monger>
+                <input>
+                    <name>Ensembl_ids</name>
+                    <iohandler>1</iohandler>
+                </input>
+                <input_create>
+                    <module>setup_initial</module>
+                    <rank>1</rank>
+                    <argument>
+                        <tag>Ensembl_ids</tag>
+                        <value>2</value>
+                    </argument>
+                </input_create>
+            </data_monger>
+            <input_iohandler id="1"/>
+        </analysis>
+        <analysis id="2">
+            <logic_name>genscan</logic_name>
+            <runnable>Bio::Pipeline::Runnable::Genscan</runnable>
+            <analysis_parameters>/usr/lib/GENSCAN/HumanIso.smat </analysis_parameters>
+            
+            <input_iohandler_mapping current="" next=""/>
+            <output_iohandler id="3" converter_id="1"/>
+        </analysis>
+        <rule next="1" action="NOTHING"/>
+        <rule current="1" next="2" action="NOTHING"/>
+    </pipeline_flow_setup>
+</pipeline_setup>

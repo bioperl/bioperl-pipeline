@@ -1,0 +1,196 @@
+<!--
+juguang_debut_annotation.xml
+
+There are 2 new features of this xml different from Shawn, Kiran used before.
+1. Introducting converter tag, which is usually located within analysis.output_iohandler.
+2. Simplified tag. Some single text nodes are moved into its parent node and become an attribute.
+
+Xml2db.PL is accordingly changed.
+
+-->
+
+<!-- this schema will be imported into juguang_debut_annotation -->
+<pipeline_setup>
+<database_setup>
+<!-- 
+I use the same module to access the different db with the same database schema, EnsEMBL 8.
+
+homo_sapiens_core_8_30a is originally from Ensembl 
+and remains no changed during the pipeline running.
+
+juguang_homo_core_annotation is initially empty 
+and will store the feature information the pipeline generates.
+
+-->
+
+
+	<dbadaptor id="1">
+		<dbname>juguang_homo_core_9_30</dbname>
+		<driver>mysql</driver>
+		<host>mysql</host>
+		<user>root</user>
+		<password></password>
+		<module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
+	</dbadaptor>
+	
+</database_setup>
+
+<iohandler_setup>
+<!-- 
+	
+-->
+	<iohandler id="1">
+		<adaptor_id>1</adaptor_id>
+		<adaptor_type>DB</adaptor_type>
+		<iohandler_type>INPUT</iohandler_type>
+		<!-- the method of adaptor, to fetch in INPUT or store in OUTPUT -->
+		<method>
+			<name>get_RawContigAdaptor</name>
+			<rank>1</rank>
+		</method>
+      <method>
+         <name>get_all_Contig_name</name>
+         <rank>2</rank>
+         <argument value="5" type="SCALAR" rank="1"/>
+      </method>  
+
+         
+	</iohandler>
+	<iohandler id="2" type="INPUT">
+		<adaptor id="1" type="DB"/>
+      <method>
+         <name>get_RawContigAdaptor</name>
+         <rank>1</rank>
+      </method>   
+		<method>
+			<name>fetch_by_name</name>
+			<rank>2</rank>
+			<argument value="INPUT" type="SCALAR" rank="1"/>
+		</method>	
+	</iohandler>
+	<iohandler id="3" type="OUTPUT">
+		<adaptor id="1" type="DB"/>
+      <method name="get_RepeatFeatureAdaptor" rank="1"/>
+      <method name="store" rank="2">
+			<!-- argument value="INPUT" type="SCALAR" rank="1"/ -->
+			<argument value="OUTPUT" type="ARRAY" rank="1"/>
+		</method>
+	</iohandler>
+	
+	<iohandler id="4" type="INPUT">
+		<adaptor id="1" type="DB"/>
+      <method name="get_RawContigAdaptor" rank="1"/>
+		<method name="fetch_by_name" rank="2">
+			<argument value="INPUT" type="SCALAR" rank="1"/>
+		</method>
+      <method name="get_repeatmasked_seq" rank="3"/>
+	</iohandler>
+	
+	<iohandler id="5" type="OUTPUT">
+		<adaptor id="1" type="DB"/>
+      <method name="get_ProteinAlignFeatureAdaptor" rank="1"/>
+		<method name="store" rank="2">
+			<!-- argument value="INPUT" type="SCALAR" rank="1"/ -->
+			<argument value="OUTPUT" type="ARRAY" rank="1"/>
+		</method>
+	</iohandler>
+
+   <converter id="1" module="FeaturePairToEnsEMBLConverter">
+      <method name="new" rank="1">
+         <argument tag = "-host" value = "mysql"/>
+         <argument tag = "-driver" value = "mysql"/>
+         <argument tag = "-dbname" value = "juguang_homo_core_9_30"/>
+         <argument tag = "-user" value = "root"/>
+         <!-- argument id = "15" tag = "-passwd" value = ""/ -->
+         <!-- I think to make the analysis logic name build in the converter instance module, but gave up since that will decrease the flexibility. 
+         -->
+         <argument tag="-analysis_logic_name" value="RepeatMask"/>
+      </method >
+      <method name="contig_name" rank="2">
+         <argument value="INPUT" type="SCALAR" rank="1"/>
+      </method>
+      <method name="convert" rank="3"/>
+  </converter>    
+  <converter id="2" module="HSPToEnsEMBLConverter">
+      <method name="new" rank="1">
+         <argument tag = "-program" value = "blastx"/>
+         <argument tag = "-host" value ="mysql"/>
+         <argument tag = "-driver" value = "mysql"/>
+         <argument tag = "-dbname" value = "juguang_homo_core_9_30"/>
+         <argument tag = "-user" value = "root"/>
+         <argument tag="-analysis_logic_name" value="blastall"/>
+      </method >
+      <method name="contig_name" rank="2">
+         <argument value="INPUT" type="SCALAR" rank="1"/>
+      </method>
+      <method name="convert" rank="3"/>
+   </converter>
+                                                                                                            
+</iohandler_setup>
+
+<pipeline_flow_setup>
+	<analysis id="1">
+		<data_monger>
+			<input>
+				<name>Ensembl_ids</name>
+				<iohandler>1</iohandler>
+			</input>
+			<input_create>
+				<module>setup_initial</module>
+				<rank>1</rank>
+				<argument>
+					<tag>Ensembl_ids</tag>
+					<value>2</value>
+				</argument>
+			</input_create>
+		</data_monger>
+		<input_iohandler id="1"/>
+	</analysis>
+		
+	<analysis id="2">
+		<logic_name>RepeatMasker</logic_name>
+		<runnable>Bio::Pipeline::Runnable::RepeatMasker</runnable>
+		<program>RepeatMasker</program>
+		<nodegroup_id>1</nodegroup_id>
+		<analysis_parameters>-lib all.lib</analysis_parameters>
+			
+		<input_iohandler_mapping current="" next=""/>
+		<output_iohandler id="3" converter_id="1" />
+			
+	</analysis>
+	
+	<analysis id="3">
+		<logic_name>Blast</logic_name>
+		<runnable>Bio::Pipeline::Runnable::Blast</runnable>
+		<db>swissprot</db>
+		<db_file>/data0/swissprot</db_file>
+		<program>blastall</program>
+		<analysis_parameters>-p blastx -e 0.001 -F SEG+XNU</analysis_parameters>
+		<output_iohandler id="5" converter_id="2"/>
+	</analysis>
+<!--	
+	<analysis id="4">
+		<logic_name>Blast</logic_name>
+		<runnable>Bio::Pipeline::Runnable::Blast</runnable>
+		<db>trembl</db>
+		<db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
+		<program>blastall</program>
+		<parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+		<output_iohandler id="5" converter_id="2"/>
+	</analysis>
+-->   
+	<!-- Simplified the rule tag.
+		current - current_analysis_id
+		next - next_analysis_id
+		action - action
+	-->
+   <rule next="1" action="NOTHING"/>
+	<rule current="1" next="2" action="NOTHING"/>
+
+   <rule current="2" next="3" action="COPY_ID"/>
+<!--
+   <rule current="2" next="4" action="COPY_ID"/>
+-->	
+</pipeline_flow_setup>
+
+</pipeline_setup>
