@@ -103,22 +103,10 @@ sub new {
   $self->module($module);
   $self->method($method);
   $self->rank($rank);
+  $self->analysis($analysis) if $analysis;
+  $self->iohandler($ioh) if $ioh;
 
-    if(defined $analysis){
-        $self->warn("a Bio::Pipeline::Analysis object expected") unless($analysis->isa('Bio::Pipeline::Analysis'));
-        $self->analysis($analysis);
-    }else{
-        $self->warn("analysis object is not defined");
-    }
-    
-    if(defined $ioh){
-        $self->warn("a Bio::Pipeline::IOHandler object expected") unless($ioh->isa('Bio::Pipeline::IOHandler'));
-        $self->iohandler($ioh);
-    }else{
-        $self->warn("iohandler object is not defined");
-    }
-    
-    return $self;
+  return $self;
 }
 
 =head2 run
@@ -141,12 +129,13 @@ sub run {
    my @inputs = ref $input_ref eq "ARRAY" ? @{$input_ref} : ($input_ref);
    my @methods = $self->method;
    my $constructor = shift @methods;
-   my @args        = $constructor->arguments;
-   my $obj         = $self->_load_obj($self->module,$constructor,@args);
+   my @args        = @{$constructor->arguments};
+   @args           = $self->_format_input_arguments($input_ref,@args);
+   my $obj         = $self->_load_obj($self->module,$constructor->name,@args);
    foreach my $method(@methods){
-    my @arguments = sort {$a->rank <=> $b->rank}@{$method->argument};
+    my @arguments = sort {$a->rank <=> $b->rank}@{$method->arguments} if ref($method->arguments);
     my @args = $self->_format_input_arguments($input_ref,@arguments);
-    my $tmp1 = $method->method;
+    my $tmp1 = $method->name;
     my @obj = $obj->$tmp1(@args);                                               
     if(scalar(@obj) == 1){                                                      
       $obj = $obj[0];                                                           
