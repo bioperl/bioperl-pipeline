@@ -145,17 +145,9 @@ print "///////////////Starting Pipeline//////////////////////\n";
 
 my @rules       = $ruleAdaptor->fetch_all;
 
-if (!$resume) {
-	my $init_rule;
-	foreach my $rule (@rules) {
-	   if (! defined($rule->current) && ($rule->action eq 'CREATE_INPUT')) {
-	      $init_rule = $rule;
-	   }
-	}
-	if (defined ($init_rule)) {
-	  _create_initial_jobs($init_rule->next);
-	}
-}
+# Create initial inputs and jobs in bulk if necessary
+_initialise();
+
 my $run = 1;
 my $submitted;
 my $total_jobs;
@@ -328,6 +320,24 @@ sub create_new_job {
     return (\@new_jobs);
 }
 
+sub _initialise {
+        my $init_rule;
+        foreach my $rule (@rules) {
+           if (! defined($rule->current) && ($rule->action eq 'CREATE_INPUT')) {
+              $init_rule = $rule;
+           }
+        }
+        if (defined ($init_rule)) {
+          if (!$jobAdaptor->job_exists($init_rule->next)) {
+             print STDERR "Starting fresh pipeline run \n";
+             _create_initial_jobs($init_rule->next);
+          }
+          else {
+            print STDERR "Resuming from previous run\n";
+          }
+        }
+}
+
 sub _create_initial_jobs {
     my ($analysis) = @_;
     my @inputs = _create_input ($analysis);
@@ -352,18 +362,21 @@ sub _create_initial_jobs {
 sub _create_input {
     my ($analysis) = @_;
     print "Fetching Input ids \n";
-    my $ioh = $analysis->create_input_iohandler;
-    my ($inputs) = $ioh->fetch_input_ids();
-    my %io_map = %{$analysis->io_map};
-    my $map_ioh = $io_map{$ioh->dbID}; 
-    print scalar(@{$inputs}). " inputs fetched\nStoring...\n";
- 
+    #my $ioh = $analysis->create_input_iohandler;
+    my $iohs = $analysis->create_input_iohandler;
     my @input_objs;
-    foreach my $in (@{$inputs}){
-        my $input_obj = Bio::Pipeline::Input->new(-name => $in,
+    foreach my $ioh (@{$iohs}) {
+      
+    	my ($inputs) = $ioh->fetch_input_ids();
+    	my %io_map = %{$analysis->io_map};
+    	my $map_ioh = $io_map{$ioh->dbID}; 
+    	print scalar(@{$inputs}). " inputs fetched\nStoring...\n";
+ 
+    	foreach my $in (@{$inputs}){
+        	my $input_obj = Bio::Pipeline::Input->new(-name => $in,
                                                   -input_handler => $map_ioh);
-        #$input_obj->job_id($jobid);
-        push @input_objs, $input_obj;
+        	push @input_objs, $input_obj;
+    	}
     }
     return @input_objs;
 }
