@@ -316,7 +316,7 @@ sub run {
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "READING: Lost the will to live Error\n");
-      die "Problems with runnableDB fetching input [$err]\n";
+      $self->throw ("Problems with runnableDB fetching input [$err]\n");
   }
   if ($rdb->input_is_void) {
       $self->set_status( "VOID" );
@@ -329,7 +329,7 @@ sub run {
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "RUNNING: Lost the will to live Error\n");
-      die "Problems running runnableDB for [$err]\n";
+      $self->throw("Problems running runnableDB for [$err]\n");
   }
   eval {
       $self->set_stage( "WRITING" );
@@ -338,21 +338,12 @@ sub run {
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "WRITING: Lost the will to live Error\n");
-      die "Problems for runnableDB writing output for  [$err]" ;
+      $self->throw( "Problems for runnableDB writing output for  [$err]") ;
   }
-  $self->set_status( "COMPLETED" );
-  if ($autoupdate) {
-      if ($self->{'_status'} eq 'COMPLETED'){
-        eval {
-            $self->set_stage("EXITING");
-            $self->update_complete_job; 
-        };
-        if ($err = $@) {
-         $self->set_status('FAILED');
-         print STDERR "Error updating completed job".$self->dbID." [$err]\n";
-        }
-      }
-  }
+  $self->stage('UPDATING');
+  $self->status( "COMPLETED" );
+  $self->update;
+  return 1;
 }
 
 
@@ -451,7 +442,7 @@ sub stage {
     $self->{'_stage'} = $arg;
   }
   
-  return $self->{'_stage'} = $arg;
+  return $self->{'_stage'};
 }
 
 
@@ -484,7 +475,7 @@ sub set_stage{
   if( ! defined( $self->adaptor )) {
     return undef;
   }
-  $self->{'_status'} = $arg;
+  $self->{'_stage'} = $arg;
  
   $self->adaptor->set_stage( $self );
 }
@@ -526,9 +517,11 @@ sub update {
 
 }
 
-sub update_complete_job{
+sub update_completed{
   my ($self)=@_;
-  print STDERR "This method is not implemented yet\n";
+  eval{
+    $self->adaptor->update_completed_job($self);
+  };if($@){$self->throw ("Error updating completed job\n$@");}
 }
 
     

@@ -75,55 +75,60 @@ my $jobAdaptor  = $db->get_JobAdaptor;
 #
 # The idea is that you could have more than one of these hashes to suit
 # different types of jobs, with different QUEUE options. You would then define
+
 # a queue 'resolver' function. This would take the Job object and return the
 # queue type, based on variables in the Job/underlying Analysis object.
 #
 # For example, you could put slow (e.g., blastx) jobs in a different queue,
 # or on certain nodes, or simply label them with a different jobname.
 
-my $QUEUE_params = {};
-$QUEUE_params->{'queue'}     = $QUEUE if defined $QUEUE;
-$QUEUE_params->{'nodes'}     = $USENODES if $USENODES;
-$QUEUE_params->{'flushsize'} = $BATCHSIZE if defined $BATCHSIZE;
-$QUEUE_params->{'jobname'}   = $JOBNAME if defined $JOBNAME;
-
 #fetching jobs that are have status NEW or 
 #have failed with a retry count less than the variable set in PipeConf.
 
+my $run =1;
 
-my $run = 1;
 while ($run) {
 
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db);
-    my @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
-    print STDERR "Running ".scalar(@jobs)."\n";
     
-    foreach my $job(@jobs){
-        if ($local){
-            $job->status('SUBMITTED');
-            $job->make_filenames unless $job->filenames;
-            $job->update;
-            $job->run;
-        }else{
-            $batchsubmitter->add_job($job);
-            if ($job->status eq 'FAILED'){ 
+    foreach my $job($jobAdaptor->fetch_all($RETRY)){
+        if ($job->get_status eq 'COMPLETED'){
+            eval{
+                $job->update_completed;
+            };if ($@){
+                $job->set_status('FAILED');
+             }else{$job->remove;}
+        }else {
+            if ($job->get_status eq 'FAILED'){ 
                 my $retry_count = $job->retry_count;
                 $retry_count++;
                 $job->retry_count($retry_count);
             }
-            $job->status('BATCHED');
-            $job->update;
-            $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
+            if ($local){
+                $job->status('SUBMITTED');
+                $job->make_filenames unless $job->filenames;
+                $job->update;
+                eval {
+                    $job->run;
+                };
+                my $pants = $@;
+                if ($pants) {
+                    print STDERR "Job ".$job->dbID." failed: [$pants]";
+                }
+            }else{
+                $batchsubmitter->add_job($job);
+                $job->set_status('BATCHED');
+                $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
+            }
         }
     }	    
 
     $batchsubmitter->submit_batch if ($batchsubmitter->batched_jobs);
     
-    exit 0 if $once;
+    my $count = $jobAdaptor->job_count;
+    $run =  0 if ($once || !$count);
     sleep($SLEEP);
-    @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
-    $run = 0 unless @jobs;
     print "Waking up and run again!\n";
 }
 
-print STDERR "exiting jobmanager...\n";
+print STDERR "Jobs completed, exiting jobmanager...\n";

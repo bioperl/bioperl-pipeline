@@ -132,11 +132,13 @@ sub fetch_by_dbID {
 =cut
 
 sub fetch_all {
-    my ($self) = @_;
+    my ($self,$retry) = @_;
 
     my @jobs;
     
     my $query = "SELECT job_id FROM job";
+
+    if ($retry) { $query .= " WHERE retry_count < $retry";}
 
     my $sth = $self->prepare($query);
     $sth->execute;
@@ -147,6 +149,30 @@ sub fetch_all {
     }
 
     return @jobs;
+}
+
+=head2 job_count
+
+  Title   : job_count
+  Usage   : my $count = $adaptor->job_count
+  Function: gives a count of the number of jobs that are still incomplete.
+  Returns : int 
+  Args    : 
+
+=cut
+
+sub job_count{
+    my ($self,$retry) = @_;
+
+    my $query = "SELECT count(*) FROM job";
+
+    if ($retry) { $query .= " WHERE retry_count < $retry";}
+
+    my $sth = $self->prepare($query);
+    $sth->execute;
+
+    my ($count) = $sth->fetchrow_array;
+    return $count;
 }
 
 =head2 fetch_new_failed_jobs
@@ -252,15 +278,6 @@ sub remove {
      WHERE job_id = $dbID } );
   $sth->execute;
 
-  $sth = $self->prepare( qq{
-    DELETE FROM current_status
-     WHERE job_id=$dbID } );
-  $sth->execute;
-
-  $sth = $self->prepare( qq{
-    DELETE FROM jobstatus
-     WHERE job_id = $dbID } );
-  $sth->execute;
 }
 
 
@@ -286,16 +303,10 @@ sub remove_by_dbID {
   my $sth = $self->prepare( qq{
     DELETE FROM job
      WHERE job_id IN $inExpr } );
-  $sth->execute;
+  eval {
+    $sth->execute;
+  };if($@){$self->throw("Error encountered trying to remove jobs $inExpr.\n$@");} 
 
-  $sth = $self->prepare( qq{
-    DELETE FROM current_status
-     WHERE job_id IN $inExpr } );
-  $sth->execute;
-  $sth = $self->prepare( qq{
-    DELETE FROM jobstatus
-     WHERE job_id IN $inExpr } );
-  $sth->execute;
 }
 
 
@@ -341,6 +352,40 @@ sub update {
 }
 
 
+=head2 update_completed_job
+
+  Title   : update_completed_job;
+  Usage   : $job->update_complete; $jobAdaptor->update_completed( $job )
+  Function: moves job record from the job table to the completed_jobs table
+            This step is optional, but it keeps a record of the completed jobs
+  Returns : throws exception when something goes wrong.
+  Args    : 
+
+=cut
+
+sub update_completed_job {
+  my $self = shift;
+  my $job = shift;
+
+  $self->throw("Can't update a completed job that has no dbID!") unless (defined $job->dbID);
+  
+  my $query = " INSERT INTO completed_jobs
+                     VALUES (".$job->dbID.",".
+                            $job->analysis->dbID.",".
+                            $job->QUEUE_ID.",".
+                            "'".$job->stdout_file."',".
+                            "'".$job->stderr_file."',".
+                            "'".$job->input_object_file."',".
+                            "now(),".
+                            $job->retry_count.")";
+  my $sth = $self->prepare($query);
+
+  eval { 
+      $sth->execute;
+  };if ($@) { $self->throw("ATTEMPT TO UPDATE COMLETED JOB FAILED.\n.$@");}
+
+  return 1;
+}
 
 =head2 _objFromHashref
 
@@ -442,7 +487,7 @@ sub set_stage {
 
 
     eval {	
-	    my $sth = $self->prepare(   "update job set stage='".$job->status."' 
+	    my $sth = $self->prepare(   "update job set stage='".$job->stage."' 
                                     where job_id = ". $job->dbID);
 	    $sth->execute();
     };
