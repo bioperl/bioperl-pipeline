@@ -47,8 +47,8 @@ use vars qw (%PipeConf);
     # database specific variables
     
     DBI_DRIVER => 'mysql',
-    DBHOST     => 'localhost',
-    DBNAME     => 'yourdbhere',
+    DBHOST     => 'locahost',
+    DBNAME     => 'yourdb',
     DBUSER     => 'root',
     DBPASS     => '',	     
 
@@ -77,17 +77,17 @@ use vars qw (%PipeConf);
     SLEEP      => 100,
 
     ##############################################
-    # NOT SUPPORTED CURRENTLY FOR FUTURE DEV
+    # PARAMS FROM HERE ON NOT SUPPORTED CURRENTLY FOR FUTURE DEV
     # default directory for data files and binary files
-    #BINDIR     => '',
-    #DATADIR    => '',
-    #USENODES    =>'',
+    BINDIR     => '',
+    DATADIR    => '',
+    USENODES    =>'',
     # jobname
-    #JOBNAME    =>'',
+    JOBNAME    =>'',
     # true->update InputIdAnalysis via Job
-    #AUTOUPDATE => 1,    
-    #WAIT_FOR_ALL_PERCENT => 0,
-    #TIMEOUT    => 100,
+    AUTOUPDATE => 1,    
+    WAIT_FOR_ALL_PERCENT => 0,
+    TIMEOUT    => 100,
     );
 
 sub import {
