@@ -221,9 +221,7 @@ sub create_new_job{
                   ################  we are not copying the fixed inputs of the previous jobs for now for this option ####################
                   #now copy outputs of all jobs of previous analysis as inputs for this job
                   my @inputs = _update_inputs($job, $new_job);
-                  foreach my $input (@inputs) {
-                     $new_job->add_input($input);
-                  }
+                  $new_job->add_input(\@inputs);
                   push (@new_jobs,$new_job);
                }
             }
