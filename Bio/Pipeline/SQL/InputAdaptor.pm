@@ -99,8 +99,14 @@ sub fetch_fixed_input_by_dbID {
     my $input_handler;
     if($iohandler_id){
         $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
+      if($analysis_id){
         my $analysis = $self->db->get_AnalysisAdaptor->fetch_by_dbID($analysis_id);
-        $input_handler->analysis($analysis) if $analysis;
+        $analysis || $self->throw("Unable to fetch analysis $analysis_id");
+        $input_handler->analysis($analysis);
+        my $trans_ref = $self->db->get_AnalysisAdaptor->fetch_transformer_by_analysis_iohandler($analysis,$input_handler);
+        $input_handler->transformers($trans_ref) if ($trans_ref);
+
+      }
     }
 
     #fetch dynamic arguments if any
