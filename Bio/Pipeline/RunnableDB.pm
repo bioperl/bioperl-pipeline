@@ -206,15 +206,15 @@ sub output {
    
     $self->{'_output'} = [];
     
-    my @r = $self->runnable;
-
-    if(scalar(@r)){
-      foreach my $r ($self->runnable){
-        if (defined $r->output){
-  	      push(@{$self->{'_output'}}, $r->output);
+    #my @r = $self->runnable;
+    
+    #if(scalar(@r)){
+      #foreach my $r ($self->runnable){
+        if (defined $self->runnable->output){
+  	      push(@{$self->{'_output'}}, @{$self->runnable->output});
         }
-      }
-    }
+     # }
+    #}
     return @{$self->{'_output'}};
 }
 
