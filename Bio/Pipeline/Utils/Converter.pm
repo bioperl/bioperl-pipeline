@@ -9,9 +9,25 @@
 # POD documentation - main docs before the code
 #
 =head1 NAME
+
 Bio::Pipeline::Converter input object
 
 The converter object for handling object conversion during io handling.
+
+=head1 SYNOPSIS
+
+  use Bio::Pipeline::Converter;
+
+  my $converter = new Bio::Pipeline::Converter( -dbID => $converter_id,
+                                                -module => $module,
+                                                -method => $method,
+                                                -argument => $argument);
+
+  my $converted_obj = $conveter->convert($obj);
+
+=head1 DESCRIPTION
+
+  Module to encapsulate a converter object
 
 =head1 FEEDBACK
 
@@ -31,7 +47,7 @@ the bugs and their resolution.  Bug reports can be submitted via email
 or the web:
 
   bioperl-bugs@bio.perl.org
-  http://bio.perl.org/bioperl-bugs/
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR - Kiran 
 
@@ -55,6 +71,21 @@ use Bio::Root::Root;
 @ISA = qw(Bio::Root::Root);
 
 
+=head2 new
+
+  Title   : new
+  Usage   : my $converter = Bio::Pipeline::Converter->new('-module'=>'Bio::SeqFeatureIO',
+                                                          '-method'=>"convert",
+                                                          '-rank'  => 1);
+  Function: constructor for converter object
+  Returns : L<Bio::Pipeline::Converter>
+  Args    : module the module name
+            method the method to call that converts the object
+            rank   the rank of the converter assuming that they may be
+                   more than one converter
+
+=cut
+
 sub new {
   my($class,@args) = @_;
   
@@ -75,80 +106,146 @@ sub new {
   return $self;
 }
 
+=head2 convert
+
+  Title   : convert
+  Usage   : my $obj = $conv->convert($obj);
+  Function: does the actual conversion
+  Returns : whatever object it is supposed to convert to
+  Args    : the input object to convert
+
+=cut
+
 sub convert {
     my ($self, $input) = @_;
+    $input || $self->throw("Need an input object to convert");
     my $obj = $self->_create_obj($self->module);
     my $method = $self->method;
     my $output = $obj->$method($input);
     return $output;
 }
 
+
+=head2 _create_obj
+
+  Title   : _create_obj
+  Usage   : my $obj = $conv->_create_obj($obj);
+  Function: loads the object 
+  Returns : whatever object it is supposed to create
+  Args    :  the module name
+
+=cut
+
 sub _create_obj {
     my ($self,$module,@args) = @_;
     $module || $self->throw("Need an object to create object");
+    $self->_load_module($module);
 
-    if($module=~/::/){
-        $module =~ s/::/\//g;
-        require "${module}.pm";
-        $module =~s/\//::/g;
-    }
     my $obj = "${module}"->new(@args);
 
     return $obj;
 }
 
+
+=head2 dbID
+
+  Title   : dbID
+  Usage   : $conv->dbID($id);
+  Function: get/set for the dbID 
+  Returns : 
+  Args    : 
+
+=cut
+
 sub dbID {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-            $self->{_dbID} = $arg;
+      $self->{'_dbID'} = $arg;
     }
 
-    return $self->{_dbID};
+    return $self->{'_dbID'};
 }
 
- 
+
+=head2 module
+
+  Title   : module
+  Usage   : $conv->module($module);
+  Function: get/set for the module
+  Returns :
+  Args    :
+
+=cut
+
 sub module {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	    $self->{_module} = $arg;
+	    $self->{'_module'} = $arg;
     }
 
-    return $self->{_module};
+    return $self->{'_module'};
 }
+
+
+=head2 method
+
+  Title   : method
+  Usage   : $conv->method($method);
+  Function: get/set for the module
+  Returns :
+  Args    :
+
+=cut
 
 sub method {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	    $self->{_method} = $arg;
+	    $self->{'_method'} = $arg;
     }
 
-    return $self->{_method};
+    return $self->{'_method'};
 }
+
+
+=head2 rank
+
+  Title   : rank
+  Usage   : $conv->rank($rank);
+  Function: get/set for the rank
+  Returns :
+  Args    :
+
+=cut
 
 sub rank{
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	    $self->{_rank} = $arg;
+	    $self->{'_rank'} = $arg;
     }
-    return $self->{_rank};
+    return $self->{'_rank'};
 }
+
+
+=head2 argument
+
+  Title   : argument
+  Usage   : $conv->argument($argument);
+  Function: get/set for the argument
+  Returns :
+  Args    :
+
+=cut
 
 sub argument{
-	my($self, $value) = @_;
-	return $self->_general_member('_argument', $value);
-}
-
-sub _general_member{
-	my ($self, $key, $value) = @_;
-	$self->throw("the key of the member variable must be specified") unless(defined($key));
-	if(defined($value)){
-		$self->{$key} = $value;
-	}
-	return $self->{$key};
+	my($self, $arg) = @_;
+  if (defined($arg)) {
+      $self->{'_argument'}= $arg;
+   }
+    return $self->{'_argument'};
 }
 
 1;

@@ -10,12 +10,16 @@
 #
 
 =head1 NAME
-Bio::Pipeline::InputCreate
-Filter object used for encasulating different input creating functions.
-Part of DataMonger Object.
 
+Bio::Pipeline::InputCreate
 
 =head1 SYNOPSIS
+
+  use Bio::Pipeline::InputCreate;
+
+ my $inc = Bio::Pipeline::InputCreate->new('-module'=>'setup_genewise','-rank'=>1,'-dbadaptor'=>$self->db);
+ $inc->run();
+
 
 =head1 DESCRIPTION
 
@@ -40,7 +44,7 @@ the bugs and their resolution.  Bug reports can be submitted via email
 or the web:
 
   bioperl-bugs@bio.perl.org
-  http://bio.perl.org/bioperl-bugs/
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR - Shawn Hoon
 
@@ -213,7 +217,6 @@ sub dbID {
   }
   return $self->{'_dbID'};
 }
-
 
 =head2 module
 

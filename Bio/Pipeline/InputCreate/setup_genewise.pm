@@ -1,3 +1,60 @@
+#
+# BioPerl module for Bio::Pipeline::InputCreate::setup_genewise
+#
+# Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+#
+#
+# You may distribute this module under the same terms as perl itself
+#
+# POD documentation - main docs before the code
+#
+=head1 NAME
+
+Bio::Pipeline::Input::setup_genewise
+
+=head1 SYNOPSIS
+
+  my $inc = Bio::Pipeline::Input::setup_genewise->new(-contig_ioh=>$cioh,
+                                                   -protein_ioh=>$pioh,
+                                                   -dh_ioh     =>$dh_ioh,
+                                                   -padding => 1000);
+  $inc->run;
+
+=head1 DESCRIPTION
+
+The input/output object for reading input and writing output.
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bio.perl.org/bioperl-bugs/
+
+=head1 AUTHOR - Shawn Hoon
+
+Email shawnh@fugu-sg.org
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
+
+=cut
+
 package Bio::Pipeline::InputCreate::setup_genewise;
 
 use vars qw(@ISA);
@@ -101,11 +158,11 @@ sub dhid {
     return $self->{'_dhid'};
 }
 
-=head2 contig_ioh
+=head2 datatypes
 
-  Title   : contig_ioh
-  Usage   : $self->contig_ioh()
-  Function: get/set of the iohandler id for fetching the contig sequence
+  Title   : datatypes
+  Usage   : $self->datatypes()
+  Function: get/set of the datatypes required for this input create
   Returns :
   Args    :
 

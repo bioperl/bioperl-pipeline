@@ -11,11 +11,15 @@
 =head1 NAME
 Bio::Pipeline::Input input object
 
+
 =head1 SYNOPSIS
-my $io = Bio::Pipeline::IO->new(-dbadaptor=>$dbadaptor,
-                                -dataadaptor=>$data_adaptor,
-                                -dataadaptormethod=>$data_adaptor_method);
-my $input = $io->fetch_input("Scaffold_1.1");
+
+   my $input = Bio::Pipeline::Input->new(-name=>"sequence1",
+                                         -tag=>"sequence",
+                                         -input_handler=>$iohandler,
+                                         -dynamic_arguments=>"-length 10",
+                                         -job_id=>1);
+  my $input = $io->fetch_input();
 
 =head1 DESCRIPTION
 
@@ -39,7 +43,7 @@ the bugs and their resolution.  Bug reports can be submitted via email
 or the web:
 
   bioperl-bugs@bio.perl.org
-  http://bio.perl.org/bioperl-bugs/
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR - Shawn Hoon
 
@@ -62,10 +66,19 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : 
-  Function: 
-  Returns : 
-  Args    : 
+  Usage   : my $input = Bio::Pipeline::Input->new(-name=>"sequence1",
+                                                  -tag=>"sequence", 
+                                                  -input_handler=>$iohandler,
+                                                  -dynamic_arguments=>"-length 10",
+                                                  -job_id=>1);
+  Function: Constructor for the input
+  Returns : L<Bio::Pipeline::Input>
+  Args    : name  the key id of the input used to fetch it
+            tag   the tag of the input, used to set runnable get/set
+            input_handler the iohandler used to fetch this input
+            dynamic_arguments dynamic arguments generated on the fly used to fetch this input
+            job_id  the job id that this input belongs to
+
 =cut
 
 sub new {
@@ -80,13 +93,11 @@ sub new {
   $name || $self->throw("Need an input name");
 
   #allow direct variable, string to be fed.
-  #$input_handler || $self->throw("Need an input_handler attached to this input.");
   $input_handler && $self->input_handler($input_handler);
   $self->job_id($job_id) if defined $job_id;
   $self->tag($tag);
   $self->name($name);
   $self->dynamic_arguments($dyn_arg);
-  
   return $self;
 }    
 
@@ -94,8 +105,9 @@ sub new {
 =head2 fetch
 
   Title    : fetch
-  Function : 
-  Example  : 
+  Function : fetch the input object that this input represents if
+             there is an input_handler, if not, just return the name
+  Example  : $input->fetch
   Returns  : 
   Args     : 
 
@@ -119,13 +131,13 @@ These methods let you get at and set the member variables
 =head2 name
 
   Title    : name
-  Function : 
+  Function : get/set for input name
   Example  : 
   Returns  : 
   Args     : 
 
 =cut
- 
+
 sub name{
     my ($self,$name) = @_;
     if (defined $name) {
@@ -137,7 +149,7 @@ sub name{
 =head2 tag 
 
   Title    : tag 
-  Function :
+  Function : get/set for input tag
   Example  :
   Returns  :
   Args     :
@@ -156,7 +168,7 @@ sub tag{
 =head2 dynamic_arguments
 
   Title    : dynamic_arguments
-  Function :
+  Function : get/set for dynamic_arguments
   Example  :
   Returns  :
   Args     :
@@ -175,7 +187,7 @@ sub dynamic_arguments{
 =head2 input_handler
 
   Title    : input_handler
-  Function : 
+  Function : get/set for input_handler
   Example  : 
   Returns  : 
   Args     : 
@@ -193,7 +205,7 @@ sub input_handler{
 =head2 job_id
 
   Title    : job_id
-  Function : 
+  Function : get/set for job_id
   Example  : 
   Returns  : 
   Args     : 
@@ -211,7 +223,7 @@ sub job_id{
 =head2 adaptor
 
   Title    : adaptor
-  Function : 
+  Function : get/set for the adaptor of this input
   Example  : 
   Returns  : 
   Args     : 
@@ -230,7 +242,7 @@ sub adaptor{
 
 
   Title    : dbID
-  Function : 
+  Function : get/set for the dbID of this input
   Example  : 
   Returns  : 
   Args     : 

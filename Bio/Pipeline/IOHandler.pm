@@ -10,20 +10,107 @@
 #
 
 =head1 NAME
+
 Bio::Pipeline::IOHandler input/output object for pipeline
 
-
 =head1 SYNOPSIS
+
+  ##################
+  #input fetching
+  ##################
+
+  #Fetching from database
+
+  my $data_handler1 = Bio::Pipeline::DataHandler->new(-dbid=>1,
+                                                      -method=>"get_ContigAdaptor",
+                                                      -rank=>1);
+  my $data_handler2 = Bio::Pipeline::DataHandler->new(-dbid=>2,
+                                                      -method=>"fetch_by_dbID",
+                                                      -argument=>['INPUT'],
+                                                      -rank=>2);
+
+  my $io_db = Bio::Pipeline::IOHandler->new_ioh_db(-dbID=>1,
+                                                   -type=>'INPUT',
+                                                   -dbadaptor_dbname=>"ensembl-db",
+                                                   -dbadaptor_driver=>"mysql",
+                                                   -dbadaptor_host  =>"localhost",
+                                                   -dbadaptor_user  => "root",
+                                                   -dbadpator_pass  => "",
+                                                   -dbadaptor_module=> "Bio::EnsEMBL::DBSQL::DBAdaptor",
+                                                   -dbadaptor_port  =>3306,
+                                                   -datahandlers    => [$datahandler_1,$datahandler_2]);
+
+  my $in = Bio::Pipeline::Input->new(-name=>"Sequence1",
+                                     -tag =>"input",
+                                     -job_id=>1);
+  my $input = $io_db->fetch_input($in); #$input is an array of ref ensembl contigs
+
+  print $input->seq;
+
+  #alternatively you can use any modules to read, here we are reading from a database
+  #of fasta formatted files
+
+  my $data_handler1 = Bio::Pipeline::DataHandler->new(-dbid=>1,
+                                                      -method=>"new",
+                                                      -rank=>1);
+  my $data_handler2 = Bio::Pipeline::DataHandler->new(-dbid=>2,
+                                                      -method=>"fetch_by_Seq_id",
+                                                      -argument=>['INPUT'],
+                                                      -rank=>2);
+  my $io_stream =  Bio::Pipeline::IOHandler->new_io_stream(-dbID=>1,
+                                                           -type=>'INPUT',
+                                                           -module=>'Bio::DB::Fasta',
+                                                           -datahandlers=>[$datahandler_1,$datahandler_2]);
+  my $in = Bio::Pipeline::Input->new(-name=>"sequence_1",
+                                     -tag =>"input",
+                                     -job_id=>1);
+  my $seq = $io_stream->fetch_input($in);
+
+  print $seq->seq;
+
+  ################## 
+  #Writing to output
+  ##################  
+
+   my $data_handler1 = Bio::Pipeline::DataHandler->new(-dbid=>1,
+                                                      -method=>"get_FeatureAdaptor",
+                                                      -rank=>1);
+   my $data_handler2 = Bio::Pipeline::DataHandler->new(-dbid=>2,
+                                                      -method=>"store",
+                                                      -argument=>['OUTPUT'],
+                                                      -rank=>2);
+
+   my $io_db = Bio::Pipeline::IOHandler->new_ioh_db(-dbID=>1,
+                                                   -type=>'INPUT',
+                                                   -dbadaptor_dbname=>"ensembl-db",
+                                                   -dbadaptor_driver=>"mysql",
+                                                   -dbadaptor_host  =>"localhost",
+                                                   -dbadaptor_user  => "root",
+                                                   -dbadpator_pass  => "",
+                                                   -dbadaptor_module=> "Bio::EnsEMBL::DBSQL::DBAdaptor",
+                                                   -dbadaptor_port  =>3306,
+                                                   -datahandlers    => [$datahandler_1,$datahandler_2]);
+    my @features = $runnable->output;
+
+    $io_db->write_output(-output=>@features);
+
 
 =head1 DESCRIPTION
 
 The input/output handler for reading input and writing output.
-Basically the goal of the IOHandler object is to represent a
-series of method calls that are needed to fetch a particular input. 
+IOHandler object represents a  series of method calls that are 
+needed to fetch a particular input or store outputs. 
+
+It represents the following snippet of code in the database:
+
+my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(-dbname=>"my_db",
+                                             -user  =>"root");
+
+my $gene = $db->get_GeneAdaptor->fetch_by_dbID(1);
+
 Methods are represented by DataHandler objects which in term have
 argument objects. Datahandlers are rank in the order that they
 are cascaded, likewise for arguments.
-
 
 =head1 FEEDBACK
 
@@ -43,7 +130,7 @@ the bugs and their resolution.  Bug reports can be submitted via email
 or the web:
 
   bioperl-bugs@bio.perl.org
-  http://bio.perl.org/bioperl-bugs/
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR - Shawn Hoon
 
@@ -68,17 +155,28 @@ use Bio::Root::Root;
 =head2 new_ioh_db
 
   Title   : new_ioh_db
-  Usage   : my $io = Bio::Pipeline::IOHandler->new(-dbadaptor=>$dbadaptor,
-                                            -dataadaptor=>$datahandler,
-                                            -dataadaptormethod=>$datahandler_method);
- 
+  Usage   : my $io_db = Bio::Pipeline::IOHandler->new_ioh_db(-dbID=>1,
+                                                   -type=>'INPUT',
+                                                   -dbadaptor_dbname=>"ensembl-db",
+                                                   -dbadaptor_driver=>"mysql",
+                                                   -dbadaptor_host  =>"localhost",
+                                                   -dbadaptor_user  => "root",
+                                                   -dbadpator_pass  => "",
+                                                   -dbadaptor_module=> "Bio::EnsEMBL::DBSQL::DBAdaptor",
+                                                   -dbadaptor_port  =>3306,
+                                                   -datahandlers    => [$datahandler_1,$datahandler_2]); 
   Function: generates a new Bio::Pipeline::IOHandler for DB connections
   Returns : a new IOHandler object 
-  Args    : dbadaptor to database #note dbadaptor and biodbadaptor are mutally exclusive
-            biodbadaptor external biodb adaptor
-            biodbname name of biodb
-            dataadaptor the adaptor for the object (example Bio::EnsEMBL::DBSQL::ProteinAdaptor)
-            dataadaptormethod the method to fetch the object (example fetch_by_dbID)
+  Args    : dbID              the dbID of this iohandler
+            dbadaptor_dbname  the database name
+            dbadaptor_driver  the database driver
+            dbadaptor_host    the database host name
+            dbadaptor_user    the database user
+            dbadaptor_pass    the database password
+            dbadaptor_module  the module used for connecting to the database
+            dbadaptor_port    the database port number
+            datahandlers      the array ref of datahandler objects
+
 =cut
 
 sub new_ioh_db {
@@ -125,13 +223,15 @@ sub new_ioh_db {
 =head2 new_ioh_stream
 
   Title   : new_ioh_stream
-  Usage   : my $io = Bio::Pipeline::IOHandler->new(-dbadaptor=>$dbadaptor,
-                                            -dataadaptor=>$datahandler,
-                                            -dataadaptormethod=>$datahandler_method);
+  Usage   : my $io_stream =  Bio::Pipeline::IOHandler->new_io_stream(-dbID=>1,
+                                                                     -type=>'INPUT',
+                                                                     -module=>'Bio::DB::Fasta',
+                                                                     -datahandlers=>[$datahandler_1,$datahandler_2]);
   Function: generates a new Bio::Pipeline::IOHandler for streams(files or remote fetching) 
   Returns : a new IOHandler object 
   Args    : module a string of the form Bio::XXX 
             datahandlers array of L<Bio::Pipeline::DataHandler> 
+
 =cut
 
 sub new_ioh_stream{
@@ -219,13 +319,13 @@ sub fetch_input {
     my $obj; 
     #create the handler fetcher differently depending on whether its a DB or a Stream
     if($self->adaptor_type eq "DB"){
-        $obj = $self->_fetch_dbadaptor();
+        $obj = $self->_load_dbadaptor();
     }
     else {
         my $constructor = shift @datahandlers;
         my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
         my @args = $self->_format_input_arguments($input_name,@arguments);
-        $obj = $self->_create_obj($self->stream_module,$constructor,@args);
+        $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
     }
 
     #now call the cascade of datahandler methods
@@ -260,6 +360,16 @@ sub fetch_input {
     }
   return $obj;
 }
+
+=head2 _merge_args
+
+  Title    : _merge_args
+  Function : merges dynamic arguments with static arguments using rank  
+  Example  : $contig = $io ->fetch_input("Scaffold_1");
+  Returns  : a array ref to the inputs
+  Args     : a string/array ref of strings which specifies the id of the input
+
+=cut
 
 sub _merge_args {
     my ($self,$arg,$dyn) = @_;
@@ -301,7 +411,7 @@ sub fetch_input_ids {
         my $constructor = shift @datahandlers;
         my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
         my @args = $self->_format_input_arguments($param,@arguments);
-        $obj = $self->_create_obj($self->stream_module,$constructor,@args);
+        $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
     }
 
     #now call the cascade of datahandler methods
@@ -326,6 +436,16 @@ sub fetch_input_ids {
   return \@ids;
 }
 
+=head2 _format_input_arguments
+
+  Title    : _format_input_arguments
+  Function : formats the arguments for input, replace key word
+             INPUT with the input id 
+  Example  : $io ->_format_input_arguments($input_id,@args);
+  Returns  : an array of arguments
+  Args     : 
+
+=cut
 
 sub _format_input_arguments {
   my ($self,$input_name,@arguments) = @_;
@@ -351,8 +471,6 @@ sub _format_input_arguments {
   return @args;
 }
 
-
-
 =head2 write_output
 
   Title    : write_output 
@@ -364,7 +482,11 @@ sub _format_input_arguments {
 =cut
 
 sub write_output {
-    my ($self, $input,$object) = @_;
+    my ($self,@args ) = @_;
+
+    my ($input,$object) = $self->_rearrange([qw(INPUT
+                                                OUTPUT)],@args);
+
     $object || $self->throw("Need an object to write to database");
 
 
@@ -374,13 +496,13 @@ sub write_output {
     my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
     my $obj;
     if($self->adaptor_type eq "DB"){
-        $obj = $self->_fetch_dbadaptor();
+        $obj = $self->_load_dbadaptor();
     }
     else {
         my $constructor = shift @datahandlers;
         my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
         my @args = $self->_format_output_args($input,$object,@arguments);
-        $obj = $self->_create_obj($self->stream_module,$constructor,@args);
+        $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
     }
 
     # safety check ? Maybe this check should be made before the runnable is even ran
@@ -402,13 +524,27 @@ sub write_output {
       my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
       foreach my $converter(@converters){
           @output_ids = $converter->convert($obj);
-          $obj = $output_ids[0];
+          $obj = shift @output_ids; 
       }
     }
   return @output_ids;
 }
 
-#needs some cleaning up --shawn
+=head2 _format_output_arguments
+
+  Title    : _format_output_arguments
+  Function : formats the arguments for output, replace key word
+             OUTPUT with the output objects,
+             INPUT  with the original input id
+             INPUTOBJ with the orignial input object 
+  Example  : $io ->_format_output_arguments($input,$ouput,@args);
+  Returns  : an array of arguments
+  Args     : $input the original input object L<Bio::Pipeline::Input>
+             $object the array ref of real bio output objects
+             @args the arguments to be passed to the store methods
+
+=cut
+
 sub _format_output_args {
     my ($self,$input,$object,@arguments) = @_;
     my @args;
@@ -488,11 +624,11 @@ These methods let you get at and set the member variables
   Args     : optionally, the new dbadaptor 
 
 =cut
- 
+
 sub dbadaptor {
     my ($self) = @_;
     if(!$self->{'_dbadaptor'}){
-        $self->{'_dbadaptor'} = $self->_fetch_dbadaptor;
+        $self->{'_dbadaptor'} = $self->_load_dbadaptor;
     }
     return $self->{'_dbadaptor'};
 }
@@ -512,6 +648,16 @@ sub datahandlers {
     return @{$self->{'_datahandlers'}};
 }
 
+=head2 dbadaptor_dbname
+
+  Title    : dbadaptor_dbname
+  Function : get/set for dbadaptor name
+  Example  : $io->dbadaptor_name($name);
+  Returns  : the db name
+  Args     : optionally, the new name
+
+=cut
+
 sub dbadaptor_dbname {
   my ($self,$value) = @_;
   if ($value){
@@ -520,7 +666,16 @@ sub dbadaptor_dbname {
   return $self->{'_dbadaptor_dbname'};
 }
 
-#get/set methods for dbadaptor params
+=head2 dbadaptor_driver
+
+  Title    : dbadaptor_driver
+  Function : get/set for dbadaptor drivr
+  Example  : $io->dbadaptor_driver($driver);
+  Returns  : the db driver
+  Args     : optionally, the new driver
+
+=cut
+
 sub dbadaptor_driver {
   my ($self,$value) = @_;
   if ($value){
@@ -528,6 +683,16 @@ sub dbadaptor_driver {
   }
   return $self->{'_dbadaptor_driver'};
 }
+
+=head2 dbadaptor_user
+
+  Title    : dbadaptor_user
+  Function : get/set for dbadaptor user 
+  Example  : $io->dbadaptor_user($user);
+  Returns  : the db user
+  Args     : optionally, the new user
+
+=cut
 
 sub dbadaptor_user {
   my ($self,$value) = @_;
@@ -537,6 +702,16 @@ sub dbadaptor_user {
   return $self->{'_dbadaptor_user'};
 }
 
+=head2 dbadaptor_pass
+
+  Title    : dbadaptor_pass
+  Function : get/set for dbadaptor pass
+  Example  : $io->dbadaptor_pass($pass);
+  Returns  : the db pass
+  Args     : optionally, the new pass
+
+=cut
+
 sub dbadaptor_pass {
   my ($self,$value) = @_;
   if ($value){
@@ -544,6 +719,17 @@ sub dbadaptor_pass {
   }
   return $self->{'_dbadaptor_pass'};
 }
+
+=head2 dbadaptor_port
+
+  Title    : dbadaptor_port
+  Function : get/set for dbadaptor port
+  Example  : $io->dbadaptor_port($port);
+  Returns  : the db port
+  Args     : optionally, the new port
+
+=cut
+
 sub dbadaptor_port{
   my ($self,$value) = @_;
   if ($value){
@@ -551,6 +737,17 @@ sub dbadaptor_port{
   }
   return $self->{'_dbadaptor_port'};
 }
+
+=head2 dbadaptor_module
+
+  Title    : dbadaptor_module
+  Function : get/set for dbadaptor module
+  Example  : $io->dbadaptor_module($module);
+  Returns  : the db module
+  Args     : optionally, the new module
+
+=cut
+
 sub dbadaptor_module {
   my ($self,$value) = @_;
   if ($value){
@@ -558,6 +755,17 @@ sub dbadaptor_module {
   }
   return $self->{'_dbadaptor_module'};
 }
+
+=head2 dbadaptor_host
+
+  Title    : dbadaptor_host
+  Function : get/set for dbadaptor host 
+  Example  : $io->dbadaptor_host($host);
+  Returns  : the db host
+  Args     : optionally, the new host
+
+=cut
+
 sub dbadaptor_host {
   my ($self,$value) = @_;
   if ($value){
@@ -565,13 +773,34 @@ sub dbadaptor_host {
   }
   return $self->{'_dbadaptor_host'};
 }
+
+=head2 stream_module
+
+  Title    : stream_module
+  Function : get/set for stream_module 
+  Example  : $io->stream_module($module);
+  Returns  : the name of the module e.g. Bio::DB::Fasta
+  Args     : optionally, the new name
+
+=cut
+
 sub stream_module{
     my ($self,$value) = @_;
     if($value) {
-        $self->{'_filemodule'} = $value;
+        $self->{'_streammodule'} = $value;
     }
-    return $self->{'_filemodule'};
+    return $self->{'_streammodule'};
 }
+
+=head2 adaptor_type
+
+  Title    : adaptor_type
+  Function : get/set for adaptor_type
+  Example  : $io->adaptor_type($type);
+  Returns  : the  type e.g. STREAM OR DB
+  Args     : optionally, the new type 
+
+=cut
 
 sub adaptor_type {
     my ($self,$value) = @_;
@@ -581,6 +810,17 @@ sub adaptor_type {
     return $self->{'_dbtype'};
 }
 
+=head2 type
+
+  Title    : type
+  Function : get/set for type
+  Example  : $io->type($type);
+  Returns  : the data structure in which the iohandler handles 
+             the input/output e.g. SCALAR OR ARRAY
+  Args     : optionally, the newtype  
+
+=cut
+
 sub type {
     my ($self,$value) = @_;
     if($value) {
@@ -588,7 +828,18 @@ sub type {
     }
     return $self->{'_iotype'};
 }
-sub _fetch_dbadaptor {
+
+=head2 _load_dbadaptor
+
+  Title    : _load_dbadaptor
+  Function : loads the dbadaptor object 
+  Example  : $io->_load_adaptor();
+  Returns  : the dbadaptor object 
+  Args     : 
+
+=cut
+
+sub _load_dbadaptor {
     my ($self,) = @_;
     my $dbname = $self->dbadaptor_dbname();
     my $driver = $self->dbadaptor_driver();
@@ -598,51 +849,35 @@ sub _fetch_dbadaptor {
     my $module = $self->dbadaptor_module();
     my $port   = $self->dbadaptor_port();
 
-    if($module =~/::/)  {
-         $module =~ s/::/\//g;
-         require "${module}.pm";
-         $module =~s/\//::/g;
-    }
-    
+    $self->_load_module($module);
+
     my $db_adaptor = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass,-port=>$port);
 
     return $db_adaptor;
 }
 
-sub _create_obj {
+=head2 _load_obj
+
+  Title    : _load_obj
+  Function : loads an object
+  Example  : $io->_load_obj('Bio::DB::Fasta","new");
+  Returns  : the object
+  Args     :
+
+=cut
+
+sub _load_obj {
     my ($self,$module,$method,@args) = @_;
     $module || $self->throw("Need an object to create object");
-    $method || $self->throw("Need a method call");
+    $method = $method || 'new';
 
-    if($module=~/::/){
-        $module =~ s/::/\//g;
-        require "${module}.pm";
-        $module =~s/\//::/g;
-    }
-    my $obj = "${module}"->new(@args);
+    $self->_load_module($module);
+
+    my $obj = "${module}"->$method(@args);
 
     return $obj;
 }
     
-
-sub _fetch_fileadaptor {
-    my ($self) = @_;
-    my $filename = $self->filename;
-    my $filemodule = $self->filemodule;
-    $filename || $self->throw("No filename specified. You probably wanna use _fetch_dbadaptor");
-    $filemodule || $self->throw("No file module specified. You probably wanna use _fetch_dbadaptor");
-
-    if($filemodule=~/::/){
-        $filemodule =~ s/::/\//g;
-        require "${filemodule}.pm";
-        $filemodule =~ s/\//::/g;
-    }
-    my $f_adaptor = "${filemodule}"->new(-filename=>$filename);
-    $f_adaptor->make_index;
-    return $f_adaptor;
-}
-
-
 =head2 dbID
 
   Title   : dbID
@@ -652,7 +887,6 @@ sub _fetch_fileadaptor {
   Args    : int
 
 =cut
-
 
 sub dbID {
     my ($self,$arg) = @_;
@@ -664,26 +898,15 @@ sub dbID {
 
 }
 
-=head2 adaptor
+=head2 converters
 
-  Title   : adaptor
-  Usage   : $self->adaptor
-  Function: get database adaptor, set only for constructor and adaptor usage.
-  Returns :
-  Args    :
+  Title   : converters
+  Usage   : $self->converters($id)
+  Function: get set the converters for this object
+  Returns : Bio::Pipeline::Converter 
+  Args    : Bio::Pipelnie::Converter 
 
 =cut
-
-
-sub adaptor {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-    $self->{'_adaptor'} = $arg;
-    }
-    return $self->{'_adaptor'};
-
-}
 
 sub converters {
     my ($self,$arg) = @_;
