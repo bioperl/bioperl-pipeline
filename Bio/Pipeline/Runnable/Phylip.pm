@@ -177,7 +177,10 @@ END
   eval {
       $output = $phylip->$runner($input);
   };
-  if($program=~/DrawTree/i){
+  if($@){
+    $self->throw("Problems running Phylip program $program: $@");
+}
+   if(($program=~/DrawTree/i) || ($program=~/DrawGram/i)){ 
        system("cp ". $output ." ". $self->infile.".ps");
        return;
   }
