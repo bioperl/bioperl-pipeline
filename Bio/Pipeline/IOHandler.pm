@@ -164,14 +164,18 @@ sub fetch_input {
     my $obj = $self->_fetch_dbadaptor();
 
     foreach my $datahandler (@datahandlers) {
-
-        my $tmp1 = $datahandler->method;
-
-        if ($datahandler->argument eq 'INPUT'){
-            $obj= $obj->$tmp1($input_name);
-        }else{
-            $obj = $obj->$tmp1($datahandler->argument);
+        my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
+        my @args;
+        for (my $i = 0; $i <=$#arguments; $i++){
+            if ($arguments[$i]->name eq 'INPUT') {
+                push @args, $input_name;
+            }
+            else {
+              push @args, $arguments[$i]->name;
+            }
         }
+        my $tmp1 = $datahandler->method;
+        $obj = $obj->$tmp1(@args);
     }
 
   return $obj;
@@ -200,24 +204,35 @@ sub write_output {
 
 
     # safety check ? Maybe this check should be made before the runnable is even ran
-    $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
-        unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
+#    $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
+ #       unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
 
     my @output_ids;
+    my $output_flag = 0;
     foreach my $datahandler (@datahandlers) {
-
+        my @arguments = sort {$a->rank <=> $b->rank} @{$datahandler->argument};
+        my @args;
         my $tmp1 = $datahandler->method;
+        for (my $i = 0; $i <=$#arguments; $i++){
+            if ($arguments[$i]->name eq 'OUTPUT'){
+                if (ref($object) eq "ARRAY"){
+                  push @args, @{$object};
+                }
+                else {
+                    push @args, $object;
+                }
 
-        if ($datahandler->argument eq 'OUTPUT'){
-            if (ref($object) eq "ARRAY"){
-                @output_ids = $obj->$tmp1(@{$object});
+                $output_flag++;
             }
             else {
-                my $output_id = $obj->$tmp1($object);
-                push(@output_ids, $output_id);
+                push @args, $arguments[$i]->name;
             }
-        }else{
-            $obj = $obj->$tmp1($datahandler->argument);
+        }
+        if($output_flag) {
+            @output_ids = $obj->$tmp1(@args);
+        }
+        else{
+          $obj = $obj->$tmp1(@args);
         }
     }
 

@@ -56,6 +56,8 @@ use strict;
 use Bio::Pipeline::SQL::BaseAdaptor;
 use Bio::Pipeline::IOHandler;
 use Bio::Pipeline::DataHandler;
+use Bio::Pipeline::Argument;
+
 @ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
 
@@ -93,18 +95,33 @@ sub fetch_by_dbID {
     ($dbname && $module) || $self->throw("No DBadaptor found. Can't create an IO object without a dbadaptor");
 
 
-    my $query = "SELECT datahandler_id, method, argument, rank from datahandler
+    my $query = "SELECT datahandler_id, method, rank from datahandler
                  WHERE iohandler_id = $dbID";
     
     $sth = $self->prepare($query);
     $sth->execute();
 
     my @datahandlers;
-    while (my ($datahandler_id, $method, $argument, $rank) = $sth->fetchrow_array){
+    my $arg_sth= $self->prepare("SELECT argument_id, name,rank,type FROM argument WHERE datahandler_id=?");
+    
+    while (my ($datahandler_id, $method,  $rank) = $sth->fetchrow_array){
+        $arg_sth->execute($datahandler_id);
+        my @args;
+        while(my ($argument_id,$name,$rank,$type) = $arg_sth->fetchrow_array){
+          if($argument_id && $name && $rank && $type){
+            my $arg = new Bio::Pipeline::Argument(-dbID => $argument_id,
+                                                -rank => $rank,
+                                                -name => $name,
+                                                -type => $type);
+            push @args, $arg;
+          }
+        }
+
+        
         my $datahandler = new Bio::Pipeline::DataHandler    (   -dbID       => $datahandler_id,
                                                                 -method     => $method,
-                                                                -argument   => $argument,
-                                                                -rank           => $rank
+                                                                -argument   => \@args,
+                                                                -rank       => $rank
                                                               );
         push (@datahandlers,$datahandler);
     }
