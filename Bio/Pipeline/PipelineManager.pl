@@ -59,6 +59,7 @@ my %pipeline_state;         #hash used to store state of all jobs in the pipelin
 			    # maybe this should be compulsory, as
 			    # the default jobname really isn't any use
 my $once =0;
+my $INPUT_LIMIT = 3;
 GetOptions(
     'host=s'      => \$DBHOST,
     'dbname=s'    => \$DBNAME,
@@ -140,6 +141,14 @@ print "///////////////Starting Pipeline//////////////////////\n";
 ######################################################################
 
 my @rules       = $ruleAdaptor->fetch_all;
+
+my $init_rule;
+foreach my $rule (@rules) {
+   if (! defined($rule->current) && ($rule->action eq 'CREATE_INPUT')) {
+      $init_rule = $rule;
+   }
+}
+_create_initial_jobs($init_rule->next);
 
 my $run = 1;
 my $submitted;
@@ -288,9 +297,11 @@ sub create_new_job {
                   my $new_job = $job->create_next_job($next_analysis);
                   $new_job->status('NEW');
                   $new_job->update;
+                  my @fixed_inputs = _create_input($next_analysis);
                   ################  we are not copying the fixed inputs of the previous jobs for now for this option ####################
                   #now copy outputs of all jobs of previous analysis as inputs for this job
-                  my @inputs = _update_inputs($job, $new_job);
+                  my @new_inputs = _update_inputs($job, $new_job);
+                  my @inputs = (@fixed_inputs, @new_inputs);
                   $new_job->add_input(\@inputs);
                   push (@new_jobs,$new_job);
                }
@@ -300,6 +311,46 @@ sub create_new_job {
         }
     }
     return (\@new_jobs);
+}
+
+sub _create_initial_jobs {
+    my ($analysis) = @_;
+    my @inputs = _create_input ($analysis);
+    my $jobid = 1;
+    my @job_objs;
+    foreach my $input (@inputs){
+        $input->job_id($jobid);
+        my @input_objs;
+        push @input_objs, $input;
+        #$inputAdaptor->store_fixed_input($input);
+        my $job = Bio::Pipeline::Job->new(-id => $jobid,
+                                              -analysis => $analysis,
+                                              -adaptor => $jobAdaptor,
+                                              -inputs => \@input_objs);
+        $jobAdaptor->store($job);
+        $jobid++;
+        if($INPUT_LIMIT && $jobid == $INPUT_LIMIT){
+            last;}
+    }
+}
+
+sub _create_input {
+    my ($analysis) = @_;
+    print "Fetching Input ids \n";
+    my $ioh = $analysis->create_input_iohandler;
+    my ($inputs) = $ioh->fetch_input_ids();
+    my %io_map = %{$analysis->io_map};
+    my $map_ioh = $io_map{$ioh->dbID}; 
+    print scalar(@{$inputs}). " inputs fetched\nStoring...\n";
+ 
+    my @input_objs;
+    foreach my $in (@{$inputs}){
+        my $input_obj = Bio::Pipeline::Input->new(-name => $in,
+                                                  -input_handler => $map_ioh);
+        #$input_obj->job_id($jobid);
+        push @input_objs, $input_obj;
+    }
+    return @input_objs;
 }
 
 sub _get_action_by_next_anal {
