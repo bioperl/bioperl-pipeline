@@ -71,6 +71,51 @@ use strict;
 
 @ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
+
+
+
+
+sub store {
+  my ($self, $node_group) = @_;
+  if (!defined ($node_group->id)) {
+    my $sth = $self->prepare( qq{
+      INSERT INTO node_group
+         SET name= ?,
+             description= ? } );
+    $sth->execute($node_group->name,$node_group->description);
+
+   $sth = $self->prepare( q{
+      SELECT last_insert_id()
+     } );
+   $sth->execute;
+
+   my $dbID = ($sth->fetchrow_array)[0];
+   $node_group->id( $dbID );
+  }
+  else {
+    my $sth = $self->prepare( qq{
+         INSERT INTO node_group 
+	 SET node_group_id = ?,
+	 name = ?,
+	description = ? } );
+    $sth->execute($node_group->id,$node_group->name,$node_group->description);
+  }
+  my $node_adaptor = $self->db->get_NodeAdaptor;
+  foreach my $node(@{$node_group->nodes}) {
+     $node->current_group($node_group->id);
+     $node_adaptor->store($node);
+  }
+  return $node_group->id;
+}
+
+
+
+
+
+
+
+
+
 =head2 fetch_by_dbID
 
  Title   : fetch_by_dbID
@@ -86,7 +131,11 @@ sub fetch_by_dbID {
   
   my $sth = $self->prepare("SELECT name,description FROM node_group where node_group_id=$id");
   $sth->execute();
+  
   my ($name,$desc) = $sth->fetchrow_array();
+  if (!defined ($name) && !defined($desc)) {
+    return undef;
+  }
   
   my @nodes = $self->db->get_NodeAdaptor->get_nodes_by_group_id($id);
     
