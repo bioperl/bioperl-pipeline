@@ -95,7 +95,7 @@ else {
 #connect string
 my $str;
 $str .= defined $DBHOST ? "-h $DBHOST " : "";
-$str .= defined $DBPASS ? "-p$DBPASS" : "";
+$str .= defined $DBPASS ? "-p$DBPASS " : "";
 $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
 
 if($db_exist){
@@ -145,9 +145,12 @@ my $method_id = 1;
 print "Doing DBAdaptor and IOHandler setup\n";
 
 my $pipeline_setup  = $xso1->child('pipeline_setup') || die("Pipeline template missing <pipeline_setup>\n Please provide a valid one");
-my $iohandler_setup = $pipeline_setup->child('iohandler_setup') || die("Pipeline template missing <iohandler_setup>\n Please provide a valid one");
+my $iohandler_setup = $pipeline_setup->child('iohandler_setup') || goto PIPELINE_FLOW_SETUP;
+
+#die("Pipeline template missing <iohandler_setup>\n Please provide a valid one");
 
 foreach my $iohandler ($iohandler_setup->children('iohandler')) {
+    $iohandler || next;
 
   my $ioid = $iohandler->attribute("id");
   my @datahandler_objs;
@@ -239,7 +242,8 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
 ############################################
 #Load Analysis and Rules information 
 ############################################
-my @nodegroup_objs;
+
+PIPELINE_FLOW_SETUP: my @nodegroup_objs;
 print "Doing Pipeline Flow Setup\n";
 
 my $pipeline_flow_setup = $pipeline_setup->child('pipeline_flow_setup') || die("Pipeline setup template missing <pipeline_flow_setup>\n Please provide a valid one");
