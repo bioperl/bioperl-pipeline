@@ -1,99 +1,74 @@
+# BioPerl module for Bio::Pipeline::Analysisbject for storing sequence analysis details
 #
-# Object for storing sequence analysis details
-#
-# Cared for by Michele Clamp  <michele@sanger.ac.uk>
-#
-# Copyright Michele Clamp
+# Adapted from Michele Clamp's EnsEMBL::Analysis  <michele@sanger.ac.uk>
 #
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
 
-=pod
+=pod 
 
 =head1 NAME
 
-Bio::EnsEMBL::Pipeline::Analysis - Stores details of an analysis run
+Bio::Pipeline::Analysis.pm - Stores details of an analysis run
 
 =head1 SYNOPSIS
 
- my $obj    = new Bio::EnsEMBL::Analysis::Analysis
-    ('-id'              => $id,
-     '-logical_name'    => 'SWIRBlast',
-     '-db'              => $db,
-     '-db_version'      => $db_version,
-     '-db_file'         => $db_file,
-     '-program'         => $program,
-     '-program_version' => $program_version,
-     '-program_file'    => $program_file,
-     '-gff_source'      => $gff_source,
-     '-gff_feature'     => $gff_feature,
-     '-module'          => $module,
-     '-module_version'  => $module_version,
-     '-parameters'      => $parameters,
-     '-created'         => $created
-     );
+    my $obj    = new Bio::Pipeline::Analysis(
+        -id              => $id,
+        -logic_name      => 'SWIRBlast',
+        -db              => $db,
+        -db_version      => $db_version,
+        -db_file         => $db_file,
+        -program         => $program,
+        -program_version => $program_version,
+        -program_file    => $program_file,
+        -gff_source      => $gff_source,
+        -gff_feature     => $gff_feature,
+        -module          => $module,
+        -module_version  => $module_version,
+        -parameters      => $parameters,
+        -created         => $created
+        );
 
 =head1 DESCRIPTION
 
-Object to store details of an analysis run.
+Object to store details of an analysis run
 
 =head1 CONTACT
 
-ensembl-dev@ebi.ac.uk
+Describe contact details here
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object
-methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
 
 =cut
 
 # Let the code begin...
 
-package Bio::EnsEMBL::Pipeline::Analysis;
+package Bio::Pipeline::Analysis;
 
 use vars qw(@ISA);
 use strict;
-
-use Bio::EnsEMBL::AnalysisI;
+use Bio::Pipeline::AnalysisI;
 use Bio::Root::RootI;
 
 # Inherits from the base bioperl object
-@ISA = qw(Bio::EnsEMBL::AnalysisI Bio::Root::RootI);
+@ISA = qw(Bio::Root::RootI Bio::Pipeline::AnalysisI );
 
-=head2 new
-
- Title   : new
- Usage   : my $analysis = new Bio::EnsEMBL::Pipeline::Analysis(%params);
- Function: Creates a new Bio::EnsEMBL::Pipeline::Analysis object
- Returns : Bio::EnsEMBL::Pipeline::Analysis
- Args    : -id:              Analysis ID
-           -db:              DB Name
-           -db_version:      DB Version
-           -db_file:         DB File
-           -program:         Program name
-           -program_version: Program version
-           -program_file:    Program file
-           -gff_source:      GFF source
-           -gff_feature:     GFF feature
-           -module:          Module 
-           -module_version:  Module version
-           -parameters:      Parameters used
-           -created:         Date created
-           -logic_name:      Logical name
-
-=cut
 
 sub new {
   my($class,@args) = @_;
-
-  my $self = $class->SUPER::new(@args);
-
-  my ($id,$db,$db_version,$db_file,$program,$program_version,$program_file,
+  
+  my $self = bless {},$class;
+   
+  my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
       $gff_source,$gff_feature,$module,$module_version,$parameters,$created,
-      $logic_name ) =
+      $logic_name ) = 
+
 	  $self->_rearrange([qw(ID
+	  			ADAPTOR
 				DB
 				DB_VERSION
 				DB_FILE
@@ -109,7 +84,8 @@ sub new {
 				LOGIC_NAME
 				)],@args);
 
-  $self->dbID           ($id);
+  $self->dbID             ($id);
+  $self->adaptor        ($adaptor);
   $self->db             ($db);
   $self->db_version     ($db_version);
   $self->db_file        ($db_file);
@@ -122,9 +98,29 @@ sub new {
   $self->gff_feature    ($gff_feature);
   $self->parameters     ($parameters);
   $self->created        ($created);
-  $self->logic_name     ( $logic_name );
+  $self->logic_name ( $logic_name );
 
-  return $self; 
+  return $self; # success - we hope!
+}
+
+
+=head2 adaptor
+
+  Title   : adaptor
+  Usage   : $self->adaptor
+  Function: Get/set method for the adaptor
+  Returns : int
+  Args    : int
+
+=cut
+
+sub adaptor {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+	$self->{_adaptor} = $arg;
+    }
+    return $self->{_adaptor};
 }
 
 
@@ -132,7 +128,7 @@ sub new {
 
   Title   : dbID
   Usage   : $self->dbID
-  Function: Get/set method for the id
+  Function: Get/set method for the dbID
   Returns : int
   Args    : int
 
@@ -142,9 +138,31 @@ sub dbID {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_dbid'} = $arg;
+	$self->{_dbid} = $arg;
     }
-    return $self->{'_dbid'};
+    return $self->{_dbid};
+}
+
+
+=head2 id
+
+  Title   : id
+  Usage   : $self->id
+  Function: Get/set method for the id
+  Returns : int
+  Args    : int
+
+=cut
+
+sub id {
+    my ($self,$arg) = @_;
+    $self->warn( "Analysis->id is deprecated. Use dbID!" );
+    print STDERR caller;
+    
+    if (defined($arg)) {
+	$self->{_dbid} = $arg;
+    }
+    return $self->{_dbid};
 }
 
 
@@ -162,10 +180,10 @@ sub db {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_db'} = $arg;
+	$self->{_db} = $arg;
     }
 
-    return $self->{'_db'};
+    return $self->{_db};
 }
 
 
@@ -183,10 +201,10 @@ sub db_version {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_db_version'} = $arg;
+	$self->{_db_version} = $arg;
     }
 
-    return $self->{'_db_version'};
+    return $self->{_db_version};
 }
 
 
@@ -204,10 +222,10 @@ sub db_file {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_db_file'} = $arg;
+	$self->{_db_file} = $arg;
     }
 
-    return $self->{'_db_file'};
+    return $self->{_db_file};
 }
 
 
@@ -225,10 +243,10 @@ sub program {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_program'} = $arg;
+	$self->{_program} = $arg;
     }
 
-    return $self->{'_program'};
+    return $self->{_program};
 }
 
 
@@ -246,10 +264,10 @@ sub program_version {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_program_version'} = $arg;
+	$self->{_program_version} = $arg;
     }
 
-    return $self->{'_program_version'};
+    return $self->{_program_version};
 }
 
 =head2 program_file
@@ -266,10 +284,10 @@ sub program_file {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_program_file'} = $arg;
+	$self->{_program_file} = $arg;
     }
 
-    return $self->{'_program_file'};
+    return $self->{_program_file};
 }
 
 
@@ -287,10 +305,10 @@ sub module {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_module'} = $arg;
+	$self->{_module} = $arg;
     }
 
-    return $self->{'_module'};
+    return $self->{_module};
 }
 
 
@@ -308,10 +326,10 @@ sub module_version {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_module_version'} = $arg;
+	$self->{_module_version} = $arg;
     }
 
-    return $self->{'_module_version'};
+    return $self->{_module_version};
 }
 
 =head2 gff_source
@@ -328,10 +346,10 @@ sub gff_source {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_gff_source'} = $arg;
+	$self->{_gff_source} = $arg;
     }
 
-    return $self->{'_gff_source'};
+    return $self->{_gff_source};
 }
 
 =head2 gff_feature
@@ -348,10 +366,10 @@ sub gff_feature {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_gff_feature'} = $arg;
+	$self->{_gff_feature} = $arg;
     }
 
-    return $self->{'_gff_feature'};
+    return $self->{_gff_feature};
 }
 
 =head2 parameters
@@ -368,10 +386,10 @@ sub parameters {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_parameters'} = $arg;
+	$self->{_parameters} = $arg;
     }
 
-    return $self->{'_parameters'};
+    return $self->{_parameters};
 }
 
 =head2 created
@@ -388,17 +406,17 @@ sub created {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_created'} = $arg;
+	$self->{_created} = $arg;
     }
 
-    return $self->{'_created'};
+    return $self->{_created};
 }
 
 =head2 logic_name
 
   Title   : logic_name
   Usage   : $self->logic_name
-  Function: Get/set method for the logic_name, the name under
+  Function: Get/set method for the logic_name, the name under 
             which this typical analysis is known.
   Returns : String
   Args    : String
@@ -409,9 +427,73 @@ sub created {
 sub logic_name {
   my ($self, $arg ) = @_;
   ( defined $arg ) &&
-    ($self->{'_logic_name'} = $arg);
-  $self->{'_logic_name'};
+    ($self->{_logic_name} = $arg);
+  $self->{_logic_name};
 }
+
+=head2 has_database
+
+ Title   : has_database
+ Usage   :
+ Function:
+ Example :
+ Returns : 
+ Args    :
+
+
+=cut
+
+sub has_database{
+   my ($self,@args) = @_;
+
+   if( defined $self->db ){ return 1; }
+   return 0;
+}
+
+=head2 compare
+
+  Title   : compare
+  Usage   : $self->compare( $analysis )
+  Function: returns 1 if this analysis is special case of given analysis
+            returns 0 if they are equal
+	    returns -1 if they are completely different
+  Returns : String
+  Args    : Bio::Pipeline::Analysis
+
+=cut
+
+
+sub compare {
+  my ($self, $ana ) = @_;
+  
+  $self->throw("Object is not a Bio::Pipeline::Analysis") 
+    unless $ana->isa("Bio::Pipeline::Analysis");
+  
+  my $detail = 0;
+
+  foreach my $methodName ( 'program', 'program_version', 'program_file',
+    'db','db_version','db_file','gff_source','gff_feature', 'module',
+    'module_version', 'parameters','logic_name' ) {
+    if( defined $self->$methodName() && ! $ana->can($methodName )) {
+      $detail = 1;
+    } 
+    if( defined $self->$methodName() && ! defined $ana->$methodName() ) {
+      $detail = 1;
+    } 
+    # if given anal is different from this, defined or not, then its different
+    if( defined $ana->$methodName() &&
+          ( $self->$methodName() ne $ana->$methodName() )) {
+      return -1;
+    }
+  }
+  if( $detail == 1 ) { return 1 };
+  return 0;
+}
+
+  
+  
+
+
 
 1;
 

@@ -1,9 +1,7 @@
-
-# Object for storing details of an analysis job
+# BioPerl module for Bio::Pipeline::Job
 #
-# Cared for by Michele Clamp  <michele@sanger.ac.uk>
-#
-# Copyright Michele Clamp
+# Adapted from Michele Clamp's EnsEMBL::Job.pm
+# 
 #
 # You may distribute this module under the same terms as perl itself
 #
@@ -13,7 +11,7 @@
 
 =head1 NAME
 
-Bio::EnsEMBL::Pipeline::DBSQL::Job
+Bio::Pipeline::Job
 
 =head1 SYNOPSIS
 
@@ -33,27 +31,23 @@ The rest of the documentation details each of the object methods. Internal metho
 
 # Let the code begin...
 
-package Bio::EnsEMBL::Pipeline::Job;
-# use Data::Dumper;
+package Bio::Pipeline::Job;
 
-BEGIN {
-  require "Bio/EnsEMBL/Pipeline/pipeConf.pl";
-}
+use Bio::Pipeline::Analysis;
+use Bio::Pipeline::Status;
+use Bio::Pipeline::SQL::JobAdaptor;
+
+# several variables needed from PipeConf.pm
+use Bio::Pipeline::PipeConf qw ( RUNNER 
+                                 NFSTMP_DIR
+                               );
 
 use vars qw(@ISA);
 use strict;
 
-# use FreezeThaw qw(freeze thaw);
 
 # Object preamble - inherits from Bio::Root::Object;
-
-use Bio::EnsEMBL::Analysis;
-use Bio::EnsEMBL::Pipeline::Status;
-use Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor;
-use Bio::EnsEMBL::Pipeline::DB::JobI;
-
-
-@ISA = qw(Bio::EnsEMBL::Pipeline::DB::JobI Bio::Root::RootI);
+@ISA = qw(Bio::Root::RootI);
 
 # following vars are static and not meaningful on remote side
 # recreation of Job object. Not stored in db of course.
@@ -78,6 +72,7 @@ sub new {
 				RETRY_COUNT
 				)],@args);
 
+				
     $dbID    = -1 unless defined($dbID);
     $queueid = -1 unless defined($queueid);
     $cls = 'contig' unless defined($cls);
@@ -85,8 +80,8 @@ sub new {
     $input_id   || $self->throw("Can't create a job object without an input_id");
     $analysis   || $self->throw("Can't create a job object without an analysis object");
 
-    $analysis->isa("Bio::EnsEMBL::Analysis") ||
-	$self->throw("Analysis object [$analysis] is not a Bio::EnsEMBL::Analysis");
+    $analysis->isa("Bio::Pipeline::Analysis") ||
+	$self->throw("Analysis object [$analysis] is not a Bio::Pipeline::Analysis");
 
     $self->dbID         ($dbID);
     $self->adaptor  ($adaptor);
@@ -118,7 +113,7 @@ sub create_by_analysis_inputId {
   my $analysis = shift;
   my $inputId = shift;
 
-  my $job = Bio::EnsEMBL::Pipeline::Job->new
+  my $job = Bio::Pipeline::Job->new
     ( -input_id    => $inputId,
       -analysis    => $analysis,
       -retry_count => 0,
@@ -198,16 +193,16 @@ sub input_id {
   Title   : analysis
   Usage   : $self->analysis($anal);
   Function: Get/set method for the analysis object of the job
-  Returns : Bio::EnsEMBL::Analysis
-  Args    : Bio::EnsEMBL::Analysis
+  Returns : Bio::Pipeline::Analysis
+  Args    : Bio::Pipeline::Analysis
 
 =cut
 
 sub analysis {
     my ($self,$arg) = @_;
     if (defined($arg)) {
-	$self->throw("[$arg] is not a Bio::EnsEMBL::Analysis object" ) 
-            unless $arg->isa("Bio::EnsEMBL::Analysis");
+	$self->throw("[$arg] is not a Bio::Pipeline::Analysis object" ) 
+            unless $arg->isa("Bio::Pipeline::Analysis");
 
 	$self->{'_analysis'} = $arg;
     }
@@ -259,16 +254,16 @@ sub flush_runs {
   my $pass     = $db->password;
   my $queueid;
 
-  # runner.pl: first look in pipeConf.pl,
+  # runner.pl: first look in PipeConf.pm,
   # then in same directory as Job.pm,
   # and fail if not found
 
-  my $runner = $::pipeConf{'runner'} || undef;
+  my $runner = $RUNNER || undef;
 
   unless (-x $runner) {
     $runner = __FILE__;
     $runner =~ s:/[^/]*$:/runner.pl:;
-    $self->throw("runner undefined - needs to be set in pipeConf.pl\n") unless defined $runner;
+    $self->throw("runner undefined - needs to be set in PipeConf.pm\n") unless defined $runner;
   }
 
   for my $queue ( @queues ) {
@@ -414,7 +409,7 @@ sub runLocally {
   $self->runInQUEUE();
 }
 
-sub runRemote {
+sub run_BatchRemote{
   my $self = shift;
   my $queue = shift;
   my $useDB = shift;
@@ -433,15 +428,15 @@ sub runRemote {
   my $cmd;
 
   # runner.pl: first look in same directory as Job.pm
-  # if it's not here use file defined in pipeConf.pl
+  # if it's not here use file defined in PipeConf.pm
   # otherwise fail
 
   my $runner = __FILE__;
   $runner =~ s:/[^/]*$:/runner.pl:; 	
 
   unless (-x $runner) {
-    $runner = $::pipeConf{'runner'} || undef;
-    $self->throw("runner undefined - needs to be set in pipeConf.pl\n") unless defined $runner;
+    $runner = $RUNNER || undef;
+    $self->throw("runner undefined - needs to be set in PipeConf.pm\n") unless defined $runner;
   }
 
   $cmd = "bsub -q ".$queue." -o ".$self->stdout_file.
@@ -499,7 +494,7 @@ sub runInQUEUE {
   my $module = $self->analysis->module;
   my $rdb;
   my $err;
-  my $autoupdate = $::pipeConf{'autoupdate'};
+  my $autoupdate = $AUTOUPDATE;
   
 
   eval {
@@ -511,7 +506,8 @@ sub runInQUEUE {
 		-input_id => $self->input_id,
 		-dbobj => $self->adaptor->db );
       } else {
-	  require "Bio/EnsEMBL/Pipeline/RunnableDB/${module}.pm";
+	      ####BUFF!!!!!########
+	  require "Bio/Pipeline/RunnableDB/${module}.pm";
           $module =~ s/\//::/g;
 	  $rdb = "Bio::EnsEMBL::Pipeline::RunnableDB::${module}"->new
 	      ( -analysis => $self->analysis,
@@ -623,7 +619,7 @@ sub write_object_file {
   Usage   : my $status = $job->set_status
   Function: Sets the job status
   Returns : nothing
-  Args    : Bio::EnsEMBL::Pipeline::Status
+  Args    : Bio::Pipeline::Status
 
 =cut
 
@@ -647,8 +643,8 @@ sub set_status {
   Title   : current_status
   Usage   : my $status = $job->current_status
   Function: Get/set method for the current status
-  Returns : Bio::EnsEMBL::Pipeline::Status
-  Args    : Bio::EnsEMBL::Pipeline::Status
+  Returns : Bio::Pipeline::Status
+  Args    : Bio::Pipeline::Status
 
 =cut
 
@@ -667,8 +663,8 @@ sub current_status {
   Title   : get_all_status
   Usage   : my @status = $job->get_all_status
   Function: Get all status objects associated with this job
-  Returns : @Bio::EnsEMBL::Pipeline::Status
-  Args    : @Bio::EnsEMBL::Pipeline::Status
+  Returns : @Bio::Pipeline::Status
+  Args    : @Bio::Pipeline::Status
 
 =cut
 
@@ -688,7 +684,7 @@ sub get_all_status {
   Title   : get_last_status
   Usage   : my @status = $job->get_all_status ($status)
   Function: Get latest status object associated with this job
-  Returns : Bio::EnsEMBL::Pipeline::Status
+  Returns : Bio::Pipeline::Status
   Args    : status string
 
 =cut
@@ -708,7 +704,7 @@ sub make_filenames {
   my ($self) = @_;
   
   my $num = int(rand(10));
-  my $dir = $::pipeConf{'nfstmp.dir'} . "/$num/";
+  my $dir = $NFSTMP_DIR . "/$num/";
   if( ! -e $dir ) {
     system( "mkdir $dir" );
   }
@@ -741,7 +737,7 @@ sub create_queuelogfile {
   my ($self) = @_;
   
   my $num = int(rand(10));
-  my $dir = $::pipeConf{'nfstmp.dir'} . "/$num/";
+  my $dir = $NFSTMP_DIR . "/$num/";
   if( ! -e $dir ) {
     system( "mkdir $dir" );
   }
@@ -764,7 +760,7 @@ sub get_files {
 
   while( 1 ) {
     my $num = int(rand(10));
-    $dir = $::pipeConf{'nfstmp.dir'} . "/$num/";
+    $dir = $NFSTMP_DIR . "/$num/";
     if( ! -e $dir ) {
       system( "mkdir $dir" );
     }
@@ -919,6 +915,65 @@ sub remove {
    if( defined $self->adaptor ) {
    $self->adaptor->remove( $self );
    }
+}
+
+
+=head2 output_file
+
+  Title   : output_file
+  Usage   : my $file = $self->output_file
+  Function: Get/set method for output
+  Returns : string
+  Args    : string
+
+=cut
+
+sub output_file {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+	$self->{_output_file} = $arg;
+    }
+    return $self->{_output_file};
+}
+
+
+=head2 input_object_file
+
+  Title   : intput_object_file
+  Usage   : my $file = $self->input_object_file
+  Function: Get/set method for the input object file
+  Returns : string
+  Args    : string
+
+=cut
+
+sub input_object_file {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+	$self->{_input_object_file} = $arg;
+    }
+    return $self->{_input_object_file};
+}
+
+=head2 status_file
+
+  Title   : status_file
+  Usage   : my $file = $self->status_file
+  Function: Get/set method for the status file
+  Returns : string
+  Args    : string
+
+=cut
+
+sub status_file {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+        $self->{_status_file} = $arg;
+    }
+    return $self->{_status_file};
 }
 
 1;
