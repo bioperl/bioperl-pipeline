@@ -10,8 +10,9 @@
 #
 =head1 NAME
 
-Bio::Pipeline::Transformer - The input object for handling object
-transformation (conversion or filtering) during io handling.
+Bio::Pipeline::Transformer input object
+
+The  object for handling object transformation (conversion or filtering) during io handling.
 
 =head1 SYNOPSIS
 
@@ -26,8 +27,7 @@ transformation (conversion or filtering) during io handling.
 
 =head1 DESCRIPTION
 
-Module that provides a layer between the IOHandlers and converters and
-filters.
+  Module that provides a layer between the IOHandlers and converters and filters 
 
 =head1 FEEDBACK
 
@@ -37,8 +37,8 @@ User feedback is an integral part of the evolution of this and other
 Bioperl modules. Send your comments and suggestions preferably to one
 of the Bioperl mailing lists.  Your participation is much appreciated.
 
-  bioperl-l@bioperl.org                       - General discussion
-  http://bio.perl.org/MailList.html           - About the mailing lists
+  bioperl-l@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
 
 =head2 Reporting Bugs
 
@@ -51,12 +51,12 @@ or the web:
 
 =head1 AUTHOR - Shawn
 
-Shawn Hoon, shawnh@fugu-sg.org
+Shawn Hoon <shawnh@fugu-sg.org>
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object
-methods. Internal metho ds are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
 
@@ -135,18 +135,16 @@ sub run {
    }
    my $obj         = $self->_load_obj($self->module,$constructor->name,@args);
    foreach my $method(@methods){
-       my @arguments = sort {$a->rank <=> $b->rank}@{$method->arguments}
-           if ref($method->arguments);
-   if(($#arguments >=0) && ref($arguments[0]) && (ref($arguments[0]) ne 'ARRAY')
-      &&  $arguments[0]->isa("Bio::Pipeline::Argument")){
+    my @arguments = sort {$a->rank <=> $b->rank}@{$method->arguments} if ref($method->arguments);
+   if(($#arguments >=0) && ref($arguments[0]) && (ref($arguments[0]) ne 'ARRAY') &&  $arguments[0]->isa("Bio::Pipeline::Argument")){
      @arguments           = $self->_format_input_arguments($input_ref,@arguments);
    }
     my $tmp1 = $method->name;
-    $obj = $obj->$tmp1(@arguments);
-    if((ref($obj) eq 'ARRAY') && (scalar(@$obj) == 1)){
-      $obj = $obj->[0];
-    }
-  }
+    $obj = $obj->$tmp1(@arguments);                                               
+    if((ref($obj) eq 'ARRAY') && (scalar(@$obj) == 1)){                                                      
+      $obj = $obj->[0];                                                           
+    }                                                                           
+  }    
   return $obj;
 }
 
@@ -169,37 +167,37 @@ sub _format_input_arguments {
     if($arguments[$i]->tag){
       push @args, $arguments[$i]->tag;
     }
-    if(($arguments[$i]->value eq 'INPUT') || ($arguments[$i]->value eq 'OUTPUT')){
+    if(($arguments[$i]->value =~/INPUT|!INPUT!/) || ($arguments[$i]->value =~/OUTPUT|!OUTPUT!/)){
       push @args, $input;
     }
     else {
       push @args, $arguments[$i]->value;
     }
-  }
-  return @args;
-}
+  }                                                                                                                                                 
+  return @args;                                                                                                                                     
+}  
 
 =head2 _load_obj
-
+    
   Title    : _load_obj
   Function : loads an object
   Example  : $io->_load_obj("Bio::DB::Fasta","new");
   Returns  : the object
   Args     :
-
-=cut
-
+        
+=cut    
+        
 sub _load_obj {
     my ($self,$module,$method,@args) = @_;
     $module || $self->throw("Need an object to create object");
     $method = $method || 'new';
-
+    
     $self->_load_module($module);
-
+    
     my $obj = "${module}"->$method(@args);
-
+    
     return $obj; 
-}
+}   
 
 =head2 dbID
 
