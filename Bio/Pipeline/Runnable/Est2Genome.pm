@@ -70,6 +70,8 @@ use Bio::Tools::Est2Genome;
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
+  my ($return_gene) = $self->_rearrange([qw(RETURN_GENE)],@args);
+  $self->return_gene($return_gene) if $return_gene;
   return $self;
 
 }
@@ -96,6 +98,23 @@ sub datatypes {
 
 }
 
+=head2 strand
+
+ Title   :   strand 
+ Usage   :   $self->strand ()
+ Function:   get/set for genomic sequence
+ Returns :
+ Args    : 
+
+=cut
+
+sub strand{
+  my ($self,$strand) = @_;
+  if($strand){
+    $self->{'_strand'} = $strand;
+  }
+  return $self->{'_strand'};
+}
 =head2 genome
 
  Title   :   genome 
@@ -114,6 +133,23 @@ sub genome{
   return $self->{'_genome'};
 }
 
+=head2 return_gene
+
+ Title   :   return_gene 
+ Usage   :   $self->return_gene ()
+ Function:   get/set for return gene
+ Returns :
+ Args    : 
+
+=cut
+
+sub return_gene{
+  my ($self,$return_gene) = @_;
+  if($return_gene){
+    $self->{'_return_gene'} = $return_gene;
+  }
+  return $self->{'_return_gene'};
+}
 
 =head2 cdna
 
@@ -168,7 +204,7 @@ sub run {
 
   my $parser = Bio::Tools::Est2Genome->new(-file=>$outfile);
   my @feat;
-  while(my $f = $parser->parse_next_gene){
+  while(my $f = $parser->parse_next_gene($self->return_gene)){
     push @feat,$f;
   }
   $self->output(\@feat);
