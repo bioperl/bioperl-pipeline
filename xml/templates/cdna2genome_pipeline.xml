@@ -170,7 +170,7 @@ choice (for example BioSQL database)
 <pipeline_setup>
   <database_setup>
     <streamadaptor id="1">
-      <module>Bio::Pipeline::Dumper</module>
+      <module>Bio::Pipeline::Utils::Dumper</module>
     </streamadaptor>
     <streamadaptor id="2">
       <module>Bio::DB::Fasta</module>

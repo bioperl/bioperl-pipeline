@@ -180,7 +180,7 @@ both to database or files depending on one's specification.
 <pipeline_setup>
   <database_setup>
     <streamadaptor id="1">
-      <module>Bio::Pipeline::Dumper</module>
+      <module>Bio::Pipeline::Utils::Dumper</module>
     </streamadaptor>
   </database_setup>
 
