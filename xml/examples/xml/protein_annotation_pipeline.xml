@@ -1,0 +1,549 @@
+<!--
+protein_annotation_pipeline.xml
+
+Cared for by Balamurugan Kumarasamy and Shawn Hoon
+bala@tll-org.sg shawnh@fugu-sg.org
+
+http://www.biopipe.org
+
+<PIPELINE SUMMARY>
+Given a set of protein sequences stored in a BioSQL Database, 
+run a series of protein annotation analysis storing the features
+back into the BioSQL database
+
+protein_sequence -> TMHMM -> SEG ->FingerPrintSca -> Profile Scan -> SingalP -> PFAM
+
+</PIPELINE SUMMARY>
+
+<DESCRIPTION> 
+
+This is a generic protein annotation pipeline that works with the BioSQL Database.
+It is proof of concept that the bioperl-pipeline is able to handle carry out analysis of 
+such scale. It also shows the flexibility of the pipeline allowing us to read and write
+from different database schemas. 
+
+The pipeline takes a protein sequence and runs a series of protein analysis on it.The current 
+status of this pipeline is as follows:
+
+1) TMHMM           (implemented)
+2) SEG             (implemented)
+3) FingerPrintScan (implemented)
+4) PFScan          (implemented)
+5) SIGNALP         (implemented)
+6) PFAM            (implemented)
+
+  <INSTALLATION REQUIRMENTS>
+
+    <PERL PACKAGES>
+      Standard Biopipe installation (pls refer to bioperl-pipeline/INSTALL)
+    </PERL PACKAGES>
+
+    <BINARIES>
+      Tmhmm - Prediction of transmembrane helices in proteins
+              http://www.cbs.dtu.dk/services/TMHMM/
+
+      Seg   - Identify low-complexity regions in protein sequences
+              ftp://ftp.ncbi.nih.gov/pub/seg/
+
+      FingerPRINTScan - identify the closest matching PRINTS sequence 
+                        motif fingerprints in a protein sequence
+                        http://www.bioinf.man.ac.uk/fingerPRINTScan/
+  
+      pfscan - scan a protein or DNA sequence with a profile library 
+                http://www.isrec.isb-sib.ch/software/software.html 
+
+      Signalp - predicts the presence and location of signal 
+                peptide cleavage sites in amino acid sequences   
+                http://www.cbs.dtu.dk/services/SignalP/
+
+      Hmmpfam - search a single sequence against an HMM database  
+                http://hmmer.wustl.edu/
+    </BINARIES>
+
+    Not all binaries are required for the pipeline to work. Simply remove the analysis and modify
+    the rules to skip any that you do not want to run.
+
+  <CONFIGURING PIPELINE>
+
+  -Setup the BioSQL Database:
+
+    creating the database:
+
+    > cd biosql-schema/sql
+    > mysqladmin -u root -host localhost create biosql_db
+    > mysql -u root biosql_db < biosqldb-mysql.sql
+   
+    loading the database with sequences
+
+    > cd bioperl-db-1-1-0/scripts
+    > perl load_seqdatabase.pl -host localhost -sqldb biosql_db \
+                               -format fasta My_Peptides  \
+                               ~/cvs_src/biopipe-release/examples/protein_annotation_pipeline/data/protein.fa 
+
+    You might see some accession number warnings which you may ignore . 
+    This is because we are using a more recent version of bioperl. 
+
+  -Configure this XML file
+
+  <global 
+    rootdir="/Users/shawn/cvs_src/biopipe-release/examples/protein_annotation_pipeline/"
+    datadir="$rootdir/data"
+
+    dbname="biosql_protein_db"
+    dbdriver="mysql"
+    dbhost  = "localhost"
+    dbuser  = "root"
+    dbpasswd = "" 
+
+    biodatabase_id="1"
+    input_desc = "My_Peptides"
+
+    tmhmm_path=""
+
+    seg_path=""
+
+    prints_path="FingerPRINTScan"
+    prints_dbname="PrintsDB"
+    prints_dbversion=""
+    prints_dbfile="$datadir/prints.dat"
+
+    profile_dbname="ProfileSample"
+    profile_dbversion=""
+    profile_dbfile="$datadir/prosite.dat"
+    pfscan_path=""
+
+    signalp_path=""
+
+    pfam_dbversion="Pfam_Sample_R11"
+    pfam_dbfile="$datadir/pfam_sample_R11"
+    hmmpfam_path=""
+ 
+  />
+
+    rootdir - specifies base directory where subsequent directories point to    
+                             
+    datadir - directory where blast input file and blast data files are located 
+                             
+    dbname  - the name of biosql database
+    dbhost  - the mysql host of the biosql database
+    dbuser  - the db user of the biosql database
+    dbpasswd - the mysql password for the biosql database
+    
+    biodatabase_id - the dbID of the sequence database in the biosql database. This 
+                     is biodatabase dbID in the biodatabase table.
+    input_desc - the description of the input sequences
+
+    (program paths)
+    tmhmm_path
+    seg_path
+    print_path
+    signalp_path
+    hmmpfam_path
+
+    (various database name and db file, db version definition)
+    prints_dbname
+    profile_dbname
+
+    prints_dbfile
+    profile_dbfile
+    pfam_dbfile
+
+    prints_dbversion
+    profile_dbversion
+    pfam_dbversion
+   
+  Running only certain analysis:
+  To run only certain analysis, you will need to either
+  comment out the analysis or remove the entry.
+
+  Once this is done, you will need to modify the rules to skip
+  this analysis. Say for example if we have remove analysis id 2 
+  for Tmhmm, 
+
+   <rule>
+      <current_analysis_id>1</current_analysis_id>
+->      <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+
+  -> change to  <next_analysis_id>3</next_analysis_id>
+    We can skip the analysis from 1 straight to 3
+    
+  And we can now remove the follow rule as well: 
+
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+      <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+
+  <LOADING PIPELINE>
+      
+       The pipeline is loaded up using this XML file.
+       A new database will be automtically created maybe created for you. 
+       This is done using the PipelineManager script found in bioperl-pipeline/scripts.
+       Using the script:
+
+      ************************************
+      *PipelineManager
+      ************************************
+      This is the central script used to run the pipeline.
+
+      Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
+
+      Options:
+      Default values are read from PipeConf.pm
+
+           -dbhost    The database host name (localhost)
+           -dbname    The pipeline database name (annotate_pipeline)
+           -dbuser    User for connecting to db (root)
+           -dbpass    The password to mysql database()
+           -dbdriver  Database driver (mysql)
+           -schema    The Biopipe database schema (../sql/schema)
+           -xml       The xml pipeline template file. It will run XMLImporter if provided
+           -xf        Force drop of any existing Biopipe database with the same name
+           -flush     flush all locks on pipeline and remove any that exists. 
+                      Should only be used for debugging or development.
+           -batchsize The number ofjobs to be batched to one node
+           -local     Whether to run jobs in local mode 
+                      (on the node where this script is run)
+           -jobnbr    Number of jobs to run (for testing)
+           -queue     Specify the queue on which to submit jobs
+           -retry     Number of times to retry failed jobs
+           -notest    Don't run pre-pipeline checks
+           -norun     Use when you just want to load the XML without running
+           -verbose   Whether to show warning during test and setup
+           -help      Display this help
+                                                                                                             
+        Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in                                
+        the Bio/Pipeline/PipeConf.pm file, for convenience.                                                  
+                                                                                                             
+  </LOADING THE PIPELINE>   
+
+  <RUNNING THE PIPELINE>                                                                                     
+                                                                                                             
+    Go to bioperl-pipeline/Bio/Pipeline                                                                      
+                                                                                                             
+    Edit PipeConf.pm accordingly for your environment variables.                                             
+                                                                                                             
+    Go to bioperl-pipeline/scripts, to load the pipeline without running:                                    
+                                                                                                             
+    perl PipelineManager -dbname mydbname \                                                                  
+                         -dbuser <user> \                                                                    
+                         -dbhost <host> \                                                                    
+                         -xml ~/biopipe_release/xml/templates/examble/blast_file_pipeline.xml                
+                         -norun                                                                              
+                                                                                                             
+    run the pipeline:                                                                                        
+                                                                                                             
+                                                                                                             
+    perl PipelineManager -dbname mydbname \                                                                  
+                         -dbuser <user> \                                                                    
+                         -dbhost <host> \                                                                    
+                         -queue priority                                                                     
+                                                                                                             
+    you may use the -local option to run it in local mode without submitting to the nodes yet.               
+    This will be a good test before submitting, and is recommended for debugging.                            
+                                                                                                             
+    If you encounter any errors, you can simply rerun the first command with the xml option                  
+    and the biopipe database will be automatically recreated once the errors have been fixed.                
+                                                                                                             
+  </RUNNING THE PIPELINE>                                                                                    
+
+  <VIEWING JOB STATUS>
+  Job status may be viewed using the job_viewer script found at bioperl-pipeline/scripts/job_viewer
+
+  [Shawn-Hoons-Computer:~/cvs_src/bioperl-pipeline/scripts] shawn% perl job_viewer -h
+
+  ****************************************
+  Biopipe JobView 0.1
+  ****************************************
+  Usage: jobviewer -dbname biopipe -dbuser root -dbhost localhost -dbpass xxx -dbdriver mysql
+
+      -dbname
+      -dbhost
+      -dbpass
+      -dbdriver
+      -help
+
+    Default values are taken from PipeConf.pm
+
+  </VIEWING JOB STATUS>
+
+  <VIEWING RESULTS>
+    SeqFeature pairs should be stored in the biosql_db. You can access it either through the API
+    or from mySQL directly. 
+
+  <AFTER NOTE>
+
+      Running pipelines are inherently for the brave hearted and we are glad you are willing to give
+      this a shot. We are working hard to ensure that it works as smoothly as possible.
+      Do let us know any problems that you face and suggestions that you have and we will do us best to help. 
+
+      In return, we ask that you keep a note down of your installation process and feedback that to us
+      so that we may make changes or improve our documentation.
+
+      cheers,
+
+      The Fugu Team
+
+   </AFTER NOTE>
+
+<CHANGE LOG>
+11 Apr 2003 - Modifying for global variables, adding docs- shawn
+</CHANGE LOG>
+
+-->
+<pipeline_setup>
+  <global 
+    rootdir="/Users/shawn/cvs_src/biopipe-release/examples/protein_annotation_pipeline/"
+    datadir="$rootdir/data"
+
+    dbname="biosql_protein_db"
+    dbdriver="mysql"
+    dbhost  = "localhost"
+    dbuser  = "root"
+    dbpasswd = "" 
+
+    biodatabase_id="1"
+    input_desc = "My_Peptides"
+
+    tmhmm_path=""
+
+    seg_path=""
+
+    prints_path="FingerPRINTScan"
+    prints_dbname="PrintsDB"
+    prints_dbversion=""
+    prints_dbfile="$datadir/prints.dat"
+
+    profile_dbname="ProfileSample"
+    profile_dbversion=""
+    profile_dbfile="$datadir/prosite.dat"
+    pfscan_path=""
+
+    signalp_path=""
+
+    pfam_dbversion="Pfam_Sample_R11"
+    pfam_dbfile="$datadir/pfam_sample_R11"
+    hmmpfam_path=""
+ 
+  />
+
+  <database_setup>
+   <!--access biosql database using biosql dbadaptor module --> 
+    <dbadaptor id="1">
+      <dbname>$dbname</dbname>
+      <driver>$dbdriver</driver>
+      <host>$dbhost</host>
+      <user>$dbuser</user>
+      <password>$dbpasswd</password>
+      <module>Bio::DB::BioSQL::DBAdaptor</module>
+    </dbadaptor>
+  </database_setup>
+
+  <iohandler_setup>
+    <!-- Create Input method used to return the bioentry_ids  for initializing the pipeline with inputs -->
+    <iohandler id="1">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+     <method>
+        <name>get_BioDatabaseAdaptor</name>
+        <rank>1</rank>
+     </method>
+     <method>
+        <name>list_bioentry_ids</name>
+        <rank>2</rank>
+        <argument>
+          <value>$biodatabase_id</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+     </method>
+    </iohandler>
+   
+    <!-- Fetch the sequence object --> 
+    <iohandler id="2">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_SeqAdaptor</name>
+        <rank>1</rank>
+     </method>
+     <method>
+        <name>fetch_by_dbID</name>
+        <rank>2</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+     </method>
+    </iohandler>
+    
+    <!-- Store protein features -->
+    <iohandler id="3">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>get_SeqFeatureAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>store_feature_array</name>
+        <rank>2</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <value>OUTPUT</value>
+          <type>ARRAY</type>
+          <rank>2</rank>
+        </argument>
+      </method>
+    </iohandler>
+  </iohandler_setup>
+
+  <!-- Data Monger analysis for setting up the inputs for first analysis-->
+  <pipeline_flow_setup>
+     <analysis id="1">
+      <data_monger>
+        <initial/>
+        <input>
+          <name>protein_ids</name>
+          <iohandler>1</iohandler>
+        </input>
+        <input_create>
+           <module>setup_initial</module>
+           <rank>1</rank>
+           <argument>
+                <tag>protein_ids</tag>
+                <value>2</value>
+            </argument>
+         </input_create>
+      </data_monger>
+      <input_iohandler id="1"/>
+    </analysis>
+    
+    <!--Analysis 1 Tmhmm --> 
+    <analysis id="2">
+      <logic_name>Tmhmm</logic_name>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <program>tmhmm</program>
+      <program_file>$tmhmm_path</program_file>
+      <runnable_parameters>-program Tmhmm</runnable_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 2 Seg --> 
+    <analysis id="3">
+      <logic_name>Seg</logic_name>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <program>seg</program>
+      <program_file>$seg_path</program_file>
+      <runnable_parameters>-program Seg</runnable_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 3 Prints -->
+    <analysis id="4">
+      <logic_name>Prints</logic_name>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <db>$prints_dbname</db>
+      <db_version>$prints_dbversion</db_version>
+      <db_file>$prints_dbfile</db_file>
+      <program>FingerPRINTScan</program>
+      <program_file>$prints_path</program_file>
+      <runnable_parameters>-program Prints</runnable_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 4 Profile -->
+    <analysis id="5">
+      <logic_name>Profile</logic_name>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <db>$profile_dbname</db>
+      <db_version>$profile_dbversion</db_version>
+      <db_file>$profile_dbfile</db_file>
+      <program>pfscan</program>
+      <program_file>$pfscan_path</program_file>
+      <runnable_parameters>-program Profile</runnable_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+   
+    <!--Analysis 5 Signalp --> 
+    <analysis id="6">
+      <logic_name>Signalp</logic_name>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <program>SignalP</program>
+      <program_file>$signap_path</program_file>
+      <runnable_parameters>-program Signalp</runnable_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+    
+    <!--Analysis 6 Hmmpfam -->
+    <analysis id="7">
+      <logic_name>Hmmpfam</logic_name>
+      <runnable>Bio::Pipeline::Runnable::ProteinAnnotation</runnable>
+      <db>$pfam_dbname</db>
+      <db_version>$pfam_dbversion</db_version>
+      <db_file>$pfam_dbfile</db_file>
+      <program>hmmpfam</program>
+      <program_file>$hmmpfam_path</program_file>
+      <runnable_parameters>-program Hmmpfam</runnable_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+
+    <!-- Rules that specify the order of analysis to be executed -->
+    <!-- Once analysis 1 is finished, copy input id from previous analysis, do the appropriate 
+         iohandler mapping and create job for analysis 2 -->
+    
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+     <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+     <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>3</current_analysis_id>
+     <next_analysis_id>4</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>4</current_analysis_id>
+     <next_analysis_id>5</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>5</current_analysis_id>
+     <next_analysis_id>7</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>6</current_analysis_id>
+     <next_analysis_id>7</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+
+  </pipeline_flow_setup>
+
+  <job_setup>
+ </job_setup>
+
+</pipeline_setup>
+

@@ -1,0 +1,353 @@
+<!--
+
+blast_biosql_pipeline.xml
+
+blast_biosql_pipeline.xml
+11 Apr 2003
+Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+http://www.biopipe.org
+
+<PIPELINE SUMMARY>
+
+Fetch sequences stored in a BioSQL sequence database and blast
+it against a blast database, storing results back into the BioSQL database
+
+</PIPELINE SUMMARY>
+
+<DESCRIPTION>
+
+This consist of two analysis, a setup_initial which gets the list
+of sequences inside the biosql database and creates one job per sequence.
+The next analysis will blast each of the input against the blast database.
+
+</DESCRIPTION>
+
+
+<THE BLAST BIOSQL PIPELINE>
+
+  <INSTALLATION REQUIRMENTS>
+
+    <PERL PACKAGES>
+      Standard Biopipe installation (pls refer to bioperl-pipeline/INSTALL)
+    </PERL PACKAGES>
+
+    <BINARIES>
+      NCBI's blastall ftp://ftp.ncbi.nih.gov/pub/blast/executables/
+    </BINARIES>
+ 
+  <CONFIGURING PIPELINE>
+
+  -Setup the BioSQL Database:
+
+    creating the database:
+
+    > cd biosql-schema/sql
+    > mysqladmin -u root -host localhost create biosql_db
+    > mysql -u root biosql_db < biosqldb-mysql.sql
+   
+    loading the database with sequences
+
+    > cd bioperl-db-1-1-0/scripts
+    > perl load_seqdatabase.pl -host localhost -sqldb biosql_db \
+                               -format fasta My_Peptides  \
+                               ~/cvs_src/biopipe-release/examples/blast_biosql_pipeline/data/input.fa 
+
+    You might see some accession number warnings which you may ignore . 
+    This is because we are using a more recent version of bioperl. 
+
+  -Configure this XML file  
+
+  <global 
+    rootdir="/Users/shawn/cvs_src/biopipe-release/examples/blast_biosql_pipeline/"
+    datadir="$rootdir/data"
+
+    dbname="biosql_db"
+    dbdriver="mysql"
+    dbhost  = "localhost"
+    dbuser  = "root"
+    dbpasswd = "" 
+
+    biodatabase_id="1"
+    input_desc = "My_Peptides"
+    blastdb_desc = "My_BlastDB"
+    blastdb_file = "$datadir/blast.fa"
+    blastpath    = ""
+    blastparam  = "-p blastp -e 1e-5"
+  />
+
+    rootdir - specifies base directory where subsequent directories point to                                 
+    datadir - directory where blast input file and blast data files are located                              
+    dbname  - the name of biosql database
+    dbhost  - the mysql host of the biosql database
+    dbuser  - the db user of the biosql database
+    dbpasswd - the mysql password for the biosql database
+    
+    biodatabase_id - the dbID of the sequence database in the biosql database. This 
+                     is biodatabase dbID in the biodatabase table.
+
+    input_desc - the description of the input sequences
+    blastdb_desc - the description of the blast database
+    blastpath - the path to NCBI's blastall binary                                                           
+    blastparam - the parameters to pass to blast
+
+  </CONFIGURING PIPELINE>    
+
+  <LOADING PIPELINE>
+      
+       The pipeline is loaded up using this XML file.
+       A new database will be automtically created maybe created for you. 
+       This is done using the PipelineManager script found in bioperl-pipeline/scripts.
+       Using the script:
+
+      ************************************
+      *PipelineManager
+      ************************************
+      This is the central script used to run the pipeline.
+
+      Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
+
+      Options:
+      Default values are read from PipeConf.pm
+
+           -dbhost    The database host name (localhost)
+           -dbname    The pipeline database name (annotate_pipeline)
+           -dbuser    User for connecting to db (root)
+           -dbpass    The password to mysql database()
+           -dbdriver  Database driver (mysql)
+           -schema    The Biopipe database schema (../sql/schema)
+           -xml       The xml pipeline template file. It will run XMLImporter if provided
+           -xf        Force drop of any existing Biopipe database with the same name
+           -flush     flush all locks on pipeline and remove any that exists. 
+                      Should only be used for debugging or development.
+           -batchsize The number ofjobs to be batched to one node
+           -local     Whether to run jobs in local mode 
+                      (on the node where this script is run)
+           -jobnbr    Number of jobs to run (for testing)
+           -queue     Specify the queue on which to submit jobs
+           -retry     Number of times to retry failed jobs
+           -notest    Don't run pre-pipeline checks
+           -norun     Use when you just want to load the XML without running
+           -verbose   Whether to show warning during test and setup
+           -help      Display this help
+                                                                                                             
+        Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in                                
+        the Bio/Pipeline/PipeConf.pm file, for convenience.                                                  
+                                                                                                             
+  </LOADING THE PIPELINE>   
+
+  <RUNNING THE PIPELINE>                                                                                     
+                                                                                                             
+    Go to bioperl-pipeline/Bio/Pipeline                                                                      
+                                                                                                             
+    Edit PipeConf.pm accordingly for your environment variables.                                             
+                                                                                                             
+    Go to bioperl-pipeline/scripts, to load the pipeline without running:                                    
+                                                                                                             
+    perl PipelineManager -dbname mydbname \                                                                  
+                         -dbuser <user> \                                                                    
+                         -dbhost <host> \                                                                    
+                         -xml ~/biopipe_release/xml/templates/examble/blast_file_pipeline.xml                
+                         -norun                                                                              
+                                                                                                             
+    run the pipeline:                                                                                        
+                                                                                                             
+                                                                                                             
+    perl PipelineManager -dbname mydbname \                                                                  
+                         -dbuser <user> \                                                                    
+                         -dbhost <host> \                                                                    
+                         -queue priority                                                                     
+                                                                                                             
+    you may use the -local option to run it in local mode without submitting to the nodes yet.               
+    This will be a good test before submitting, and is recommended for debugging.                            
+                                                                                                             
+    If you encounter any errors, you can simply rerun the first command with the xml option                  
+    and the biopipe database will be automatically recreated once the errors have been fixed.                
+                                                                                                             
+  </RUNNING THE PIPELINE>                                                                                    
+
+  <VIEWING RESULTS>
+    SeqFeature pairs should be stored in the biosql_db. You can access it either through the API
+    or from mySQL directly. Note bioperl-db-1-1-0 does not store cigar lines or hsps yet.                           
+    For that functionality, you may wanna look at the EnsEMBL Database.
+
+  <AFTER NOTE>
+
+      Running pipelines are inherently for the brave hearted and we are glad you are willing to give
+      this a shot. We are working hard to ensure that it works as smoothly as possible.
+      Do let us know any problems that you face and suggestions that you have and we will do us best to help. 
+
+      In return, we ask that you keep a note down of your installation process and feedback that to us
+      so that we may make changes or improve our documentation.
+
+      cheers,
+
+      The Fugu Team
+
+   </AFTER NOTE>
+
+<CHANGE LOG>
+11 Apr 2003 - First Addition - shawn
+</CHANGE LOG>
+
+//-->
+
+<pipeline_setup>
+
+  <!-- You really only need to modify here -->  
+  <global 
+    rootdir="/Users/shawn/cvs_src/biopipe-release/examples/blast_db_flat_pipeline/"
+    datadir="$rootdir/data"
+
+    dbname="biosql_db"
+    dbdriver="mysql"
+    dbhost  = "localhost"
+    dbuser  = "root"
+    dbpasswd = "" 
+
+    biodatabase_id="1"
+    input_desc = "My_Peptides"
+    blastdb_desc = "My_BlastDB"
+    blastdb_file = "$datadir/blast.fa"
+    blastpath    = ""
+    blastparam  = "-p blastp -e 1e-5"
+  />
+
+  <!-- You shouldn't need to modify from here on -->
+
+  <database_setup>
+
+    <dbadaptor id="1">
+      <dbname>$dbname</dbname>
+      <driver>$dbdriver</driver>
+      <host>$dbhost</host>
+      <user>$dbuser</user>
+      <password>$dbpasswd</password>
+      <module>Bio::DB::BioSQL::DBAdaptor</module>
+    </dbadaptor>
+
+  </database_setup>
+
+  <iohandler_setup>
+    <!-- get_all_ids present in the sequence database-->
+    <iohandler id="1">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+     <method>
+        <name>get_BioDatabaseAdaptor</name>
+        <rank>1</rank>
+     </method>
+     <method>
+        <name>list_bioentry_ids</name>
+        <rank>2</rank>
+        <argument>
+          <value>$biodatabase_id</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+     </method>
+    </iohandler>
+
+    <!-- Fetch the sequence object --> 
+    <iohandler id="2">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_SeqAdaptor</name>
+        <rank>1</rank>
+     </method>
+     <method>
+        <name>fetch_by_dbID</name>
+        <rank>2</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+     </method>
+    </iohandler>
+    
+    <!-- dump result to a gff file in directory specified by 
+         $resultdir
+    -->
+   <!-- Store protein features -->
+    <iohandler id="3">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>get_SeqFeatureAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>store_feature_array</name>
+        <rank>2</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <value>OUTPUT</value>
+          <type>ARRAY</type>
+          <rank>2</rank>
+        </argument>
+      </method>
+    </iohandler>
+  </iohandler_setup>
+
+  <pipeline_flow_setup>
+  <!-- 
+      setup blast analysis, creating input and jobs. Input are
+       assigned iohandler id 2, which is iohandler that does:
+       my $db = Bio::DB::BioSQL::DBAdaptor->new(-dbname=>"db",-user=>"root",-host=>"localhost");
+       my $seq = $db->get_SeqAdaptor->fetch_by_dbID($inputid);
+   -->
+   <analysis id="1">
+      <data_monger>
+        <initial/>
+        <input>
+          <name>$input_desc</name>
+          <iohandler>1</iohandler>
+        </input>
+        <input_create>
+           <module>setup_initial</module>
+           <rank>1</rank>
+           <argument>
+                <tag>$input_desc</tag>
+                <!-- the iohandler id (here its the value 2) that tells the next
+                     analysis how which iohandler to use -->
+                <value>2</value>
+            </argument>
+         </input_create>
+      </data_monger>
+      <!--the input to this analysis itself which is just input ids-->
+      <input_iohandler id="1"/>
+    </analysis>
+
+    <analysis id="2">
+      <logic_name>Blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>$blastdb_desc</db>
+      <db_file>$blastdb_file</db_file>
+      <program>blastall</program>
+      <program_file>$blastpath</program_file>
+      <analysis_parameters>$blastparam </analysis_parameters>
+      <runnable_parameters>-formatdb 1 -return_type subject</runnable_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3"/>
+    </analysis>
+
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+
+  </pipeline_flow_setup>
+
+  <job_setup>
+ </job_setup>
+
+</pipeline_setup>

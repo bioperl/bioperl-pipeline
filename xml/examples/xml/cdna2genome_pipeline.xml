@@ -1,0 +1,408 @@
+<!--
+
+cdna2genome_pipeline.xml
+
+cdna2genome pipeline
+22 Jan 2003
+Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+http://www.biopipe.org
+
+<PIPELINE SUMMARY>
+
+Given a file of cdna sequence and a genome database in contigs, do the following:
+
+CDNA Sequences->blastn Genome Database->Extract Top hits->Align cdna to genome chunk->dump to gff
+
+</PIPELINE SUMMARY>
+
+<DESCRIPTION>
+
+Given a file of cdna sequences in fasta format, split the sequences into chunks.
+These chunks are then blasted against a database of genomic sequences in fasta format.
+The top hits are extracted and selected for cdna to genome alignment using either est2genome
+or sim4. Results are written to flat files in gff format, one for each cdna sequence.
+
+One may modify this (via modifying the iohandlers) to write the results to a database of your
+choice (for example BioSQL database)
+
+</DESCRIPTION>
+
+<THE CDNA2GENOME PIPELINE>
+
+  <INSTALLATION REQUIREMENTS>
+
+    <PERL PACKAGES>
+      Standard Biopipe installation (pls refer to bioperl-pipeline/INSTALL)
+    </PERL PACKAGES>
+
+    <BINARIES> 
+      NCBI's blastall ftp://ftp.ncbi.nih.gov/pub/blast/executables/
+      Either:
+        sim4 http://globin.cse.psu.edu/
+        est2genome http://www.hgmp.mrc.ac.uk/Software/EMBOSS/
+    </BINARIES>
+ 
+  <CONFIGURING PIPELINE>
+
+    Modify the following parameters under the <global> tag to point to the directories,
+    files and parameters appropriately.
+
+    <global 
+      workdir="/Users/shawn/cvs_src/biopipe-release/examples/cdna2genome_pipeline"
+      resultdir = "$workdir/results"
+      cdna_input = "$workdir/cdna.fa"
+      genomic_input = "$workdir/genomic.fa"
+      blast_dir = "$workdir/blast_dir"
+      blast_param = "-p blastn -e 1e-7"
+      blast_program_file=""
+      analysis_logic_name="Sim4"
+      analysis_runnable="Bio::Pipeline::Runnable::Sim4"
+      analysis_program="sim4"
+      analysis_program_file = ""
+      analysis_parameters= ""
+    />
+
+   workdir    - root working directory
+   resultdir  - the result directory
+   cdna_input - the cdna input file
+   genomic_input  - the genomic input file
+   blast_dir      - the directory where blast results are stored
+   blast_param    - blast parameters
+   blast_program_file - the path to blastall
+   analysis_logic_name - the est alignment program 
+                         supported either: Sim4 or Est2Genome
+   analysis_runnable   - the module running the est alignment program
+                         supported either : Bio::Pipeline::Runnable::Sim4
+                                            Bio::Pipeline::Runnable::Est2Genome
+   analysis_program   - the program binary name 
+                        supported either: sim4 or est2genome
+   analysis_program_file - path to either sim4 or est2genome
+   analysis_parameters   - parameters to sim4 or est2genome
+   
+  </CONFIGURING PIPELINE>    
+
+  <LOADING PIPELINE>
+      
+       The pipeline is loaded up using this XML file.
+       A new database will be automtically created maybe created for you. 
+       This is done using the PipelineManager script found in bioperl-pipeline/scripts.
+       Using the script:
+
+      ************************************
+      *PipelineManager
+      ************************************
+      This is the central script used to run the pipeline.
+
+      Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
+
+      Options:
+      Default values are read from PipeConf.pm
+
+           -dbhost    The database host name (localhost)
+           -dbname    The pipeline database name (annotate_pipeline)
+           -dbuser    User for connecting to db (root)
+           -dbpass    The password to mysql database()
+           -dbdriver  Database driver (mysql)
+           -schema    The Biopipe database schema (../sql/schema)
+           -xml       The xml pipeline template file. It will run XMLImporter if provided
+           -xf        Force drop of any existing Biopipe database with the same name
+           -flush     flush all locks on pipeline and remove any that exists. 
+                      Should only be used for debugging or development.
+           -batchsize The number ofjobs to be batched to one node
+           -local     Whether to run jobs in local mode 
+                      (on the node where this script is run)
+           -jobnbr    Number of jobs to run (for testing)
+           -queue     Specify the queue on which to submit jobs
+           -retry     Number of times to retry failed jobs
+           -notest    Don't run pre-pipeline checks
+           -norun     Use when you just want to load the XML without running
+           -verbose   Whether to show warning during test and setup
+           -help      Display this help
+
+        Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in 
+        the Bio/Pipeline/PipeConf.pm file, for convenience.
+
+  </LOADING THE PIPELINE>
+
+  <RUNNING THE PIPELINE>
+
+    Go to bioperl-pipeline/Bio/Pipeline
+
+    Edit PipeConf.pm accordingly for your environment variables.
+
+    Go to bioperl-pipeline/scripts, to load the pipeline without running:
+
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -xml ~/biopipe-release/xml/templates/examble/blast_file_pipeline.xml
+                         -norun 
+
+    run the pipeline:
+
+    
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -queue priority
+
+    you may use the -local option to run it in local mode without submitting to the nodes yet.
+    This will be a good test before submitting, and is recommended for debugging.
+  
+    If you encounter any errors, you can simply rerun the first command with the xml option
+    and the biopipe database will be automatically recreated once the errors have been fixed.
+
+  </RUNNING THE PIPELINE>
+
+<CHANGE LOG>
+21 Jan 2003 - First Addition - shawn
+</CHANGE LOG>
+
+//-->
+
+<pipeline_setup>
+
+  <!-- You really only need to modify here -->
+  <global 
+      workdir="/Users/shawn/cvs_src/biopipe-release/examples/cdna2genome_pipeline"
+      resultdir = "$workdir/results"
+      cdna_input = "$workdir/cdna.fa"
+      genomic_input = "$workdir/genomic.fa"
+      blast_dir = "$workdir/blast_dir"
+      blast_param = "-p blastn -e 1e-7"
+      blast_program_file=""
+      analysis_logic_name="Sim4"
+      analysis_runnable="Bio::Pipeline::Runnable::Sim4"
+      analysis_program="sim4"
+      analysis_program_file = ""
+      analysis_parameters= ""
+  />
+
+  <!-- You shouldn't need to modify from here on -->
+
+  <database_setup>
+    <streamadaptor id="1">
+      <module>Bio::Pipeline::Utils::Dumper</module>
+    </streamadaptor>
+    <streamadaptor id="2">
+      <module>Bio::DB::Fasta</module>
+    </streamadaptor>
+  </database_setup>
+
+  <!-- fetch the sequence -->
+  <iohandler_setup>
+
+    <!-- fetch the sequence -->
+    <iohandler id="1">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>STREAM</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>new</name>
+        <rank>1</rank>
+        <argument>
+          <tag>-dir</tag>
+          <value>$resultdir</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <tag>-module</tag>
+          <value>generic</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <tag>-prefix</tag>
+          <type>SCALAR</type>
+          <value>INPUT</value>
+          <rank>2</rank>
+        </argument>
+        <argument>
+          <tag>-format</tag>
+          <type>SCALAR</type>
+          <value>gff</value>
+          <rank>3</rank>
+        </argument>
+        <argument>
+          <tag>-file_suffix</tag>
+          <type>SCALAR</type>
+          <value>gff</value>
+          <rank>4</rank>
+        </argument>
+      </method>
+      <method>
+        <name>dump</name>
+        <rank>2</rank>
+        <argument>
+          <value>OUTPUT</value>
+          <type>ARRAY</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+    </iohandler>
+    <iohandler id="2">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>STREAM</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>new</name>
+        <rank>1</rank>
+        <argument>
+          <value>$cdna_input</value>
+        </argument>
+      </method>
+      <method>
+        <name>get_Seq_by_id</name>
+        <argument>
+          <value>INPUT</value>
+        </argument>
+        <rank>2</rank>
+      </method>
+    </iohandler>
+    <iohandler id="3">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>STREAM</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>new</name>
+        <rank>1</rank>
+        <argument>
+          <value>$genomic_input</value>
+        </argument>
+      </method>
+      <method>
+        <name>get_Seq_by_id</name>
+        <argument>
+          <value>INPUT</value>
+        </argument>
+        <rank>2</rank>
+      </method>
+    </iohandler>
+  </iohandler_setup>
+  <pipeline_flow_setup>
+    <analysis id="1">
+      <data_monger>
+        <initial/>
+        <input>
+          <name>input_file</name>
+        </input>
+        <input_create>
+           <module>setup_file</module>
+           <rank>1</rank>
+            <argument>
+                <tag>input_file</tag>
+                <value>$cdna_input</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>full_path</tag>
+                <value>0</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>chop_nbr</tag>
+                <value>35</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>workdir</tag>
+                <value>$workdir</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>result_dir</tag>
+                <value>$blast_dir</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>runnable</tag>
+                <value>Bio::Pipeline::Runnable::Blast</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>informat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>outformat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>tag</tag>
+                <value>infile</value>
+                <type>SCALAR</type>
+            </argument>
+         </input_create>
+      </data_monger>
+    </analysis>
+    <analysis id="2">
+      <logic_name>Blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>family</db>
+      <db_file>$genomic_input</db_file>
+      <program>blastall</program>
+      <!--Provide path to blast-->
+      <program_file>$blast_program_file</program_file>
+      <analysis_parameters>$blast_param</analysis_parameters>
+      <runnable_parameters>-formatdb 1 -formatdb_alphabet dna -infile_dir  $workdir -result_dir $blast_dir</runnable_parameters>
+    </analysis>
+
+    <analysis id="3">
+      <data_monger>
+        <input_create>
+          <module>setup_cdna2genome</module>
+          <rank>1</rank>
+          <argument>
+            <tag>infile_dir</tag>
+            <value>$blast_dir</value>
+          </argument>
+          <argument>
+            <tag>infile_suffix</tag>
+            <value>bls</value>
+          </argument>
+          <argument>
+           <tag>cdna_ioh</tag>
+           <value>2</value>
+          </argument>
+          <argument>
+            <tag>genome_ioh</tag>
+            <value>3</value>
+          </argument>
+        </input_create>
+       </data_monger>
+    </analysis>
+
+    <analysis id="4">
+      <logic_name>$analysis_logic_name</logic_name>
+      <runnable>$analysis_runnable</runnable>
+      <program>$analysis_program</program>
+      <program_file>$analysis_program_file</program_file>
+      <analysis_parameters>$analysis_param</analysis_parameters>
+      <output_iohandler id="1"/>
+    </analysis>
+
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+      <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID_FILE</action>
+    </rule>
+    <rule>
+      <current_analysis_id>3</current_analysis_id>
+      <next_analysis_id>4</next_analysis_id>
+      <action>NOTHING</action>
+    </rule> 
+
+  </pipeline_flow_setup>
+
+  <job_setup>
+ </job_setup>
+
+</pipeline_setup>

@@ -1,0 +1,540 @@
+
+<pipeline_setup>
+ <global rootdir="/Users/shawn/cvs_src/biopipe-release/examples/genome_annotation_pipeline/"
+         ens_dbname="ensembl_db2"
+         ens_dbdriver="mysql"
+         ens_dbhost="localhost"
+         ens_dbuser="root"
+         ens_dbpasswd=""
+     
+         repeatmasker_param=""
+
+         blast1_logicname="BlastCdna"
+         blast1_dbname="FishCdna"
+         blast1_dbfile="$rootdir/data/fugu_cdna.fa"
+         blast1_dbversion ="test version"
+         blast1_param = "-p blastn -e 1e-10"
+         
+         blast2_logicname="BlastPep"
+         blast2_dbname="FishCdna"
+         blast2_dbfile="$rootdir/data/arp3_prot.fa"
+         blast2_dbversion ="test version"
+         blast2_param = "-p blastx -e 1e-10"
+    
+        slice_ioh="8"
+        protein_ioh="9"
+        genewise_ioh="$slice_ioh"
+ />
+  <database_setup>
+    <dbadaptor id="1">
+      <dbname>$ens_dbname</dbname>
+      <driver>$ens_dbdriver</driver>
+      <host>$ens_dbhost</host>
+      <user>$ens_dbuser</user>
+      <password>$ens_dbpasswd</password>
+      <module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
+    </dbadaptor>
+    <streamadaptor id="2">
+      <module>Bio::DB::Fasta</module>
+    </streamadaptor>
+
+  </database_setup>
+ 
+  <!-- get all the contig ids -->
+  <iohandler_setup>
+    <transformer id="1">
+      <module>Bio::EnsEMBL::Utils::Converter</module>
+        <method>
+          <name>new</name>
+          <rank>1</rank>
+          <argument>
+            <tag>-in</tag>
+            <value>Bio::SeqFeature::FeaturePair</value>
+            <rank>1</rank>
+          </argument>
+          <argument>
+            <tag>-out</tag>
+            <value>Bio::EnsEMBL::RepeatFeature</value>
+            <rank>2</rank>
+          </argument>
+          <argument>
+            <tag>-analysis</tag>
+            <value>!ANALYSIS!</value>
+            <rank>3</rank>
+          </argument>
+          <argument>
+            <tag>-contig</tag>
+            <value>!UNTRANSFORMED_INPUTOBJ!</value>
+            <rank>4</rank>
+          </argument>
+        </method>
+        <method>
+          <name>convert</name>
+          <argument>
+            <value>!OUTPUT!</value>
+          </argument>
+          <rank>2</rank>
+        </method>
+   </transformer>
+   <transformer id="2">
+    <module>Bio::EnsEMBL::Utils::Converter</module>
+      <method>
+        <name>new</name>
+        <rank>1</rank>
+        <argument>
+          <tag>-in</tag>
+          <value>Bio::Search::HSP::GenericHSP</value>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <tag>-out</tag>
+          <value>Bio::EnsEMBL::BaseAlignFeature</value>
+          <rank>2</rank>
+        </argument>
+        <argument>
+          <tag>-analysis</tag>
+          <value>!ANALYSIS!</value>
+          <rank>3</rank>
+        </argument>
+        <argument>
+          <tag>-contig</tag>
+          <value>!INPUTOBJ!</value>
+          <rank>4</rank>
+        </argument>
+        </method>
+        <method>
+          <name>convert</name>
+          <argument>
+           <value>!OUTPUT!</value>
+          </argument>
+          <rank>2</rank>
+        </method>
+   </transformer>
+   <transformer id="3">
+    <module>Bio::Pipeline::Utils::MaskSeq</module>
+    <method>
+      <name>new</name>
+      <rank>1</rank>
+    </method>
+    <method>
+      <name>run</name>
+      <argument>
+        <value>!INPUT!</value>
+      </argument>
+      <rank>2</rank>
+    </method>
+   </transformer>
+   <transformer id="4">
+    <module>Bio::Pipeline::Utils::Filter</module>
+    <method>
+      <name>new</name>
+      <rank>1</rank>
+      <argument>
+        <tag>-module</tag>
+       <value>feature_coverage</value>
+     </argument>
+    </method>
+    <method>
+      <name>run</name>
+      <argument>
+        <value>!INPUT!</value>
+      </argument>
+      <rank>2</rank>
+    </method>
+   </transformer>
+
+   <transformer id="5">
+    <module>Bio::EnsEMBL::Utils::Converter</module>
+      <method>
+        <name>new</name>
+        <rank>1</rank>
+        <argument>
+          <tag>-in</tag>
+          <value>Bio::SeqFeature::Gene::GeneStructure</value>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <tag>-out</tag>
+          <value>Bio::EnsEMBL::Gene</value>
+          <rank>2</rank>
+        </argument>
+        <argument>
+          <tag>-analysis</tag>
+          <value>!ANALYSIS!</value>
+          <rank>3</rank>
+        </argument>
+        <argument>
+          <tag>-contig</tag>
+          <value>!INPUTOBJ1!</value>
+          <rank>4</rank>
+        </argument>
+        <argument>
+          <tag>-assembly_mapper</tag>
+          <value>!IOHANDLER11!</value>
+        </argument>
+        </method>
+        <method>
+          <name>convert</name>
+          <argument>
+           <value>!OUTPUT!</value>
+          </argument>
+          <rank>2</rank>
+        </method>
+   </transformer>
+    <iohandler id="1">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_RawContigAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>get_all_Contig_id</name>
+        <rank>2</rank>
+       </method>
+    </iohandler>
+
+    <iohandler id="2">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_RawContigAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>fetch_by_dbID</name>
+        <rank>2</rank>
+         <argument>
+          <value>!INPUT!</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+       </method>
+   </iohandler>
+
+    <iohandler id="3">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>get_RepeatFeatureAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>store</name>
+        <rank>2</rank>
+        <argument>
+          <value>!OUTPUT!</value>
+          <type>ARRAY</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+   
+    </iohandler>
+
+   <!-- fetch the repeat_masked seq through BioToEns -->
+    <iohandler id="4">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_RawContigAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>fetch_by_dbID</name>
+        <rank>2</rank>
+        <argument>
+          <value>!INPUT!</value>
+          <rank>1</rank>
+          <type>SCALAR</type>
+        </argument>
+      </method>
+    </iohandler>  
+
+   <!-- Store the Dna Features --> 
+   <iohandler id="5">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>get_DnaAlignFeatureAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>store</name>
+        <argument>
+          <value>!OUTPUT!</value>
+          <type>ARRAY</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+    </iohandler>
+    
+   <iohandler id="6">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>get_ProteinAlignFeatureAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>store</name>
+        <argument>
+          <value>!OUTPUT!</value>
+          <type>ARRAY</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+    </iohandler>
+
+   <iohandler id="7">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_SliceAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>fetch_by_contig_id</name>
+        <argument>
+          <value>!INPUT!</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <rank>2</rank>
+      </method>
+      <method>
+        <name>get_all_ProteinAlignFeatures</name>
+        <rank>3</rank>
+      </method> 
+    </iohandler>
+   <iohandler id="8">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>get_SliceAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>fetch_by_chr_start_end</name>
+        <argument>
+          <value>!INPUT!</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+    </iohandler>
+   <iohandler id="9">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>STREAM</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>new</name>
+        <rank>1</rank>
+        <argument>
+          <value>$blast2_dbfile</value>
+       </argument>
+      </method>
+      <method>
+        <name>get_Seq_by_id</name>
+        <argument>
+          <value>!INPUT!</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+    </iohandler>
+  <iohandler id="10">
+    <adaptor_id>1</adaptor_id>
+    <adaptor_type>DB</adaptor_type>
+    <iohandler_type>OUTPUT</iohandler_type>
+    <method>
+      <name>get_GeneAdaptor</name>
+      <rank>1</rank>
+    </method>
+    <method>
+      <name>store</name>
+      <rank>2</rank>
+      <argument>
+        <value>!OUTPUT!</value>
+        <type>ARRAY</type>
+      </argument>
+    </method>
+  </iohandler>
+  <iohandler id="11">
+    <adaptor_id>1</adaptor_id>
+    <adaptor_type>DB</adaptor_type>
+    <iohandler_type>INPUT</iohandler_type>
+    <method>
+      <name>get_AssemblyMapperAdaptor</name>
+      <rank>1</rank>
+    </method>
+    <method>
+      <name>fetch_by_type</name>
+      <argument>
+        <value>TEST</value>
+      </argument>
+      <rank>1</rank>
+    </method>
+  </iohandler>
+    
+  </iohandler_setup>
+  <pipeline_flow_setup>
+
+    <analysis id="1">
+      <data_monger>
+        <input>
+          <name>Ensembl_ids</name>
+          <iohandler>1</iohandler>
+        </input>
+        <input_create>
+           <module>setup_initial</module>
+           <rank>1</rank>
+           <argument>
+                <tag>Ensembl_ids</tag>
+                <value>2</value>
+            </argument>
+         </input_create>
+      </data_monger>
+      <input_iohandler id="1"/>
+    </analysis>
+
+
+    <!--Analysis 2 Repeat Masker-->
+   <analysis id="2">
+      <logic_name>RepeatMasker</logic_name>
+      <runnable>Bio::Pipeline::Runnable::RepeatMasker</runnable>
+      <program>RepeatMasker</program>
+        <analysis_parameters>$repeatmasker_param</analysis_parameters>
+      <input_iohandler id="2"/>
+      <output_iohandler id="3">
+      <transformer id="1">
+        <rank>1</rank>
+      </transformer>
+      </output_iohandler>       
+    </analysis>
+
+   <!--Analysis 3 BlastSavignyiCdna--> 
+
+    <analysis id="3">
+      <logic_name>$blast1_logicname</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>$blast1_dbname</db>
+      <!--<db_file>/data0/40mb_assembly.fa</db_file>-->
+      <db_file>$blast1_dbfile</db_file>
+      <db_version>$blast1_dbversion</db_version>
+      <program>blastall</program>
+      <analysis_parameters>$blast1_param</analysis_parameters>
+      <input_iohandler id="4">
+        <transformer id="3">
+        <rank>1</rank>
+        </transformer>
+     </input_iohandler> 
+      <output_iohandler id="5">
+        <transformer id="2">
+        <rank>1</rank>
+        </transformer>
+     </output_iohandler>
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+    </input_iohandler_mapping>
+   </analysis>
+ 
+   <!--Analysis 4  BlastIntestinalisCdna-->
+
+    <analysis id="4">
+      <logic_name>$blast2_logicname</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>$blast2_dbname</db>
+      <db_file>$blast2_dbfile</db_file>
+      <db_version>$blast2_dbversion</db_version>
+      <program>blastall</program>
+      <analysis_parameters>$blast2_param</analysis_parameters>
+      <input_iohandler id="4">
+        <transformer id="3">
+        <rank>1</rank>
+        </transformer>
+     </input_iohandler> 
+      <output_iohandler id="6">
+        <transformer id="2">
+        <rank>1</rank>
+        </transformer>
+     </output_iohandler>
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+    </input_iohandler_mapping>
+   </analysis>
+
+    <analysis id="5">
+      <data_monger>
+        <input_create>
+           <module>setup_genewise</module>
+           <rank>1</rank>
+           <argument>
+                <tag>slice_ioh</tag>
+                <value>$slice_ioh</value>
+            </argument>
+            <argument>
+                <tag>protein_ioh</tag>
+                <value>$protein_ioh</value>
+           </argument>
+           <argument>
+              <tag>dyn_arg_datahandler_name</tag>
+              <value>fetch_by_chr_start_end</value>
+          </argument>
+         </input_create>
+      </data_monger>
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>4</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>7</current_analysis_iohandler_id>
+    </input_iohandler_mapping>
+      <input_iohandler id="7">
+        <transformer id="4"/>
+      </input_iohandler>
+    </analysis>
+    <analysis id="6">
+      <logic_name>genewise</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Genewise</runnable>
+      <output_iohandler id="10">
+        <transformer id="5"/>
+      </output_iohandler>
+      <input_iohandler id="8"/>
+      <input_iohandler isd="9"/>
+    </analysis>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+     <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+     <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>3</current_analysis_id>
+     <next_analysis_id>4</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>4</current_analysis_id>
+     <next_analysis_id>5</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>5</current_analysis_id>
+     <next_analysis_id>6</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+  </pipeline_flow_setup>
+
+</pipeline_setup>
+
