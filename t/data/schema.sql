@@ -208,11 +208,19 @@ CREATE TABLE analysis (
 CREATE TABLE analysis_iohandler(
   analysis_id               int(10) NOT NULL,
   iohandler_id              int(10) NOT NULL,
-
+  converter_id              int(10) ,
+  rank                      int(2) ,
   PRIMARY KEY (analysis_id,iohandler_id)
 
 );
 
+CREATE TABLE converter (
+  converter_id		int(10) NOT NULL,
+  module		varchar(255) NOT NULL,
+  method                varchar(255) NOT NULL,
+
+  PRIMARY KEY (converter_id)
+);
 
 CREATE TABLE completed_jobs (
   completed_job_id      int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
