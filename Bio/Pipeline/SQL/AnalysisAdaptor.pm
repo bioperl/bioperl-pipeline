@@ -266,4 +266,17 @@ sub update_runnable {
     }
 }
 
+sub remove_analysis {
+    my ($self,@dbID) = @_;
+    my $sth;
+    if (!@dbID){
+        $sth = $self->prepare("DELETE FROM analysis");
+    }
+    else {
+       my $list = join(",",@dbID);
+       $sth = $self->prepare("DELETE FROM analysis WHERE analysis_id in($list)");
+    }
+    $sth->execute();
+}
+
 1;
