@@ -9,6 +9,9 @@ BEGIN {
 }
 
 END {
+     foreach( $Test::ntest..NUMTESTS) {
+      skip('Blast or env variables not installed correctly',1);
+     }
     unlink "t/data/blast_dir/blast.fa.1";
     unlink "t/data/blast_dir/blast.fa.2";
     unlink "t/data/blast_dir/blast.fa.3";
@@ -26,7 +29,18 @@ END {
 
 use BiopipeTestDB;
 use Bio::Pipeline::SQL::DBAdaptor;
+use Bio::Tools::Run::StandAloneBlast;
 use Bio::SeqIO;
+
+my  $factory = Bio::Tools::Run::StandAloneBlast->new();
+
+my $blast_present = $factory->executable('blastall');
+if( ! $blast_present ) {
+        skip('Blast not installed',1);
+            exit;
+} else {
+        ok($blast_present);
+}
 
 my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
