@@ -127,11 +127,11 @@ sub fetch_by_dbID {
 sub fetch_inputhandler_dbID_by_analysis{
     my ($self,$analysis_id) = @_;
 
-    my $query = "   SELECT iohandler.iohandler
-                    FROM   analysis_iohandler,iohandler,
+    my $query = "   SELECT iohandler.iohandler_id
+                    FROM   analysis_iohandler,iohandler
                     WHERE  analysis_id = ? 
                            and iohandler.type = 'INPUT'
-                           and iohandler.iohandler= analysis_iohandler.iohandler_id";
+                           and iohandler.iohandler_id= analysis_iohandler.iohandler_id";
     my $sth = $self->prepare($query);
     $sth->execute($analysis_id);
 
