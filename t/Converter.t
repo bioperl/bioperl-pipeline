@@ -11,6 +11,8 @@ use BiopipeTestDB;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::SQL::ConverterAdaptor;
 use Bio::Pipeline::Converter;
+use Bio::Pipeline::Method;
+use Bio::Pipeline::Argument;
 
 
 my $biopipe_test = BiopipeTestDB->new();
@@ -78,6 +80,7 @@ sub _check_converter{
 	
 #	}
 }
+
 
 sub _check_converter_method{
 	my ($method, $dbID, $method_name, $rank) =@_;

@@ -228,7 +228,7 @@ CREATE TABLE converters (
 CREATE TABLE converter_methods(
 	converter_method_id	INT(10) UNSIGNED DEFAULT '0' NOT NULL AUTO_INCREMENT,
 	converter_id 		INT(10) UNSIGNED NOT NULL,
-	method			VARCHAR(40) NOT NULL,
+	name			VARCHAR(40) NOT NULL,
 	rank			INT(2) NOT NULL,
 
 	PRIMARY KEY(converter_method_id)
