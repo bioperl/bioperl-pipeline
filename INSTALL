@@ -1,14 +1,37 @@
-The bioperl-pipeline relies on a mysql database for its job management and tracking.
-This allows persistency of most operations inherent to the pipeline, which
+Installation of bioperl-pipeline requires XML::SimpleObject.pm which can be obtained from
+CPAN. bioperl-pipeline also requires the Bioperl bioperl-run package and the main Bioperl
+package, eiher bioperl-live or the latest stable release.
+
+Install the bioperl-pipeline package in the standard way:
+
+   >perl Makefile.PL
+   >make
+   >make test
+   >make install
+
+For detailed instructions on installing bioperl* packages please refer to the INSTALL document
+in bioperl-live or in the latest Bioperl release. This document discusses issues like
+installation into non-standard locations or how to install a Perl package if you don't
+have root access (Unix).
+
+Installation of Bioperl on Windows is discussed in the INSTALL.WIN document in bioperl-live
+or in the latest Bioperl release.
+
+The bioperl-pipeline relies on a MySQL database for its job management and tracking.
+This allows persistence of most operations inherent to the pipeline, which
 in turn allows the pipeline to restart seemlessly even after an abrupt halt due
-to some system failure (e.g. network problems, power cut, etc.)
+to some system failure (e.g. network problems, power cut, and so on). 
 
-1) Create a pipeline database:
+Obtain MySQL from wwww.mysql.org and refer to the MySQL documentation for installation
+instructions. Once MySQL is installed and running you can create the bioperl-pipeline
+database.
 
->mysqladmin -u root create biopipe
+To create a pipeline database:
 
-2) Populate the database with the schema:
+   >mysqladmin -u root create biopipe
 
->cd bioperl-pipeline
->mysql -u root biopipe < sql/schema.sql
+To create the pipeline database tables:
+
+   >cd bioperl-pipeline
+   >mysql -u root biopipe < sql/schema.sql
 
