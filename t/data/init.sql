@@ -67,8 +67,8 @@ INSERT INTO iohandler VALUES (2,1,'OUTPUT','STREAM');
 # Dumping data for table 'job'
 #
 
-INSERT INTO job VALUES (1,'NEW',1,0,'','','','NEW','','',0);
-INSERT INTO job VALUES (2,'NEW',1,0,'','','','NEW','','',0);
+INSERT INTO job VALUES (1,'NEW',1,1,0,'pulse','','','','NEW','','',0);
+INSERT INTO job VALUES (2,'NEW',1,1,0,'pulse','','','','NEW','','',0);
 
 #
 # Dumping data for table 'new_input'
@@ -101,7 +101,7 @@ INSERT INTO node_group VALUES (1,'gr1','desc1');
 # Dumping data for table 'rule'
 #
 
-INSERT INTO rule VALUES (1,1,2,'WAITFORALL_AND_UPDATE');
+INSERT INTO rule VALUES (1,1,1,2,'WAITFORALL_AND_UPDATE');
 
 #
 # Dumping data for table 'streamadaptor'
