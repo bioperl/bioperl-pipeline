@@ -384,9 +384,6 @@ sub create_new_job {
                 }
                 push (@new_jobs,$new_job);
             }
-            elsif ($action eq 'CREATE_INPUT'){
-              die("Not Implemented yet");   
-            }
             elsif ($action eq 'UPDATE') {
                my @output_ids = $job->output_ids;
                if (scalar(@output_ids) == 0) {  ## No outputs, so dont create any job 
@@ -677,6 +674,7 @@ sub remove_lock{
     unlink "$dir/db.pag";
     unlink "$dir/db.dir";
     unlink "$dir/db.db";
+    unlink "$dir/db";
     rmdir $dir;
 }
 
