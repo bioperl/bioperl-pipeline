@@ -15,8 +15,10 @@ INSERT INTO analysis VALUES (2,'2002-07-26 16:22:46','blast','Bio::Pipeline::Run
 # Dumping data for table 'analysis_output_handler'
 #
 
-INSERT INTO analysis_iohandler VALUES (1,2);
-INSERT INTO analysis_iohandler VALUES (2,2);
+INSERT INTO analysis_iohandler VALUES (1,2,NULL,NULL);
+INSERT INTO analysis_iohandler VALUES (2,2,NULL,NULL);
+
+#INSERT INTO converter VALUES (1,'Bio::Pipeline::TestConverter','convertBioToEns');
 
 #
 # Dumping data for table 'argument'
