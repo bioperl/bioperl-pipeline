@@ -41,7 +41,7 @@ push @meth , Bio::Pipeline::Method->new(-name=>"run",
 
 my $trans  = new Bio::Pipeline::Transformer(-module=>"Bio::Pipeline::Utils::Filter",
                                             -method=>\@meth);
-ok scalar($trans->method), 2;
+ok scalar @{$trans->method}, 2;
 ok $trans->module, "Bio::Pipeline::Utils::Filter";
 
 ok my $filtered = $trans->run(\@hsps);

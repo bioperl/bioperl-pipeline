@@ -127,7 +127,7 @@ sub run {
     return;
    }
    my @inputs = ref $input_ref eq "ARRAY" ? @{$input_ref} : ($input_ref);
-   my @methods = $self->method;
+   my @methods = @{$self->method};
    my $constructor = shift @methods;
    my @args        = @{$constructor->arguments};
    @args           = $self->_format_input_arguments($input_ref,@args);
