@@ -1,5 +1,5 @@
-# $Id: .pm,v 1.51 Fri Jun 07 05:43:37 SGT 2002
-# BioPerl module for 
+# $Id $
+# BioPerl module for Bio::Pipeline::SQL::NodeGroupAdaptor
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -17,7 +17,7 @@ Bio::Pipeline::SQL::NodeGroupAdaptor - Desc
 
     my $group = $self->db->get_NodeGroupAdaptor->fetch_by_dbID(1);
     my $nodes_ref = $group->nodes;
-    
+
 =head1 DESCRIPTION
 
 Adaptor Object for fetching a NodeGroup

@@ -12,67 +12,74 @@
 #
 # Bio::Pipeline::Runnable::Clustalw
 #
+
 =head1 SYNOPSIS
-The pipeline wrapper for running Clustalw
 
-For running a multiple alignments on an array of seq objects:
+  The pipeline wrapper for running Clustalw
 
-my $runnable = Bio::Pipeline::Runnable::Clustalw->new();
-my $analysis = new Bio::Pipeline::Analysis (-ID             => 1, 
-                                            -PROGRAM        => "align",
-                                            -PROGRAM_FILE   => "/usr/local/bin/clustalw", 
-                                            -RUNNABLE       => "Bio::Pipeline::Runnable::Clustalw",
-                                            -LOGIC_NAME     => "Clustalw" 
-                                            -OUTPUT_HANDLER => $output_handler );
+  For running a multiple alignments on an array of seq objects:
 
-$runnable->analysis($analysis);
+  my $runnable = Bio::Pipeline::Runnable::Clustalw->new();
+  my $analysis = new Bio::Pipeline::Analysis
+      (-ID             => 1,
+       -PROGRAM        => "align",
+       -PROGRAM_FILE   => "/usr/local/bin/clustalw",
+       -RUNNABLE       => "Bio::Pipeline::Runnable::Clustalw",
+       -LOGIC_NAME     => "Clustalw"
+       -OUTPUT_HANDLER => $output_handler );
 
-my $seq = Bio::PrimarySeq->new ( -seq => 'ATGGGGTGGGCGGTGGGTGGTTTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
-                                   -id  => '1',
-                                   -accession_number => 'X78121',
-                                   -alphabet => 'dna',
-                                   -is_circular => 1
-                                   );
-my $seq2 = Bio::PrimarySeq->new ( -seq => 'CCCCATGGGGTGGGCGGTGGGTGGTTTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
-                                   -id  => '2',
-                                   -accession_number => 'X78121',
-                                   -alphabet => 'dna',
-                                   -is_circular => 1
-                                   );
-my @seq;
-push @seq,$seq;
-push @seq,$seq2;
-$runnable->seq(\@seq);
-$runnable->run;
-my $output = $runnable->output; #Returns a SimpleAlign object
+  $runnable->analysis($analysis);
 
-OR do a profile alignment with a single sequence and an alignment object
+  my $seq = Bio::PrimarySeq->new
+      ( -seq => 'ATGGGGTGGGCGGTGGGTGGTTTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
+	-id  => '1',
+	-accession_number => 'X78121',
+	-alphabet => 'dna',
+	-is_circular => 1
+      );
+  my $seq2 = Bio::PrimarySeq->new
+      ( -seq => 'CCCCATGGGGTGGGCGGTGGGTGGTTTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
+	-id  => '2',
+	-accession_number => 'X78121',
+	-alphabet => 'dna',
+	-is_circular => 1
+      );
+  my @seq;
+  push @seq,$seq;
+  push @seq,$seq2;
+  $runnable->seq(\@seq);
+  $runnable->run;
+  my $output = $runnable->output; #Returns a SimpleAlign object
 
-my $align = $runnnable->output;
-$runnable->align($align);
-my $seq3 = Bio::PrimarySeq->new ( -seq => 'CCCGTGGGTGGTTTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
-                                   -id  => '3',
-                                   -accession_number => 'X78121',
-                                   -alphabet => 'dna',
-                                   -is_circular => 1
-                                   );
-$runnable->seq($seq3);
-my $analysis = new Bio::Pipeline::Analysis (-ID             => 2, 
-                                            -PROGRAM        => "profile_align",
-                                            -PROGRAM_FILE   => "/usr/local/bin/clustalw", 
-                                            -RUNNABLE       => "Bio::Pipeline::Runnable::Clustalw",
-                                            -LOGIC_NAME     => "Clustalw" 
-                                            -OUTPUT_HANDLER => $output_handler );
+  OR do a profile alignment with a single sequence and an alignment object
 
-$runnable->run;
-my $output = $runnable->output; #Returns a SimpleAlign object
+  my $align = $runnnable->output;
+  $runnable->align($align);
+  my $seq3 = Bio::PrimarySeq->new
+      ( -seq => 'CCCGTGGGTGGTTTGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG',
+	-id  => '3',
+	-accession_number => 'X78121',
+	-alphabet => 'dna',
+	-is_circular => 1
+      );
+  $runnable->seq($seq3);
+  my $analysis = new Bio::Pipeline::Analysis
+          (-ID             => 2,
+           -PROGRAM        => "profile_align",
+	   -PROGRAM_FILE   => "/usr/local/bin/clustalw",
+	   -RUNNABLE       => "Bio::Pipeline::Runnable::Clustalw",
+	   -LOGIC_NAME     => "Clustalw"
+	   -OUTPUT_HANDLER => $output_handler );
 
-OR do a profile alignment with 2 alignment objects
+  $runnable->run;
+  my $output = $runnable->output; #Returns a SimpleAlign object
 
-$runnable->align($aln1,$aln2); #2 Simple Align objects
+  # OR do a profile alignment with 2 alignment objects
 
-$runnable->run;
-my $output = $runnable->output;
+  $runnable->align($aln1,$aln2); #2 Simple Align objects
+
+  $runnable->run;
+  my $output = $runnable->output;
 
 
 =head1 DESCRIPTION
@@ -87,6 +94,7 @@ shawnh@fugu-sg.org
 =head1 APPENDIX
 
 =cut
+
 package Bio::Pipeline::Runnable::Clustalw;
 use vars qw(@ISA);
 use strict;
@@ -96,13 +104,14 @@ use Bio::Pipeline::RunnableI;
 use Bio::Tools::Run::Alignment::Clustalw;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
+
 =head2 new
 
-Title   :   new
-Usage   :   $self->new()
-Function:
-Returns :
-Args    :
+ Title   :   new
+ Usage   :   $self->new()
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -115,11 +124,11 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes
-Usage   :   $self->datatypes()
-Function:   returns a hash of the datatypes required by the runnable
-Returns :
-Args    :
+ Title   :   datatypes
+ Usage   :   $self->datatypes()
+ Function:   returns a hash of the datatypes required by the runnable
+ Returns :
+ Args    :
 
 =cut
 
@@ -135,7 +144,7 @@ sub datatypes {
   my $dtc = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SimpleAlign',
                                          '-name'=>'alignment',
                                          '-reftype'=>'SCALAR');
-                                         
+
   my %dts;
   $dts{seq} = $dta;
   #get/set for align can hold either an array of alignments (for profile alignment between
@@ -144,19 +153,20 @@ sub datatypes {
   $dts{align} = [];
   push @{$dts{align}},$dtb;
   push @{$dts{align}},$dtc;
-  
-  
+
+
   return %dts;
 
 }
 
 =head2 seq
 
-Title   :   seq
-Usage   :   $self->seq(\@seq)
-Function:   get/set to hold a reference to an array of sequences/single sequence for multiple alignment/profile alignment
-Returns :
-Args    :
+ Title   :   seq
+ Usage   :   $self->seq(\@seq)
+ Function:   get/set to hold a reference to an array of sequences/single 
+             sequence for multiple alignment/profile alignment
+ Returns :
+ Args    :
 
 =cut
 
@@ -170,11 +180,12 @@ sub seq {
 
 =head2 align
 
-Title   :   align
-Usage   :   $self->align(\@align)
-Function:   get/set to hold a reference to an array of alignments/single alignment for profile alignment 
-Returns :
-Args    :
+ Title   :   align
+ Usage   :   $self->align(\@align)
+ Function:   get/set to hold a reference to an array of alignments/single 
+             alignment for profile alignment
+ Returns :
+ Args    :
 
 =cut
 
@@ -188,13 +199,14 @@ sub align {
 
 =head2 run
 
-Title   :   run
-Usage   :   $self->run()
-Function:   execute 
-Returns :   
-Args    :
+ Title   :   run
+ Usage   :   $self->run()
+ Function:   execute
+ Returns :
+ Args    :
 
 =cut
+
 sub run {
   my ($self) = @_;
   my $factory;
@@ -204,7 +216,7 @@ sub run {
   }
   else {
       $factory = Bio::Tools::Run::Alignment::Clustalw->new();
-  }      
+  }
   my $program = $self->analysis->program || $self->throw("No program specified for Clustalw |align|profile_align");
   my $aln;
   ($program =~ /align|profile_align/i) || $self->throw("Clustalw needs either program to be set as align or profile_align in the analysis table");

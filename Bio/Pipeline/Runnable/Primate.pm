@@ -16,10 +16,10 @@
 
 =head1 DESCRIPTION
 
-my $runnable = Bio::Pipeline::Runnable::Primate->new();
-$runnable->analysis($analysis);
-$runnable->search;
-my $output = $runnable->output;
+  my $runnable = Bio::Pipeline::Runnable::Primate->new();
+  $runnable->analysis($analysis);
+  $runnable->search;
+  my $output = $runnable->output;
 
 =head1 CONTACT
 
@@ -28,6 +28,7 @@ shawnh@fugu-sg.org
 =head1 APPENDIX
 
 =cut
+
 package Bio::Pipeline::Runnable::Primate;
 use vars qw(@ISA);
 use strict;
@@ -37,13 +38,14 @@ use Bio::Pipeline::RunnableI;
 use Bio::Tools::Run::Primate;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
+
 =head2 new
 
-Title   :   new
-Usage   :   $self->new()
-Function:
-Returns :
-Args    :
+ Title   :   new
+ Usage   :   $self->new()
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -56,11 +58,11 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes
-Usage   :   $self->datatypes()
-Function:   returns a hash of the datatypes required by the runnable
-Returns :
-Args    :
+ Title   :   datatypes
+ Usage   :   $self->datatypes()
+ Function:   returns a hash of the datatypes required by the runnable
+ Returns :
+ Args    :
 
 =cut
 
@@ -69,7 +71,7 @@ sub datatypes {
   my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::PrimarySeqI',
                                         '-name'=>'sequence',
                                         '-reftype'=>'SCALAR');
-                                        
+
   my %dts;
   $dts{target} = $dt;
 
@@ -88,11 +90,11 @@ sub target{
 
 =head2 run
 
-Title   :   run
-Usage   :   $self->run()
-Function:   execute 
-Returns :   
-Args    :
+ Title   :   run
+ Usage   :   $self->run()
+ Function:   execute 
+ Returns :
+ Args    :
 
 =cut
 
@@ -102,14 +104,14 @@ sub run {
   my $target = $self->target || $self->throw("Need a target sequence to run primate");
   my $query = $self->analysis->db_file || $self->throw("Need a db file of primer tags");
   (-e $query) || $self->throw("Query file doesn't seem to exist");
- 
+
   my $param_str = $self->analysis->parameters;
   my @params = $self->parse_params($param_str);
   if ($self->analysis->program_file){
       my $file = $self->analysis->program_file;
       push @params , ('PROGRAM',"$file");
   }
-  
+
   my $factory = Bio::Tools::Run::Primate->new(@params);
   $factory->query($query);
 
@@ -118,7 +120,7 @@ sub run {
   $self->output(\@feats);
 
   return \@feats;
-  
+
 }
 
 

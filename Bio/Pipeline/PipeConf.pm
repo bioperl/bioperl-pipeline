@@ -3,9 +3,11 @@
 # configuration information
 
 =head1 NAME
+
 Bio::Pipeline::PipeConf
 
 =head1 DESCRIPTION
+
 PipeConf is a copy of humConf written by James Gilbert.
 
 humConf is based upon ideas from the standard perl Env environment
@@ -25,7 +27,6 @@ The variables can also be references to arrays or hashes.
 All the variables are in capitals, so that they resemble environment
 variables.
 
-=head1
 
 =cut
 

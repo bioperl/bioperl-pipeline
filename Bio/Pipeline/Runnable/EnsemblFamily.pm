@@ -44,13 +44,14 @@ use Bio::EnsEMBL::ExternalData::Family::DBSQL::DBAdaptor;
 
 
 @ISA = qw(Bio::Pipeline::RunnableI);
+
 =head2 new
 
-Title   :   new
-Usage   :   $self->new()
-Function:
-Returns :
-Args    :
+  Title   :   new
+  Usage   :   $self->new()
+  Function:
+  Returns :
+  Args    :
 
 =cut
 
@@ -70,11 +71,11 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes
-Usage   :   $self->datatypes()
-Function:   returns a hash of the datatypes required by the runnable
-Returns :
-Args    :
+  Title   :   datatypes
+  Usage   :   $self->datatypes()
+  Function:   returns a hash of the datatypes required by the runnable
+  Returns :
+  Args    :
 
 =cut
 
@@ -92,11 +93,11 @@ sub datatypes {
 
 =head2 family
 
-Title   :   family 
-Usage   :   $self->family ()
-Function:   get/set for families 
-Returns :
-Args    : 
+  Title   :   family 
+  Usage   :   $self->family ()
+  Function:   get/set for families 
+  Returns :
+  Args    : 
 
 =cut
 
@@ -141,11 +142,11 @@ sub ensembl_family_locator{
 
 =head2 run
 
-Title   :   run
-Usage   :   $self->run()
-Function:   execute 
-Returns :   
-Args    :
+  Title   :   run
+  Usage   :   $self->run()
+  Function:   execute 
+  Returns :   
+  Args    :
 
 =cut
 

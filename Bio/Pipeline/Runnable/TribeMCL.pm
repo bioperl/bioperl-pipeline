@@ -16,15 +16,15 @@
 =head1 SYNOPSIS
 
 
-my $runnable = Bio::Pipeline::Runnable::TribeMCL->new();
-$runnable->analysis($analysis);
-$runnable->run;
-my $output = $runnable->output;
+  my $runnable = Bio::Pipeline::Runnable::TribeMCL->new();
+  $runnable->analysis($analysis);
+  $runnable->run;
+  my $output = $runnable->output;
 
 =head1 DESCRIPTION
 
 Runnable for TribeMCL that takes in an array of protein blast scores
-runs the TribeMCL wrapper. 
+runs the TribeMCL wrapper.
 
 =head1 CONTACT
 
@@ -45,11 +45,11 @@ use Bio::Pipeline::RunnableI;
 
 =head2 new
 
-Title   :   new
-Usage   :   $self->new()
-Function:
-Returns :
-Args    :
+ Title   :   new
+ Usage   :   $self->new()
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -62,16 +62,16 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes
-Usage   :   $self->datatypes()
-Function:   returns a hash of the datatypes required by the runnable
-Returns :
-Args    :
+ Title   :   datatypes
+ Usage   :   $self->datatypes()
+ Function:   returns a hash of the datatypes required by the runnable
+ Returns :
+ Args    :
 
 =cut
 
 sub datatypes {
-  
+
   my ($self) = @_;
   my $dt = Bio::Pipeline::DataType->new('-match'=>0);
 
@@ -85,11 +85,11 @@ sub datatypes {
 
 =head2 run
 
-Title   :   run
-Usage   :   $self->run()
-Function:   execute 
-Returns :   
-Args    :
+ Title   :   run
+ Usage   :   $self->run()
+ Function:   execute 
+ Returns :   
+ Args    :
 
 =cut
 

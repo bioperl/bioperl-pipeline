@@ -20,8 +20,7 @@ use Bio::Pipeline::Input;
 @ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
 
-=head 1 Fetch methods 
-
+=head1 Fetch methods
 
 =cut
 

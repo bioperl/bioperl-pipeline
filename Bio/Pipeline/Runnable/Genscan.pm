@@ -13,16 +13,18 @@ Bio::Pipeline::Runnable::Genscan
 
 =head1 SYNOPSIS
 
-my $runnable = Bio::Pipeline::Runnable::Genscan->new();
-$runnable->analysis($analysis);
-$runnable->run;
-my $output = $runnable->output;
+ my $runnable = Bio::Pipeline::Runnable::Genscan->new();
+ $runnable->analysis($analysis);
+ $runnable->run;
+ my $output = $runnable->output;
 
 =head1 DESCRIPTION
+
 This is the pipeline wrapper for Genscan that makes use of
 Bio::Tools::Run::Genscan module.
 
 Note:
+
   parameters are set in the parameters column inside the biopipeline
   analysis table.
   For more detailed explanation of the parameters  go to
@@ -30,9 +32,11 @@ Note:
 
 
 INPUT DATATYPES
+
 The runnable currently accepts  Bio::PrimarySeqI object
 
 OUTPUT DATATYPES
+
 The runnable currently returns an array of Bio::Tools::Prediction::Gene objects
 
 =head1 CONTACT
@@ -42,6 +46,7 @@ Describe contact details here
 =head1 APPENDIX
 
 =cut
+
 package Bio::Pipeline::Runnable::Genscan;
 use vars qw(@ISA);
 use strict;
@@ -67,13 +72,13 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes
-Usage   :   $self->datatypes
-Function:   Returns the datatypes that the runnable requires. This is used by the Runnable DB to
-            match the inputs to the corresponding.
-Returns :   It returns a hash of the different data types. The key of the hash is the name of the
-            get/set method used by the RunnableDB to set the input
-Args    :
+ Title   :   datatypes
+ Usage   :   $self->datatypes
+ Function:   Returns the datatypes that the runnable requires. This is used by the Runnable DB to
+             match the inputs to the corresponding.
+ Returns :   It returns a hash of the different data types. The key of the hash is the name of the
+             get/set method used by the RunnableDB to set the input
+ Args    :
 
 =cut
 
@@ -92,11 +97,11 @@ sub datatypes {
  
 =head2 feat1
 
-Title   :   feat1
-Usage   :   $self->feat1($seq)
-Function:
-Returns :
-Args    :
+ Title   :   feat1
+ Usage   :   $self->feat1($seq)
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -113,11 +118,11 @@ sub feat1{
 
 =head2 run
 
-Title   :   run
-Usage   :   $self->run($seq)
-Function:   Runs Genscan
-Returns :
-Args    :
+ Title   :   run
+ Usage   :   $self->run($seq)
+ Function:   Runs Genscan
+ Returns :
+ Args    :
 
 =cut
 
@@ -149,11 +154,11 @@ sub run {
 =head2 output
 
 
-Title   :   output
-Usage   :   $self->output($seq)
-Function:   Get/set method for output
-Returns :   An array of Bio::Tools::Prediction::Gene objects
-Args    :   An array ref to an array of Bio::Tools::Prediction::Gene objects
+ Title   :   output
+ Usage   :   $self->output($seq)
+ Function:   Get/set method for output
+ Returns :   An array of Bio::Tools::Prediction::Gene objects
+ Args    :   An array ref to an array of Bio::Tools::Prediction::Gene objects
 
 =cut
 

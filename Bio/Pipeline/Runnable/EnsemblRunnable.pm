@@ -78,13 +78,13 @@ use Bio::Pipeline::RunnableI;
 
 =head2 new
 
-Title   :   new
-Usage   :   $self->new()
-Function:   return a new EnsemblRunnable wrapper
-Returns :   L<Bio::Pipeline::Runnable::EnsemblRunnable>
-Args    :   -module the specific Ensembl Runnable to use
-            Any other parameters  that are passed to the 
-            Ensembl Runnable.
+ Title   :   new
+ Usage   :   $self->new()
+ Function:   return a new EnsemblRunnable wrapper
+ Returns :   L<Bio::Pipeline::Runnable::EnsemblRunnable>
+ Args    :   -module the specific Ensembl Runnable to use
+             Any other parameters  that are passed to the 
+             Ensembl Runnable.
 
 =cut
 
@@ -110,13 +110,13 @@ sub new {
 
 =head2 add_tag
 
-Title   :   add_tag
-Usage   :   $self->add_tag()
-Function:   add to the list of methods that EnsemblRunnable expects
-            this is to accomodate for some required parameters
-            in the new method of the specific EnsemblRunnable
-Returns :   Array of strings 
-Args    :
+ Title   :   add_tag
+ Usage   :   $self->add_tag()
+ Function:   add to the list of methods that EnsemblRunnable expects
+             this is to accomodate for some required parameters
+             in the new method of the specific EnsemblRunnable
+ Returns :   Array of strings 
+ Args    :
 
 =cut
 
@@ -131,11 +131,11 @@ sub add_tag{
 
 =head2 get_tags
 
-Title   :   get_tags
-Usage   :   $self->get_tags()
-Function:   gets the list of tags 
-Returns :   Array of strings
-Args    :
+ Title   :   get_tags
+ Usage   :   $self->get_tags()
+ Function:   gets the list of tags 
+ Returns :   Array of strings
+ Args    :
 
 =cut
 
@@ -147,11 +147,11 @@ sub get_tags {
 
 =head2 AUTOLOAD
 
-Title   :   AUTOLOAD
-Usage   :   
-Function:   Allow any get/sets
-Returns :
-Args    :
+ Title   :   AUTOLOAD
+ Usage   :   
+ Function:   Allow any get/sets
+ Returns :
+ Args    :
 
 =cut
 
@@ -170,11 +170,11 @@ sub AUTOLOAD {
 
 =head2 get_input_params
 
-Title   :   get_input_params
-Usage   :   $self->get_input_params()
-Function:   returns an array of tag-value parameters 
-Returns :   Array of tag-value pairs
-Args    :
+ Title   :   get_input_params
+ Usage   :   $self->get_input_params()
+ Function:   returns an array of tag-value parameters 
+ Returns :   Array of tag-value pairs
+ Args    :
 
 =cut
 
@@ -190,12 +190,12 @@ sub get_input_params {
 
 =head2 module
 
-Title   :   module
-Usage   :   $self->module()
-Function:   get/set for module, the name of the name of the ensembl runnable
-            to use e.g Blast, Genscan, RepeatMasker etc
-Returns :
-Args    :
+ Title   :   module
+ Usage   :   $self->module()
+ Function:   get/set for module, the name of the name of the ensembl runnable
+             to use e.g Blast, Genscan, RepeatMasker etc
+ Returns :
+ Args    :
 
 =cut
 
@@ -209,11 +209,11 @@ sub module {
 
 =head2 run
 
-Title   :   run
-Usage   :   $self->run()
-Function:   execute 
-Returns :   
-Args    :
+ Title   :   run
+ Usage   :   $self->run()
+ Function:   execute 
+ Returns :   
+ Args    :
 
 =cut
 
@@ -235,11 +235,11 @@ sub run {
 
 =head2 runnable
 
-Title   :   runnable
-Usage   :   $self->runnable()
-Function:   get/set for runnable 
-Returns :
-Args    :
+ Title   :   runnable
+ Usage   :   $self->runnable()
+ Function:   get/set for runnable 
+ Returns :
+ Args    :
 
 =cut
 
@@ -253,11 +253,11 @@ sub runnable {
 
 =head2 load_runnable
 
-Title   :   load_runnable
-Usage   :   $self->load_runnable($module)
-Function:   loads the ensembl runnable 
-Returns :
-Args    :
+ Title   :   load_runnable
+ Usage   :   $self->load_runnable($module)
+ Function:   loads the ensembl runnable 
+ Returns :
+ Args    :
 
 =cut
 

@@ -103,10 +103,9 @@ needed to fetch a particular input or store outputs.
 
 It represents the following snippet of code in the database:
 
-my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(-dbname=>"my_db",
-                                             -user  =>"root");
-
-my $gene = $db->get_GeneAdaptor->fetch_by_dbID(1);
+  my $db = Bio::EnsEMBL::DBSQL::DBAdaptor->new(-dbname=>"my_db",
+                                               -user  =>"root");
+  my $gene = $db->get_GeneAdaptor->fetch_by_dbID(1);
 
 Methods are represented by DataHandler objects which in term have
 argument objects. Datahandlers are rank in the order that they

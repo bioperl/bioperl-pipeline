@@ -20,6 +20,8 @@ Bio::Pipeline::SQL::NodeAdaptor
 
 =head1 DESCRIPTION
 
+Description here.
+
 =head1 EXAMPLES
 
 A simple and fundamental block of code

@@ -6,7 +6,7 @@ Bio::Pipeline::SQL::BaseAdaptor - Base Adaptor for DB::SQL::adaptors
 =head1 SYNOPSIS
 
     # base adaptor provides
-    
+
     # SQL prepare function
     $adaptor->prepare("sql statement");
 
@@ -28,7 +28,8 @@ Describe contact details here
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object
+methods. Internal methods are usually preceded with a _
 
 =cut
 

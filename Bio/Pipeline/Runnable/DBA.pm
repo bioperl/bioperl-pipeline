@@ -1,20 +1,21 @@
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
-# Copyright Shawn Hoon 
+# Copyright Shawn Hoon
 #
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
 
-=pod 
-
 =head1 NAME
 
- Bio::Pipeline::Runnable::DBA
+Bio::Pipeline::Runnable::DBA
 
 =head1 SYNOPSIS
 
+ #
+
 =head1 DESCRIPTION
+
 Runnable for Dna Block Aligner program by Ewan Birney available at
 ftp://ftp.sanger.ac.uk/pub/birney/wise2/
 
@@ -37,9 +38,9 @@ the bugs and their resolution. Bug reports can be submitted via email
   bioperl-bugs@bio.perl.org
   http://bio.perl.org/bioperl-bugs/
 
-=head1 AUTHOR - Shawn Hoon 
+=head1 AUTHOR - Shawn Hoon
 
-Email shawnh@fugu-sg.org 
+Email shawnh@fugu-sg.org
 
 Describe contact details here
 
@@ -55,7 +56,7 @@ package Bio::Pipeline::Runnable::DBA;
 use vars qw(@ISA);
 use strict;
 use FileHandle;
-use Bio::PrimarySeq; 
+use Bio::PrimarySeq;
 use Bio::SeqFeature::FeaturePair;
 use Bio::SeqFeature::Generic;
 use Bio::SeqI;
@@ -76,13 +77,15 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes 
-Usage   :   $self->datatypes
-Function:   Returns the datatypes that the runnable requires. This is used by the Runnable DB to 
-            match the inputs to the corresponding. 
-Returns :   It returns a hash of the different data types. The key of the hash is the name of the 
-            get/set method used by the RunnableDB to set the input
-Args    :
+ Title   :   datatypes
+ Usage   :   $self->datatypes
+ Function:   Returns the datatypes that the runnable requires.
+             This is used by the Runnable DB to
+             match the inputs to the corresponding.
+ Returns :   It returns a hash of the different data types.
+             The key of the hash is the name of the
+             get/set method used by the RunnableDB to set the input
+ Args    :
 
 =cut
 
@@ -98,16 +101,16 @@ sub datatypes {
     $dts{feat1} = $dt1;
     $dts{feat2} = $dt2;
 
-    return %dts; 
+    return %dts;
 }
 
 =head2 feat1
-  
-Title   :   feat1
-Usage   :   $self->feat1($seq)
-Function:   
-Returns :   
-Args    :   
+
+ Title   :   feat1
+ Usage   :   $self->feat1($seq)
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -120,12 +123,12 @@ sub feat1{
 }
 
 =head2 feat2
-  
-Title   :   feat2
-Usage   :   $self->feat2($seq)
-Function:   
-Returns :   
-Args    :   
+
+ Title   :   feat2
+ Usage   :   $self->feat2($seq)
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -138,12 +141,12 @@ sub feat2{
 }
 
 =head2 dba
-  
-Title   :   dba
-Usage   :   $self->dba($seq)
-Function:   Get/set method for dba 
-Returns :   String 
-Args    :   String 
+
+ Title   :   dba
+ Usage   :   $self->dba($seq)
+ Function:   Get/set method for dba
+ Returns :   String
+ Args    :   String
 
 =cut
 
@@ -157,12 +160,12 @@ sub dba{
 
 
 =head2 run
-  
-Title   :   run
-Usage   :   $self->run($seq)
-Function:   Runs DBA 
-Returns :   
-Args    :  
+
+ Title   :   run
+ Usage   :   $self->run($seq)
+ Function:   Runs DBA
+ Returns :
+ Args    :
 
 =cut
 
@@ -192,12 +195,12 @@ sub run {
 }
 
 =head2 output
-  
-Title   :   output
-Usage   :   $self->output($seq)
-Function:   Get/set method for output 
-Returns :   An array of Bio::Search::HSP::GenericHSP objects 
-Args    :   An array ref to an array of Bio::Search::HSP::GenericHSP objects
+
+ Title   :   output
+ Usage   :   $self->output($seq)
+ Function:   Get/set method for output
+ Returns :   An array of Bio::Search::HSP::GenericHSP objects
+ Args    :   An array ref to an array of Bio::Search::HSP::GenericHSP objects
 
 =cut
 
@@ -210,7 +213,7 @@ sub output{
     return @{$self->{'_hsp'}};
 }
 
-1;  
+1;
 
 
 
@@ -232,4 +235,4 @@ sub output{
 
 
 
-    
+

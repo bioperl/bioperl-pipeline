@@ -90,6 +90,7 @@ use Fcntl ':flock';
   Args    : -module the list of Dumper modules found in Bio::Pipeline::Dumper::*
             -file   the output file for dumping 
             -args   Any number of arguments to be passed on to the Dumper modules
+
 =cut
 
 sub new {

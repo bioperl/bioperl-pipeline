@@ -9,14 +9,17 @@
 #
 # POD documentation - main docs before the code
 
-=pod 
 
 =head1 NAME
+
 Bio::Pipeline::RunnableI;
 
 =head1 SYNOPSIS
-#Do not run this module directly.
+
+  #Do not run this module directly.
+
 =head1 DESCRIPTION
+
 This provides a standard BioPerl Pipeline Runnable interface that should be
 implemented by any object that wants to be treated as a Runnable. This
 serves purely as an abstract base class for implementers and can not
@@ -46,8 +49,6 @@ or the web:
 
 Email: shawnh@fugu-sg.org 
 
-=head1 CONTRIBUTORS
-
 
 =head1 APPENDIX
 
@@ -75,14 +76,13 @@ use Bio::SeqIO;
 =head1 ABSTRACT METHODS
 
 These methods need to be implemented in any
-module which implements
-
-<Bio::Pipeline::RunnableI>.
+module which implements L<Bio::Pipeline::RunnableI>.
 
 This methods will be used by RunnableDB so they MUST be
 implemeted to work properly.
 
 =head2 datatypes
+
   my %datatype = $self->datatypes();
 
   Returns a hash of datatypes that describes the parameters
@@ -100,7 +100,7 @@ implemeted to work properly.
 =head2 params
 
   $self->params("-C 10 -W 3")
-  
+
   This is a get/set method to allow any string of parameters to be
   passed into the runnable without needing a explicit get/set method
 
@@ -112,9 +112,9 @@ implemeted to work properly.
   the program output
 
 =head2 parse_params
-  
+
   $self->parse_params()
-  
+
   This is a utility used to parse a string of the form "-p blastp -e 0.01"
   into an array of tag/value elements to be passed into the bioperl run functions.
 
@@ -132,6 +132,7 @@ files created (before throwing the exception!).
     @output = $self->output();
 
 Return a list of objects created by the analysis
+
 =cut
 
 

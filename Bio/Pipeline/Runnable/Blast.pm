@@ -13,15 +13,17 @@ Bio::Pipeline::Runnable::Blast
 
 =head1 SYNOPSIS
 
-my $runnable = Bio::Pipeline::Runnable::Blast->new();
-$runnable->analysis($analysis);
-$runnable->run;
-my $output = $runnable->output;
+  my $runnable = Bio::Pipeline::Runnable::Blast->new();
+  $runnable->analysis($analysis);
+  $runnable->run;
+  my $output = $runnable->output;
 
 =head1 DESCRIPTION
-This is the pipeline wrapper for ncbi blast that makes use of 
+
+This is the pipeline wrapper for ncbi blast that makes use of
 Bio::Tools::Run::StandAloneBlast module. It thus allows one to run
 the following programs:
+
   1. blastall
   2. psiblast(blastpgp)
   3. bl2seq
@@ -29,9 +31,10 @@ the following programs:
 
 
 Note:
+
   parameters are set in the parameters column inside the biopipeline
   analysis table in the following form "-p blastn -e 0.0001"
-  For more detailed explanation of the parameters look go to 
+  For more detailed explanation of the parameters look go to
   Bio::Tools::Run::StandAloneBlast or do a blastall|blastpgp - .|bl2seq on the command line
 
   The database for blastall is set using $self->analysis->db_file which
@@ -40,10 +43,13 @@ Note:
 
 
 INPUT DATATYPES
+
 The runnable currently accepts any Bio::Seq compliant objects
 
 OUTPUT DATATYPES
+
 The runnable currently returns the following output types:
+
   1) A SearchIO object for the blastall and blastpgp runs
   2) An AlignIO object for the bl2seq runs
 
@@ -71,13 +77,13 @@ use Bio::AlignIO;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
 
-=head2 new 
+=head2 new
 
-Title   :   new 
-Usage   :   $self->new()
-Function:
-Returns :
-Args    :
+ Title   :   new
+ Usage   :   $self->new()
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -90,11 +96,11 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes
-Usage   :   $self->datatypes()
-Function:   returns a hash of the datatypes required by the runnable
-Returns :
-Args    :
+ Title   :   datatypes
+ Usage   :   $self->datatypes()
+ Function:   returns a hash of the datatypes required by the runnable
+ Returns :
+ Args    :
 
 =cut
 
@@ -118,11 +124,11 @@ sub datatypes {
 
 =head2 seq1
 
-Title   :   seq1
-Usage   :   $self->seq1($seq)
-Function:   get/set for query sequence
-Returns :
-Args    :
+ Title   :   seq1
+ Usage   :   $self->seq1($seq)
+ Function:   get/set for query sequence
+ Returns :
+ Args    :
 
 =cut
 
@@ -136,11 +142,11 @@ sub seq1{
 
 =head2 seq2
 
-Title   :   seq2
-Usage   :   $self->seq2($seq)
-Function:   get/set for 2nd query sequence used in bl2seq
-Returns :
-Args    :
+ Title   :   seq2
+ Usage   :   $self->seq2($seq)
+ Function:   get/set for 2nd query sequence used in bl2seq
+ Returns :
+ Args    :
 
 =cut
 
@@ -160,13 +166,13 @@ sub file {
     return $self->{'_file'};
 }
 
-=head2 run 
+=head2 run
 
-Title   :   run 
-Usage   :   $self->run()
-Function:   execute blast calling StandAloneBlast.pm 
-Returns :   Either a SearchIO or AlignIO object depending on the type of blast run
-Args    :
+ Title   :   run
+ Usage   :   $self->run()
+ Function:   execute blast calling StandAloneBlast.pm
+ Returns :   Either a SearchIO or AlignIO object depending on the type of blast run
+ Args    :
 
 =cut
 
@@ -178,7 +184,7 @@ sub run {
 
 
   #initialize the StandAloneBlast Module
-  
+
   if ($self->analysis->parameters){
     my @params = $self->parse_params($self->analysis->parameters);
     my %param = @params;
@@ -218,11 +224,11 @@ sub run {
   }
 
   $self->throw("Analysis not set") unless $analysis->isa("Bio::Pipeline::Analysis");
-  
+
   my $program = $analysis->program || 'blastall';
 
   #pass the path to the executable if program_file is set.
-  $analysis->program_file && $blast_obj->executable($analysis->program,$analysis->program_file,1); 
+  $analysis->program_file && $blast_obj->executable($analysis->program,$analysis->program_file,1);
 
   my $seq1 = $self->seq1;
   my $seq2 = $self->seq2;
@@ -242,7 +248,7 @@ sub run {
       my $alnio = Bio::AlignIO->new('-file'=>$newreport,
                                     '-format' => 'bl2seq');
 
-      $self->output($alnio);                                    
+      $self->output($alnio);
   }
   elsif($seq1 && ($program =~ /blastall/i)) {
       my $IO = Bio::Root::IO->new();
@@ -275,7 +281,7 @@ sub run {
           }
         }
       }
-      
+
       $self->output(\@output);
   }
   elsif($seq1 && ($program =~/blastpgp/i)){
@@ -334,7 +340,7 @@ sub _setup_blastdb {
     return;
 }
 1;
-    
+
 
 
 

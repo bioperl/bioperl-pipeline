@@ -5,12 +5,14 @@
 #
 # POD documentation - main docs before the code
 #
+
 =head1 NAME
-Bio::Pipeline::IOHandlerAdaptor input/output adaptors object for pipeline
+
+Bio::Pipeline::IOHandlerAdaptor - input/output adaptors object for pipeline
 
 =head1 SYNOPSIS
-my $in_adpt = Bio::Pipeline::IOHandlerAdaptor->new($db);
 
+  my $in_adpt = Bio::Pipeline::IOHandlerAdaptor->new($db);
 
 =head1 DESCRIPTION
 
@@ -61,8 +63,10 @@ use Bio::Pipeline::Argument;
 @ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
 
-=head1 Fetch methods 
+=head1 Fetch methods
+
 These methods retrievs the adaptors
+
 =cut
 
 =head2 fetch_by_dbID
@@ -170,7 +174,6 @@ sub fetch_by_dbID {
     }
 
 
-                                    
     return $iohandler;
 }
 

@@ -468,7 +468,7 @@ sub AUTOLOAD {
   }
 }
 
-=head2
+=head2 DESTROY
 
  Title   : DESTROY
  Function: Disconnect from the database

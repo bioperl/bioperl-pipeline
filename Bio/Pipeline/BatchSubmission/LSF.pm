@@ -13,7 +13,7 @@ Bio::Pipeline::BatchSubmission::LSF
 
 =head1 SYNOPSIS
 
-my $batchsub = Bio::Pipeline::BatchSubmission::LSF->new(
+  my $batchsub = Bio::Pipeline::BatchSubmission::LSF->new(
                   -dbobj => $dbobj,
                   -stdout => $stdout,
                   -stderr => $stderr,

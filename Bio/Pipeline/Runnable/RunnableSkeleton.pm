@@ -7,25 +7,26 @@
 # POD documentation - main docs before the code
 #
 # =pod
-#
-# =head1 NAME
-#
-# Bio::Pipeline::Runnable::RunnableSkeleton
-#
+
+=head1 NAME
+
+Bio::Pipeline::Runnable::RunnableSkeleton
+
 =head1 SYNOPSIS
+
+ my $runnable = Bio::Pipeline::Runnable::RunnableSkeleton->new();
+ $runnable->analysis($analysis);
+ $runnable->run;
+ my $output = $runnable->output;
+
+=head1 DESCRIPTION
+
 Bare Bones Runnable for writing you own runnable quickly. 
 You probably need to do the following:
 
 1. Naturally, replace all cases of RunnableSkeleton with the name of your runnable
 2. Create get/set methods for your specified datatypes
 3. Write the functionality inside the run routine calling the appropriate binary wrapper
-
-=head1 DESCRIPTION
-
-my $runnable = Bio::Pipeline::Runnable::RunnableSkeleton->new();
-$runnable->analysis($analysis);
-$runnable->run;
-my $output = $runnable->output;
 
 =head1 CONTACT
 
@@ -34,6 +35,7 @@ shawnh@fugu-sg.org
 =head1 APPENDIX
 
 =cut
+
 package Bio::Pipeline::Runnable::RunnableSkeleton;
 use vars qw(@ISA);
 use strict;
@@ -41,13 +43,14 @@ use Bio::Root::Root;
 use Bio::Pipeline::DataType;
 use Bio::Pipeline::RunnableI;
 @ISA = qw(Bio::Pipeline::RunnableI);
+
 =head2 new
 
-Title   :   new
-Usage   :   $self->new()
-Function:
-Returns :
-Args    :
+ Title   :   new
+ Usage   :   $self->new()
+ Function:
+ Returns :
+ Args    :
 
 =cut
 
@@ -60,11 +63,11 @@ sub new {
 
 =head2 datatypes
 
-Title   :   datatypes
-Usage   :   $self->datatypes()
-Function:   returns a hash of the datatypes required by the runnable
-Returns :
-Args    :
+ Title   :   datatypes
+ Usage   :   $self->datatypes()
+ Function:   returns a hash of the datatypes required by the runnable
+ Returns :
+ Args    :
 
 =cut
 
@@ -81,7 +84,7 @@ sub datatypes {
                                          '-name'=>'alignment',
                                          '-reftype'=>'SCALAR');
 
-                                        
+
   my %dts;
   #Replace seq1 with whatever you want to call your get/set methods
   $dts{seq1} = $dt;
@@ -99,13 +102,14 @@ sub datatypes {
 
 =head2 run
 
-Title   :   run
-Usage   :   $self->run()
-Function:   execute 
-Returns :   
-Args    :
+ Title   :   run
+ Usage   :   $self->run()
+ Function:   execute 
+ Returns :   
+ Args    :
 
 =cut
+
 sub run {
   my ($self) = @_;
   #Whatever you want to do here
@@ -113,13 +117,14 @@ sub run {
 
 =head2 parse_results
 
-Title   :   parse_results
-Usage   :   $self->parse_results()
-Function:   whatever additional parsing that needs to be done 
-Returns :
-Args    :
+ Title   :   parse_results
+ Usage   :   $self->parse_results()
+ Function:   whatever additional parsing that needs to be done 
+ Returns :
+ Args    :
 
 =cut
+
 sub parse_results {
   my ($self) = @_;
   #Whatever you want to do here
