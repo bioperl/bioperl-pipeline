@@ -115,7 +115,7 @@ sub _initialize {
 
 sub _load_filter_module {
     my ($self, $module) = @_;
-    my $module = "Bio::Pipeline::Filter::" . $module;
+    $module = "Bio::Pipeline::Filter::" . $module;
     my $ok;
 
     eval {

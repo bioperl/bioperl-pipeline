@@ -116,7 +116,7 @@ sub _initialize {
 
 sub _load_inputcreate_module {
     my ($self, $module) = @_;
-    my $module = "Bio::Pipeline::InputCreate::" . $module;
+    $module = "Bio::Pipeline::InputCreate::" . $module;
     my $ok;
 
     eval {
