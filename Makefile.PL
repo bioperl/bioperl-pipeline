@@ -14,6 +14,8 @@
 
 # All Bioperl dependencies on external modules are defined here
 %packages = (
+             'XML::SAX::Base'           => '0.0/XML Parser/loading BioPipe XML files/XMLImporter',
+             'XML::SimpleObject'        => '0.0/XML Parser/loading BioPipe XML files/XMLImporter',
 	     'DBD::mysql'               => '0.0/Mysql driver/loading',
 	     );
 
