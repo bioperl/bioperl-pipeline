@@ -164,8 +164,17 @@ sub run {
   my ($self) = @_;
   my $analysis = $self->analysis;
   my $blast_obj;
+  my $return_type = 'hsp';
+
   if ($self->analysis->parameters){
     my @params = $self->parse_params($self->analysis->parameters);
+    my %param = @params;
+    @param{ map { lc $_ } keys %param} = values %param; #lowercase keys
+    if($param{'return_type'}){
+        $return_type = $param{'return_type'};
+        delete $param{'return_type'};
+        @params = %param;
+    }
     $blast_obj = Bio::Tools::Run::StandAloneBlast->new(@params);
   }
   else {
@@ -205,19 +214,28 @@ sub run {
       system("cp ". $blast_obj->o ." $newreport");
       my $searchio = Bio::SearchIO->new ('-format' => 'blast',
                                         '-file'   => $newreport);
-      my @hsps;
-      while (my $result = $searchio->next_result){
-        while( my $hit = $result->next_hit ) {
-          while( my $hsp= $hit->next_hsp ){
-              $hsp->add_tag_value('analysis_parameters',$self->analysis->parameters);
-              $hsp->add_tag_value('analysis_program',$self->analysis->program);
-              $hsp->add_tag_value('analysis_db',$self->analysis->db);
-              push @hsps,$hsp;
+      my @output;
+      if($return_type =~/hit/i){
+        while(my $result = $searchio->next_result){
+            while(my $hit = $result->next_hit){
+                push @output, $hit;
+            }
+        }
+      }
+      else {
+        while (my $result = $searchio->next_result){
+          while( my $hit = $result->next_hit ) {
+            while( my $hsp= $hit->next_hsp ){
+                $hsp->add_tag_value('analysis_parameters',$self->analysis->parameters);
+                $hsp->add_tag_value('analysis_program',$self->analysis->program);
+                $hsp->add_tag_value('analysis_db',$self->analysis->db);
+                push @output,$hsp;
+            }
           }
         }
       }
       
-      $self->output(\@hsps);
+      $self->output(\@output);
   }
   elsif($seq1 && ($program =~/blastpgp/i)){
       my $IO = Bio::Root::IO->new();
@@ -228,18 +246,31 @@ sub run {
       system("cp ". $blast_obj->o ." $newreport");
       my $searchio = Bio::SearchIO->new ('-format' => 'psiblast',
                                         '-file'   => $newreport);
-      my @hsps;
-      while (my $result = $searchio->next_result){
-        while( my $hit = $result->next_hit ) {
-          while( my $hsp = $hit->next_hsp ) {
+      my @output;
+      if($return_type=~/hit/i){
+          while(my $result = $searchio->next_result){
+            while(my $hit = $result->next_hit){
+
+                $hit->add_tag_value('analysis_parameters',$self->analysis->parameters);
+                $hit->add_tag_value('analysis_program',$self->analysis->program);
+                $hit->add_tag_value('analysis_db',$self->analysis->db);
+                push @output, $hit;
+            }
+        }
+      }
+      else {
+        while (my $result = $searchio->next_result){
+         while( my $hit = $result->next_hit ) {
+           while( my $hsp = $hit->next_hsp ) {
               $hsp->add_tag_value('analysis_parameters',$self->analysis->parameters);
               $hsp->add_tag_value('analysis_program',$self->analysis->program);
               $hsp->add_tag_value('analysis_db',$self->analysis->db);
-              push @hsps,$hsp;
-          }
+              push @output,$hsp;
+           }
+         }
         }
       }
-      $self->output(\@hsps);
+      $self->output(\@output);
 
   }
   return $self->output;
