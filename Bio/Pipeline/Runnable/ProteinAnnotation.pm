@@ -189,7 +189,12 @@ END
   eval {
     @features  = $factory->predict_protein_features($seq);
   };
+
 	$self->throw("Problems running predict_protein_featuers due to $@") if $@;
+
+  if($features[0]->isa("Bio::SearchIO")){
+    @features = $self->_return_feat($features[0]);
+  }
 
   $self->output(\@features);
   
@@ -197,6 +202,18 @@ END
 
 }
 
+sub _return_feat {
+  my ($self,$sio) = @_;
+  my @feat;
+  while (my $result = $searchio->next_result){
+    while(my $hit = $result->next_hit){
+      while (my $hsp = $hit->next_hsp){
+       push @feat, $hsp;
+      }
+    }
+  } 
+  return @feat;
+}
 1;
 
 
