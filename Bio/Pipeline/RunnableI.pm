@@ -110,6 +110,12 @@ implemeted to work properly.
   This is called by the runnable itself to parse the results from
   the program output
 
+=head2 parse_params
+  
+  $self->parse_params()
+  
+  This is a utility used to parse a string of the form "-p blastp -e 0.01"
+  into an array of tag/value elements to be passed into the bioperl run functions.
 
 =head2 run
 
@@ -151,9 +157,11 @@ sub parse_results {
   return;
 }
 sub output {
-  my ($self) = @_;
-  $self->throw_not_implemented();
-  return;
+  my ($self,$output) = @_;
+  if(defined $output){
+      $self->{'_output'} = $output;
+  }
+  return $self->{'_output'} ;
 }
 sub analysis{
   my ($self, $analysis) = @_;
@@ -161,5 +169,18 @@ sub analysis{
       $self->{'_analysis'} = $analysis;
   }
   return $self->{'_analysis'};
+}
+sub parse_params {
+    my ($self,$string) = @_;
+
+    my @param_str = split('-',$self->analysis->parameters);
+    shift @param_str;
+    #parse the parameters
+    my @params;
+    foreach my $p(@param_str){
+      my ($tag,$value) = $p=~/(\S+)\s+(\S+)/;
+      push @params, ($tag,$value);
+    }
+    return @params;
 }
 1;
