@@ -564,10 +564,7 @@ sub make_filenames {
   my ($self) = @_;
   
   my $num = int(rand(10));
-  my $dir = $NFSTMP_DIR . "/$num/";
-  if( ! -e $dir ) {
-    system( "mkdir $dir" );
-  }
+  my $dir = $NFSTMP_DIR;
 
 # scp - one set of out files per job (even if batching together)
 # this is a bit messy! added '.0' to $stub. This will be the master
