@@ -24,8 +24,8 @@ use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
-use Bio::Pipeline::Filter;
-use Bio::Pipeline::Converter;
+use Bio::Pipeline::Utils::Filter;
+use Bio::Pipeline::Utils::Converter;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 
@@ -370,9 +370,10 @@ foreach my $converter ($pipeline_flow_setup->children('converter')) {
   if (ref($converter)) {
       my $module = &verify($converter,'module','REQUIRED');
       my $method= &verify($converter,'method','REQUIRED');
-     my $converter_obj = Bio::Pipeline::Converter->new(-dbID => $converter->attribute('id'),
-                                                     -module => $module,
-                                                     -method => $method);
+     my $converter_obj = Bio::Pipeline::Utils::Converter->new
+	 (-dbID => $converter->attribute('id'),
+	  -module => $module,
+	  -method => $method);
      push @pipeline_converter_objs, $converter_obj;
   }
 }
@@ -427,7 +428,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
             my $argument = Bio::Pipeline::Argument->new(-tag => $tag, -value => $value);
             push @arguments, $argument;
            }
-           my $filter = Bio::Pipeline::Filter->new(-module => $module, -rank => $rank);
+           my $filter = Bio::Pipeline::Utils::Filter->new(-module => $module, -rank => $rank);
            $filter->arguments(\@arguments);
            $datamonger_obj->add_filter($filter);
          }
