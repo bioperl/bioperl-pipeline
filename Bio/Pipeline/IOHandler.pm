@@ -585,16 +585,23 @@ sub write_output {
       my @new_trans;
       #set the arguments for transformers
       foreach my $t(@{$trans}){
+        my $tmp_transformer = Bio::Pipeline::Transformer->new(-module=>$t->module,
+                                                              -dbID=>$t->dbID,
+                                                              -rank=>$t->rank);
+
         my @methods = @{$t->method};
         my @new_method;
         foreach my $method(@methods){
             my @arguments = @{$method->arguments};
             my @args = $self->_format_output_args($input,$object,@arguments);
-            $method->arguments(\@args);
-            push @new_method, $method;
+            my $new_meth = Bio::Pipeline::Method->new(-dbID=>$method->dbID,
+                                                      -name=>$method->name,
+                                                      -argument=>\@args,
+                                                      -rank=>$method->rank);
+            push @new_method, $new_meth;
         }
-        $t->method(\@new_method);
-        push @new_trans, $t;
+        $tmp_transformer->method(\@new_method);
+        push @new_trans, $tmp_transformer;
       }
       
       my $tran = shift @new_trans;
