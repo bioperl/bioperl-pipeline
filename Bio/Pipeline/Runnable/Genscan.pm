@@ -130,14 +130,13 @@ sub feat1{
 sub run {
   my ($self) = @_;
   my $seq = ($self->feat1);
-  my $params = $self->params;
 
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
-  my @params = ('MATRIX', $self->analysis->analysis_parameters);
+  my @params;
+  push @params ,$self->parse_params($self->analysis->analysis_parameters);
   $factory = Bio::Tools::Run::Genscan->new(@params);
   $factory->quiet(1);
-    print "ref seq is " . ref($seq );
   my @genes;
   eval {
     @genes = $factory->predict_genes($seq);
