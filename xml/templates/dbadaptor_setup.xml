@@ -1,3 +1,4 @@
+<dbadaptor_setup>
 <!--
 data_handling_setup.xml
 
@@ -120,7 +121,4 @@ Feel free to contact us at bioperl-pipeline@bioperl.org if you have any doubts o
   <streamadaptor id="20">
     <module>Bio::DB::Registry</module>
   </streamadaptor>
-
-
-
-
+</dbadaptor_setup>
