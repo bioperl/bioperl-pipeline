@@ -65,22 +65,20 @@ use strict;
 
 sub store {
   my ( $self, $rule ) = @_;
-  my $sth = $self->prepare( q{
-    INSERT INTO rule_goal
-       SET analysis_id= ? } );
-  $sth->execute( $rule->goalAnalysis->dbID );
-  $sth = $self->prepare( q {
-    SELECT last_insert_id() } );
-  $sth->execute;
-  my $dbID = ($sth->fetchrow_array)[0];
-  my @literals = $rule->list_conditions;
-  for my $literal ( @literals ) {
-    $sth = $self->prepare( qq{
-      INSERT INTO rule_conditions
-         SET rule_id=$dbID,
-             analysis_id='$literal' } );
+
+    my $sth = $self->prepare( qq{
+      INSERT INTO rule
+         SET current=$rule->current
+             next=$rule->next
+             action=$rule->action } );
     $sth->execute;
-  }
+  
+  $sth = $self->prepare( q{
+     SELECT last_insert_id()
+    } );
+  $sth->execute;
+
+  my $dbID = ($sth->fetchrow_array)[0];
   $rule->dbID( $dbID );
   $rule->adaptor( $self );
 }
@@ -105,12 +103,8 @@ sub remove {
   }
 
   my $sth = $self->prepare( qq {
-    DELETE FROM rule_goal
+    DELETE FROM rule
     WHERE rule_id = $dbID } );
-  $sth->execute;
-  $sth = $self->prepare( qq {
-    DELETE FROM rule_conditions
-     WHERE rule_id = $dbID } );
   $sth->execute;
 }
 
@@ -127,38 +121,25 @@ sub remove {
 
 sub fetch_all {
   my $self = shift;
-  my $anaAdaptor = $self->db->get_AnalysisAdaptor;
   my %rules;
-  my ( $analysis, $rule, $dbID );
+  my ($rule );
   my @queryResult;
 
   my $sth = $self->prepare( q {
-    SELECT rule_id,analysis_id
-      FROM rule_goal } );
+    SELECT rule_id, current, next, action
+      FROM rule } );
   $sth->execute;
 
   while( @queryResult = $sth->fetchrow_array ) {
-    $analysis = $anaAdaptor->fetch_by_dbID( $queryResult[1] );
-    $dbID = $queryResult[0];
-
     $rule = Bio::Pipeline::Rule->new
-      ( '-dbid'    => $dbID,
-	      '-goal'    => $analysis,
+      ( '-dbid'    => $queryResult[0],
+        '-current' => $queryResult[1],
+        '-next'    => $queryResult[2],
+        '-action'  => $queryResult[3],
         '-adaptor' => $self );
-    # print STDERR "Setting $dbID rule\n";
-    $rules{$dbID} = $rule;
+    $rules{$queryResult[0]} = $rule;
   }
 
-  $sth= $self->prepare( q{
-    SELECT rule_id, analysis_id
-      FROM rule_conditions } );
-  $sth->execute;
-
-  while( @queryResult = $sth->fetchrow_array ) {
-      # print STDERR "@queryResult\n";
-      $rules{$queryResult[0]}->condition( $queryResult[1] );
-  }
-  # print STDERR "Found @{[scalar keys %rules]} rules\n";
   return values %rules;
 }
 
@@ -176,13 +157,12 @@ sub fetch_by_dbID {
   my $self = shift;
   my $dbID = shift;
   
-  my $anaAdaptor = $self->db->get_AnalysisAdaptor;
-  my ( $analysis, $rule );
+  my ( $rule );
   my $queryResult;
 
   my $sth = $self->prepare( q {
-    SELECT rule_id,analysis_id
-      FROM rule_goal 
+    SELECT rule_id
+      FROM rule 
       WHERE rule_id = ? } );
   $sth->execute( $dbID  );
 
@@ -190,66 +170,17 @@ sub fetch_by_dbID {
   if( ! defined $queryResult ) {
     return undef;
   }
-  
-  $analysis = $anaAdaptor->fetch_by_dbID( $queryResult->{goal} );
       
   $rule = Bio::Pipeline::Rule->new
-    ( '-dbid'    => $dbID,
-      '-goal'    => $analysis,
+    ( '-dbid'    => $queryResult->{rule_id} ,
+      '-current'    => $queryResult->{current} ,
+      '-next'    => $queryResult->{next} ,
+      '-action'  => $queryResult->{action} ,
       '-adaptor' => $self );
 
-  $sth= $self->prepare( q{
-    SELECT rule_id, analysis_id
-      FROM rule_conditions 
-      WHERE rule_id = ?} );
-  $sth->execute( $dbID );
-  
-  while( $queryResult = $sth->fetchrow_hashref ) {
-    $rule->condition( $queryResult->{condition} );
-  }
   return $rule;
 }
 
-sub deleteObj {
-  my $self = shift;
-  my @dummy = values %{$self};
-  foreach my $key ( keys %$self ) {
-    delete $self->{$key};
-  }
-  foreach my $obj ( @dummy ) {
-    eval {
-      $obj->deleteObj;
-    }
-  }
-}
 
-sub create_tables{
-  my ($self) = @_;
-  my $sth;
-
-  $sth = $self->prepare("drop table if exists rule_goal");
-  $sth->execute();
-
-  $sth = $self->prepare(qq{
-    CREATE TABLE rule_goal (
-    rule_id           int unsigned default 0 not null auto_increment,
-    goal  int unsigned,
-
-    PRIMARY KEY (rule_id)
-    );
-  });
-  $sth->execute();
-
-  $sth = $self->prepare("drop table if exists rule_conditions");
-  $sth->execute();
-
-  $sth = $self->prepare(qq{
-    CREATE TABLE rule_conditions (
-    rule_id            int not null,
-    analysis_id varchar(40)
-    );
-  });
-  $sth->execute();
-}
 
 1;

@@ -43,7 +43,7 @@ use strict;
 =head2 Constructor
 
   Title   : new
-  Usage   : ...Rule->new($analysis);
+  Usage   : ...
   Function: Constructor for Rule object
   Returns : Bio::Pipeline::Rule
   Args    : A Bio::Analysis object. Conditions are added later,
@@ -56,24 +56,26 @@ sub new {
   my ($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
 
-  my ( $goal, $adaptor, $dbID ) =
-    $self->_rearrange( [ qw ( GOAL
-                  			      ADAPTOR
-                  			      DBID
-            			     ) ], @args );
-  $self->throw( "Wrong parameter" ) unless
-    $goal->isa( "Bio::Pipeline::Analysis" );
+  my ( $current, $next, $action, $adaptor, $dbID ) =
+    $self->_rearrange( [ qw (CURRENT
+                             NEXT 
+                             ACTION
+                  	     ADAPTOR
+                             DBID
+            	            ) ], @args );
   $self->dbID( $dbID );
-  $self->goalAnalysis( $goal );
+  $self->current( $current );
+  $self->next( $next );
+  $self->action( $action );
   $self->adaptor( $adaptor );
 				
   return $self;
 }
 
-=head2 condition
+=head2 current
 
-  Title   : condition
-  Usage   : $self->conditon(analysis->dbID);
+
+  Usage   : $self->current(analysis->dbID);
   Function: Add/Set method for condition for the rule.
   Returns : nothing
   Args    : the dbID of an analysis that must have been fulfilled as a pre-requisite 
@@ -82,69 +84,49 @@ sub new {
 =cut
 
 
-sub condition {
+sub current {
   my $self = shift;
-  my $condition = shift;
+  my $current = shift;
 
-  if (defined $condition){
-    $self->{'_condition'}= $condition;
+  if (defined $current){
+    $self->{'_current'}= $current;
   }    
 
-  return $self->{'_condition'};
+  return $self->{'_current'};
 }
 
+=head2 next
 
-=head2 goalAnalysis
 
-  Title   : goalAnalysis
-  Usage   : $self->goalAnalysis($anal);
-  Function: Get/set method for the goal analysis object of this rule.
-  Returns : Bio::Analysis
-  Args    : Bio::Analysis
+  Usage   : $self->next(analysis->dbID);
+  Function: Add/Set method for condition for the rule.
+  Returns : nothing
+  Args    : the dbID of an analysis that needs to be started after finishing the current analysis 
 
 =cut
 
-sub goalAnalysis {
-  my ($self,$arg) = @_;
 
-  ( defined $arg ) &&
-    ( $self->{'_goal'} = $arg );
-  $self->{'_goal'};
-}
-
-
-# return 0 if nothing can be done or $goalAnalysis,
-# if it should be done.
-
-sub check_for_analysis {
+sub next {
   my $self = shift;
-  my @analist = @_;
-  my %anaHash;
+  my $next = shift;
 
-  # reimplement with proper identity check!
-  my $goal = $self->goalAnalysis->dbID;
-
-  # print STDERR "My goal is " . $goal . "\n";
-
-  for my $analysis ( @analist ) {
-      # print STDERR " Analysis " . $analysis->logic_name . " " . $analysis->dbID . "\n";
-    $anaHash{$analysis->logic_name} = $analysis;
-    if( $goal == $analysis->dbID ) {
-      # already done
-      return 0;
-    }
+  if (defined $next){
+    $self->{'_next'}= $next;
   }
 
-  for my $cond ( $self->list_conditions ) {
-    if( ! defined $anaHash{$cond} ) {
-      return 0;
-    }
-  }
-  return $self->goalAnalysis;
+  return $self->{'_next'};
 }
 
+sub action {
+  my $self = shift;
+  my $action = shift;
 
+  if (defined $action){
+    $self->{'_action'}= $action;
+  }
 
+  return $self->{'_action'};
+}
 
 
 sub dbID {

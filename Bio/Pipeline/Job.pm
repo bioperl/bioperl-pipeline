@@ -61,9 +61,10 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage ) 
+    my ($adaptor,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids ) 
 	= $self->_rearrange([qw(ADAPTOR
             				ID
+                                        PROCESS_ID
 			            	QUEUE_ID
 			            	INPUTS
 			            	ANALYSIS
@@ -73,6 +74,7 @@ sub new {
             				RETRY_COUNT
             				STATUS
             				STAGE
+                                        OUTPUT_IDS
 		        		)],@args);
 
 				
@@ -84,6 +86,7 @@ sub new {
 	  $self->throw("Analysis object [$analysis] is not a Bio::Pipeline::Analysis");
 
     $self->dbID             ($dbID);
+    $self->process_id       ($process_id);
     $self->adaptor          ($adaptor);
     $self->analysis         ($analysis);
     $self->stdout_file      ($stdout);
@@ -93,16 +96,27 @@ sub new {
     $self->queue_id         ($queueid);
     $self->status           ($status);
     $self->stage            ($stage);
+    #$self->output_ids       ($output_ids);
 
     @{$self->{'_inputs'}}= ();
+    @{$self->{'_output_ids'}}= ();
 
     foreach my $input (@{$inputs}){
         $self->add_input($input);
     }
     
+    foreach my $output_id (@{$output_ids}){
+       push (@{$self->{'_output_ids'}},$output_id);
+    }
     $self->make_filenames unless $self->filenames;
 
     return $self;
+}
+
+sub output_ids {
+
+    my ($self) = @_;
+    return @{$self->{'_output_ids'}};
 }
 
 
@@ -143,9 +157,12 @@ sub create_by_analysis_inputId {
 sub create_next_job{
   my $self = shift;
   my $next_analysis = shift;
+  #my $process_id = shift;
 
+  #my $next_analysis = $self->adaptor->get_AnalysisAdaptor->fetch_by_dbId($next_analysis_id);
   my $new_job = Bio::Pipeline::Job->new
     ( -analysis    => $next_analysis,
+      -process_id  => $self->process_id,
       -retry_count => 0,
       -adaptor => $self->adaptor
     );
@@ -153,32 +170,6 @@ sub create_next_job{
 
   $self->adaptor->store($new_job);
   $new_job->make_filenames;
-
-  # this is going to be the default method to create the next job. 
-  # taking the same inputs as those from the previous analysis.
-  
-  my @new_inputs;
-  my @new_inputdb_dbIDs = sort { $a<=>$b }$self->adaptor->db->get_IOHandlerAdaptor->fetch_inputhandler_dbID_by_analysis($next_analysis->dbID);
-  my $new_dbID = join ('\t',@new_inputdb_dbIDs);
-  
-  my @old_inputdb_dbIDs;
-  foreach my $input ($self->inputs){
-    push (@old_inputdb_dbIDs,$input->input_handler->dbID);
-  }
-  @old_inputdb_dbIDs =sort {$a<=>$b}@old_inputdb_dbIDs;
-  my $old_dbID = join ('\t',@old_inputdb_dbIDs);
-
-  if ($new_dbID eq $old_dbID){
-    foreach my $old_input ($self->inputs){
-        my $new_input = Bio::Pipeline::Input->new ( -name => $old_input->name,
-                                                    -input_handler => $old_input->input_handler,);
-        $new_input->job_id($new_job->dbID);
-        $self->adaptor->db->get_InputAdaptor->store($new_input);
-        $new_job->add_input($new_input);
-    }
-  }else {
-    $self->throw("Input jump not implemented yet.");
-  }
 
   return $new_job;
 } 
@@ -201,6 +192,27 @@ sub dbID {
 	    $self->{'_dbID'} = $arg;
     }
     return $self->{'_dbID'};
+
+}
+
+=head2 process_id
+
+  Title   : process_id
+  Usage   : $self->process_id($id)
+  Function: get set the process_id for this object, only used by Adaptor
+  Returns : int
+  Args    : int
+
+=cut
+
+
+sub process_id {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+            $self->{'_process_id'} = $arg;
+    }
+    return $self->{'_process_id'};
 
 }
 
@@ -284,6 +296,7 @@ sub analysis {
 }
 
 
+
 =head2 run
 
   Title   : run
@@ -354,21 +367,25 @@ sub run {
       print (STDERR "RUNNING: Lost the will to live Error. Problems running runnableDB\n[$err]\n");
       $self->throw ("Problems running runnableDB for\n[$err]\n")
   }
+  my @output_ids;
   eval {
       $self->set_stage( "WRITING" );
-      $rdb->write_output;
+      @output_ids = $rdb->write_output;
   }; 
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "WRITING: Lost the will to live Error\nProblems for runnableDB writing output for \n[$err]") ;
       $self->throw( "Problems for runnableDB writing output for \n[$err]") ;
   }
+  $self->adaptor->store_outputs($self, @output_ids);
+  $self->output_ids(@output_ids);
   $self->stage('UPDATING');
   $self->status( "COMPLETED" );
   $self->update;
 
+    print "debugjob\n"; 
   eval{
-    $self->adaptor->update_completed_job($self);
+   $self->adaptor->update_completed_job($self);
   };
   if($err = $@){
       print STDERR ("Error updating completed job\n$err");

@@ -40,6 +40,7 @@ The rest of the documentation details each of the object methods. Internal metho
 package Bio::Pipeline::SQL::JobAdaptor;
 
 use Bio::Pipeline::Job;
+use Bio::Pipeline::SQL::InputAdaptor;
 use Bio::Root::Root;
 
 use vars qw(@ISA);
@@ -65,7 +66,7 @@ sub fetch_by_dbID {
   my $job;
 
   my $sth = $self->prepare( q{
-   SELECT job_id, analysis_id, queue_id, object_file,
+   SELECT job_id, process_id, analysis_id, queue_id, object_file,
       stdout_file, stderr_file, retry_count,status,stage
     FROM job
     WHERE job_id = ? } );
@@ -83,17 +84,19 @@ sub fetch_by_dbID {
       fetch_by_dbID( $hashref->{analysis_id} );
 
   # getting the inputs
-  my @inputs=() ;
-  my $query = "SELECT input_id
-               FROM input
-               WHERE job_id = $id";
+  my @inputs= $self->db->get_InputAdaptor->fetch_inputs_by_jobID($id);
+
+
+  # gettting the outputs if any
+  # No output adaptor for the moment, so sql stuff goes here
+  my $query = "SELECT output_name 
+            FROM output
+            WHERE job_id = $id";
   $sth = $self->prepare($query);
   $sth->execute;
-  
-  while (my ($input_id) = $sth->fetchrow_array){
-      my $input = $self->db->get_InputAdaptor->
-                         fetch_by_dbID($input_id);
-      push (@inputs,$input);
+  my @outputs;
+  while (my ($output_id) = $sth->fetchrow_array){
+      push (@outputs,$output_id);
   }
 
 
@@ -102,6 +105,7 @@ sub fetch_by_dbID {
    '-dbobj'    => $self->db,
    '-adaptor'  => $self,
    '-id'       => $hashref->{'job_id'},
+   '-process_id' => $hashref->{'process_id'},
    '-queue_id' => $hashref->{'queue_id'},
    '-inputs'   => \@inputs,
    '-stdout'   => $hashref->{'stdout_file'},
@@ -110,12 +114,85 @@ sub fetch_by_dbID {
    '-analysis' => $analysis,
    '-retry_count' => $hashref->{'retry_count'},
    '-stage'     => $hashref->{'stage'},
-   '-status'    => $hashref->{'status'}
+   '-status'    => $hashref->{'status'},
+   '-output_ids'   => \@outputs
   );
 
   return $job;
 }
 
+
+=head2 fetch_by_analysisId_and_processId_
+
+  Title   : fetch_by_analysisId_and_processId
+  Usage   : my $job = $adaptor->fetch_by_analysisId_and_processId
+  Function: Retrieves all jobs from database by their analysis_id and processId 
+  Returns : throws exception when something goes wrong.
+  Args    : analysis_id, process_id 
+
+=cut
+
+sub fetch_by_analysisId_and_processId {
+  my $self = shift;
+  my $analysis_id = shift;
+  my $process_id = shift;
+  my @jobs;
+
+ 
+  my $query = " SELECT job_id
+                FROM job
+                WHERE analysis_id = $analysis_id and process_id = '$process_id'" ;
+
+  my $sth = $self->prepare($query);
+  $sth->execute();
+
+  while (my ($job_id) = $sth->fetchrow_array) {
+     my $job = $self->fetch_by_dbID($job_id);
+     push (@jobs, $job);
+  }
+  return @jobs;
+}
+
+
+sub fetch_completed_jobids_by_analysisId_and_processId {
+  my $self = shift;
+  my $analysis_id = shift;
+  my $process_id = shift;
+  my @job_ids;
+
+
+  my $query = " SELECT completed_job_id
+                FROM completed_jobs
+                WHERE analysis_id = $analysis_id and process_id = '$process_id'" ;
+
+  my $sth = $self->prepare($query);
+  $sth->execute();
+  
+  while (my ($job_id) = $sth->fetchrow_array) {
+     push (@job_ids, $job_id);
+  }
+  return @job_ids;
+}
+
+sub fetch_output_ids {
+  my ($self, @job_ids) = @_;
+
+  my @output_ids = ();
+
+  foreach my $job_id (@job_ids) {
+    my $query = "SELECT output_name
+                 FROM output
+                 WHERE job_id = $job_id";
+    my $sth = $self->prepare($query);
+    $sth->execute;
+    while (my ($output_id) = $sth->fetchrow_array){
+        push (@output_ids, $output_id);
+    }
+  }
+  return @output_ids;
+}
+
+    
 
 =head2 fetch_all
 
@@ -205,6 +282,27 @@ sub fetch_new_failed_jobs {
     return @jobs;
 
 }
+
+
+sub store_outputs {
+ my $self = shift;
+ my $job = shift;
+ my @output_ids = shift;
+
+ my $sth;
+ my $query;
+ my $job_id = $job->dbID;
+
+ foreach my $output_id(@output_ids) {
+   $query = "   INSERT into output (job_id,output_name)
+                    VALUES ($job_id, $output_id)"; 
+   $sth = $self->prepare($query);
+   $sth->execute;
+ }
+}
+
+ 
+ 
 
 =head2 store
 
@@ -329,7 +427,8 @@ sub update {
            retry_count = ?,
            queue_id = ?,
            stage = ?,
-           status = ?
+           status = ?,
+           process_id = ?
      WHERE job_id = ? } );
 
   eval {
@@ -340,6 +439,7 @@ sub update {
 		 $job->queue_id,
 		 $job->stage,
 		 $job->status,
+                 $job->process_id,
 		 $job->dbID );
   };if ($@) { $self->throw("ATTEMPT TO UPDATE JOB FAILED.\n.$@");}
 }
@@ -360,10 +460,12 @@ sub update_completed_job {
   my $self = shift;
   my $job = shift;
 
+  print "debug2\n";
   $self->throw("Can't update a completed job that has no dbID!") unless (defined $job->dbID);
   
   my $query = " INSERT INTO completed_jobs
-                     VALUES (".$job->dbID.",".
+                     VALUES (".$job->dbID.",'".
+                            $job->process_id."',".
                             $job->analysis->dbID.",".
                             $job->queue_id.",".
                             "'".$job->stdout_file."',".

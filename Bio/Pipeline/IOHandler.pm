@@ -203,23 +203,25 @@ sub write_output {
     $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
         unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
 
+    my @output_ids;
     foreach my $datahandler (@datahandlers) {
 
         my $tmp1 = $datahandler->method;
 
         if ($datahandler->argument eq 'OUTPUT'){
             if (ref($object) eq "ARRAY"){
-                $obj->$tmp1(@{$object});
+                @output_ids = $obj->$tmp1(@{$object});
             }
             else {
-                $obj->$tmp1($object);
+                my $output_id = $obj->$tmp1($object);
+                push(@output_ids, $output_id);
             }
         }else{
             $obj = $obj->$tmp1($datahandler->argument);
         }
     }
 
-  return;
+  return @output_ids;
 }
 
 =head1 Member variable access

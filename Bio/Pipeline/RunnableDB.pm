@@ -405,9 +405,9 @@ sub write_output {
     my @output = $self->output();
 
     return 0 unless scalar(@output);    
-    $self->analysis->output_handler->write_output(\@output);
+    my @output_ids = $self->analysis->output_handler->write_output(\@output);
 
-    return 1;
+    return @output_ids;
 }
 
 =head2 seqfetcher
