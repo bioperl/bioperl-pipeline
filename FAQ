@@ -87,14 +87,15 @@ Ans:-Again as in (7) there could be more than 1 reason for this.One possibility 
      bsub -o /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.out -e /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.err -q  /usr/users/savikalpa/src/bioperl-pipeline//Bio/Pipeline/runner.pl 1 2
      couldn't submit jobs 1 2 to LSF.
      Waking up and run again!
-     Fetched 2 jobs
-     opening bsub command line:
 
-     This could be due to some problem in sending the job to LSF. Try running it locally(ie perl -l PipelineManager.pl) if it runs then it 
+     This could be due to some problem in sending the job to LSF. Try running it locally(ie perl PipelineManager.pl -l) if it runs then it 
      confirms this.
 
 9.  There are many tables that i left empty.Dont we need to put anything in them?
-     
+    Some of the tables like the job and output tables will be automatically populated as the pipeline runs.  
+    
 10. What about the output of the pipeline?
+    The output of the pipeline(ie gene object etc ) can be stored in any database of choice(need the dbadaptor of course). 
+
 
 11. 
