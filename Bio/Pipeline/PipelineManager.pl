@@ -14,10 +14,11 @@
 use strict;
 use Getopt::Long;
 
-use Bio::Pipeline::DBSQL::RuleAdaptor;;
-use Bio::Pipeline::DBSQL::JobAdaptor;
-use Bio::Pipeline::DBSQL::AnalysisAdaptor;
-use Bio::Pipeline::DBSQL::DBAdaptor;
+use Bio::Pipeline::SQL::RuleAdaptor;;
+use Bio::Pipeline::SQL::JobAdaptor;
+use Bio::Pipeline::SQL::AnalysisAdaptor;
+use Bio::Pipeline::SQL::DBAdaptor;
+use Bio::Pipeline::BatchSubmission;
 
 # defaults: command line options override pipeConf variables,
 # which override anything set in the environment variables.
@@ -41,14 +42,11 @@ my $currentStart = 0;       # Running total of job ids
 my $completeRead = 0;       # Have we got all the input ids yet?
 my $local        = 0;       # Run failed jobs locally
 my $analysis;               # Only run this analysis ids
-my $submitted;
 my $JOBNAME;                # Meaningful name displayed by bjobs
 			    # aka "bsub -J <name>"
 			    # maybe this should be compulsory, as
 			    # the default jobname really isn't any use
-my $idlist;
-my ($done, $once);
-
+my $once =0;
 GetOptions(
     'host=s'      => \$DBHOST,
     'dbname=s'    => \$DBNAME,
@@ -56,7 +54,6 @@ GetOptions(
     'dbpass=s'    => \$DBPASS,
     'flushsize=i' => \$BATCHSIZE,
     'local'       => \$local,
-    'idlist=s'    => \$idlist,
     'queue=s'     => \$QUEUE,
     'jobname=s'   => \$JOBNAME,
     'usenodes=s'  => \$USENODES,
@@ -75,7 +72,6 @@ my $db = Bio::Pipeline::SQL::DBAdaptor->new(
 
 my $ruleAdaptor = $db->get_RuleAdaptor;
 my $jobAdaptor  = $db->get_JobAdaptor;
-my $sic         = $db->get_StateInfoContainer;
 
 
 # scp
@@ -91,63 +87,78 @@ my $sic         = $db->get_StateInfoContainer;
 #
 # For example, you could put slow (e.g., blastx) jobs in a different queue,
 # or on certain nodes, or simply label them with a different jobname.
-
-my $QUEUE_params = {};
-$QUEUE_params->{'queue'}     = $QUEUE if defined $QUEUE;
-$QUEUE_params->{'nodes'}     = $USENODES if $NODES;
-$QUEUE_params->{'flushsize'} = $BATCHSIZE if defined $BATCHSIZE;
-$QUEUE_params->{'jobname'}   = $JOBNAME if defined $JOBNAME;
-
 # Fetch all the analysis rules.  These contain details of all the
 # analyses we want to run and the dependences between them. e.g. the
 # fact that we only want to run blast jobs after we've repeat masked etc.
 
 my @rules       = $ruleAdaptor->fetch_all;
-my @jobs;
 
-my @idList;     # All the input ids to check
-
-while (1) {
+my $run = 1;
+my $submitted;
+while ($run) {
     
-    @jobs = $jobAdaptor->fetch_all;
+    my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db);
+    my @jobs = $jobAdaptor->fetch_all;
+    print STDERR "Fetched ".scalar(@jobs)." jobs\n";
 
     foreach my $job(@jobs){
    
-        if ($job->status eq 'NEW')   ||
-	    ( ($job->status eq 'FAILED') && ($job->retry_count < $RETRY) ){ 
+        if (($job->status eq 'NEW')   ||
+	    ( ($job->status eq 'FAILED') && ($job->retry_count < $RETRY) )){ 
+            $submitted = 1;
 
-            if ($local){
-                $job->run_Locally;
-	        }else{
-                $job>batch_remotely($QUEUE_params);
+            if ($job->status eq 'FAILED'){
+                my $retry_count = $job->retry_count;
+                $retry_count++;
+                $job->retry_count($retry_count);
             }
+            if ($local){
+                $job->status('SUBMITTED');
+                $job->make_filenames unless $job->filenames;
+                $job->update;
+                $job->run;
+	        }else{
+                $batchsubmitter->add_job($job);
+                $job->status('BATCHED');
+                $job->update;
+                $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
+                }
         }
 	    elsif ($job->status eq 'COMPLETED'){
             foreach my $new_job (&create_new_job($job)){
-                $new_job->batch_remotely($QUEUE_params);
+
+                if ($local){
+                    $job->status('SUBMITTED');
+                    $job->make_filenames unless $job->filenames;
+                    $job->update;
+                    $job->run;
+	            }else{
+                    $batchsubmitter->add_job($job);
+                    $job->status('BATCHED');
+                    $job->update;
+                    $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
+                }
             }
-	    }
-	else (DO NOTHING?){
+            $job->remove;
         }
+	}
 
-    }	    
+    #submit remaining jobs in batch.
+    $batchsubmitter->submit_batch if ($batchsubmitter->batched_jobs);
 
-    #Bio::EnsEMBL::Pipeline::Job->flush_runs($jobAdaptor, $QUEUE_params);
-    
-    exit 0 if $done || $once;
-    sleep($SLEEP) if $submitted == 0;
+    sleep($SLEEP) unless $submitted;
     $completeRead = 0;
     $currentStart = 0;
-    @idList = ();
     print "Waking up and run again!\n";
 }
 
 sub create_new_job{
-    my $job = @_;
+    my ($job) = @_;
     my @new_jobs;
     foreach my $rule (@rules){
         if ($rule->condition == $job->analysis->dbID){
-            my $new_job = Bio::Pipeline::Job->create_by_analysis_inputId($rule->analysis,$job->input_id);
+            my $new_job = $job->create_next_job($rule->goalAnalysis);
+            $jobAdaptor->store($new_job);
             push (@new_jobs,$new_job);
         }    
     }    
