@@ -101,7 +101,7 @@ else {
 #connect string
 my $str;
 $str .= defined $DBHOST ? "-h $DBHOST " : "";
-$str .= defined $DBPASS ? "-p $DBPASS " : "";
+$str .= defined $DBPASS ? "-p$DBPASS " : "";
 $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
 
 if($db_exist){
