@@ -15,7 +15,7 @@ sub new {
     my ($dbname, $host, $driver, $user, $pass, $contig_dbID) =
         $self->_rearrange([qw( DBNAME HOST DRIVER USER PASS CONTIG_DBID)], @args);
 
-
+   require "Bio/EnsEMBL/DBSQL/DBAdaptor.pm";
    my $dba = Bio::EnsEMBL::DBSQL::DBAdaptor->new(
       -user => $user,
       -dbname => $dbname,
