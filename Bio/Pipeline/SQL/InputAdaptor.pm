@@ -193,7 +193,7 @@ sub create_new_input {
 }
 
 sub copy_inputs_map_ioh {
-    my ($self,$job,$new_job) = @_;
+    my ($self,$job,$new_job,$tag) = @_;
     my @inputs;
     $job || $self->throw("Need the prev job");
     $new_job || $self->throw("Need the new job");
@@ -202,11 +202,11 @@ sub copy_inputs_map_ioh {
       my $in;
       if($input->input_handler){
         my $map_ioh = $self->db->get_IOHandlerAdaptor->get_mapped_ioh($new_job->analysis->dbID,$input->input_handler->dbID);
-        $in      = Bio::Pipeline::Input->new(-name => $input->name,-input_handler => $map_ioh,-job_id => $new_job->dbID); 
+        $in      = Bio::Pipeline::Input->new(-name => $input->name,-input_handler => $map_ioh,-job_id => $new_job->dbID,-tag=>$tag); 
         push @inputs, $in;
       }
       else {
-        $in      = Bio::Pipeline::Input->new(-name => $input->name,-job_id => $new_job->dbID); 
+        $in      = Bio::Pipeline::Input->new(-name => $input->name,-job_id => $new_job->dbID,-tag=>$tag); 
         push @inputs, $in;
       }
       $self->store_fixed_input($in);
