@@ -74,6 +74,7 @@ use Bio::Pipeline::BatchSubmission;
 # several variables needed from PipeConf.pm
 use Bio::Pipeline::PipeConf qw ( NFSTMP_DIR
                                  NUM_TMP_DIR
+                                 VERBOSE
                                );
 
 use vars qw(@ISA);
@@ -159,6 +160,7 @@ sub new {
     $self->hostname($hostname);
     #$self->output_ids       ($output_ids);
     $self->dependency($dependency);
+    $self->verbose($VERBOSE);
     @{$self->{'_inputs'}}= ();
     @{$self->{'_output_ids'}}= ();
     
@@ -314,7 +316,7 @@ sub _run_analysis {
   my $rdb;
     
 
-  print STDERR "Running job: ".$self->dbID." | analysis: ". $analysis->dbID."| ". $self->stdout_file . " " . $self->stderr_file . "\n";
+  $self->debug("Running job: ".$self->dbID." | analysis: ". $analysis->dbID."| ". $self->stdout_file . " " . $self->stderr_file . "\n");
 
   local *STDOUT;
   local *STDERR;
@@ -355,6 +357,14 @@ sub _run_analysis {
   }
   eval {
       $self->set_stage( "RUNNING" );
+      if($self->local){
+        $self->set_hostname("localhost");
+      }
+      else {
+#	print STDERR $self->queue_id."\n";
+        my $hostname = Bio::Pipeline::BatchSubmission::get_host_name($self->queue_id);
+        $self->set_hostname($hostname);
+      }
       $rdb->run;
   };
   if ($err = $@) {
@@ -364,13 +374,6 @@ sub _run_analysis {
   }
   my @output;
   eval {
-      if($self->local){
-        $self->set_hostname("localhost");
-      }
-      else {
-        my $hostname = Bio::Pipeline::BatchSubmission::get_host_name($self->queue_id);
-        $self->set_hostname($hostname);
-      }
       $self->set_stage( "WRITING" );
       @output= $rdb->write_output;
   }; 
@@ -467,7 +470,7 @@ sub set_hostname{
 
   $self->{'_hostname'} = $arg;
  
-  $self->adaptor->set_status( $self );
+  $self->update();
 }
 
 =head2 get_status
@@ -644,7 +647,7 @@ sub remove {
   if( -e $self->input_object_file ) { unlink( $self->input_object_file )|| $self->throw("Unable to remove object file ".$self->input_object_file)};
 
    if( defined $self->adaptor ) {
-   $self->adaptor->remove( $self );
+     $self->adaptor->remove( $self );
    }
    
 }
