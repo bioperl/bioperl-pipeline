@@ -67,17 +67,14 @@ use vars qw(@ISA);
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($dbobj,$analysis,$inputs) = $self->_rearrange ([qw  (   
-                                                                 DBOBJ
+    my ($analysis,$inputs) = $self->_rearrange ([qw  (   
                                                                  ANALYSIS
                                                                  INPUTS
                                                                 )],@args);
     
-    $self->throw("No DB_obj provided to RunnableDB") unless defined($dbobj);
     $self->throw("No analysis provided to RunnableDB") unless defined($analysis);
     $self->throw("No inputs provided to RunnableDB") unless defined($inputs);
 
-    $self->dbobj($dbobj);
     $self->analysis($analysis);
     $self->runnable($analysis->runnable);
 
@@ -137,29 +134,6 @@ sub setup_runnable_params {
       $runnable->$routine($param{$routine});
     }
     return;
-}
-
-
-=head2 dbobj
-
-    Title   :   dbobj
-    Usage   :   $self->dbobj($obj);
-    Function:   Gets or sets the value of dbobj
-    Returns :   A Bio::Pipeline::SQL::DBAdaptor object
-    Args    :   A Bio::Pipeline::SQL:DBAdaptor compliant object
-
-=cut
-
-sub dbobj {
-    my( $self, $value ) = @_;
-    
-    if ($value) 
-    {
-        $value->isa("Bio::Pipeline::SQL::DBAdaptor")
-            || $self->throw("Input [$value] isn't a Bio::Pipeline::SQL::DBAdaptor");
-        $self->{'_dbobj'} = $value;
-    }
-    return $self->{'_dbobj'};
 }
 
 
@@ -428,7 +402,6 @@ sub vcontig{
 sub write_output {
     my($self) = @_;
 
-    my $db=$self->dbobj();
     my @output = $self->output();
 
     return 0 unless scalar(@output);    

@@ -319,7 +319,6 @@ sub run {
  
   eval {
     $rdb = Bio::Pipeline::RunnableDB->new ( 
-                        -dbobj      => $self->adaptor->db,
                         -analysis   => $self->analysis,
                         -inputs     => \@inputs,
                         );
