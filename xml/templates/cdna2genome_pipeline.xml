@@ -326,15 +326,14 @@ choice (for example BioSQL database)
          </input_create>
       </data_monger>
     </analysis>
-
-
     <analysis id="2">
       <logic_name>Blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>family</db>
       <db_file>t/data/genomic.fa</db_file>
       <program>blastall</program>
-      <program_file>/usr/local/bin/blastall</program_file>
+      <!--Provide path to blast-->
+      <program_file></program_file>
       <analysis_parameters>-p blastn -e 1-e07 </analysis_parameters>
       <runnable_parameters>-formatdb 1 -formatdb_alphabet dna -infile_dir  t/data/cdna2genome_results/ -result_dir t/data/cdna2genome_results/blast_dir</runnable_parameters>
     </analysis>
