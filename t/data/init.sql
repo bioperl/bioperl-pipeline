@@ -65,8 +65,8 @@ INSERT INTO iohandler VALUES (2,1,'OUTPUT','STREAM');
 # Dumping data for table 'job'
 #
 
-INSERT INTO job VALUES (1,'NEW',1,0,'/tmp//5/test_run.job_1.blast.1027671765.239.out','/tmp//5/test_run.job_1.blast.1027671765.239.err','/tmp//5/test_run.job_1.blast.1027671765.239.obj','NEW','','2002-07-26 16:22:46',0);
-INSERT INTO job VALUES (2,'NEW',1,0,'/tmp//1/test_run.job_2.blast.1027671765.819.out','/tmp//1/test_run.job_2.blast.1027671765.819.err','/tmp//1/test_run.job_2.blast.1027671765.819.obj','NEW','','2002-07-26 16:22:46',0);
+INSERT INTO job VALUES (1,'NEW',1,0,'','','','NEW','','',0);
+INSERT INTO job VALUES (2,'NEW',1,0,'','','','NEW','','',0);
 
 #
 # Dumping data for table 'new_input'
