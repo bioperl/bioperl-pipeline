@@ -424,14 +424,6 @@ sub _create_new_job {
                }
                push (@new_jobs,$new_job);
             }                                                          
-            elsif ($action eq 'COPY_INPUT') {
-                my $new_job = $job->create_next_job($next_analysis);
-                my @inputs = $self->inputAdaptor->copy_fixed_inputs($job->dbID,$new_job->dbID);
-                foreach my $input (@inputs) {
-                 $new_job->add_input($input);
-                }
-                push (@new_jobs,$new_job);
-            }
             elsif ($action eq 'UPDATE') {
                my @output_ids = $job->output_ids;
                if (scalar(@output_ids) == 0) {  ## No outputs, so dont create any job 
