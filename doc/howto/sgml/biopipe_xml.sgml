@@ -1,0 +1,220 @@
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<article>
+
+<!-- Header -->
+
+<articleinfo>
+
+<title>Biopipe Pipeline Creation HOWTO</title>
+<author>
+  <firstname>Brian</firstname>
+  <surname>Osborne</surname>
+  <affiliation>
+  <orgname>Cognia Corporation</orgname>
+    <address>
+      <email>brian_osborne@cognia.com</email>
+    </address>
+  </affiliation>
+</author>
+
+<revhistory>
+  <revision>
+    <revnumber>0.1</revnumber>
+    <date>2003-2-18</date>
+    <authorinitials>BIO</authorinitials>
+    <revremark>Draft</revremark>
+  </revision>
+</revhistory>
+
+<legalnotice>
+<para>
+This document is copyright Brian Osborne, 2003. For reproduction other than
+personal use, please contact brian_osborne@cognia.com
+</para>
+</legalnotice>
+
+<abstract>
+<para>
+This document is concerned with the creation of sequence analysis pipelines using the Biopipe system.
+</para>
+</abstract>
+
+ </articleinfo>
+
+
+<!-- Section1: intro -->
+
+<section id="High Level">
+<title>An overview of a simple Biopipe XML file</title>
+<para>
+A Biopipe pipeline is made up of one or more "analyses", and if there are multiple analyses they are executed 
+in sequence, in the order they're described in the pipeline's XML file. Each analysis has a number of 
+attributes, like the program or application used, the path to the queried database(s), the path to the query file(s), the Perl module utilized, and so on. 
+</para>
+<para>
+The Biopipe Introduction HOWTO discusses a simple pipeline example based on the blast_file_pipeline.xml
+in the xml/templates directory. Let's continue with this same example and concern ourselves with how 
+one might modify this template to make a new pipeline that still uses BLAST. As its name suggests, this
+XML file describes one functional step, a BLAST run.
+</para>
+<para>
+Before discussing the XML let's digress and reflect on run modes in general.
+There are 2 run modes available, local or load-sharing, and the default is load-sharing. One might want
+to run locally to debug a new pipeline or if load-sharing software, PBS or LFS, isn't installed or
+if the particular pipeline simply doesn't require much computation.  To run locally one executes 
+the PipelineManager script with the -local option, local mode can't be specified in 
+Bio/Pipeline/PipeConf.pm. It turns out that re-configuring the XML file will involve the same exact 
+fields whether mode is local or load-sharing, the only real difference in terms of configuration
+involves PipeConf.pm, meaning there are a number of additional values in there that need to be considered
+when load-sharing. 
+</para>
+<para>
+Let's assume you've copied xml/templates/blast_file_pipeline.xml to your directory as 
+my_blast_pipeline.xml and would like to modify it for your particular purpose. Let's scan the file
+from a high level first before diving in. Right at the top, after introductory text, we see
+the pipeline specifications begin like this:
+<programlisting>
+<pipeline_setup>
+  <database_setup>
+    <streamadaptor id="1">
+      <module>Bio::Pipeline::Dumper</module>
+    </streamadaptor>
+  </database_setup>
+</programlisting>
+There will be only one &lt;database_setup&gt; section for each pipeline, and it's concerned with 
+the final output of the pipeline, after all analyses are done. In this case we've specified 
+Bio::Pipeline::Dumper as the responsible module, and this module will create text output for us.
+A different pipeline could specify a module that writes to a database, ar any reasonable output
+for that matter.
+</para>
+<para>
+You'll also notice that there are 2 sections tagged as &lt;analysis&gt;, like this one:
+<programlisting>
+<analysis id="2">
+      <logic_name>Blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>family</db>
+      <db_file>t/data/blast.fa</db_file>
+      <program>blastall</program>
+      <!--Provide path to blast here-->
+      <program_file>/usr/local/bin/blastall</program_file>
+      <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>
+      <runnable_parameters>-formatdb 1 -result_dir t/data/blast_result </runnable_parameters>
+    </analysis>
+</programlisting>
+In truth the word "analysis" could be a bit of a misnomer. Some would say that certain &lt;analysis&gt;
+ sections are entirely concerned with preprocessing prior to <emphasis>actual</emphasis> analysis but 
+let's assume for the moment that the world is not perfect and note simply that these sections are 
+logically self-contained and executed in the order in which they're written. In my_blast_pipeline.xml
+ the first&lt;analysis&gt; section is concerned with creating the files and directories necessary 
+for the Blast run and the second &lt;analysis&gt; section concerns the Blast run itself. The analysis 
+attribute "id", which can be text or number, must be unique with respect to all analysis id's in the 
+file but can be changed to be informative, as in:
+<programlisting>
+<analysis id="file preprocess">
+</analysis>
+</programlisting>
+</para>
+<para>
+You will also see a section labelled "rule". In simple pipelines like this the &lt;action&gt; 
+of the rule is "NOTHING" meaning, essentially, that no action will be taken at the end of the first
+output step. We will examine rules and their role in more complex pipelines in a later section.
+</para>
+Our pipeline description ends with an empty &lt;job_setup&gt; section. This section, if it were used,
+would be concerned with pre-processing. In fact &lt;job_setup&gt; is rarely used if ever, most users
+would choose to specify their pre-processing in an &lt;analysis&gt; section. Happily ignore 
+&lt;job_setup&gt;!
+</section>
+
+<section id="Modification">
+<title>Modifying a simple Biopipe XML file</title>
+<para>
+Our overview indicates that any changes that need to be made in order to customize my_blast_pipeline.xml
+will take place within the 2 &lt;analysis&gt; sections. These changes turn out to be very simple and
+concern paths to files and directories. The required changes in the first analysis section are the
+following:
+<programlisting>
+           <argument>
+                <tag>input_file</tag>
+                <value>/Users/admin/programming/biopipe/test.fa</value>
+                <type>SCALAR</type>
+            </argument>
+</programlisting>
+We've entered the full path to the file containing the query sequence(s).
+<programlisting>
+     <argument>
+                <tag>workdir</tag>
+                <value>/Users/admin/programming/biopipe</value>
+                <type>SCALAR</type>
+            </argument>
+</programlisting>
+We've entered the name of the directory where any intermediate files will reside, such as sub-files
+created from our query sequence file which could be used as the actual input to blastall.
+<programlisting>
+            <argument>
+                <tag>result_dir</tag>
+           -->    <value>/Users/admin/programming/biopipe</value>
+                <type>SCALAR</type>
+            </argument>
+</programlisting>
+And this will be the location of the result or report files created by blastall. It's worth mentioning
+in this context that error reports and "lock" files will be written to the directory specified in 
+PipeConf.pm. as NFSTMP_DIR.
+<para>
+Allow another digression. The following section is a nice illustration of how Biopipe draws on Bioperl
+fundamentals as a consequence of OO architecture. Biopipe can accept any sequence format understood
+by Bio::SeqIO as input, provided the correct term (e.g. "fasta", "swiss", "genbank") is used in the 
+&lt;value&gt; section (see the <ulink url="http://www.bioperl/HOWTOs">SeqIO HOWTO<ulink> for a 
+discussion of SeqIO).
+</para>
+<programlisting>
+    <argument>
+                <tag>informat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>outformat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+</programlisting>
+</para>
+<para>
+Recall that we characterized this first analysis section as concerned with pre-processing. The second
+section addresses execution. The required changes in the second analysis section are these:
+<programlisting>
+    <analysis id="2">
+      <logic_name>Blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>family</db>
+      <db_file>/Users/admin/programming/biopipe/testdb.fa</db_file>
+      <program>blastall</program>
+      <!--Provide path to blast here-->
+      <program_file>/usr/local/bin/blastall</program_file>
+      <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>
+      <runnable_parameters>-formatdb 1 -result_dir /Users/admin/programming/biopipe </runnable_parameters>
+    </analysis>
+</programlisting>
+</para>
+<para>
+You may have noticed the &lt;rank&gt; section above these &lt;argument&gt; sections, it's name is not
+self-explanatory. 
+
+</para>
+</section>
+
+<section id="Creation">
+<title>Creating Biopipe pipelines <emphasis>de novo</emphasis></title>
+    <para>
+The section title is a bit misleading, one would never want create a pipeline XML file <emphasis>
+de novo</emphasis>, that's <emphasis>way</emphasis> too much typing! What we will address here is
+a situation where you find it necessary to construct a pipeline that's significantly different from
+the existing pipelines, when you'll have to think about your proposed pipeline in some detail.
+    </para>
+<para>
+
+</para>
+</section>
+</article>
