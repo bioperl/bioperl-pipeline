@@ -34,7 +34,12 @@ use Bio::Root::IO;
    $seq1 = $seqstream->next_seq();
 
    # create a analysis object (with just enough arguments for now that the runnable needs)
-   my $parameters = '-MATRIX t/data/HumanIso.smat';
+   if(! $ENV{'GENSCAN_DIR'}){
+           warn("Need to define env variable GENSCAN_DIR to run test");
+               exit(0);
+   }
+   my $paramfile = Bio::Root::IO->catfile($ENV{'GENSCAN_DIR'},"HumanIso.smat");
+   my $parameters = "-MATRIX " . $paramfile;
    my $analysis = Bio::Pipeline::Analysis->new(-parameters => $parameters);
    
    # create Bio:Pipeline::Runnable::Genscan object
@@ -50,9 +55,7 @@ use Bio::Root::IO;
    $@ && exit(0);
    my @feat = $genscan->output();
    my $no = scalar(@feat);
-   print "No of genes $no\n";
    my @subfeat = $feat[0]->predicted_protein();
    $no = scalar(@subfeat);
-   print "No of Proteins $no \n";
    ok($feat[0]->isa("Bio::SeqFeatureI"));
    ok($subfeat[0]->isa("Bio::PrimarySeqI"));
