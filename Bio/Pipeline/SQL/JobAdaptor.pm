@@ -47,13 +47,6 @@ use strict;
 
 @ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
-sub new {
-  my ($class,$dbobj) = @_;
-  my $self = $class->SUPER::new();
-  
-  $self->db( $dbobj );
-  return $self;
-}
 
 =head2 fetch_by_dbID
 

@@ -48,30 +48,110 @@ use vars qw(@ISA);
 use strict;
 use DBI;
 
-use Bio::DB::SQL::DBAdaptor;
 use Bio::Pipeline::SQL::InputDBAAdaptor;
 use Bio::Pipeline::SQL::OutputDBAAdaptor;
 use Bio::Pipeline::SQL::RuleAdaptor;
-=head
+use Bio::Pipeline::SQL::BaseAdaptor;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::StateInfoContainer;
-=cut
 use Bio::Root::Root;
 
 # Inherits from the base bioperl object
 
-@ISA = qw(Bio::DB::SQL::DBAdaptor);
+@ISA = qw(Bio::Root::Root);
 
 
-# sub new {
-    # my ($class,@args) = @_;
-    # my $self = $class->SUPER::new(@args);
-    # return $self;
-# }
+sub new {
+  my($pkg, @args) = @_;
 
-# new() inherited from Bio::DB::SQL::DBAdaptor;
+  my $self = bless {}, $pkg;
 
+    my (
+        $db,
+        $host,
+        $driver,
+        $user,
+        $password,
+        $port,
+        ) = $self->_rearrange([qw(
+            DBNAME
+            HOST
+            DRIVER
+            USER
+            PASS
+            )],@args);
+    $db   || $self->throw("Database object must have a database name");
+    $user || $self->throw("Database object must have a user");
+
+    if( ! $driver ) {
+        $driver = 'mysql';
+    }
+    if( ! $host ) {
+        $host = 'localhost';
+    }
+    if ( ! $port ) {
+        $port = '';
+    }
+
+    my $dsn = "DBI:$driver:database=$db;host=$host;port=$port";
+
+  my $dbh = DBI->connect("$dsn","$user",$password, {RaiseError => 1});
+
+  $dbh || $self->throw("Could not connect to database $db user $user using [$dsn] as a locator");
+
+  $self->_db_handle($dbh);
+  $self->username( $user );
+  $self->host( $host );
+  $self->dbname( $db );
+
+  return $self; # success - we hope!
+}
+
+sub dbname {
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_dbname} = $arg );
+  $self->{_dbname};
+}
+
+sub username {
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_username} = $arg );
+  $self->{_username};
+}
+
+sub host {
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_host} = $arg );
+  $self->{_host};
+}
+
+=head2 prepare
+
+ Title   : prepare
+ Usage   : $sth = $dbobj->prepare("select seq_start,seq_end from feature where analysis = \" \" ");
+ Function: prepares a SQL statement on the DBI handle
+ Example :
+ Returns : A DBI statement handle object
+ Args    : a SQL string
+
+
+=cut
+
+sub prepare {
+   my ($self,$string) = @_;
+
+   if( ! $string ) {
+       $self->throw("Attempting to prepare an empty SQL query!");
+   }
+   if( !defined $self->_db_handle ) {
+      $self->throw("Database object has lost its database handle! getting otta here!");
+   }
+   return $self->_db_handle->prepare($string);
+}
 
 =head2 get_JobAdaptor
 
@@ -82,6 +162,7 @@ use Bio::Root::Root;
  Returns : Bio::Pipeline::SQL::JobAdaptor
  Args    : nothing
 
+=cut
 
 
 sub get_JobAdaptor {
@@ -95,7 +176,6 @@ sub get_JobAdaptor {
   return $self->{_JobAdaptor};
 }
 
-=cut
 =head2 get_input_dba_adaptor
 
  Title   : get_input_dba_adaptor
@@ -151,6 +231,7 @@ sub get_output_dba_adaptor{
  Returns : Bio::Pipeline::SQL::AnalysisAdaptor
  Args    : nothing
 
+=cut
 
 sub get_AnalysisAdaptor {
   my ($self) = @_;
@@ -164,7 +245,6 @@ sub get_AnalysisAdaptor {
   return $self->{_AnalysisAdaptor};
 }
 
-=cut
 
 =head2 get_RuleAdaptor
 

@@ -38,11 +38,11 @@ The rest of the documentation details each of the object methods. Internal metho
 package Bio::Pipeline::SQL::StateInfoContainer;
 
 use Bio::Pipeline::SQL::AnalysisAdaptor;
-use Bio::Root::RootI;
+use Bio::Root::Root;
 use vars qw(@ISA);
 use strict;
 
-@ISA = qw( Bio::Root::RootI );
+@ISA = qw( Bio::Root::Root );
 
 sub new {
   my ($class, $dbobj) = @_;

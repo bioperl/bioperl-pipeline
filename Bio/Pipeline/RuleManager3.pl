@@ -16,11 +16,11 @@ BEGIN {
 use strict;
 use Getopt::Long;
 
-use Bio::EnsEMBL::Pipeline::DBSQL::RuleAdaptor;;
-use Bio::EnsEMBL::Pipeline::DBSQL::JobAdaptor;
-use Bio::EnsEMBL::Pipeline::DBSQL::AnalysisAdaptor;
-use Bio::EnsEMBL::Pipeline::DBSQL::StateInfoContainer;
-use Bio::EnsEMBL::Pipeline::DBSQL::DBAdaptor;
+use Bio::EnsEMBL::Pipeline::SQL::RuleAdaptor;;
+use Bio::EnsEMBL::Pipeline::SQL::JobAdaptor;
+use Bio::EnsEMBL::Pipeline::SQL::AnalysisAdaptor;
+use Bio::EnsEMBL::Pipeline::SQL::StateInfoContainer;
+use Bio::EnsEMBL::Pipeline::SQL::DBAdaptor;
 
 # defaults: command line options override pipeConf variables,
 # which override anything set in the environment variables.

@@ -1,8 +1,8 @@
-# BioPerl module for Bio::Pipeline::Analysisbject for storing sequence analysis details
+# BioPerl runnable for Bio::Pipeline::Analysisbject for storing sequence analysis details
 #
 # Adapted from Michele Clamp's EnsEMBL::Analysis  <michele@sanger.ac.uk>
 #
-# You may distribute this module under the same terms as perl itself
+# You may distribute this runnable under the same terms as perl itself
 #
 # POD documentation - main docs before the code
 
@@ -25,8 +25,8 @@ Bio::Pipeline::Analysis.pm - Stores details of an analysis run
         -program_file    => $program_file,
         -gff_source      => $gff_source,
         -gff_feature     => $gff_feature,
-        -module          => $module,
-        -module_version  => $module_version,
+        -runnable          => $module,
+        -runnable_version  => $module_version,
         -parameters      => $parameters,
         -created         => $created
         );
@@ -63,7 +63,7 @@ sub new {
   my $self = bless {},$class;
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
-      $gff_source,$gff_feature,$module,$module_version,$parameters,$created,
+      $gff_source,$gff_feature,$runnable,$parameters,$created,
       $logic_name ) = 
 
 	  $self->_rearrange([qw(ID
@@ -76,8 +76,7 @@ sub new {
 				PROGRAM_FILE
 				GFF_SOURCE
 				GFF_FEATURE
-				MODULE
-				MODULE_VERSION
+				RUNNABLE
 				PARAMETERS
 				CREATED
 				LOGIC_NAME
@@ -91,8 +90,7 @@ sub new {
   $self->program        ($program);
   $self->program_version($program_version);
   $self->program_file   ($program_file);
-  $self->module         ($module);
-  $self->module_version ($module_version);
+  $self->runnable       ($runnable);
   $self->gff_source     ($gff_source);
   $self->gff_feature    ($gff_feature);
   $self->parameters     ($parameters);
@@ -290,46 +288,27 @@ sub program_file {
 }
 
 
-=head2 module
+=head2 runnable
 
-  Title   : module
-  Usage   : $self->module
-  Function: Get/set method for the module name
+  Title   : runnable
+  Usage   : $self->runnable
+  Function: Get/set method for the runnable name
   Returns : String
   Args    : String
 
 =cut
 
-sub module {
+sub runnable {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{_module} = $arg;
+	$self->{_runnable} = $arg;
     }
 
-    return $self->{_module};
+    return $self->{_runnable};
 }
 
 
-=head2 module_version
-
-  Title   : module_version
-  Usage   : $self->module_version
-  Function: Get/set method for the module version number
-  Returns : string
-  Args    : string
-
-=cut
-
-sub module_version {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-	$self->{_module_version} = $arg;
-    }
-
-    return $self->{_module_version};
-}
 
 =head2 gff_source
 
@@ -471,8 +450,8 @@ sub compare {
   my $detail = 0;
 
   foreach my $methodName ( 'program', 'program_version', 'program_file',
-    'db','db_version','db_file','gff_source','gff_feature', 'module',
-    'module_version', 'parameters','logic_name' ) {
+    'db','db_version','db_file','gff_source','gff_feature', 'runnable',
+    'runnable_version', 'parameters','logic_name' ) {
     if( defined $self->$methodName() && ! $ana->can($methodName )) {
       $detail = 1;
     } 

@@ -34,11 +34,11 @@ The rest of the documentation details each of the object methods. Internal metho
 
 package Bio::Pipeline::Rule;
 use vars qw(@ISA);
-use Bio::Root::RootI;
+use Bio::Root::Root;
 use strict;
 
 
-@ISA = qw( Bio::Root::RootI );
+@ISA = qw( Bio::Root::Root );
 
 =head2 Constructor
 

@@ -33,21 +33,25 @@ use vars qw (%PipeConf);
 %PipeConf = ( 
 
     # working directory for err/outfiles
-    NFSTMP_DIR => '/work1/lec/out',
+    NFSTMP_DIR => '',
 
     # database specific variables
     DBI_DRIVER => 'mysql',
-    DBHOST     => 'ecs1c',
-    DBNAME     => 'laura_test',
-    DBUSER     => 'ensadmin',
-    DBPASS     => 'ensembl',	     
+    DBHOST     => 'localhost',
+    DBNAME     => 'bioperl_pipeline',
+    DBUSER     => 'root',
+    DBPASS     => '',	     
 
     # default directory for data files and binary files
-    BINDIR     => '/usr/local/ensembl/bin',
-    DATADIR    => '/usr/local/ensembl/data',
+    BINDIR     => '',
+    DATADIR    => '',
 
     # farm queue
-    QUEUE      => 'acarilong', 
+    QUEUE      => '', 
+    # farm nodes to use, default all
+    USENODES    =>'',
+    # jobname
+    JOBNAME    =>'',
     # true->update InputIdAnalysis via Job
     AUTOUPDATE => 1,    
 
@@ -55,6 +59,8 @@ use vars qw (%PipeConf);
     BATCHSIZE  => 1,        
     BSUB_OPT   => '-C0',
 
+    # number of times to retry a failed job
+    RETRY       => '',
     # path to runner.pl, needed by Job.pm
     RUNNER     => '',   
     #sleep time in Rulemanager

@@ -39,23 +39,17 @@ The rest of the documentation details each of the object methods. Internal metho
 
 # Let the code begin...
 
-package Bio::EnsEMBL::Pipeline::DBSQL::AnalysisAdaptor;
+package Bio::Pipeline::SQL::AnalysisAdaptor;
 
-use Bio::EnsEMBL::Analysis;
-use Bio::Root::RootI;
+use Bio::Pipeline::Analysis;
+use Bio::Pipeline::SQL::BaseAdaptor;
+use Bio::Root::Root;
 
 use vars qw(@ISA);
 use strict;
 
-@ISA = qw( Bio::Root::RootI );
+@ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
-sub new {
-  my ($class, $dbobj) = @_;
-  my $self = $class->SUPER::new();
-
-  $self->db( $dbobj );
-  return $self;
-}
 
 =head2 fetch_all
 
@@ -110,14 +104,14 @@ sub fetch_by_dbID {
   }
 
   my $sth = $self->prepare( q{
-    SELECT analysisId, logic_name,
+    SELECT analysis_id, logic_name,
            program,program_version,program_file,
            db,db_version,db_file,
-           module,module_version,
+           runnable,
            gff_source,gff_feature,
            created, parameters
-    FROM analysisprocess
-    WHERE analysisId = ? } );
+    FROM analysis
+    WHERE analysis_id = ? } );
 
   $sth->execute( $id );
   my $rowHashRef = $sth->fetchrow_hashref;
@@ -332,8 +326,8 @@ sub exists {
 sub _objFromHashref {
   my ($self,$rowHash) = @_;
 
-  my $analysis = Bio::EnsEMBL::Analysis->new
-    ( -id => $rowHash->{analysisId},
+  my $analysis = Bio::Pipeline::Analysis->new
+    ( -id => $rowHash->{analysis_id},
       -db => $rowHash->{db},
       -db_file => $rowHash->{db_file},
       -program => $rowHash->{program},
@@ -341,8 +335,7 @@ sub _objFromHashref {
       -program_file => $rowHash->{program_file},
       -gff_source => $rowHash->{gff_source},
       -gff_feature => $rowHash->{gff_feature},
-      -module => $rowHash->{module},
-      -module_version => $rowHash->{module_version},
+      -runnable=> $rowHash->{runnable},
       -parameters => $rowHash->{parameters},
       -created => $rowHash->{created},
       -logic_name => $rowHash->{logic_name}
@@ -408,10 +401,6 @@ sub db {
   $self->{'_db'};
 }
 
-sub prepare {
-  my ( $self, $query ) = @_;
-  $self->db->prepare( $query );
-}
 
 
 sub deleteObj {

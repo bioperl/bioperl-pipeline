@@ -49,7 +49,7 @@ use strict;
 
 
 # Object preamble - inherits from Bio::Root::Object;
-@ISA = qw(Bio::Root::RootI);
+@ISA = qw(Bio::Root::Root);
 
 # following vars are static and not meaningful on remote side
 # recreation of Job object. Not stored in db of course.
@@ -516,9 +516,12 @@ sub runInQUEUE {
   my $autoupdate = $AUTOUPDATE;
   
 
-  my $rdb = Bio::EnsEMBL::Pipeline::RunnableDB->new ( 
-                -job    => $self,
-            );
+  my $rdb = Bio::Pipeline::RunnableDB->new ( 
+                        -obobj      => $self->adaptor->db,
+                        -analysis   => $self->analysis,
+                        -runnable   => $self->runnable,
+                        -inputs     => \@{$self->inputs},
+                        );
 
   if ($err = $@) {
       print (STDERR "CREATE: Lost the will to live Error\n");

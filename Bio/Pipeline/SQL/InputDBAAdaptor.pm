@@ -56,7 +56,7 @@ package Bio::Pipeline::SQL::InputDBAAdaptor;
 use vars qw(@ISA);
 use strict;
 
-use Bio::DB::SQL::BaseAdaptor;
+use Bio::Pipeline::SQL::BaseAdaptor;
 use Bio::Pipeline::IO;
 @ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 

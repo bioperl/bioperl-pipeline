@@ -1,7 +1,7 @@
 
 =head1 NAME
 
-Bio::DB::SQL::BaseAdaptor - Base Adaptor for DB::SQL::adaptors
+Bio::Pipeline::SQL::BaseAdaptor - Base Adaptor for DB::SQL::adaptors
 
 =head1 SYNOPSIS
 
@@ -19,7 +19,7 @@ Bio::DB::SQL::BaseAdaptor - Base Adaptor for DB::SQL::adaptors
 
 =head1 DESCRIPTION
 
-This is a true base class for Adaptors in the Bio::DB::SQL
+This is a true base class for Adaptors in the Bio::Pipeline::SQL
 system. Original idea from Arne Stabenau (stabenau@ebi.ac.uk)
 
 =head1 CONTACT
@@ -40,10 +40,9 @@ package Bio::Pipeline::SQL::BaseAdaptor;
 
 use vars qw(@ISA);
 use strict;
-use Bio::Root::RootI;
-use Bio::DB::SQL::BioQuery;
+use Bio::Root::Root;
 
-@ISA = qw(Bio::Root::RootI);
+@ISA = qw(Bio::Root::Root);
 
 sub new {
     my ($class,$dbobj) = @_;

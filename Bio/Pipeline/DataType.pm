@@ -82,28 +82,38 @@ sub new {
 
 =cut
 sub create_from_input {
-  my ($self,$input) = @_;
-  $input || $self->throw("Need an input");
+  my $dummy = shift;
+  my $input = shift;
+
+  my $datatype;
 
   #can't figure out name..have to set it manually
   if (ref($input) eq ""){ #a scalar 
-    $self->object_type("");
-    $self->ref_type("SCALAR");
-    $self->name("");
+    my $datatype = Bio::Pipeline::DataType->new(   
+                -object_type    => "",
+                -reftype        => "SCALAR",
+                -name           => "",
+            );
+
   }
   elsif (ref($input) eq "ARRAY"){#an array of objects
     my $first = $input->[0];
     (ref($first) ne "") || $self->throw("Array does not contain valid data types");
-    $self->object_type(ref($first));
-    $self->ref_type("ARRAY");
-    $self->name("");
+    
+    my $datatype = Bio::Pipeline::DataType->new(   
+                -object_type    => ref($first),
+                -reftype        => "ARRAY",
+                -name           => "",
+            );
   }
   else {# a single object
-    $self->object_type(ref($input));
-    $self->ref_type("");
-    $self->name("");
+    my $datatype = Bio::Pipeline::DataType->new(   
+                -object_type    => ref($input),
+                -reftype        => "",
+                -name           => "",
+            );
   }
-  return $self;
+  return $datatype;
 }
  
 =head2 match 

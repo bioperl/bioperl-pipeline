@@ -44,7 +44,7 @@ The rest of the documentation details each of the object methods. Internal metho
 package Bio::Pipeline::SQL::RuleAdaptor;
 
 use Bio::Pipeline::Rule;
-use Bio::Root::RootI;
+use Bio::Root::Root;
 use vars qw(@ISA);
 use strict;
 
@@ -67,7 +67,7 @@ sub store {
   my ( $self, $rule ) = @_;
   my $sth = $self->prepare( q{
     INSERT INTO rule_goal
-       SET goal = ? } );
+       SET analysis_id= ? } );
   $sth->execute( $rule->goalAnalysis->dbID );
   $sth = $self->prepare( q {
     SELECT last_insert_id() } );
@@ -78,7 +78,7 @@ sub store {
     $sth = $self->prepare( qq{
       INSERT INTO rule_conditions
          SET rule_id=$dbID,
-             condition='$literal' } );
+             analysis_id='$literal' } );
     $sth->execute;
   }
   $rule->dbID( $dbID );
@@ -133,7 +133,7 @@ sub fetch_all {
   my @queryResult;
 
   my $sth = $self->prepare( q {
-    SELECT rule_id,goal
+    SELECT rule_id,analysis_id
       FROM rule_goal } );
   $sth->execute;
 
@@ -150,7 +150,7 @@ sub fetch_all {
   }
 
   $sth= $self->prepare( q{
-    SELECT rule_id, condition
+    SELECT rule_id, analysis_id
       FROM rule_conditions } );
   $sth->execute;
 
@@ -181,7 +181,7 @@ sub fetch_by_dbID {
   my $queryResult;
 
   my $sth = $self->prepare( q {
-    SELECT rule_id,goal
+    SELECT rule_id,analysis_id
       FROM rule_goal 
       WHERE rule_id = ? } );
   $sth->execute( $dbID  );
@@ -199,7 +199,7 @@ sub fetch_by_dbID {
       '-adaptor' => $self );
 
   $sth= $self->prepare( q{
-    SELECT rule_id, condition
+    SELECT rule_id, analysis_id
       FROM rule_conditions 
       WHERE rule_id = ?} );
   $sth->execute( $dbID );
@@ -246,7 +246,7 @@ sub create_tables{
   $sth = $self->prepare(qq{
     CREATE TABLE rule_conditions (
     rule_id            int not null,
-    condition  varchar(40)
+    analysis_id varchar(40)
     );
   });
   $sth->execute();
