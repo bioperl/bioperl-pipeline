@@ -84,11 +84,12 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($name,$tag,$input_handler,$dyn_arg,$job_id) = $self->_rearrange([qw(    NAME
+  my ($name,$tag,$input_handler,$dyn_arg,$job_id,$dbID) = $self->_rearrange([qw(    NAME
                                                                 TAG
                                                                 INPUT_HANDLER
                                                                 DYNAMIC_ARGUMENTS
-                                                                JOB_ID)],@args);
+                                                                JOB_ID
+                                                                DBID)],@args);
 
   $name || $self->throw("Need an input name");
 
@@ -98,6 +99,7 @@ sub new {
   $self->tag($tag);
   $self->name($name);
   $self->dynamic_arguments($dyn_arg);
+  $self->dbID($dbID) if $dbID;
   return $self;
 }    
 

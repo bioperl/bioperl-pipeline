@@ -187,6 +187,7 @@ sub fetch_fixed_input_by_dbID {
 
     my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
+                                    -dbID=>$id,
                                     -input_handler => $input_handler,
                                     -job_id => $job_id,
                                     -tag    => $input_tag,
@@ -232,6 +233,7 @@ sub fetch_new_input_by_dbID {
 
     my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
+                                    -dbID=>$id,
                                     -input_handler => $input_handler,
                                     -job_id => $job_id);
 
