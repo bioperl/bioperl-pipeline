@@ -10,7 +10,7 @@
 #
 
 =head1 NAME
- 
+
 Bio::Pipeline::Dumper::blastscore
 
 =head1 SYNOPSIS
