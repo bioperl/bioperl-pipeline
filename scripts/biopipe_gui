@@ -1,0 +1,372 @@
+#!/usr/bin/perl -w
+#######################################################
+#Job Viewer 0.1
+#Simple TK GUI for viewing job status and err
+#logs
+#AUTHOR: Shawn Hoon
+#EMAIL: shawnh-at-stanford-dot-edu
+#Require TK
+#######################################################
+
+=head1 NAME
+
+biopipe_gui - View jobs and status from Biopipe Database
+
+=head1 SYNOPSIS
+
+  Usage: biopipe_gui -dbname -dbhost -dbpass -dbdriver
+
+  -dbname
+  -dbhost
+  -dbpass
+  -dbdriver
+  -help
+
+  Default values are taken from PipeConf.pm
+
+=head1 DESCRIPTION
+
+  A simple TK gui for checking job status.
+
+=head1 AUTHOR
+
+Shawn Hoon 
+shawnh-at-stanford-dot-edu
+
+=cut
+
+use strict;
+use Tk;
+use Tk::Adjuster;
+use Tk::HList;
+use Tk::FileSelect;
+use Bio::Pipeline::SQL::DBAdaptor;
+use Getopt::Long;
+use Data::ShowTable;
+use Bio::Pipeline::XMLImporter;
+use IO::Scalar;
+use vars qw($theRow %ANAL_ALLOWED %STAGE_ALLOWED $HELP);
+use Bio::Pipeline::PipeConf qw (DBI_DRIVER
+                                DBHOST 
+                                DBNAME
+                                DBUSER
+                                DBPASS);
+
+my %gb = (
+  JOB_STATUS => "Job Summary\nNEW: \nSUBMITTED: \nFAILED: \nCOMPLETED: \nTOTAL: \n",
+  ANALYSIS_ID=>0,
+  SHOW_JOB_STATUS=>"NEW",
+  LOG_FILE=>'',
+  DBNAME =>$DBNAME,
+  DBUSER =>$DBUSER,
+  DBPASS =>$DBPASS,
+  DBHOST =>$DBHOST,
+  VIEW_LIMIT=>10,
+  XML_STATUS=>'No XML Loaded'
+
+          );
+
+my $VERSION = 0.1;
+my $DK_CLR = '#330066';
+
+
+#create the main window
+my $mw = MainWindow->new();
+$mw->title("Biopipe Viewer v$VERSION");
+
+#######################################################################################
+#Menubar Window
+#######################################################################################
+my $toplevel = $mw->toplevel();
+my $menubar = $toplevel->Menu(-type=>'menubar');
+$toplevel->configure(-menu=>$menubar);
+my $f = $menubar->cascade(-label =>'~File',-tearoff=>0);
+$f->command(-label=>'Open Pipeline XML ...', -command=>[\&OpenXMLFile,$mw],
+            -image=> $toplevel->Getimage("openfile"),-compound=>"left");
+$f->command(-label=>'Connect to DB ...', -command=>[\&ConnectToDB,$mw,\$DBNAME,\$DBHOST,\$DBUSER,\$DBPASS],
+            -image=> $toplevel->Getimage("win"),-compound=>"left");
+
+#######################################################################################
+#Analysis Window
+#######################################################################################
+my $ANALYSIS_CHOICE;
+my @anal_logicname;
+my $analysis_frame = $mw->Frame->pack(-side=>'top',-pady=>8,-padx=>8);
+
+#my $analysis_frame = $mw->Frame->pack(-side=>'left',-fill=>'y',-pady=>8,-padx=>8);
+my $analysis_section= $analysis_frame->Scrolled("HList",
+      -label=>"Analysis",
+      -header => 1,
+      -columns => 2,
+      -scrollbars => 'osoe',
+      -width => 20,
+      -selectbackground => 'green',
+      -selectmode=>'single',
+      -background => 'white',
+      -browsecmd=>[\&choose_analysis],
+           )->pack(-side=>'left');
+
+$analysis_section->header('create', 0, -text => 'ID');
+$analysis_section->header('create', 1, -text => 'Analysis');
+#my $bot = $mw->Frame->pack(-side=>'top',-fill=>'x',-padx=>8,-pady=>8);
+my $lab4 = $analysis_frame->Label(-textvariable=>\$gb{JOB_STATUS}, -justify=>'left', -fg=>'red')->pack(-side=>'left');
+
+my $job_frame= $mw->Frame->pack(-side=>'top',-fill=>'both',-padx=>7);
+my $job_info;
+my $logtxt= $analysis_frame->Scrolled('ROText',-scrollbars=>'true',-label=>"Status",-setgrid=>'true',-width=>80, -height=>10)->pack(-side=>'top');
+
+#######################################################################################
+#Job Info Window
+#######################################################################################
+
+$job_info= $job_frame->Scrolled("HList",
+      -label =>'Job Info',
+      -header => 1,
+      -columns => 12,
+      -scrollbars => 'osoe',
+      -width => 70,
+      -browsecmd=>[\&choose_job_log],
+      -selectbackground => 'SeaGreen3',
+           )->pack(-side=>'bottom',-expand => 1,-fill=>'both');
+
+$job_info->header('create', 0, -text => 'job_id');
+$job_info->header('create', 1, -text => 'status');
+$job_info->header('create', 2, -text => 'stage');
+$job_info->header('create', 3, -text => 'process_id');
+$job_info->header('create', 4, -text => 'analysis_id');
+$job_info->header('create', 5, -text => 'rule_group_id');
+$job_info->header('create', 6, -text => 'queue_id');
+$job_info->header('create', 7, -text => 'hostname');
+$job_info->header('create', 8, -text => 'stdout_file');
+$job_info->header('create', 9, -text => 'stderr_file');
+$job_info->header('create', 10, -text => 'time');
+$job_info->header('create', 11, -text => 'retry_count');
+my $view_frame = $mw->Frame->pack(-padx=>10,-pady=>10,-side=>'top');
+my $view_label = $view_frame->Label(-text=>'View Job with status: ')->pack();
+my $menubut = $view_frame->Optionmenu(-command=>[\&choose_job],-options =>[qw/NEW SUBMITTED FAILED COMPLETED/])->pack(qw/-side left -padx 8 -pady 8/);
+my $view_limit_ent =   $view_frame->LabEntry(-label => "Limit: ", -textvariable => \$gb{'VIEW_LIMIT'})->pack;
+my @STATUS=('NEW',"SUBMITTED","FAILED","COMPLETED");
+my @STAGE = ('READING','WRITING','BATCHED','RUNNING');
+
+#XML loaded info
+my $xml_label = $mw->Label(-textvariable=>\$gb{XML_STATUS}, -fg=>'red')->pack(-side=>'left');
+
+#pipeline button currently disabled
+#my $pipeline_button = $mw->Button(-text=>"Run Pipeline",-width=>10,-command=>[\&run_pipeline]);
+#$pipeline_button->pack(-side=>'bottom');
+
+
+my $DBCONNECTION;
+MainLoop;
+
+
+#connect to the database
+sub choose_job_log {
+  my $job_id = shift;
+  my @logs = @{$gb{LOG_FILE}};
+  open(FILE,$logs[$job_id]);
+  print $logs[$job_id]."\n";
+  my $line;
+  while(<FILE>){
+    $line.=$_;
+  }
+  close(FILE);
+  $line||="Empty Log\n";
+  print $line;
+#  $logwin->title($logs[$job_id]);
+  &clear_job_log();
+  $logtxt->insert('insert',$line);
+#n  $logwin->update;
+}
+sub clear_job_log {
+  $logtxt->selectAll;
+  $logtxt->deleteSelected;
+}
+sub update_status {
+  my ($line) = @_;
+#  &clear_job_log;
+  $logtxt->insert('insert',$line);
+}
+  
+
+sub choose_job {
+  my $status = shift;
+  $gb{SHOW_JOB_STATUS} = $status;
+  $job_info->label("Job Info: $status");
+#  return unless $gb{ANALYSIS_ID};
+  return unless $DBCONNECTION;
+  print $status."\n";
+  my @job;
+  @job = $DBCONNECTION->get_JobAdaptor->fetch_jobs(-number=>$gb{'VIEW_LIMIT'},-analysis_id=>$gb{ANALYSIS_ID}+1,-status=>[$status]);
+  
+  my @data = ();
+  my @log = ();
+  foreach my $j(@job){
+    print $j->dbID."\n";
+    my @D = ($j->dbID,$j->status,$j->stage,$j->process_id,$gb{ANALYSIS_ID}+1,$j->rule_group_id,$j->queue_id,$j->hostname,$j->stdout_file,$j->stderr_file,'',$j->retry_count);
+    push @log, $j->stderr_file if $j->stderr_file;
+    push @data,\@D;
+  }
+ $gb{LOG_FILE} = [@log];
+ ShowData($job_info,[1,1, 1, 1, 1, 1, 1, 1, 1, 1, 1],@data);
+}
+
+sub clear_job_info {
+ $job_info->delete('all'); 
+}
+
+sub clear_analysis_info {
+  print STDERR "Clearing analysis\n";
+ $analysis_section->delete('all'); 
+ $analysis_section->update();
+}
+sub choose_analysis {
+  my $anal_id= shift;
+  print STDERR "Choose Analysis\n";
+  $gb{ANALYSIS_ID} = $anal_id;
+  $anal_id+=1;
+  print STDERR "Retrieving Analysis $anal_id\n";
+  my $analysis_name = $anal_logicname[$anal_id]->[1];
+  my $analysis_obj = $DBCONNECTION->get_AnalysisAdaptor->fetch_by_dbID($anal_id);
+  
+  #update status window on analysis information
+  &clear_job_log();
+  my $anal_info = "Analysis $analysis_name\ndbID: $anal_id\ndb:". $analysis_obj->db."\ndb_file:".$analysis_obj->db_file."\nprogram: ".$analysis_obj->program.
+  "\nprogram_file: ".$analysis_obj->program_file."\nanalysis parameters: ".$analysis_obj->analysis_parameters."\nrunnable parameters:".$analysis_obj->runnable_parameters.
+  "\nqueue: ".$analysis_obj->queue."\n";
+
+  $logtxt->insert('insert',$anal_info);
+
+
+  print $analysis_name."\n";
+  my @data=();
+  my @failed = ();
+  my @stagedata=();
+  my $ttotal;
+  foreach my $status(@STATUS){
+    my ($count1, $total);
+    if($status ne 'COMPLETED') { #different table for completed jobs
+    $count1 = $DBCONNECTION->get_JobAdaptor->get_job_count(-status=>[$status],-analysis_id=>$anal_id);
+    $total  = $count1;
+    }
+    else {
+      $count1= $DBCONNECTION->get_JobAdaptor->get_completed_job_count(-analysis_id=>$anal_id);
+      $total= $count1;
+    }
+    $ttotal+=$total;
+    push @data,$total;
+  }
+  push @data,$ttotal;
+  print join(":",@data)."\n";
+  $gb{JOB_STATUS} = "Job Summary\nNEW: ".$data[0]."\nSUBMITTED: ".$data[1]."\nFAILED: ".$data[2]."\nCOMPLETED: ".$data[3]."\nTOTAL: ".$data[4]."\n";
+  $analysis_frame->update();
+#  &clear_job_log();
+  &clear_job_info();
+  &choose_job($gb{SHOW_JOB_STATUS});
+}
+sub ConnectToDB {
+  my $w = shift;
+  my $d = $w->DialogBox(-title=>"Connect to Biopipe Database",-buttons=>["OK","Cancel"]);
+  my $f = $d->LabFrame(-label => "Database Parameters", -labelside => "acrosstop");
+  my $dbpass;
+  $f->LabEntry(-label => "Database Name: ", -textvariable => \$gb{'DBNAME'})->pack;
+  $f->LabEntry(-label => "Database Host: ", -textvariable => \$gb{'DBHOST'})->pack;
+  $f->LabEntry(-label => "Database User: ", -textvariable => \$gb{'DBUSER'})->pack;
+  $f->LabEntry(-label => "Database Pass: ", -show=>"*",-textvariable => \$dbpass)->pack;
+  $f->pack;
+  my $button = $d->Show;
+  return if $button eq 'Cancel';
+  $gb{DBPASS} = $dbpass;
+  &update_analysis;
+
+}
+
+sub update_analysis {
+  print STDERR "Updating Analysis\n";
+#fetch all analysis
+  eval {$DBCONNECTION = Bio::Pipeline::SQL::DBAdaptor->new(
+                                                -host=>$gb{DBHOST},
+                                                -dbname=>$gb{DBNAME},
+                                                -user=>$gb{DBUSER},
+                                                -pass=>$gb{DBPASS});};
+
+  if($@){
+    my $d = $mw->messageBox(-message=>"Unable to connect to database ".$gb{DBNAME},-type=>'Ok');
+    return;
+  }
+  my @anal = $DBCONNECTION->get_AnalysisAdaptor->fetch_all;
+  @anal_logicname = map{[$_->dbID,$_->logic_name]}@anal;
+  my $title = ['id',"Analysis"];
+  my (@types,@width,@Data);
+  foreach my $i(0..$#anal_logicname){
+    print STDERR $anal_logicname[$i]->[1]."\n";
+    push @Data,[$anal_logicname[$i]->[0],$anal_logicname[$i]->[1]];
+    push @types,'char';
+    $ANAL_ALLOWED{$anal_logicname[$i]->[0]}++;
+  }
+  #show available analysis
+  &clear_analysis_info();
+  ShowData($analysis_section,$title,@Data);
+}
+  
+#load the XML file into database
+sub OpenXMLFile{
+    my $w = shift;
+    my $operation ||='open';
+    my $types;
+    my $file;
+    my @types =
+      (["XML files",           [qw/.xml/]],
+      );
+    if ($operation eq 'open') {
+  $file = $w->getOpenFile(-filetypes => \@types);
+    } else {
+  $file = $w->getSaveFile(-filetypes => \@types,
+        -initialfile => 'Untitled',
+        -defaultextension => '.txt');
+    }
+    $file || return;
+    &update_status("Loading XML $file\n");
+    my $importer = Bio::Pipeline::XMLImporter->new (
+                                                -dbhost=>$gb{DBHOST},
+                                                -dbname=>$gb{DBNAME},
+                                                -dbuser=>$gb{DBUSER},
+                                                -dbpass=>$gb{DBPASS},
+                                                -schema=>'/Users/shawn/Work/IBM/cvs_src/bioperl-pipeline/sql/schema.sql',
+                                                -xml   =>$file); 
+    my $xml_log;
+    tie *STDERR, 'IO::Scalar',\$xml_log;
+    
+    my $loaded = $importer->run(1);
+    untie *STDOUT;
+    &update_status($xml_log);
+    
+    if (!$loaded){
+          &update_status("Unable to load XML successfully\n Please check your parameters on the xml template");
+    }
+    else {
+        &update_status("XML $file loaded successfully\n");
+        &update_analysis();
+        $gb{XML_STATUS} = "XML: $file";
+        $mw->update;
+    }
+
+}
+
+sub ShowData {
+  my ($sec,$title,@Data) = @_;
+  my $size = scalar(@$title);
+  print STDERR "ShowData\n";
+  my $size2 = scalar(@Data);
+  print STDERR $size2."\n";
+  &clear_job_info();
+  foreach my $ind(0..$size2-1){
+    print STDERR ref($sec)."\n";
+    eval {$sec->add($ind) };
+    foreach my $ind2(0..$size-1){
+    print $Data[$ind][$ind2]."\n";
+    print STDERR "No Exists $ind $ind2\n";
+    $sec->itemCreate($ind, $ind2, -text => $Data[$ind][$ind2]);
+    }
+  }
+}  
