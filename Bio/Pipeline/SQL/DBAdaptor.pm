@@ -137,13 +137,14 @@ sub new {
     if ( ! $port ) {
         $port = 3306; 
     }
-    if (! $password) {
-        $password ='';
-    }
-
-
+    $password ||=undef;
   my $dsn = "DBI:$driver:database=$db;host=$host;port=$port";
-  my $dbh = DBI->connect("$dsn","$user","$password", {RaiseError => 1}) || $self->throw("Could not connect to database $db user $user using [$dsn] as a locator");
+  my @params = ("$dsn","$user");
+  
+  push @params,$password ? "$password":"";
+  push @params, {RaiseError => 1};
+
+  my $dbh = DBI->connect(@params) || $self->throw("Could not connect to database $db user $user using [$dsn] as a locator");
 
   $self->_db_handle($dbh);
   $self->username( $user );
@@ -153,6 +154,91 @@ sub new {
   $self->password($password);
 
   return $self; # success - we hope!
+}
+
+=head2 dbname
+
+ Title   : dbname
+ Function: get/set for dbname
+ Example :
+ Returns : a string 
+ Args    : a string specifying the dbname 
+
+=cut
+
+sub dbname {
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_dbname} = $arg );
+  $self->{_dbname};
+}
+
+=head2 port
+
+ Title   : port
+ Function: get/set for port
+ Example :
+ Returns : a string
+ Args    : a string specifying the port number
+
+=cut
+
+sub port {
+    my ($self,$port) = @_;
+    (defined $port ) && ($self->{_port} = $port);
+    return $self->{_port};
+}
+
+=head2 username
+
+ Title   : username
+ Function: get/set for username
+ Example :
+ Returns : a string
+ Args    : a string specifying the username
+
+=cut
+
+sub username {
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_username} = $arg );
+  $self->{_username};
+}
+
+=head2 password
+
+ Title   : password
+ Function: get/set for password
+ Example :
+ Returns : a string
+ Args    : a string specifying the password
+
+=cut
+
+sub password{
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_password} = $arg );
+  $self->{_password};
+}
+
+=head2 host
+
+ Title   : host
+ Function: get/set for host
+ Example :
+ Returns : a string
+ Args    : a string specifying the host
+
+=cut
+
+sub host {
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_host} = $arg );
+  $self->{_host};
+
 }
 
 =head2 dbname
