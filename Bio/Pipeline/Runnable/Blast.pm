@@ -169,7 +169,6 @@ sub run {
   if ($self->analysis->parameters){
     my @params = $self->parse_params($self->analysis->parameters);
     my %param = @params;
-    @param{ map { lc $_ } keys %param} = values %param; #lowercase keys
     if($param{'return_type'}){
         $return_type = $param{'return_type'};
         delete $param{'return_type'};
