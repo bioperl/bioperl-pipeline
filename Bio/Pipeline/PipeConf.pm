@@ -87,7 +87,7 @@ use vars qw (%PipeConf);
     #number of temp directories in NFS_TMP_DIR. This allows for file management so that we 
     #don't have too many files in a single directory
 
-    NUM_TMP_DIR => 100
+    NUM_TMP_DIR => 100,
 
     ##############################################
     # PARAMS FROM HERE ON NOT SUPPORTED CURRENTLY FOR FUTURE DEV

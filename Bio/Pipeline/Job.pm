@@ -72,7 +72,7 @@ use Bio::Pipeline::RunnableDB;
 
 # several variables needed from PipeConf.pm
 use Bio::Pipeline::PipeConf qw ( NFSTMP_DIR
-                                 $NUM_TMP_DIR
+                                 NUM_TMP_DIR
                                );
 
 use vars qw(@ISA);
