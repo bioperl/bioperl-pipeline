@@ -10,6 +10,7 @@
 #
 
 =head1 NAME
+
 Bio::Pipeline::Dumper
 
 Object for dumping output from pipeline to flat files
@@ -35,6 +36,28 @@ Object for dumping output from pipeline to flat files
   }
 
   $dumper->dump(@hit);
+
+#or 
+  use Bio::TreeIO;
+  use Bio::Pipeline::Dumper;
+
+  my $tio = Bio::TreeIO->new(-file=>$ARGV[0],-format=>"newick");
+
+  while(my $tree =$tio->next_tree){
+    push @tree, $tree;
+  }
+
+  my $du = Bio::Pipeline::Dumper->new(-module=>"generic",
+                                      -format=>"newick",
+                                      -dir=>"/usr/users/shawnh/src/bioperl-pipeline/Bio/Pipeline/Dumper",
+                                      -file_suffix=>".tr",
+                                      -prefix=>"tree");
+
+  #dumps to file tree.tr
+  $du->dump(\@tree);
+
+
+
 
 =head1 DESCRIPTION
 
@@ -77,7 +100,6 @@ use vars qw(@ISA);
 use strict;
 use Bio::Root::Root;
 use Bio::Root::IO;
-use Fcntl ':flock';
 
 @ISA = qw(Bio::Root::Root Bio::Root::IO);
 
@@ -114,21 +136,27 @@ sub new {
       delete $param{'-dir'};
       my $prefix = $param{'-prefix'};
       delete $param{'-prefix'};
+      my $file_suffix = $param{'-file_suffix'};
+      delete $param{'-file_suffix'};
       $file || $dir || Bio::Root::Root->throw("You must provide an output file ");
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_Dumper_module($module));
       my ($self) =  "Bio::Pipeline::Dumper::$module"->new(@args);
       $self->module($module);
-      my $sem = $file.".lck";
-      $sem=~s/>//g;
-      $self->_semaphore($sem);
+      $file = shift @{$file} if ref($file) eq "ARRAY";
       $self->_file($file) if $file;
-      if($dir){
-        mkdir($dir,0755) || $self->warn("$dir: $!");
+
+      if($dir && (!-e $dir)){
+         mkdir($dir,0755) || $self->warn("$dir: $!");
       }
       $self->_dir($dir) if $dir;
+
+      $prefix = shift @{$prefix} if ref($prefix) eq "ARRAY";
+      $self->_file($file) if $file;
       $self->_prefix($prefix) if $prefix;
+      $self->_file_suffix($file_suffix) if $file_suffix;
+
       @args = %param;
       $self->_initialize(@args);
       return $self;
@@ -141,17 +169,10 @@ sub _initialize {
     if(!$file && $self->_dir && $self->_prefix){
       ($file) = (split /\//, $self->_prefix)[-1]; #get the filename only
       $file = ">".$self->_dir."/$file";
+      $file.=".".$self->_file_suffix if $self->_file_suffix;
     }
     # initialize the IO part for only
     $self->_initialize_io(-file=>$file);
-}
-
-sub _semaphore {
-    my ($self,$semaphore) = @_;
-    if($semaphore){
-        $self->{'_semaphore'} = $semaphore;
-    }
-    return $self->{'_semaphore'};
 }
 
 sub _file {
@@ -176,6 +197,14 @@ sub _prefix {
         $self->{'_prefix'} = $prefix;
     }
     return $self->{'_prefix'};
+}
+
+sub _file_suffix {
+    my ($self,$suffix) = @_;
+    if($suffix) {
+        $self->{'_file_suffix'} = $suffix;
+    }
+    return $self->{'_file_suffix'};
 }
 
 =head2 _load_Dumper_module
@@ -261,56 +290,9 @@ sub dump{
   $self->throw_not_implemented();
 }
 
-=head2 _lock 
-
-  Title   : _lock 
-  Usage   : $self->lock($FH);
-  Function: locks a file handle 
-  Returns :
-  Args    : a FileHandle
-
-=cut
-
-sub _lock {
-  my ($self) = @_;
-
-  my $dir= $self->_semaphore;
-  mkdir $dir, 0777 or die "Can't make lock directory";
-  my %db;
-  dbmopen %db, "$dir/db", 0666;
-    $db{'started'} = time();
-    $db{'user'}    = getlogin();
-  dbmclose %db;
-}
-
-=head2 _unlock
-
-  Title   : _unlock
-  Usage   : $self->_lock($FH);
-  Function: unlocks a file handle
-  Returns :
-  Args    : a FileHandle
-
-=cut
-
-sub _unlock {
-  my ($self) = @_;
-  my $dir = $self->_semaphore;
-  unlink "$dir/db.pag";
-  unlink "$dir/db.dir";
-  unlink "$dir/db.db";
-  unlink "$dir/db";
-  rmdir $dir;
-}
-
 sub _print {
     my ($self) = shift;
-
     my $fh = $self->_fh;
-    while(-e $self->_semaphore){
-    }
-    $self->_lock($fh);
-    print $fh @_;
-    $self->_unlock($fh);
+    $fh->flush;
 }
 1;
