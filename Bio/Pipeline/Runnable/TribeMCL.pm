@@ -73,33 +73,13 @@ Args    :
 sub datatypes {
   
   my ($self) = @_;
-  my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::Search::Hit::GenericHit',
-                                        '-name'=>'sequence',
-                                        '-reftype'=>'ARRAY');
-                                          
+  my $dt = Bio::Pipeline::DataType->new('-match'=>0);
+
   my %dts;
 
-  $dts{protein} = $dt;
+  $dts{datatypes} = $dt;
   return %dts;
 
-}
-
-=head2 protein
-
-Title   :   protein
-Usage   :   $self->protein($protein)
-Function:   get/set for array ref of protein blast scores
-Returns :
-Args    :
-
-=cut
-
-sub protein{
-    my ($self,$ref) = @_;
-    if (defined($ref)){
-        $self->{'_ref'} = $ref;
-    }
-    return $self->{'_ref'};
 }
 
 
@@ -116,11 +96,20 @@ Args    :
 sub run {
   my ($self) = @_;
   my $err;
-  my $protein = $self->protein || $self->throw("Input Proteins not set!");
+#  my $protein = $self->protein || $self->throw("Input Proteins not set!");
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
+  my $file;
   if($self->analysis->parameters){
     my @params = $self->parse_params($self->analysis->parameters);
+    my %hash = @params;
+    my $blastdir = $hash{'blastdir'}  || $self->throw("Need the location of the blast directory");
+    $file = $blastdir."/blast_out.".time().rand(1000);
+    delete $hash{'blastdir'};
+    system("cat $blastdir/* > $file");
+    @params = %hash;
+    push @params, ("scorefile"=>$file);
+
     $factory = Bio::Tools::Run::TribeMCL->new(@params);
   }
   else {
@@ -128,8 +117,9 @@ sub run {
   }
   my @clusters;
   eval {
-      @clusters = $factory->run($protein);
+      @clusters = $factory->run();
   };
+  unlink $file;
   if($err = $@){
       $self->throw("Problems running TribeMCL for \n[$err]\n");
   }
