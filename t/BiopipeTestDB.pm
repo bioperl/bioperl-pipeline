@@ -59,6 +59,8 @@ my $counter=0;
         port
         password
         schema_sql
+        xml_script
+        pipeline_manager
         module
         );
 
@@ -72,28 +74,28 @@ my $counter=0;
         $counter++;
 
         my $self =undef;
-	$self = do 'BiopipeTestDB.conf'
-	    || {
-		'driver'        => 'mysql',
-		'host'          => 'localhost',
-		'user'          => 'root',
-		'port'          => '3306',
-		'password'      => undef,
-		'schema_sql'    => ['../sql/table.sql'],
-		'module'        => 'Bio::Pipeline::SQL::DBAdaptor'
-		};
-	if ($arg) {
-	    if  (ref $arg eq 'HASH' ) {  # a hash ref
+      	$self = do 'BiopipeTestDB.conf'
+	              || {
+                		'driver'        => 'mysql',
+                		'host'          => 'localhost',
+                		'user'          => 'root',
+                		'port'          => '3306',
+                		'password'      => undef,
+                		'schema_sql'    => ['../sql/table.sql'],
+                 		'module'        => 'Bio::Pipeline::SQL::DBAdaptor'
+                		};
+       	if ($arg) {
+    	    if  (ref $arg eq 'HASH' ) {  # a hash ref
                 foreach my $key (keys %$arg) {
-		    $self->{$key} = $arg->{$key};
-		}
-	    }
-	    elsif (-f $arg )  { # a file name
-		$self = do $arg;
-	    } else {
-		confess "expected a hash ref or existing file";
-	    }
-	}
+          		    $self->{$key} = $arg->{$key};
+            		}
+    	    }
+    	    elsif (-f $arg )  { # a file name
+        		$self = do $arg;
+    	    } else {
+        		confess "expected a hash ref or existing file";
+	        }
+      	}
         
         foreach my $f (keys %$self) {
             confess "Unknown config field: '$f'" unless $known_field{$f};
@@ -157,6 +159,22 @@ sub schema_sql {
         push(@{$self->{'schema_sql'}}, $value);
     }
     return $self->{'schema_sql'} || confess "schema_sql not set";
+}
+
+sub xml_script {
+    my ($self,$val) = @_;
+    if($val){
+        $self->{'xml_script'} = $val;
+    }
+    return $self->{'xml_script'} || confess 'Xml2Db.pl not set';
+}
+
+sub pipeline_manager {
+    my ($self,$val) = @_;
+    if($val){
+        $self->{'pipeline_manager'} = $val;
+    }
+    return $self->{'pipeline_manager'} || confess 'PipelineManager.pl not set';
 }
 
 sub dbname {
@@ -316,6 +334,34 @@ sub do_sql_file {
     }
     return $i;
 }                                       # do_sql_file
+
+sub do_xml_file {
+    my ($self,$file) = @_;
+    $file || confess "Must pass in XML file";
+
+    my $xml_script = "perl ".$self->xml_script;
+    $xml_script .= " -dbhost ".$self->host if $self->host;
+    $xml_script .= " -dbname ".$self->dbname if $self->dbname;
+    $xml_script .= " -dbuser ".$self->user if $self->user;
+    $xml_script .= " -schema ".@{$self->schema_sql}[0] if $self->schema_sql;
+    $xml_script .= " -p ".$file ." -f\n";
+
+    my $status = system($xml_script);
+    confess ("Problem running $xml_script") if $status > 0;
+    return;
+}
+
+sub run_pipeline {
+    my ($self) = @_;
+    my $manager = "perl ".$self->pipeline_manager;
+    $manager.= " -dbname ".$self->dbname;
+    $manager.=" -l -f ";
+    my $status = system($manager);
+    confess ("Problem running $manager ") if $status > 0;
+    return;
+}
+    
+    
 
 sub validate_sql {
     my ($self, $statement) = @_;
