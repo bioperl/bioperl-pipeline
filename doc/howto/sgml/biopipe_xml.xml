@@ -130,9 +130,11 @@ You will also see a section labelled "rule":
       &lt;action&gt;NOTHING&lt;/action&gt;
     &lt;/rule&gt;
 </programlisting>
-In simple pipelines like this the &lt;action&gt; 
-of the rule is "NOTHING" meaning, essentially, that no action will be taken after the Blast
-analysis. We will examine rules and their role in more complex pipelines in a later section.
+Note that this section stands alone, apart from the analyses, and it contains instructions 
+relating the various analyses and uses the analysis id's as references. In this case 
+the &lt;action&gt; of the rule is "NOTHING" meaning that no specific rule
+should be applied after preprocessing and before the blastall run. We will examine rules and 
+their role in more complex pipelines in a later section.
 </para>
 Our pipeline description ends with an empty &lt;job_setup&gt; section. This section, if it were used,
 would be concerned with pre-processing. In fact &lt;job_setup&gt; is rarely used, most pipeliners
@@ -213,7 +215,6 @@ Recall that we characterized the first &lt;analysis&gt; section as concerned wit
 2 lines below, in <emphasis>italics</emphasis>:
 <programlisting>
     &lt;analysis id="2"&gt;
-       &lt;logic_name&gt;Blast&lt;/logic_name&gt;
        &lt;runnable&gt;Bio::Pipeline::Runnable::Blast&lt;/runnable&gt;
        &lt;db&gt;family&lt;/db&gt;
        <emphasis>&lt;db_file&gt;/Users/admin/programming/biopipe/testdb.fa&lt;/db_file&gt;</emphasis>
@@ -225,20 +226,32 @@ Recall that we characterized the first &lt;analysis&gt; section as concerned wit
     &lt;/analysis&gt;
 </programlisting>
 In this last &lt;analysis&gt; section we changed &lt;db_file&gt; and &lt;program_file&gt; to 
-reflect the correct locations. The last 2 lines of this second &lt;analysis&gt; section deserve 
-comment. The first line, &lt;analysis_parameters&gt;, contains arguments that are passed 
+reflect the correct locations. In fact, the &lt;program_file&gt; and &lt;program&gt; sections
+are closely related: if &lt;program_file&gt; is specified there is no need for
+&lt;program&gt;. If &lt;program&gt; is specified and the executable can be found using the $PATH
+variable then there's no need for &lt;program_file&gt;. If both are specified then the 
+value in &lt;program_file&gt; is used.
+</para>
+<para>
+</para>
+<para>
+The last 2 lines of this second &lt;analysis&gt; section deserve 
+comment. One line, &lt;analysis_parameters&gt;, contains arguments that are passed 
 to the executable blastall, this is where you'll set analytical thresholds. The principle is
 that Biopipe does not participate in filtering, you want to do as much filtering by threshold,
- or cutoffs, as you can using the executable itself. The second of 
-the 2 lines, &lt;runnable_parameters&gt;, 
+ or cutoffs, as you can using the executable itself. The other line, &lt;runnable_parameters&gt;, 
 contains arguments that are passed to the "runnable". The runnable is a lightweight 
 Biopipe module that acts as interface between the 
 executable, like blastall, and the corresponding Bioperl modules that run the executables and 
-parse their output. Finally, one could modify &lt;family&gt;. This section is for
+parse their output. The runnable is also responsible for input/output of file and database 
+content and plays a role in chaining analyses together, we will discuss this below in the context
+of more complex pipelines. 
+</para>
+<para>
+Finally, one could modify &lt;family&gt;. This section is for
 XML documentation purposes only, it's not used by Biopipe nor does it appear later in the
 database or in a report.
 </para>
-
 </section>
 
 <section id="Creation">
@@ -252,6 +265,13 @@ the existing pipelines, when you'll have to think about your proposed pipeline i
 <para>
 
 To be continued...
+
+Bio::Tools contains parsers.
+input_create defines input (e.g. 1 seq? or 2? as in bl2seq)
+rules in schema.sql?
+logic_name v. analysis id
+runnable dir (e.g. -blast_dir) must match Dumper's -dir
+
 
 </para>
 </section>
