@@ -88,7 +88,7 @@ use Bio::Pipeline::Input;         # used in _create_new_job
 
 use Bio::Root::Root;
 
-use vars qw(@ISA @autoload_methods);
+use vars qw($AUTOLOAD @ISA @autoload_methods);
 @ISA = qw(Bio::Root::Root);
 
 BEGIN {
