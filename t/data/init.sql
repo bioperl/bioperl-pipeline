@@ -28,7 +28,7 @@ INSERT INTO argument VALUES (1,1,'-file','t/data/testin.fa',1,'SCALAR');
 INSERT INTO argument VALUES (2,1,'-format','Fasta',2,'SCALAR');
 INSERT INTO argument VALUES (3,3,'-file','>t/data/testout.fa',1,'SCALAR');
 INSERT INTO argument VALUES (4,3,'-format','Fasta',2,'SCALAR');
-INSERT INTO argument VALUES (5,4,NULL,'OUTPUT',1,'ARRAY');
+INSERT INTO argument VALUES (5,4,NULL,'!OUTPUT!',1,'ARRAY');
 
 #
 # Dumping data for table 'completed_jobs'

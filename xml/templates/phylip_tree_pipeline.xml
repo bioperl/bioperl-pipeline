@@ -212,7 +212,7 @@ both to database or files depending on one's specification.
       </argument>
       <argument>
         <tag>-prefix</tag>
-        <value>INPUT</value>
+        <value>!INPUT!</value>
         <type>SCALAR</type>
       </argument>
       <argument>
@@ -227,7 +227,7 @@ both to database or files depending on one's specification.
     <method>
      <name>dump</name>
      <argument>
-       <value>OUTPUT</value>
+       <value>!OUTPUT!</value>
      </argument>
      </method>
      </iohandler>
@@ -247,7 +247,7 @@ both to database or files depending on one's specification.
       </argument>
       <argument>
         <tag>-prefix</tag>
-        <value>INPUT</value>
+        <value>!INPUT!</value>
         <type>SCALAR</type>
       </argument>
       <argument>
@@ -262,7 +262,7 @@ both to database or files depending on one's specification.
     <method>
      <name>dump</name>
      <argument>
-       <value>OUTPUT</value>
+       <value>!OUTPUT!</value>
      </argument>
      </method>
      </iohandler>
@@ -282,7 +282,7 @@ both to database or files depending on one's specification.
       </argument>
       <argument>
         <tag>-prefix</tag>
-        <value>INPUT</value>
+        <value>!INPUT!</value>
         <type>SCALAR</type>
       </argument>
       <argument>
@@ -297,7 +297,7 @@ both to database or files depending on one's specification.
     <method>
      <name>dump</name>
      <argument>
-       <value>OUTPUT</value>
+       <value>!OUTPUT!</value>
      </argument>
      </method>
      </iohandler>
@@ -317,7 +317,7 @@ both to database or files depending on one's specification.
       </argument>
       <argument>
         <tag>-prefix</tag>
-        <value>INPUT</value>
+        <value>!INPUT!</value>
         <type>SCALAR</type>
       </argument>
       <argument>
@@ -332,7 +332,7 @@ both to database or files depending on one's specification.
     <method>
      <name>dump</name>
      <argument>
-       <value>OUTPUT</value>
+       <value>!OUTPUT!</value>
      </argument>
      </method>
      </iohandler>
@@ -352,7 +352,7 @@ both to database or files depending on one's specification.
       </argument>
       <argument>
         <tag>-prefix</tag>
-        <value>INPUT</value>
+        <value>!INPUT!</value>
         <type>SCALAR</type>
       </argument>
       <argument>
@@ -367,7 +367,7 @@ both to database or files depending on one's specification.
     <method>
      <name>dump</name>
      <argument>
-       <value>OUTPUT</value>
+       <value>!OUTPUT!</value>
      </argument>
      </method>
      </iohandler>

@@ -215,7 +215,7 @@ choice (for example BioSQL database)
         <argument>
           <tag>-prefix</tag>
           <type>SCALAR</type>
-          <value>INPUT</value>
+          <value>!INPUT!</value>
           <rank>2</rank>
         </argument>
         <argument>
@@ -235,7 +235,7 @@ choice (for example BioSQL database)
         <name>dump</name>
         <rank>2</rank>
         <argument>
-          <value>OUTPUT</value>
+          <value>!OUTPUT!</value>
           <type>ARRAY</type>
           <rank>1</rank>
         </argument>
@@ -255,7 +255,7 @@ choice (for example BioSQL database)
       <method>
         <name>get_Seq_by_id</name>
         <argument>
-          <value>INPUT</value>
+          <value>!INPUT!</value>
         </argument>
         <rank>2</rank>
       </method>
@@ -274,7 +274,7 @@ choice (for example BioSQL database)
       <method>
         <name>get_Seq_by_id</name>
         <argument>
-          <value>INPUT</value>
+          <value>!INPUT!</value>
         </argument>
         <rank>2</rank>
       </method>
