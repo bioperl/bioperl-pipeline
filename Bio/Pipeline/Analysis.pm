@@ -109,7 +109,9 @@ sub test_and_setup {
   my ($self) = @_;
   my $program = $self->program;
   my $db_file = $self->db_file;
-  $self->exists_program ||$self->throw("Program $program doesn't exist or not executable");
+
+  #currently doesn't throw if no program or program file as some runnables don't need executables
+  ($self->program || $self->program_file) && ($self->exists_program ||$self->throw("Program $program doesn't exist or not executable"));
   if($self->db_file){
     ($self->exists_db_file) || $self->throw("DB File $db_file doesn't exist");
   }
