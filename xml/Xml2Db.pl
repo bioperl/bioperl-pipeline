@@ -457,7 +457,8 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
     	my $program_file = $analysis->child('program_file');
     	my $db = $analysis->child('db');
     	my $db_file = $analysis->child('db_file');
-    	my $parameters = $analysis->child('parameters');
+    	my $analysis_parameters = $analysis->child('analysis_parameters');
+    	my $runnable_parameters = $analysis->child('runnable_parameters');
     	my $logic_name = $analysis->child('logic_name');
 
    	if(defined($logic_name)){
@@ -475,8 +476,11 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
    	if (defined($db_file)){
       		$analysis_obj->db_file($db_file->value)
    	}
-   	if (defined($parameters)){
-      		$analysis_obj->parameters($parameters->value)
+   	if (defined($analysis_parameters)){
+      		$analysis_obj->analysis_parameters($analysis_parameters->value)
+   	}
+   	if (defined($runnable_parameters)){
+      		$analysis_obj->runnable_parameters($runnable_parameters->value)
    	}
     }
    my $nodegroup_id = $analysis->child('nodegroup_id');
