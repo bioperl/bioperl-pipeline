@@ -395,7 +395,7 @@ sub fetch_input {
         my @new_method;
         foreach my $method(@methods){
             my @arguments = @{$method->arguments};
-            my @args = $self->_format_input_arguments($input,$obj,@arguments);
+            my @args = $self->_format_input_arguments($obj,@arguments); 
             $method->arguments(\@args);
             push @new_method, $method;
         }
@@ -404,13 +404,18 @@ sub fetch_input {
       }
       
       my $tran = shift @new_trans;
-      my $obj = $tran->run($obj);
+      $obj = $tran->run($obj);
       foreach my $tran(@new_trans){
         if(defined $tran){
-          $obj = $tran->run($obj);
+          my @obj = $tran->run($obj);
+          if(scalar(@obj) == 1){
+            $obj = $obj[0];
+          }
+          else {
+            $obj = \@obj;
+          }
         }
       }
-      $obj= $obj;
     }
     
     #destroy handle only if its a dbhandle
