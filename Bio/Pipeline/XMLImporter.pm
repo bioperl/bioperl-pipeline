@@ -85,6 +85,7 @@ use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Filter;
 use Bio::Pipeline::Converter;
+use ExtUtils::MakeMaker;
 
 use vars qw(@ISA);
 use Bio::Root::Root;
