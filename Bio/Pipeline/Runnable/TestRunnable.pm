@@ -4,7 +4,7 @@ package Bio::Pipeline::Runnable::TestRunnable;
 use vars qw(@ISA);
 use strict;
 use Bio::Pipeline::RunnableI;
-use Bio::EnsEMBL::SeqFeature;
+use Bio::SeqFeature::Generic;
 use Bio::SeqIO;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
@@ -29,29 +29,20 @@ sub datatypes {
                                           -name=>"sequence",
                                           -reftype=>"SCALAR");
     my %dt;
-    $dt{set_seq} = $dt;
+    $dt{seq} = $dt;
     return %dt;
-}
-sub set_seq {
-    my ($self,$seq) = @_;
-    $seq->isa("Bio::PrimarySeqI") || $self->throw("Bio::PrimarySeqI");
-    $self->seq($seq);
 }
 sub run {
     my ($self) = @_;
     my $seq = $self->seq();
     $seq || $self->throw("Input seq not set!");
-    print STDERR "Creating temp file for sequence\n";
-    my $out = Bio::SeqIO->new(-file=>">seq",-format=>'FASTA');
-    $out->write_seq($self->seq);
+    my $rev = $seq->revcom;
+    $self->output($rev);
 
-    print STDERR "Result file: /tmp/Results_test.tmp\n";
-    $self->result("/tmp/Results_test.tmp");
+#    $self->run_analysis();   
+ #   print STDERR "Parsing Results....\n";
 
-    $self->run_analysis();   
-    print STDERR "Parsing Results....\n";
-
-    $self->parse_results();
+   # $self->parse_results();
 }
 sub analysis {
     my ($self,$value) = @_;
@@ -82,15 +73,15 @@ sub run_analysis {
 
 sub parse_results {
     my ($self) = @_;
+    
     my $rfh = $self->result();
     open (RESULTS,$rfh);
     my @feats;
     while (<RESULTS>){
         my $line = $_;
         my ($start,$end,$strand) = split("\t",$line);
-        my $feat = new Bio::EnsEMBL::SeqFeature(-seqname=>'Scaffold_267_153',
+        my $feat = new Bio::SeqFeature::Generic(-seqname=>'Scaffold_267_153',
                                                 -start =>$start,
-                                                -analysis=>$self->analysis,
                                                 -end   =>$end,
                                                 -score =>100,
                                                 -source_tag=>"source_tag",
@@ -102,9 +93,9 @@ sub parse_results {
 
 }
 sub output {
-    my ($self,@feats) = @_;
-    if (@feats){
-       @{$self->{'_output'}} = @feats;
+    my ($self,$seq) = @_;
+    if ($seq){
+       @{$self->{'_output'}} = $seq;
    }
    return @{$self->{'_output'}};
 }
