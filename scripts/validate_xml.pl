@@ -10,13 +10,14 @@
 # POD documentation - main docs after the code
 
 use strict;
-use vars qw($USAGE);
 use XML::SAX::ParserFactory;
 use XML::Validator::Schema;
 use Getopt::Long;
 
-$USAGE = "validate_xml.pl [-h] [-xsd (../xml/pipeline.xsd)] [-xml]\n";
-my ($xsd) = "../xml/pipeline.xsd";
+my $USAGE = "validate_xml.pl [-h] [-xsd (../xml/pipeline.xsd)] [-xml]\n";
+my $xsd = "../xml/pipeline.xsd";
+-e $xsd or $xsd="$ENV{BIOPIPE_HOME}/xml/pipeline.xsd";
+
 my ($xml,$help) = (undef,undef);
 
 &GetOptions('help|h'  =>\$help,
@@ -27,9 +28,8 @@ if($help){
   exec('perldoc', $0);
   die;
 }
-if(!defined $xml){
-  die($USAGE."\n\t Must specify xml file\n");
-}
+defined $xml or die($USAGE."\n\t Must specify xml file\n");
+-e $xml or die "$USAGE\n\txml file, '$xml', does not exists\n";
 
 my $validator = XML::Validator::Schema->new(file => $xsd);
 my $parser = XML::SAX::ParserFactory->parser(Handler => $validator);
@@ -55,6 +55,9 @@ validate_xml.pl - script for validating biopipe xml against the schema
 =head1 DESCRIPTION
 
 This script will validate an xml file against the biopipe xml schema
+
+-xsd can be omitted, if you run this script at biopipe's scripts directory,
+or you have set BIOPIPE_HOME system environment variables properly.
 
 =head1 FEEDBACK
 
