@@ -147,7 +147,9 @@ sub create_next_job{
   my $new_job = Bio::Pipeline::Job->new
     ( -analysis    => $next_analysis,
       -retry_count => 0,
+      -adaptor => $self->adaptor
     );
+
 
   $self->adaptor->store($new_job);
   $new_job->make_filenames;
@@ -156,12 +158,12 @@ sub create_next_job{
   # taking the same inputs as those from the previous analysis.
   
   my @new_inputs;
-  my @new_inputdb_dbIDs = sort { $a<=>$b }$self->adaptor->db->get_InputDBAAdaptor->fetch_dbIDs_by_analysis_id($next_analysis->dbID);
+  my @new_inputdb_dbIDs = sort { $a<=>$b }$self->adaptor->db->get_IOHandlerAdaptor->fetch_inputhandler_dbID_by_analysis($next_analysis->dbID);
   my $new_dbID = join ('\t',@new_inputdb_dbIDs);
   
   my @old_inputdb_dbIDs;
   foreach my $input ($self->inputs){
-    push (@old_inputdb_dbIDs,$input->input_dba->dbID);
+    push (@old_inputdb_dbIDs,$input->input_handler->dbID);
   }
   @old_inputdb_dbIDs =sort {$a<=>$b}@old_inputdb_dbIDs;
   my $old_dbID = join ('\t',@old_inputdb_dbIDs);
@@ -169,7 +171,7 @@ sub create_next_job{
   if ($new_dbID eq $old_dbID){
     foreach my $old_input ($self->inputs){
         my $new_input = Bio::Pipeline::Input->new ( -name => $old_input->name,
-                                                    -input_dba => $old_input->input_dba,);
+                                                    -input_handler => $old_input->input_handler,);
         $new_input->job_id($new_job->dbID);
         $self->adaptor->db->get_InputAdaptor->store($new_input);
         $new_job->add_input($new_input);
