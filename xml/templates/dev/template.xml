@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<!--
+This is a very simple template to save your minutes in writing a pipeline setup xml file.
+
+First of all, You are encouraged to compose the explanation on the purpose of your pipeline, the dataset and modules the pipeline needs, as well as the copyright and contact information. This template is copyleft. :)
+
+NOTE: the template xml does not work as a real pipeline. The intent of it is to demo how the pipeline xml is structed.
+-->
+<!--
+
+-->
+
+<pipeline_setup>
+    <database_setup>
+    <!-- according to the dataset your pipeline applies, you may choose either streamadaptor for mainly files or dbadaptor for relational databases, or both.
+    -->
+        <streamadaptor id="1">
+            <module>Bio::AnyModule_Make_Sense</module>
+        </streamadaptor>
+        </dbadaptor id="2">
+    </database_setup>
+    <iohandler_setup>
+
+
+    </iohandler_setup>
+    <pipeline_flow_setup>
+    
+    </pipeline_flow_setup>
+</pipeline_setup>
+
