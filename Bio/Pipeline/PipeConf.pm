@@ -38,6 +38,9 @@ use vars qw (%PipeConf);
 %PipeConf = ( 
 
     # You will need to modify these variables
+    
+    #1 prints all the output to stderr. recommended.
+    VERBOSE => 1,
 
     # working directory for err/outfiles
     NFSTMP_DIR => '/tmp/',
