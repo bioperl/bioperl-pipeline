@@ -184,7 +184,7 @@ sub new_ioh_db {
   my $self = $class->SUPER::new(@args);
   my ($dbID,$type,$dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
       $dbadaptor_user,$dbadaptor_pass,$dbadaptor_module,$dbadaptor_port,
-      $datahandlers) = $self->_rearrange([ qw( DBID
+      $datahandlers,$analysis) = $self->_rearrange([ qw( DBID
                                                TYPE
                                                 DBADAPTOR_DBNAME
                                                 DBADAPTOR_DRIVER
@@ -193,7 +193,8 @@ sub new_ioh_db {
                                                 DBADAPTOR_PASS
                                                 DBADAPTOR_MODULE
                                                 DBADAPTOR_PORT
-                                                DATAHANDLERS)],@args);
+                                                DATAHANDLERS
+                                                ANALYSIS)],@args);
 
   $dbadaptor_dbname ||= $self->throw("Need a dbadaptor name");
   $dbadaptor_driver ||= "mysql";
@@ -459,6 +460,14 @@ sub _format_input_arguments {
         push @args, $input_name;
       }
     }
+    elsif($arguments[$i]->value eq 'ANALYSIS_NAME'){
+      if ($arguments[$i]->tag){
+        push @args, ($arguments[$i]->tag => $self->analysis->logic_name);
+      }
+      else {
+        push @args, $self->analysis->logic_name;
+      }
+    }
     else {
       if($arguments[$i]->tag){
         push @args, ($arguments[$i]->tag => $arguments[$i]->value);
@@ -556,11 +565,16 @@ sub _format_output_args {
       }
       #pass input id
       elsif($arguments[$i]->value eq 'INPUT'){
-	      my @names;
-	      foreach my $in (@{$input}){
-		      push @names, $in->name;
-	      }
+        if(scalar(@{$input}) == 1 && $arguments[$i]->type eq 'SCALAR'){
+            $value = $input->[0]->name;
+        }
+        else {
+  	      my @names;
+	        foreach my $in (@{$input}){
+		        push @names, $in->name;
+	        }
           $value = \@names;
+        }
       }
       #pass input obj
       elsif($arguments[$i]->value eq 'INPUTOBJ'){
@@ -922,6 +936,13 @@ sub converters {
 
 }
 
+sub analysis {
+    my ($self,$analysis) = @_;
+    if($analysis){
+        $self->{'_analysis'} = $analysis;
+    }
+    return $self->{'_analysis'};
+}
 
 1;
 

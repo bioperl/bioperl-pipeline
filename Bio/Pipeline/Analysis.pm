@@ -795,6 +795,9 @@ sub logic_name {
 sub iohandler {
     my ($self, $ioh) = @_;
     if($ioh) {
+        foreach my $io (@{$ioh}){
+            $io->analysis($self);
+        }
         $self->{'_iohandler'} = $ioh;
     }
     return $self->{'_iohandler'};

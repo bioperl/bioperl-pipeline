@@ -100,7 +100,6 @@ sub new {
     # object?
     if( $class =~ /Bio::Pipeline::Dumper::(\S+)/ ) {
       my ($self) = $class->SUPER::new(@args);
-      $self->_initialize(@args);
       return $self;
     }
     else {
@@ -109,8 +108,12 @@ sub new {
       my $module= $param{'-module'};
       $module || Bio::Root::Root->throw("Must you must provided a Dumper module found in Bio::Pipeline::Dumper::*");
       my $file= $param{'-file'};
-      $file || Bio::Root::Root->throw("You must provide an output file ");
-
+      delete $param{'-file'};
+      my $dir = $param{'-dir'};
+      delete $param{'-dir'};
+      my $prefix = $param{'-prefix'};
+      delete $param{'-prefix'};
+      $file || $dir || Bio::Root::Root->throw("You must provide an output file ");
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_Dumper_module($module));
@@ -119,16 +122,27 @@ sub new {
       my $sem = $file.".lck";
       $sem=~s/>//g;
       $self->_semaphore($sem);
-      $self->_file($file);
+      $self->_file($file) if $file;
+      if($dir){
+        mkdir($dir,0755) || $self->warn("$dir: $!");
+      }
+      $self->_dir($dir) if $dir;
+      $self->_prefix($prefix) if $prefix;
+      @args = %param;
+      $self->_initialize(@args);
       return $self;
     }
 }
 
 sub _initialize {
-    my($self, @args) = @_;
-
+    my($self, @args) = @_;  
+    my $file = $self->_file;
+    if(!$file && $self->_dir && $self->_prefix){
+      ($file) = (split /\//, $self->_prefix)[-1]; #get the filename only
+      $file = ">".$self->_dir."/$file";
+    }
     # initialize the IO part for only
-    $self->_initialize_io(@args);
+    $self->_initialize_io(-file=>$file);
 }
 
 sub _semaphore {
@@ -146,6 +160,23 @@ sub _file {
     }
     return $self->{'_file'};
 }
+
+sub _dir {
+    my ($self,$dir) = @_;
+    if($dir) {
+        $self->{'_dir'} = $dir;
+    }
+    return $self->{'_dir'};
+}
+
+sub _prefix {
+    my ($self,$prefix) = @_;
+    if($prefix) {
+        $self->{'_prefix'} = $prefix;
+    }
+    return $self->{'_prefix'};
+}
+
 =head2 _load_Dumper_module
 
   Title   : _load_Dumper_module
