@@ -1,6 +1,32 @@
 # -*- text -*-
+The core of the BioPipe design and the beginning of the project are 
+entirely based on the hard work of the people working at Ensembl
+(www.ensembl.org), specifically: 
 
-PRIMARY AUTHORS AND MAJOR CONTRIBUTORS TO BIOPERL-PIPELINE
+*Michele Clamp <michele@sanger.ac.uk>
+*Arne Stabenau <stabenau@ebi.ac.uk>
+*Val Curwen <vac@sanger.ac.uk>
+*Simon Potter <scp@sanger.ac.uk>
+*Eduardo Eyras <eae@sanger.ac.uk 
+
+The bioperl-pipeline started off as a development project that branched off 
+directly from the ensembl-pipeline project 
+(http://cvsweb.sanger.ac.uk/cgi-bin/cvsweb.cgi/ensembl-pipeline/), 
+aiming to make the code more usable within the generic OpenBio framework, 
+and in particular bioperl. BioPipe would have not been possible without 
+the fantastic work that resides at its core, the ensembl pipeline.
+
+The core of the pipeline, i.e. the concepts/objects of analysis, job,
+job status, etc. are derived directly from the ensembl pipeline. What the 
+BioPipe developers have been focusing mostly on is the IOHandler system,
+the XML layer, converters, filters,etc.
+
+It should be stressed also that BioPipe is currently aimed at small-medium
+data analysis projects, and simple genome annotation tasks, while the ensembl
+pipeline is much better geared to complex genome annotation, analysis and 
+complex gene building.
+
+AUTHORS AND CONTRIBUTORS TO BIOPERL-PIPELINE
 
 Releases co-ordinated and submitted by bioperl core devs. 
 
