@@ -171,26 +171,6 @@ sub input_objs{
 
 }
 
-=head2 genseq
-
-    Title   :   genseq
-    Usage   :   $self->genseq($genseq);
-    Function:   Get/set genseq
-    Returns :   
-    Args    :   
-
-=cut
-
-sub genseq {
-    my ($self, $genseq) = @_;
-
-    if (defined($genseq)){ 
-	$self->{'_genseq'} = $genseq; 
-    }
-    return $self->{'_genseq'}
-}
-
-
 =head2 output
 
     Title   :   output
@@ -274,48 +254,6 @@ DT: foreach my $in(@input){
         }
       }
     }
-=head
-        
-
-  
-    DT: foreach my $r_key (keys %r_datatypes){
-          foreach my $in_obj(@input){
-            if($in_obj->[0] ne "no_tag"){
-              
-              $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
-              $self->runnable->$r_key($in_obj->[1]);
-              next DT;
-            }
-            else {
-              if (ref($r_datatypes{$r_key}) eq "ARRAY"){
-                  foreach my $dt (@{$r_datatypes{$r_key}}){
-                      next DT if exists $match_datatype{$in_obj};
-                      if ($self->match_data_type($in_obj,$dt)) {
-                        $match_datatype{$in_obj}=1;
-                        #set runnables inputs
-                        $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
-                        $self->runnable->$r_key($in_obj);
-                        next DT;
-                      }
-
-                  }
-                
-              }
-              else {
-                next if exists $match_datatype{$in_obj};
-                if ($self->match_data_type($in_obj,$r_datatypes{$r_key})) {
-                   $match_datatype{$in_obj}=1;
-                   #set runnables inputs
-                   $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
-                   $self->runnable->$r_key($in_obj);
-                   next DT;
-                }
-              }
-            }
-        }
-        $self->throw("Job's inputs datatypes do not match runnable ".$self->runnable." datatypes.");
-    }
-=cut
 }
 
 =head2 match_data_type
@@ -423,40 +361,6 @@ sub runnable {
     return $self->{'_runnable'};  
 }
 
-
-=head2 vc
-
- Title   : vc
- Usage   : $obj->vc($newval)
- Function: 
- Returns : value of vc
- Args    : newvalue (optional)
-
-
-=cut
-
-sub vc {
-   my $obj = shift;
-   if( @_ ) {
-      my $value = shift;
-      $obj->{'_vc'} = $value;
-    }
-    return $obj->{'_vc'};
-
-}
-
-
-sub vcontig{
-  my $obj = shift;
-   if( @_ ) {
-      my $value = shift;
-      $obj->{'_vc'} = $value;
-    }
-    return $obj->{'_vc'};
-}
- 
-
-
 =head2 write_output
 
     Title   :   write_output
@@ -476,48 +380,6 @@ sub write_output {
     my @output_ids = $self->analysis->output_handler->write_output(\@inputs,\@output);
 
     return @output_ids;
-}
-
-=head2 seqfetcher
-
-    Title   :   seqfetcher
-    Usage   :   $self->seqfetcher($seqfetcher)
-    Function:   Get/set method for SeqFetcher
-    Returns :   Bio::DB::RandomAccessI object
-    Args    :   Bio::DB::RandomAccessI object
-
-=cut
-
-sub seqfetcher {
-  my( $self, $value ) = @_;    
-  if (defined($value)) {
-    #need to check if passed sequence is Bio::DB::RandomAccessI object
-    #$value->isa("Bio::DB::RandomAccessI") || 
-    #  $self->throw("Input isn't a Bio::DB::RandomAccessI");
-    $self->{'_seqfetcher'} = $value;
-  }
-    return $self->{'_seqfetcher'};
-}
-
-=head2 input_is_void
-
-    Title   :   input_is_void
-    Usage   :   $self->input_is_void(1)
-    Function:   Get/set flag for sanity of input sequence
-                e.g. reject seqs with only two base pairs
-    Returns :   Boolean
-    Args    :   Boolean
-
-=cut
-
-sub input_is_void {
-    my ($self, $value) = @_;
-
-    if ($value) {
-	$self->{'_input_is_void'} = $value;
-    }
-    return $self->{'_input_is_void'};
-
 }
 
 =head2 fetch_input

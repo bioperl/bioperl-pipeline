@@ -377,10 +377,6 @@ sub run {
       print (STDERR "READING: Lost the will to live Error. Problems with runnableDB fetching input \n[$err]\n");
       $self->throw ("Problems with runnableDB fetching input\n[$err]\n");
   }
-  if ($rdb->input_is_void) {
-      $self->set_status( "VOID" );
-      return;
-  }
   eval {
       $self->set_stage( "RUNNING" );
       $rdb->run;
