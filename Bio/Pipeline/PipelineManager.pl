@@ -1,5 +1,6 @@
 #!/usr/local/bin/perl
 
+
 # Script for operating the analysis pipeline
 #
 # Creator: Arne Stabenau <stabenau@ebi.ac.uk>
@@ -33,10 +34,11 @@ use Bio::Pipeline::PipeConf qw (DBHOST
                                 DBUSER
                                 DBPASS
                                 QUEUE
+                                BATCHSIZE
                                 USENODES
                                 BATCHSIZE
                                 MAX_INCOMPLETE_JOBS_BATCHSIZE
-				MAX_CREATE_NEXT_JOBS_BATCHSIZE
+				                        MAX_CREATE_NEXT_JOBS_BATCHSIZE
                                 JOBNAME
                                 RETRY
                                 SLEEP
@@ -53,7 +55,6 @@ $| = 1;
 my $local        = 0;       # Run failed jobs locally
 my $resume       = 0;
 my $analysis;               # Only run this analysis ids
-my $JOBNAME;                # Meaningful name displayed by bjobs
 my $pipeline_time = time(); #tracks how long pipeline has been running in seconds
                             #use to see whether timeout has occured
 my %pipeline_state;         #hash used to store state of all jobs in the pipeline 
@@ -72,7 +73,6 @@ GetOptions(
     'local'       => \$local,
     'resume'      => \$resume,
     'queue=s'     => \$QUEUE,
-    'jobname=s'   => \$JOBNAME,
     'usenodes=s'  => \$USENODES,
     'once!'       => \$once,
     'retry=i'     => \$RETRY,
@@ -97,7 +97,6 @@ my $inputAdaptor    = $db->get_InputAdaptor;
 my $analysisAdaptor = $db->get_AnalysisAdaptor;
 my $iohAdaptor      = $db->get_IOHandlerAdaptor;
 
-$QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
 
 ###############################
 #Pipeline Test
@@ -157,15 +156,23 @@ if (!$resume) {
 	  _create_initial_jobs($init_rule->next);
 	}
 }
-
 my $run = 1;
 my $submitted;
 my $total_jobs;
 while ($run) {
     
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db,-queue=>$QUEUE);
-    my @incomplete_jobs = $jobAdaptor->fetch_incomplete_jobs($MAX_INCOMPLETE_JOBS_BATCHSIZE);
-    my @completed_jobs = $jobAdaptor->fetch_completed_jobs($MAX_CREATE_NEXT_JOBS_BATCHSIZE);
+
+    #Give priority of fetching to new jobs, only fetch FAILED ones once NEW ones are exhausted.
+    my @incomplete_jobs = $jobAdaptor->fetch_jobs(-number =>$MAX_INCOMPLETE_JOBS_BATCHSIZE,-status=>['NEW']);
+    if ($#incomplete_jobs < ($MAX_INCOMPLETE_JOBS_BATCHSIZE-1)){
+        my $nbr_left = $MAX_INCOMPLETE_JOBS_BATCHSIZE - (scalar(@incomplete_jobs));
+        push @incomplete_jobs, $jobAdaptor->fetch_jobs(-number =>$nbr_left ,-status=>['FAILED']);
+    }
+
+    #fetch completed jobs for creating new jobs
+    
+    my @completed_jobs = $jobAdaptor->fetch_jobs(-number =>$MAX_CREATE_NEXT_JOBS_BATCHSIZE,-status=>['COMPLETED']);
     print STDERR "Fetched ".scalar(@incomplete_jobs)." incomplete jobs\n";
     print STDERR "Fetched ".scalar(@completed_jobs)." completed jobs\n";
     $submitted = 0;
