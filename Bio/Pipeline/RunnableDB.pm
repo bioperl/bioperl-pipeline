@@ -369,7 +369,7 @@ sub runnable {
     }
   
     if (defined($arg)) {
-      if($self->analysis->runnable->isa("Bio::Pipeline::Runnable::DataMonger")){
+      if($self->analysis->runnable eq "Bio::Pipeline::Runnable::DataMonger"){
           my $dm_adaptor = $self->analysis->adaptor->db->get_DataMongerAdaptor;
           my $runnable = $dm_adaptor->fetch_by_analysis($self->analysis);
           $runnable->next_analysis($self->analysis->adaptor->fetch_next_analysis($self->analysis));
