@@ -8,8 +8,10 @@
 #
 # POD documentation - main docs before the code
 #
+
 =head1 NAME
 Bio::Pipeline::IO input/output object for pipeline
+
 
 =head1 SYNOPSIS
 my $io = Bio::Pipeline::IO->new(-dbadaptor=>$dbadaptor,
@@ -148,9 +150,7 @@ sub write_output {
   my $data_method = $self->data_adaptor_method;
 
   if (ref($object) eq "ARRAY"){
-      foreach my $obj (@{$object}){
-        $adaptor->$data_adaptor->${data_method}($obj);
-      }
+      $adaptor->$data_adaptor->${data_method}(@{$object});
   }
   else {
       $adaptor->$data_adaptor->${data_method}($object);

@@ -78,7 +78,7 @@ sub fetch_by_dbID {
     $self->db->get_AnalysisAdaptor->
       fetch_by_dbID( $hashref->{analysis_id} );
 
-  # getting th
+  # getting the inputs
   my @inputs=() ;
   my $query = "SELECT input_id
                FROM input
@@ -92,13 +92,16 @@ sub fetch_by_dbID {
       push @inputs,$input;
   }
 
+  #getting the output adaptor
+  my $output_adp = $self->db->get_OutputDBAAdaptor->fetch_by_analysisID($hashref->{analysis_id});
   $job = Bio::Pipeline::Job->new
   (
    '-dbobj'    => $self->db,
    '-adaptor'  => $self,
    '-id'       => $hashref->{'job_id'},
-   '-queue_id'   => $hashref->{'queue_id'},
+   '-queue_id' => $hashref->{'queue_id'},
    '-inputs'   => \@inputs,
+   '-output'   =>$output_adp,
    '-stdout'   => $hashref->{'stdout_file'},
    '-stderr'   => $hashref->{'stderr_file'},
    '-input_object_file' => $hashref->{'object_file'},

@@ -189,7 +189,7 @@ sub get_JobAdaptor {
 
 =cut
 
-sub get_input_dba_adaptor{
+sub get_InputDBAAdaptor{
   my ($self) = @_;
 
   if( ! defined $self->{_InputDBAdaptor} ) {
@@ -212,7 +212,7 @@ sub get_input_dba_adaptor{
 
 =cut
 
-sub get_output_dba_adaptor{
+sub get_OutputDBAAdaptor{
   my ($self) = @_;
 
   if( ! defined $self->{_OutputDBAdaptor} ) {

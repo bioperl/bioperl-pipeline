@@ -62,11 +62,12 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count ) 
+    my ($adaptor,$dbID,$queueid,$inputs,$output_adp,$analysis,$stdout,$stderr,$obj_file, $retry_count ) 
 	= $self->_rearrange([qw(ADAPTOR
             				ID
 			            	QUEUE_ID
 			            	INPUTS
+                    OUTPUT
 			            	ANALYSIS
 			            	STDOUT
 		            		STDERR
@@ -80,9 +81,9 @@ sub new {
 
     $inputs || $self->throw("Can't create a job object without inputs");
     $analysis   || $self->throw("Can't create a job object without an analysis object");
-
+    $output_adp || $self->throw("Can't create a job object without an output adaptor");
     $analysis->isa("Bio::Pipeline::Analysis") ||
-	$self->throw("Analysis object [$analysis] is not a Bio::Pipeline::Analysis");
+	  $self->throw("Analysis object [$analysis] is not a Bio::Pipeline::Analysis");
 
     $self->dbID             ($dbID);
     $self->adaptor          ($adaptor);
@@ -92,6 +93,7 @@ sub new {
     $self->input_object_file($obj_file);
     $self->retry_count      ($retry_count);
     $self->QUEUE_ID         ($queueid);
+    $self->output_adaptor($output_adp);
 
     @{$self->{'_inputs'}}= ();
 
@@ -145,12 +147,30 @@ sub dbID {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-	$self->{'_dbID'} = $arg;
+	    $self->{'_dbID'} = $arg;
     }
     return $self->{'_dbID'};
 
 }
 
+=head2 output_adaptor 
+
+  Title   : output_adaptor 
+  Usage   : $self->output_adaptor($output_adaptor)
+  Function: get set the output adaptor for this object 
+  Returns : int
+  Args    : int
+
+=cut
+
+sub output_adaptor {
+    my ($self,$adp) = @_;
+
+    if (defined($adp)){
+        $self->{'_output_adaptor'} = $adp;
+    }
+    return $self->{'_output_adaptor'};
+}
 =head2 adaptor
 
   Title   : adaptor
@@ -524,6 +544,7 @@ sub runInQUEUE {
                         -dbobj      => $self->adaptor->db,
                         -analysis   => $self->analysis,
                         -inputs     => \@inputs,
+                        -output     => $self->output_adaptor
                         );
   };                      
   if ($err = $@) {

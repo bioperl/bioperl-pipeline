@@ -33,12 +33,12 @@ use vars qw (%PipeConf);
 %PipeConf = ( 
 
     # working directory for err/outfiles
-    NFSTMP_DIR => '/home/jerm/tmp/',
+    NFSTMP_DIR => '/home/shawn/tmp/',
 
     # database specific variables
     DBI_DRIVER => 'mysql',
     DBHOST     => 'localhost',
-    DBNAME     => 'bioperl_pipeline',
+    DBNAME     => 'biopipeline',
     DBUSER     => 'root',
     DBPASS     => '',	     
 

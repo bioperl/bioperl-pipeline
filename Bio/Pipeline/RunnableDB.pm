@@ -67,19 +67,22 @@ use vars qw(@ISA);
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($dbobj,$analysis,$inputs) = $self->_rearrange ([qw  (   
-                                                        DBOBJ
-                                                        ANALYSIS
-                                                        INPUTS
-                                                        )],@args);
+    my ($dbobj,$analysis,$inputs,$output) = $self->_rearrange ([qw  (   
+                                                                 DBOBJ
+                                                                 ANALYSIS
+                                                                 INPUTS
+                                                                 OUTPUT
+                                                                )],@args);
     
     $self->throw("No DB_obj provided to RunnableDB") unless defined($dbobj);
     $self->throw("No analysis provided to RunnableDB") unless defined($analysis);
     $self->throw("No inputs provided to RunnableDB") unless defined($inputs);
+    $self->throw("No output adaptor provided to RunnableDB") unless defined($output);
 
     $self->dbobj($dbobj);
     $self->analysis($analysis);
     $self->runnable($analysis->runnable);
+    $self->output_adaptor($output);
 
     $self->{'_input_objs'}=[];
     $self->{'_data_types'}=[];
@@ -89,6 +92,9 @@ sub new {
         my $datatype =  Bio::Pipeline::DataType->create_from_input($input_obj);
         $self->add_input_obj($input_obj);
     }
+
+    $self->setup_runnable_inputs();
+    $self->setup_runnable_params($analysis->parameters);
 
     return $self;
 }
@@ -113,6 +119,49 @@ sub analysis {
         $self->{'_analysis'} = $analysis;
     }
     return $self->{'_analysis'};
+}
+
+=head2 output_adaptor
+
+    Title   :   output_adaptor
+    Usage   :   $self->output_adaptor($analysis);
+    Function:   Gets or sets the stored output_adaptor object
+    Returns :   a output adaptor 
+    Args    :   a output adaptor 
+
+=cut
+
+sub output_adaptor {
+    my ($self,$value) = @_;
+    if ($value){
+        $self->{'_output_adaptor'} = $value;
+    }
+    return $self->{'_output_adaptor'};
+}
+
+sub setup_runnable_params {
+    my ($self,$parameters) = @_;
+    my @params = split("--",$parameters);
+    shift @params; #first element is empty
+    my %param;
+    foreach my $param(@params){
+      my @list = split(" ",$param);
+      my $routine = shift @list;
+      my $string = join " ",@list[0..$#list];
+      $param{$routine} = $string;
+    }
+    #set the pamaters in the runnable
+    my $runnable = $self->runnable;
+    foreach my $routine (keys %param){
+      eval {
+        $runnable->$routine($param{$routine});
+      };
+      if($@) {
+
+        $self->warn("Error setting up parameter $routine for analysis ".$self->analysis->logic_name." with message:\n $@\n");
+      }
+    }
+    return;
 }
 
 
@@ -297,8 +346,6 @@ sub match_data_type {
 sub run {
     my ($self) = @_;
     
-    #do data checking and setup inputs of runnable
-    $self->setup_runnable_inputs();
     my $runnable = $self->runnable; 
     $self->throw("Runnable module not set") unless ($runnable);
     $self->throw("Inputs not fetched") unless ($self->input_objs());
@@ -391,8 +438,10 @@ sub write_output {
     my($self) = @_;
 
     my $db=$self->dbobj();
-    my @features = $self->output();
-  
+    my @output = $self->output();
+ 
+    $self->output_adaptor->write_output(\@output);
+=head 
     foreach my $f (@features) {
 	$f->analysis($self->analysis);
     }
@@ -414,6 +463,7 @@ sub write_output {
         my $feat_adp=Bio::DBSQL::FeatureAdaptor->new($db);
 	$feat_adp->store($contig, @features);
     }
+=cut
     return 1;
 }
 

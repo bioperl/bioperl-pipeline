@@ -103,7 +103,27 @@ sub fetch_by_dbID {
 
     return $ioadpt;
 }
-
+#assume 1 analysis, 1 output dbadaptor
+sub fetch_by_analysisID {
+    my ($self,$id) = @_;
+    $id || $self->throw("Need a db ID");
+    my $sth  = $self->prepare("SELECT
+                               output_dba_id 
+                               FROM output_dba
+                               WHERE analysis_id='$id'"
+                             );
+    $sth->execute();
+    my ($job_id) = $sth->fetchrow_array;
+    if ($job_id){
+        return $self->fetch_by_dbID($job_id);
+    }
+    else {
+        $self->throw("No outputdba with analysis id $id");
+    }
+}
+     
+                           
+    
 sub _fetch_db_adaptor {
     my ($self,$id) = @_;
     my $sth = $self->prepare("SELECT dbname,driver,host,user,pass,module 

@@ -45,7 +45,7 @@ sub fetch_by_dbID {
     
     my ($name,$input_dba_id) = $sth->fetchrow_array;
 
-    my $input_dba = $self->db->get_input_dba_adaptor->fetch_by_dbID($input_dba_id);
+    my $input_dba = $self->db->get_InputDBAAdaptor->fetch_by_dbID($input_dba_id);
 
     my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
