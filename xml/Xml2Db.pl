@@ -73,12 +73,6 @@ $JOBFLOW || die($USAGE);
 
 
  
-my $dba = Bio::Pipeline::SQL::DBAdaptor->new(
-    -host   => $DBHOST,
-    -dbname => $DBNAME,
-    -user   => $DBUSER,
-    -pass   => $DBPASS,
-);
 
 my $create = prompt("Would you like to delete any existing db named $DBNAME and load a new one?  y/n","n");
 if($create =~/^[yY]/){
@@ -88,9 +82,9 @@ if($create =~/^[yY]/){
       die(1);
     }
     else {
-      system("mysqladmin -u root drop $DBNAME");
-      print STDERR "Creating $DBNAME\n";
-      system("mysqladmin -u root create $DBNAME");
+      system("mysqladmin -u root drop $DBNAME > /dev/null ");
+      print STDERR "Creating $DBNAME\n   ";
+      system("mysqladmin -u root create $DBNAME ");
       print STDERR "Loading Schema\n";
       system("mysql -u root $DBNAME < $SCHEMA");
    }
@@ -98,6 +92,12 @@ if($create =~/^[yY]/){
 else {
   print STDERR "Using existing db $DBNAME";
 }
+my $dba = Bio::Pipeline::SQL::DBAdaptor->new(
+    -host   => $DBHOST,
+    -dbname => $DBNAME,
+    -user   => $DBUSER,
+    -pass   => $DBPASS,
+);
 
 my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
 
