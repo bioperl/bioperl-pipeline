@@ -85,9 +85,11 @@ sub fetch_fixed_input_by_dbID {
     
     my ($name,$input_tag,$iohandler_id, $job_id) = $sth->fetchrow_array;
 
-    $iohandler_id || $self->throw("No input handler for input with id $id");
-
-    my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id,$job_id);
+    
+    my $input_handler;
+    if($iohandler_id){
+        $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id,$job_id);
+    }
 
     #fetch dynamic arguments if any
     $sth = $self->prepare("SELECT a.datahandler_id, a.tag,a.value,a.rank,a.type
@@ -226,13 +228,14 @@ sub store_fixed_input {
     $input || $self->throw("Need input obj to store");
 
     if (!defined ($input->dbID)) {
-      my $sql = " INSERT INTO input (iohandler_id, job_id, name)
-                 VALUES (?,?,?)";
+      my $sql = " INSERT INTO input (iohandler_id, job_id, name,tag)
+                 VALUES (?,?,?,?)";
       my $sth = $self->prepare($sql);
       my $ioh_id = (ref($input->input_handler) && $input->input_handler->can("dbID")) ? $input->input_handler->dbID : $input->input_handler;
+      my $tag = $input->tag || '';
 
       eval{
-          $sth->execute($ioh_id,$input->job_id,$input->name);
+          $sth->execute($ioh_id,$input->job_id,$input->name,$tag);
       };if ($@){$self->throw("Error storing new input.\n$@");}
 
       $input->dbID($sth->{'mysql_insertid'});
@@ -247,11 +250,11 @@ sub store_fixed_input {
       $input->adaptor($self);
     }
     else {
-      my $sql = " INSERT INTO input (input_id, iohandler_id, job_id, name)
-                VALUES (?,?,?,?)";
+      my $sql = " INSERT INTO input (input_id, iohandler_id, job_id, name,tag)
+                VALUES (?,?,?,?,?)";
       my $sth = $self->prepare($sql);
       eval{
-         $sth->execute($input->dbID, $input->input_handler->dbID,$input->job_id,$input->name);
+         $sth->execute($input->dbID, $input->input_handler->dbID,$input->job_id,$input->name,$input->tag);
       };if ($@){$self->throw("Error storing new input.\n$@");}
 
       $input->adaptor($self);
