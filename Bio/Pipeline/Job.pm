@@ -413,7 +413,7 @@ sub make_filenames {
   my $num = int(rand(10));
   my $dir = $NFSTMP_DIR;
   my $stub='';
-  $stub .= $self->adaptor->db->dbname if $self->adaptor;
+  $stub .= $self->adaptor->db->dbname."_" if $self->adaptor;
   $stub .= ".job_".$self->dbID."." if $self->dbID;
   $stub .= $self->analysis->logic_name.".";
   $stub .= time().".".int(rand(1000));
