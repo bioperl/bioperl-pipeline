@@ -47,9 +47,8 @@ if ($@) {
    skip('XML::Parser not installed',1);
    exit;
 }  
-$biopipe_test->do_xml_file("xml/templates/blast_file_pipeline.xml"),0;
 
-$biopipe_test->run_pipeline(), 0;
+$biopipe_test->run_pipeline("xml/templates/blast_file_pipeline.xml"), 0;
 
 ok -e "t/data/blast_dir/blast.fa.1";
 ok -e "t/data/blast_dir/blast.fa.2";

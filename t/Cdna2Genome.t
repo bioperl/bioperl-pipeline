@@ -38,7 +38,7 @@ if( ! $sim4_present ) {
 my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
 
-#open (STDERR, ">/dev/null");
+open (STDERR, ">/dev/null");
 eval {
    require('XML/Parser.pm');
 };
@@ -47,9 +47,8 @@ if ($@) {
    skip('XML::Parser not installed',1);
    exit;
 }  
-$biopipe_test->do_xml_file("xml/templates/cdna2genome_pipeline.xml"),0;
 
-$biopipe_test->run_pipeline(), 0;
+$biopipe_test->run_pipeline("xml/templates/cdna2genome_pipeline.xml"), 0;
 
 ok -e "t/data/cdna2genome_results/MUSSPSYN.gff";
 ok -e "t/data/cdna2genome_results/cdna.fa.1";

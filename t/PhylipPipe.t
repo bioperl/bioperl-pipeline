@@ -49,13 +49,12 @@ eval {
    require('XML/Parser.pm');
 };
 if ($@) {
-   warn(" XML::Parser not installed, skipping test");
+   warn(" XML::Parser not installed, skipping test. Pls install Bundle::BioPerl from CPAN");
    skip('XML::Parser not installed',1);
    exit;
 }
-$biopipe_test->do_xml_file("xml/templates/phylip_tree_pipeline.xml"),0;
 
-$biopipe_test->run_pipeline(), 0;
+$biopipe_test->run_pipeline("xml/templates/phylip_tree_pipeline.xml"), 0;
 
 ok -e "t/data/phylip_dir/cysprot.fa.1";
 ok -e "t/data/phylip_result/cysprot.fa.1.cls";
