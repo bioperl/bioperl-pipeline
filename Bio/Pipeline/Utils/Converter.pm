@@ -122,7 +122,7 @@ sub convert {
     my $obj = $self->_create_obj($self->module);
 
 
-	@methods = sort {$a->rank <=> $b->rank} @{$self->method};
+	my @methods = sort {$a->rank <=> $b->rank} @{$self->method};
 	foreach my $method (@methods){
 				
 
