@@ -89,7 +89,7 @@ sub create_from_input {
 
   #can't figure out name..have to set it manually
   if (ref($input) eq ""){ #a scalar 
-    my $datatype = Bio::Pipeline::DataType->new(   
+    $datatype = Bio::Pipeline::DataType->new(   
                 -object_type    => "",
                 -reftype        => "SCALAR",
                 -name           => "",
@@ -98,18 +98,17 @@ sub create_from_input {
   }
   elsif (ref($input) eq "ARRAY"){#an array of objects
     my $first = $input->[0];
-    (ref($first) ne "") || $self->throw("Array does not contain valid data types");
     
-    my $datatype = Bio::Pipeline::DataType->new(   
+    $datatype = Bio::Pipeline::DataType->new(   
                 -object_type    => ref($first),
                 -reftype        => "ARRAY",
                 -name           => "",
             );
   }
   else {# a single object
-    my $datatype = Bio::Pipeline::DataType->new(   
+    $datatype = Bio::Pipeline::DataType->new(   
                 -object_type    => ref($input),
-                -reftype        => "",
+                -reftype        => "SCALAR",
                 -name           => "",
             );
   }
@@ -135,14 +134,14 @@ sub match {
     my $q_obj_type = $data_type->object_type();
     my $q_ref_type = $data_type->ref_type();
     my $q_name = $data_type->name();
-    if (($obj_type eq $q_obj_type) && ($name eq $q_name ) &&($ref_type eq $q_ref_type)){
+    #if (($obj_type eq $q_obj_type) && ($name eq $q_name ) &&($ref_type eq $q_ref_type)){
+    if (($obj_type eq $q_obj_type) &&($ref_type eq $q_ref_type)){#don't require name to match for now
         return 1;
     }
     else {
         return 0;
     }
 }
-
 
 =head2 object_type
 
