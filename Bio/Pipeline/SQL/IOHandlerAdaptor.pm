@@ -203,6 +203,19 @@ sub _get_streamadaptor {
   return $streamadaptor_id;
 }
 
+sub store_if_needed {
+    my ($self,$iohandler) = @_;
+    return $self->store($iohandler) if !$iohandler->dbID;
+
+    my $sth = $self->prepare("SELECT iohandler_id 
+                              FROM iohandler 
+                              WHERE iohandler_id=?");
+    $sth->execute($iohandler->dbID);
+    my ($id) = $sth->fetchrow_array;
+    return $self->store($iohandler) if !$id;
+
+    return $id;
+}
 
 sub store {
   my ($self, $iohandler) = @_;
@@ -371,7 +384,9 @@ sub get_mapped_ioh {
 
     my $map_ioh = $sth->fetchrow_array;
 
-    $map_ioh || $self->throw("No mapped ioh found");
+    #if no map, reuse old one
+    $map_ioh  = $map_ioh || $prev_ioh_id;
+
 
     my $ioh = $self->fetch_by_dbID($map_ioh);
     $ioh || $self->throw("Unable to retrieve IOHandler of dbID $map_ioh");
