@@ -56,7 +56,8 @@ sub _parse_instance {
         return 'Bio::Pipeline::Utils::Converter::HSPToEnsEMBLConverter';
     }elsif($in eq 'Bio::SeqFeature::Generic'){
         return 'Bio::Pipeline::Utils::Converter::SeqFeatureToEnsEMBLConverter';
-        
+    }elsif($in eq 'Bio::SeqFeature::FeaturePair'){
+        return 'Bio::Pipeline::Utils::Converter::FeaturePairToEnsEMBLConverter';
     }else{
         $self->throw("[$in] to [$out], not supported");
     }

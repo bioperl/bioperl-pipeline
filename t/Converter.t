@@ -4,7 +4,7 @@ use strict;
 BEGIN {
     use lib 't';
     use Test;
-    plan tests => 14;
+    plan tests => 20;
 }
 
 END {
@@ -70,13 +70,19 @@ ok $_->percent_id, 54;
 
 # Test for SeqFeatureToEnsEMBLConverter
 
-my $seqFeature = new Bio::SeqFeature::Generic(
+my $seqFeature1 = new Bio::SeqFeature::Generic(
     -start => 100,
     -end => 200,
     -strand => 1,
     -score => 10
 );
 
+my $seqFeature2 = new Bio::SeqFeature::Generic(
+    -start => 1234,
+    -end => 5678,
+    -strand => -1,
+    -score => 14
+);
 $converter = new Bio::Pipeline::Utils::Converter(
     -in => 'Bio::SeqFeature::Generic',
     -out => 'Bio::EnsEMBL::SeqFeature',
@@ -84,11 +90,35 @@ $converter = new Bio::Pipeline::Utils::Converter(
     -contig => $ens_contig
 );
 
-my ($ens_seqFeature) = @{$converter->convert([$seqFeature])};
+my ($ens_seqFeature, $ens_seqFeature2) = @{$converter->convert([$seqFeature1, $seqFeature2])};
 
 ok $ens_seqFeature->isa('Bio::EnsEMBL::SeqFeature');
 ok $ens_seqFeature->start, 100;
 ok $ens_seqFeature->end, 200;
-ok $ens_seqFeature->strand, ;
+ok $ens_seqFeature->strand, 1;
 ok $ens_seqFeature->score, 10;
+
+
+# Test for FeaturePair conversion
+
+my $featurePair = new Bio::SeqFeature::FeaturePair(
+    -feature1 => $seqFeature1,
+    -feature2 => $seqFeature2
+);
+
+$converter = new Bio::Pipeline::Utils::Converter(
+    -in => 'Bio::SeqFeature::FeaturePair',
+    -out => 'Bio::EnsEMBL::RepeatFeature',
+    -analysis => $ens_analysis,
+    -contig => $ens_contig
+);
+
+my ($ens_repeatFeature) = @{$converter->convert([$featurePair])};
+
+ok $ens_repeatFeature->start, 100;
+ok $ens_repeatFeature->end, 200;
+ok $ens_repeatFeature->strand, 1;
+ok $ens_repeatFeature->hstart, 1234;
+ok $ens_repeatFeature->hend, 5678;
+ok $ens_repeatFeature->hstrand, 1;
 
