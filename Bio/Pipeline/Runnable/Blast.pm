@@ -169,6 +169,7 @@ Returns :   Either a SearchIO or AlignIO object depending on the type of blast r
 Args    :
 
 =cut
+
 sub run {
   my ($self) = @_;
   my $analysis = $self->analysis;
@@ -184,8 +185,32 @@ sub run {
     if($param{'return_type'}){
         $return_type = $param{'return_type'};
         delete $param{'return_type'};
-        @params = %param;
     }
+    my $result_dir;
+    if($param{'result_dir'}){
+        my $dir = $param{'result_dir'};
+        delete $param{'result_dir'};
+        my $file;
+        if(ref $self->seq1){
+            $file = $self->seq1->id.".out";
+        }
+        elsif($self->seq1) {
+            #is a file name
+            my $filename = (split /\//, $self->seq1)[-1];
+            $file = $filename.".out";
+        }
+        else {
+            $file = "blastreport.out";
+        }
+        $result_dir=Bio::Root::IO->catfile($dir,$file);
+
+    }
+    if($param{'formatdb'}){
+        $self->_setup_blastdb($analysis->db_file);
+        delete $param{'formatdb'};
+    }
+    @params = %param;
+    push @params, ('output'=>$result_dir) if $result_dir;
     $blast_obj = Bio::Tools::Run::StandAloneBlast->new(@params);
   }
   else {
@@ -219,6 +244,7 @@ sub run {
   elsif($seq1 && ($program =~ /blastall/i)) {
       my $IO = Bio::Root::IO->new();
       my ($fh,$newreport) = $IO->tempfile();
+
       $blast_obj->database($analysis->db_file);
 
       $blast_report = $blast_obj->$program($seq1);
@@ -289,6 +315,21 @@ sub run {
 
 }
 
+sub _setup_blastdb {
+    my ($self,$file) = @_;
+
+    $file || return;
+
+    #already formatted
+    -e $file.".phr" && return;
+
+    Bio::Root::IO->exists_exe('formatdb') || return;
+
+    my $cmd = "formatdb -i ".$file;
+    my $status = system($cmd);
+    $self->throw("Problems formatting db $file $!") if $status > 0;
+    return;
+}
 1;
     
 
