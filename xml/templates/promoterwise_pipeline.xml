@@ -1,0 +1,351 @@
+<!--
+
+promoterwise_pipeline.xml
+
+Promoterwise Pipeline Demo XML Template
+
+28 March 2003
+Cared for by Chuah Aaron <aaron@tll.org.sg>
+
+<PIPELINE SUMMARY>
+
+Give a file of sequences, split the files into smaller chunks, and blast
+it against the database over a compute farm. Blast results files are stored
+into a given results  directory, with one result file per blast job.
+
+</PIPELINE SUMMARY>
+
+<DESCRIPTION>
+
+This is a simple blast pipeline demo that allows one to pipeline a bunch of blast
+jobs. It is stripped bare, assuming that the user has sequences in files and simply wishes
+to parallalize the blast jobs. It doesn't utilize one of the main features of blast which
+is to allow inputs from different database sources.
+
+</DESCRIPTION>
+
+
+<XML ORGANIZATION>
+
+  <pipeline_setup>
+    <database_setup>
+    <iohandler_setup>
+    <pipeline_flow_setup>
+    <job_setup>(optional)
+  </pipeline_setup>
+
+  <database_setup>
+  This specifies the databases that the pipeline connects to and the
+  adaptor modules that intefaces with them.
+
+  <iohandler_setup>
+  This specifies the method calls that will be used by the pipeline
+  to access the databases. These methods are contained in the modules
+  specified by the database setup section above.
+
+  <pipeline_flow_setup>
+  This specifies the analysis and rules of the pipeline. Analysis
+  refer to the runnables that will be used in this pipeline while the
+  rules specify the order in which these analysis are to be run, including
+  any specific pre-processing actions that are to be carried out.
+
+  <job_setup> 
+  This is an optional part that allows specific inputs to be inserted.
+  Usually, this is done using DataMongers and Input Create modules.
+
+</XML ORGANIZATION>
+
+
+<THE BLAST DEMO PIPELINE>
+
+  <INSTALLATION>
+
+    <PERL PACKAGES>
+      The following perl packages are required:
+
+        <Bioperl>
+          bioperl-pipeline
+          bioperl-live
+          bioperl-run
+
+          Available thru anonymous cvs:
+
+          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-live
+          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
+          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline
+
+
+          This is bleeding edge stuff so it is recommended that you use main trunk code for all three packages.
+ 
+          Note the schema for biopipe has moved to bioperl-pipeline/sql/schema.sql for convenience
+        </Bioperl>
+    </PERL PACKAGES>
+
+    <BINARIES>
+      NCBI's blastall
+    </BINARIES>
+ 
+  <CONFIGURING PIPELINE>
+
+      You will need to modify some parts of this XML file to point files to non-default places.
+
+      The following sections describe that.
+
+      <analysis 1> Setting Up the Blast Jobs
+
+        This involves a DataMonger Analysis using the <setup_file_blast> module.
+        The datamonger will split the file specified below into a specified number of chunks.
+        It will create a blast job in the pipeline for each chunk. It will also 
+        create the specified working directory for storing these files and format the db file for 
+        blasting if you are blasting against itself. If you are blasting against a different database file,
+        you can specify the formatting of the db as part of the analysis parameters. see below. 
+
+        In this analysis , 3 parameters are set.
+
+            <argument>
+                <tag>input_file</tag>
+                <value>t/data/blast.fa</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>chop_nbr</tag>
+                <value>1000</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>workdir</tag>
+                <value>t/data/blast_dir</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>result_dir</tag>
+                <value>t/data/blast_result</value>
+                <type> SCALAR</type>
+            </argument>
+
+         input_file: This is the input file that consist of all the sequences that you want to
+                     parallize for blasting. Please modify this to a file of your choice. 
+
+         chop_nbr : This is the number of chunks to split the peptide file into.
+                       It corresponds to the number of blast jobs that are created for the farm.
+                       Default value is 400 (arbritrary selected).
+
+         workdir     : This is the working directory that the chunk files will be created. It 
+                       should be an NFS mounted directory that all the nodes may access. It will
+                       be created if it doesn't exist.
+         resultdir   : This is the directory where blast results will be stored.
+
+ 
+      <analysis 2> Blast Analysis
+
+        This actually runs the blast jobs, blasting each chunk against the peptide_file specified
+        above.
+
+        Default parameters:
+
+          <program>blastall</program>
+
+          This specifies the program to use.
+
+          <program_file>/usr/local/bin/blastall</program_file>
+
+          This specifies the actual location of the executable. Modify accoordingly. Note if
+          this can be seen on command line at the nodes, then it is unnecessary. 
+
+          <db_file>t/data/blast.fa</db_file>
+
+          This is the blast database that you want to blast your input_file against.
+          For testing purposes, I have made it the same as the input file here, so you are blasting
+          proteins against itself. You can put any database you want here.
+
+          <parameters>-p blastp -e 1-e05 -formatdb 1 -infile_dir t/data/blast_dir/ -result_dir t/data/blast_dir/blast_result/ </parameters>
+
+          You may modify the parameters as u wish. Here, blast parameters are intercalated with blast runnable
+          parameters so you may add any additional ones that you wish.
+
+          If formatdb is set as above , the db_file will be formatdb-ed for blasting. If not, make sure
+          you do it yourself.
+
+          Note this is using blastp for proteins, so if your input or database are dna sequences, change
+          accordingly to blastn, blastx or tblastx etc...
+          
+
+          Each blast result file is written to /tmp/blast_dir/blast_result/ which should be the same as the
+          argument given in analysis 1.
+
+          The Blast runnable will look for the files inside the directory specified by infile_dir.
+
+
+  </CONFIGURING PIPELINE>    
+
+  <LOADING PIPELINE>
+      
+       The pipeline is loaded up using this XML file.
+       A new database will be automtically created maybe created for you. 
+       This is done using the PipelineManager script found in bioperl-pipeline/scripts.
+       Using the script:
+
+        ******************************
+        * PipelineManager
+        ******************************
+        This script configures and runs a pipeline based on xml definitions.
+
+         Usage: PipelineManager -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -xml pipeline_setup.xml
+
+          Default values in ()
+            -dbhost host (mysql)
+            -dbname name of pipeline database (test_XML)
+            -dbuser user name (root)
+            -dbpass db password()
+            -schema The path to the bioperl-pipeline schema.
+                    Needed if you want to create a new db.
+                    (../sql/schema.sql)
+            -xml    the pipeline setup xml file (required)
+
+        Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in 
+	the Bio/Pipeline/PipeConf.pm file, for ease of use.
+
+  </LOADING THE PIPELINE>
+
+  <RUNNING THE PIPELINE>
+
+    Go to bioperl-pipeline/Bio/Pipeline
+
+    Edit PipeConf.pm accordingly for your environment variables.
+
+    Go to bioperl-pipeline/scripts, to run the pipeline:
+
+    perl PipelineManager.pl -dbname mydbname -dbuser root -dbhost pulse
+
+    you may use the -local option to run it in local mode without submitting to the nodes yet.
+    This will be a good test before submitting, and is recommended for debugging.
+
+  </RUNNING THE PIPELINE>
+
+  <AFTER NOTE>
+
+      Running pipelines are inherently for the brave hearted and we are glad you are willing to give
+      this a shot. We are working hard to ensure that it works as smoothly as possible.
+      Do let us know any problems that you face and suggestions that you have and we will do us best to help. 
+
+      In return, we ask that you keep a note down of your installation process and feedback that to us
+      so that we may make changes or improve our documentation.
+
+      cheers,
+
+      The Fugu Team
+
+   </AFTER NOTE>
+
+<CHANGE LOG>
+28 Nov 2002 - First Addition - shawn
+</CHANGE LOG>
+
+//-->
+
+<pipeline_setup>
+
+
+  <global
+          rootdir="../t"
+          datadir="$rootdir/data"
+          workdir="$datadir/promo_dir"
+          inputfile="$datadir/cdna.fa"
+          promopath="/Home_R1/baaron/bin/"
+          promodb="$datadir/genomic.fa"
+          promoparam=""
+          resultdir="$datadir/promo_result/"
+  />
+
+  <database_setup>
+    <streamadaptor id="1">
+      <module>Bio::Pipeline::Dumper</module>
+    </streamadaptor>
+  </database_setup>
+
+  <!-- fetch the sequence -->
+
+  <pipeline_flow_setup>
+    <analysis id="1">
+      <data_monger>
+        <initial/>
+        <input>
+          <name>input_file</name>
+        </input>
+        <input_create>
+           <module>setup_file</module>
+           <rank>1</rank>
+            <argument>
+                <tag>input_file</tag>
+                <value>$inputfile</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>full_path</tag>
+                <value>1</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>chop_nbr</tag>
+                <value>1</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>workdir</tag>
+                <value>$workdir</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>result_dir</tag>
+                <value>$resultdir</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>runnable</tag>
+                <value>Bio::Pipeline::Runnable::Promoterwise</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>informat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>outformat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>tag</tag>
+                <value>infile</value>
+                <type>SCALAR</type>
+            </argument>
+         </input_create>
+      </data_monger>
+    </analysis>
+
+
+    <analysis id="2">
+      <logic_name>Promoterwise</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Promoterwise</runnable>
+      <db>family</db>
+      <db_file>$promodb</db_file>
+      <program>promoterwise</program>
+      <!--Provide path to promoterwise here-->
+      <program_file>$promopath</program_file>
+      <analysis_parameters>$promoparam</analysis_parameters>
+      <runnable_parameters></runnable_parameters>
+    </analysis>
+
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+     <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+
+  </pipeline_flow_setup>
+
+  <job_setup>
+ </job_setup>
+
+</pipeline_setup>
