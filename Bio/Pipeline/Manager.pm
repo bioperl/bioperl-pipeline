@@ -277,7 +277,7 @@ sub run{
                     $new_job->status('SUBMITTED');
                     $new_job->make_filenames unless $job->filenames;
                     $new_job->update;
-                    eval "$new_job->run";
+                    $new_job->run;
 	            }else{
                     $batchsubmitter->add_job($new_job);
                     $new_job->status('SUBMITTED');
