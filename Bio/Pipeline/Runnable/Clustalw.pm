@@ -128,6 +128,9 @@ sub datatypes {
   my $dtc = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SimpleAlign',
                                          '-name'=>'alignment',
                                          '-reftype'=>'SCALAR');
+  my $dtf = Bio::Pipeline::DataType->new('-object_type'=>'File',
+                                         '-name'=>'sequence',
+                                         '-reftype'=>'SCALAR');
 
   my %dts;
   $dts{seq} = $dta;
@@ -137,6 +140,7 @@ sub datatypes {
   $dts{align} = [];
   push @{$dts{align}},$dtb;
   push @{$dts{align}},$dtc;
+  $dts{file} = $dtf;
 
 
   return %dts;
@@ -205,7 +209,7 @@ sub run {
     elsif($self->seq) {
       #is a file name
       my $filename = (split /\//, $self->seq)[-1];
-      $file = $filename.".aln";
+      $file = $filename.$self->file_suffix;
     }
     else {
       $file = "clustalw.aln";
@@ -222,8 +226,20 @@ sub run {
   my $program = $self->analysis->program || $self->throw("No program specified for Clustalw |align|profile_align");
   my $aln;
   ($program =~ /align|profile_align/i) || $self->throw("Clustalw needs either program to be set as align or profile_align in the analysis table");
+
+  #get input 
+  my $seq;
+  if($self->seq){
+      $seq = $self->seq;
+  }
+  elsif($self->file) {
+    $seq = $self->file;
+  }
+  else {
+      $self->throw("No input supplied");
+  }
+  
   if ($program eq "align"){
-      my $seq = $self->seq;
       $aln    = $factory->align($seq);
   }
   else {
