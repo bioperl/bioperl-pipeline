@@ -1,0 +1,78 @@
+=head1 NAME
+
+Bioperl pipeline - Information on how to use the bioperl pipeline system
+
+=head1 SYNOPSIS
+
+The bioperl pipeline framework is a flexible workflow system that
+complements the bioperl package in providing job management facilities
+for high throughput analysis. This system is heavily inspired by the EnsEMBL Pipeline
+system
+ 
+=head1 DESCRIPTION
+
+This document describe how to use the bioperl pipeline. Some features of 
+the current system include:
+
+  1)  Handling of various input and output data formats from various databases.
+
+  2)  A bioperl interface to non-specific loadsharing software (LSF,PBS
+etc) to ensure that the various analysis programs are run in proper
+order and are successfully completed while re-running those that fail.
+
+  3)  A flexible pluggable bioperl interface that allows programs to be
+      'pipeline-enabled'.
+
+=head1 PIPELINE OVERVIEW
+
+A holistic view of the bioperl pipeline involves 4 main components. 
+
+=over 2
+ 
+=item Input Layer
+
+One main feature of the bioperl pipeline is the flexibility in allowing
+the retrieval of multiple data inputs from a variety of input formats and
+databases. Data may be retrieved as long as the adaptors for the database is written
+and the data format is handled by the bioperl object layer.
+ 
+
+=item Analysis Layer
+
+The crux of the bioperl pipeline revolves around the series of analysis programs that a user
+may wish to run. For example, a typical user may wish to run a series of  a user may wish to run:
+
+  RepeatMasker
+  Clustalw
+  ProtPars
+
+for phylogenetic analysis. Each of the 3 analysis programs above will require a Runnable layer
+that wraps binary program. The Runnable layer has been designed to work intimately with bioperl's growing 
+list of binary wrappers found in Bio::Tools::Run::*. The Runnables do not wrap the system call to the program
+nor does it implement the parser for the binary program's output. Instead it instantiates the wrapper in Bioperl
+which in turns uses a format parser written also in Bioperl (e.g. the AlignIO and SeqIO formats).
+In this case, we have 3 Runnables:
+
+  1) Bio::Pipeline::Runnable::RepeatMasker
+  2) Bio::Pipeline::Runnable::Clustalw
+  3) Bio::Pipeline::Runnable::ProtPars
+  
+which makes use of the following binary wrappers:
+
+  1) Bio::Tools::Run::RepeatMasker
+  2) Bio::Tools::Run::Alignment::Clustalw
+  3) Bio::Tools::Run::Phylo::ProtPars
+
+The Runnable provides a interface specifying the inputs required by the wrapper and 
+this is used to match the data provided by the Input Layer. This design of light-weight Runnables
+ensures that binary wrappers written for various programs are non-pipeline specific and increases
+the number of programs usable by non-pipeline users. Making the Runnables easy to write also allows
+users to write extensions to the Runnables allowing for additional processing of the inputs and outputs for
+their specific analysis.   
+
+=item Job Management
+
+
+=item Output Storage
+
+=back
