@@ -194,7 +194,7 @@ B) The Family Clustering Pipeline
             </argument>
             <argument>
                 <tag>chopsize</tag>
-                <value>400</value>
+                <value>1000</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -317,7 +317,7 @@ B) The Family Clustering Pipeline
         <rank>1</rank>
         <argument>
           <tag>-dir</tag>
-          <value>/data0/family_blast_dir/blast_results</value>
+          <value>/data0/test_abel/blast_results</value>
           <type>SCALAR</type>
           <rank>1</rank>
         </argument>
@@ -382,17 +382,17 @@ B) The Family Clustering Pipeline
            <rank>1</rank>
             <argument>
                 <tag>peptide_file</tag>
-                <value>/data0/family_run_17_6_2002/all_pep</value>
+                <value>/data0/shawn_tmp/fugu.fa</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>chopsize</tag>
-                <value>400</value>
+                <value>1</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>/data0/family_blast_dir</value>
+                <value>/data0/shawn_tmp/</value>
                 <type>SCALAR</type>
             </argument>
          </input_create>
@@ -404,9 +404,11 @@ B) The Family Clustering Pipeline
       <logic_name>Blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>family</db>
-      <db_file>/data0/family_run_17_6_2002/all_pep</db_file>
+      <db_file>/data0/shawn_tmp/fugu.fa</db_file>
       <program>blastall</program>
-      <parameters>-p blastp -e 0.00001 -return_type hit</parameters>
+      <program>/usr/local/bin/blastall</program>
+      <analysis_parameters>-p blastp -e 0.00001</analysis_parameters>
+      <runnable_parameters>-return_type hit</runnable_parameters>
       <output_iohandler id="1"/>
     </analysis>
 
@@ -414,7 +416,8 @@ B) The Family Clustering Pipeline
       <logic_name>TribeMCL</logic_name>
       <runnable>Bio::Pipeline::Runnable::TribeMCL</runnable>
       <program>TribeMCL</program>
-      <parameters>-blastdir /data0/family_blast_dir/blast_results -inputtype scorefile -description_file /data0/tmp_family/family.desc</parameters>
+      <analysis_parameters>-inputtype scorefile -description_file /data0/tmp_family/family.desc</analysis_parameters>
+      <runnable_parameters>-blastdir /data0/test_abel/blast_results</runnable_parameters>
       <output_iohandler id="2"/>
     </analysis>
     <rule>

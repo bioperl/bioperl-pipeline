@@ -263,7 +263,7 @@ is to allow inputs from different database sources.
           <name>input_file</name>
         </input>
         <input_create>
-           <module>setup_file_blast</module>
+           <module>setup_file</module>
            <rank>1</rank>
             <argument>
                 <tag>input_file</tag>
@@ -277,12 +277,22 @@ is to allow inputs from different database sources.
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>/tmp/blast_dir/</value>
+                <value>/tmp/blast_dir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>result_dir</tag>
-                <value>/tmp/blast_dir/blast_result/</value>
+                <value>/tmp/blast_dir/blast_result</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>runnable</tag>
+                <value>Bio::Pipeline::Runnable::Blast</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>format</tag>
+                <value>fasta</value>
                 <type>SCALAR</type>
             </argument>
          </input_create>
@@ -297,7 +307,8 @@ is to allow inputs from different database sources.
       <db_file>/data0/shawn_tmp/blast.fa</db_file>
       <program>blastall</program>
       <program_file>/usr/local/bin/blastall</program_file>
-      <parameters>-p blastp -e 1-e05 -formatdb 1 -result_dir /tmp/blast_dir/blast_result/ </parameters>
+      <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>
+      <runnable_parameters>-formatdb 1 -result_dir /tmp/blast_dir/blast_result </runnable_parameters>
     </analysis>
 
     <rule>

@@ -153,7 +153,7 @@ and will store the feature information the pipeline generates.
 		<runnable>Bio::Pipeline::Runnable::RepeatMasker</runnable>
 		<program>RepeatMasker</program>
 		<nodegroup_id>1</nodegroup_id>
-		<parameters>-lib all.lib</parameters>
+		<analysis_parameters>-lib all.lib</analysis_parameters>
 			
 		<input_iohandler_mapping current="" next=""/>
 		<output_iohandler id="3" converter_id="1" />
