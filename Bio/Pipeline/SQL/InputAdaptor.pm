@@ -77,13 +77,13 @@ sub fetch_fixed_input_by_dbID {
     my ($self,$id) = @_;
     $id || $self->throw("Need a db ID");
     
-    my $sth = $self->prepare("SELECT name, iohandler_id, job_id
+    my $sth = $self->prepare("SELECT name, tag,iohandler_id, job_id
                               FROM input 
                               WHERE input_id = '$id'"
                               );
     $sth->execute();
     
-    my ($name,$iohandler_id, $job_id) = $sth->fetchrow_array;
+    my ($name,$input_tag,$iohandler_id, $job_id) = $sth->fetchrow_array;
 
     $iohandler_id || $self->throw("No input handler for input with id $id");
 
@@ -113,6 +113,7 @@ sub fetch_fixed_input_by_dbID {
                                     -name => $name,
                                     -input_handler => $input_handler,
                                     -job_id => $job_id,
+                                    -tag    => $input_tag,
                                     -dynamic_arguments=>\@args);
                                                     
     return $input;

@@ -230,44 +230,92 @@ sub output {
 =cut
 
 sub setup_runnable_inputs {
-    my ($self) = @_;
+    my ($self,@input) = @_;
     my $runnable = $self->runnable;
     $runnable->can("datatypes") || $self->throw("Runnable $runnable has no sub datatypes implemeted.");
     my %r_datatypes = $runnable->datatypes;
-    my @inputs = $self->input_objs;
+#    my @inputs = $self->input_objs;
+    my @to_match;
+    my %match_datatype={};
+
+DT: foreach my $in(@input){
+      my $tag = $in->[0];
+      my $in_obj = $in->[1];
+      if($tag ne "no_tag"){
+        $self->runnable->can($tag) || $self->throw("Runnable $runnable cannot call $tag");
+        $self->runnable->$tag($in_obj);
+        $match_datatype{$in_obj} = 1;
+      }
+      else {
+        foreach my $r_key(keys %r_datatypes){
+          if (ref($r_datatypes{$r_key}) eq "ARRAY"){
+            foreach my $dt (@{$r_datatypes{$r_key}}){
+              if ($self->match_data_type($in_obj,$dt)) {
+                $match_datatype{$in_obj}=1;
+                #set runnables inputs
+                $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
+                $self->runnable->$r_key($in_obj);
+                next DT;
+              }
+
+            }
+
+          }
+          else {
+            if ($self->match_data_type($in_obj,$r_datatypes{$r_key})) {
+              $match_datatype{$in_obj}=1;
+              #set runnables inputs
+              $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
+              $self->runnable->$r_key($in_obj);
+              next DT;
+            }
+          }
+          $self->throw("Job's inputs datatypes do not match runnable ".$self->runnable." datatypes.");
+        }
+      }
+    }
+=head
         
 
-    my %match_datatype={};
   
     DT: foreach my $r_key (keys %r_datatypes){
-        foreach my $in_obj(@inputs){
-            if (ref($r_datatypes{$r_key}) eq "ARRAY"){
-                foreach my $dt (@{$r_datatypes{$r_key}}){
-                    next DT if exists $match_datatype{$in_obj};
-                    if ($self->match_data_type($in_obj,$dt)) {
-                      $match_datatype{$in_obj}=1;
-                      #set runnables inputs
-                      $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
-                      $self->runnable->$r_key($in_obj);
-                      next DT;
-                    }
-
-                }
-                
+          foreach my $in_obj(@input){
+            if($in_obj->[0] ne "no_tag"){
+              
+              $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
+              $self->runnable->$r_key($in_obj->[1]);
+              next DT;
             }
             else {
-              next if exists $match_datatype{$in_obj};
-              if ($self->match_data_type($in_obj,$r_datatypes{$r_key})) {
-                 $match_datatype{$in_obj}=1;
-                 #set runnables inputs
-                 $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
-                 $self->runnable->$r_key($in_obj);
-                 next DT;
+              if (ref($r_datatypes{$r_key}) eq "ARRAY"){
+                  foreach my $dt (@{$r_datatypes{$r_key}}){
+                      next DT if exists $match_datatype{$in_obj};
+                      if ($self->match_data_type($in_obj,$dt)) {
+                        $match_datatype{$in_obj}=1;
+                        #set runnables inputs
+                        $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
+                        $self->runnable->$r_key($in_obj);
+                        next DT;
+                      }
+
+                  }
+                
+              }
+              else {
+                next if exists $match_datatype{$in_obj};
+                if ($self->match_data_type($in_obj,$r_datatypes{$r_key})) {
+                   $match_datatype{$in_obj}=1;
+                   #set runnables inputs
+                   $self->runnable->can($r_key) || $self->throw("Runnable $runnable cannot call $r_key");
+                   $self->runnable->$r_key($in_obj);
+                   next DT;
+                }
               }
             }
         }
         $self->throw("Job's inputs datatypes do not match runnable ".$self->runnable." datatypes.");
     }
+=cut
 }
 
 =head2 match_data_type
@@ -486,6 +534,7 @@ sub fetch_input {
     my($self) = @_;
     my @inputs = $self->inputs;
     my $count = 0;
+    my @input_table;
     foreach my $input (@inputs){
 
         print "fetching nbr $count\n";
@@ -496,19 +545,32 @@ sub fetch_input {
         if(ref($input) eq "ARRAY"){
             my @input_objs;
             foreach my $sub (@{$input}){
-#               $self->add_input_obj($sub->fetch);
               push @input_objs, $sub->fetch;
             }
             $self->add_input_obj(\@input_objs);
+            if($input->tag){
+              push @input_table, [$input->tag,\@input_objs];        
+            }
+            else {
+              push @input_table, ['no_tag',\@input_objs];
+            }
+
         }
         else {
           my $input_obj = $input->fetch;
           my $datatype =  Bio::Pipeline::DataType->create_from_input($input_obj);
           $self->add_input_obj($input_obj);
+          if($input->tag){
+            push @input_table, [$input->tag,$input_obj];        
+          }
+          else {
+            push @input_table, ['no_tag',$input_obj];
+          }
+
         }
     }
 
-    $self->setup_runnable_inputs();
+    $self->setup_runnable_inputs(@input_table);
     
     return $self->input_objs;
 }

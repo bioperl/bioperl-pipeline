@@ -71,15 +71,16 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($name,$input_handler,$dyn_arg,$job_id) = $self->_rearrange([qw(    NAME
+  my ($name,$tag,$input_handler,$dyn_arg,$job_id) = $self->_rearrange([qw(    NAME
+                                                                TAG
                                                                 INPUT_HANDLER
                                                                 DYNAMIC_ARGUMENTS
                                                                 JOB_ID)],@args);
 
   $name || $self->throw("Need an input name");
   $input_handler || $self->throw("Need an input_handler attached to this input.");
-
   $self->job_id($job_id) if defined $job_id;
+  $self->tag($tag);
   $self->name($name);
   $self->input_handler($input_handler);
   $self->dynamic_arguments($dyn_arg);
@@ -126,6 +127,25 @@ sub name{
     }
     return $self->{'_name'};
 }
+
+=head2 tag 
+
+  Title    : tag 
+  Function :
+  Example  :
+  Returns  :
+  Args     :
+
+=cut
+
+sub tag{
+    my ($self,$tag) = @_;
+    if (defined $tag) {
+        $self->{'_tag'} = $tag;
+    }
+    return $self->{'_tag'};
+}
+
 
 =head2 dynamic_arguments
 
