@@ -2,19 +2,6 @@
 
 Ans: -Start by creating a DB for the pipeline, e.g genscan_pipe (follow the schema of course)
      -Update the DB in the PipeConf.pm
-     -Populate the DB Tables(see Populating the Tables for more Info) 
+     -Populate the DB Tables(see Populating the Tables in INSTALL for more Info) 
 
   
-
-2.  Populating the tables
-
-
-The datahandler table
-
-each iohandler represents a series of steps that gets the input, writes the output etc.
-Hence it is required to pass in the methods that implements this..
-Ex: To pass a Bio Seq object to Genscan
-DBAdaptor->get_contig(id).........method 1> get_contig  gives a contig1(Example)
-contig1->perl_primary_seq.........method 2> perl_primary_seq gives a Bio::PrimarySeq object  (Argument for this will be INPUT as were passing this in.)
-
-       

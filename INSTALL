@@ -1,0 +1,12 @@
+Populating the tables
+
+
+THE DATAHANDLER TABLE
+
+method:
+
+Each iohandler represents a series of steps that gets the input or writes the output etc.
+Hence it is required to pass in the methods that implements this..
+Example: To use Genscan Runnable in the pipeline, we need to pass a Bio::PrimarySeq object as the input to the runnable. 
+method 1:DBAdaptor->get_contig(id)  (get_contig gives a contig(no argument for this method)
+method 2:contig1->perl_primary_seq  (perl_primary_seq gives a Bio::PrimarySeq object(argument for this will be INPUT as were passing this in.)
