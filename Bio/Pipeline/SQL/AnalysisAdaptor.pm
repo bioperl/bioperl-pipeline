@@ -162,43 +162,13 @@ sub deleteObj {
   }
 }
 
+
 sub store {
     my ($self,$analysis) = @_;
-    
-    return $analysis->dbID if defined ($analysis->dbID);
-    
-    if( defined $analysis->created ) {
+    #return $analysis->dbID if defined ($analysis->dbID);
+
+    if (!defined ($analysis->dbID)) {
 	my $sth = $self->prepare( q{
-	    INSERT INTO analysis
-		SET created = ?,
-		logic_name = ?,
-		db = ?,
-		db_version = ?,
-		db_file = ?,
-		program = ?,
-		program_version = ?,
-		program_file = ?,
-		parameters = ?,
-		runnable = ?,
-		gff_source = ?,
-		gff_feature = ? } );
-	$sth->execute
-	    ( $analysis->created,
-	      $analysis->logic_name,
-	      $analysis->db,
-	      $analysis->db_version,
-	      $analysis->db_file,
-	      $analysis->program,
-	      $analysis->program_version,
-	      $analysis->program_file,
-	      $analysis->parameters,
-	      $analysis->runnable,
-	      $analysis->gff_source,
-	      $analysis->gff_feature
-	      );
-    } else {
-	my $sth = $self->prepare( q{
-	    
 	    INSERT INTO analysis
 		SET created = now(),
 		logic_name = ?,
@@ -227,15 +197,75 @@ sub store {
 	      $analysis->gff_feature
 	      );
 	my $dbid = $sth->{mysql_insertid};
-	$sth = $self->prepare( q{
-	    SELECT created
-		FROM analysis
-		    WHERE analysis_id = ? } );
-	$sth->execute($dbid);
-	$analysis->created( ($sth->fetchrow_array)[0] );
 	$analysis->dbID($dbid);
-	return $dbid;
-    }
+     }
+     else {
+        my $sth = $self->prepare( q{
+            INSERT INTO analysis
+                SET 
+                analysis_id = ?,
+                created = now(),
+                logic_name = ?,
+                db = ?,
+                db_version = ?,
+                db_file = ?,
+                program = ?,
+                program_version = ?,
+                program_file = ?,
+                parameters = ?,
+                runnable = ?,
+                gff_source = ?,
+                gff_feature = ? } );
+
+        $sth->execute
+            ( $analysis->dbID,
+              $analysis->logic_name,
+              $analysis->db,
+              $analysis->db_version,
+              $analysis->db_file,
+              $analysis->program,
+              $analysis->program_version,
+              $analysis->program_file,
+              $analysis->parameters,
+              $analysis->runnable,
+              $analysis->gff_source,
+              $analysis->gff_feature
+              );
+      }
+      my $nodegroup_adaptor = $self->db->get_NodeGroupAdaptor;
+      #foreach my $node_group($analysis->node_group) {
+        #check if it exitst in the db and do not store if it already exists
+      if(defined($analysis->node_group)) {
+        if (! defined ($nodegroup_adaptor->fetch_by_dbID($analysis->node_group->id))) {
+           $nodegroup_adaptor->store($analysis->node_group);
+        }
+      }
+
+     my $output_handler = $analysis->output_handler;
+     my $new_input_handler = $analysis->new_input_handler;
+
+     if (defined ($output_handler)) {
+         my $sth = $self->prepare( q{
+            INSERT INTO analysis_output_handler
+                SET
+                analysis_id = ?,
+                iohandler_id = ? } ); 
+         $sth->execute
+            ( $analysis->dbID, $output_handler->dbID);
+     }
+
+     if (defined ($new_input_handler)) {
+         my $sth = $self->prepare( q{
+            INSERT INTO new_input_ioh
+                SET
+                analysis_id = ?,
+                iohandler_id = ? } );
+         $sth->execute
+            ( $analysis->dbID, $new_input_handler->dbID);
+     }
+      
+     
+      return $analysis->dbID;
 }
 
 sub update_logic_name {
@@ -264,19 +294,6 @@ sub update_runnable {
     if($@){
       $self->throw("Attempt to update runnable failed.\n $@");
     }
-}
-
-sub remove_analysis {
-    my ($self,@dbID) = @_;
-    my $sth;
-    if (!@dbID){
-        $sth = $self->prepare("DELETE FROM analysis");
-    }
-    else {
-       my $list = join(",",@dbID);
-       $sth = $self->prepare("DELETE FROM analysis WHERE analysis_id in($list)");
-    }
-    $sth->execute();
 }
 
 1;
