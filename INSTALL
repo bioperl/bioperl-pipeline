@@ -32,18 +32,18 @@ o System Requirements and Inatallation
     Each job is then run  sequentially but this is not recommended for high throughput analysis.
 
   -Bioperl Packages
-   bioperl-live release 1.2.1 or later
-   bioperl-run  release xxx
-   bioperl-pipeline release xxx
+   bioperl-live bioperl-run-release-1-2-0 or later
+   bioperl-run  bioperl-run-release-1-2-0
+   bioperl-pipeline bioperl-run-release-1-2-0
 
    recommended: bioperl-db
                 biosql-schema
 
     The packages are available from CVS using the following commands:
 
-    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-1 bioperl-live
-    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
-    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline      
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout -r bioperl-run-release-1-2-0 bioperl-live
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout -r bioperl-run-release-1-2-0 bioperl-run
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout -r bioperl-run-release-1-2-0 bioperl-pipeline      
   
     password is 'cvs'
 
@@ -54,6 +54,16 @@ o System Requirements and Inatallation
      >cd bioperl-pipeline
      >perl Makefile.PL
      >make
+
+     Before doing make test, ensure that you modify the following files to reflect
+     your system specifics:
+
+     1) bioperl-pipeline/t/BiopipeTestDB.conf
+     2) bioperl-pipeline/Bio/Pipeline/PipeConf.pm
+
+     In particular, ensure that your mysql configurations are correct.
+     Having done, so, you may continue :
+
      >make test
      >make install
 
@@ -66,10 +76,10 @@ o System Requirements and Inatallation
        >cd bioperl-pipeline
        >mysql -u <user> biopipe < sql/schema.sql
 
-    Biopipe databases are automatically created when pipelines are run, so this
-    is a useful test but not necessary for installation.
+    Biopipe databases are automatically created when pipelines are run(mysql configuration
+    read from PipeConf.pm) , so this is a useful test but not necessary for installation.
 
-    Although recommened, you do not need to install the packages. You may simply put them into
+    Although recommended, you do not need to install the packages. You may simply put them into
     a directory and point to them in your PERL5LIB environment variable like so:
 
     setenv $CVSPATH "/Users/shawn/cvs_src"
