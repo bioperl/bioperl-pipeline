@@ -799,6 +799,7 @@ sub set_global {
   my ($string) = @_;
   while($string=~/\$(\w+)/){
     my $var = $global{$1};
+    die("variable \$$1 doesn't exist. Pls check that you have it defined in the <global> tag.") unless $var;    
     $string=~s/\$$1/$var/;
   }
   return $string;
