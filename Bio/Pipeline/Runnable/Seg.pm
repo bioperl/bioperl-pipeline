@@ -15,7 +15,7 @@ Bio::Pipeline::Runnable::Seg
 
 =head1 SYNOPSIS
 
- my $runnable = Bio::Pipeline::Runnable::Seg->new();
+ my $runnable = Bio::Pipeline::Runnable::Seg->new(@params);
  $runnable->analysis($analysis);
  $runnable->run;
  my $output = $runnable->output;
@@ -23,6 +23,26 @@ Bio::Pipeline::Runnable::Seg
 =head1 DESCRIPTION
 
 Runnable for Seg
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to the
+Bioperl mailing lists  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org                         - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via
+email or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR
 

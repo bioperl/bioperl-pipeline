@@ -1,4 +1,4 @@
-# Pipeline module for Profile Bio::Pipeline::Runnable::Coil
+# Pipeline module for Coil  Bio::Pipeline::Runnable::Coil
 #
 # Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Coil
 # originally written by Marc Sohrmann (ms2@sanger.ac.uk)
@@ -15,7 +15,7 @@ Bio::Pipeline::Runnable::Coil
 
 =head1 SYNOPSIS
 
- my $runnable = Bio::Pipeline::Runnable::Coil->new();
+ my $runnable = Bio::Pipeline::Runnable::Coil->new(@params);
  $runnable->analysis($analysis);
  $runnable->run;
  my $output = $runnable->output;
@@ -23,6 +23,26 @@ Bio::Pipeline::Runnable::Coil
 =head1 DESCRIPTION
 
 Runnable for Coil
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to the
+Bioperl mailing lists  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org                         - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via
+email or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR
 

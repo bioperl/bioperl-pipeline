@@ -24,6 +24,27 @@ Bio::Pipeline::Runnable::Tmhmm
 
 Runnable for Tmhmm
 
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to the
+Bioperl mailing lists  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org                         - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via
+email or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+
 =head1 AUTHOR
 
  Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Tmhmm
@@ -66,7 +87,7 @@ sub new {
  Title   :   datatypes
  Usage   :   $self->datatypes
  Function:   Returns the datatypes that the runnable requires.
- Returns :   It returns a hash of the different data types. The key of the hash is the name of the
+ Returns :   It returns a hash of the different data types.
  Args    :
 
 =cut
@@ -118,7 +139,6 @@ sub feat1{
 sub run {
   my ($self) = @_;
   my $seq = ($self->feat1);
-  my $params = $self->params;
 
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;

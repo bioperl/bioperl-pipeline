@@ -16,19 +16,41 @@ Bio::Pipeline::Runnable::Hmmpfam
 
 =head1 SYNOPSIS
 
- my $runnable = Bio::Pipeline::Runnable::Hmmpfam->new(); 
+ my $runnable = Bio::Pipeline::Runnable::Hmmpfam->new(@params); 
  $runnable->analysis($analysis);
  $runnable->run;
  my $output = $runnable->output;
 
 =head1 DESCRIPTION
+
 Runnable for Hmmpfam
 
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to the
+Bioperl mailing lists  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org                         - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via
+email or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
 =head1 AUTHOR
-Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Hmm
-originally written by Emmanuel Mongin <mongin@ebi.ac.uk>
-Written in BioPipe by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
-Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+
+ Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Hmmpfam
+ originally written by Emmanuel Mongin <mongin@ebi.ac.uk>
+ Written in BioPipe by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
+ Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
 =head1 APPENDIX
 
@@ -114,7 +136,6 @@ sub feat1{
 sub run {
   my ($self) = @_;
   my $seq = ($self->feat1);
-  my $params = $self->params;
 
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
