@@ -63,6 +63,7 @@ use strict;
 use Bio::Root::Root;
 use Bio::Pipeline::Input;
 use Bio::Pipeline::Job;
+use Bio::Pipeline::Runnable::DataMonger;
 
 
 @ISA = qw(Bio::Root::Root);
@@ -108,11 +109,75 @@ sub new {
 
 sub _initialize {
   my ($self,@args) = @_;
-  my ($dbadaptor,$analysis) = $self->_rearrange([qw(DBADAPTOR)],@args);
-
+  my ($infile_suffix,$infile_dir,$dbadaptor) = $self->_rearrange([qw(INFILE_SUFFIX INFILE_DIR DBADAPTOR)],@args);
+  $self->infile_suffix($infile_suffix) if $infile_suffix;
+  $self->infile_dir($infile_dir) if $infile_dir;
   #$dbadaptor || $self->throw("InputCreate needs a dbadaptor to create new jobs and inputs");
 
   $self->dbadaptor($dbadaptor);
+}
+
+=head2 infile_dir
+
+ Title   :   infile_dir
+ Usage   :   $self->infile_dir()
+ Function:   get/set
+             holds the directory in which input files are
+             found
+ Returns :   a string
+ Args    :   a string (optional)
+
+=cut
+
+sub infile_dir {
+  my ($self, $infile_dir) = @_;
+  if($infile_dir) {
+      $self->{'_infile_dir'} = $infile_dir;
+  }
+  return $self->{'_infile_dir'};
+}
+
+=head2 infile
+
+ Title   :   infile
+ Usage   :   $self->infile()
+ Function:   get/set
+             holds the directory in which input files are
+             found
+ Returns :   a string
+ Args    :   a string (optional)
+
+=cut
+
+sub infile{
+  my ($self, $infile) = @_;
+  if($infile) {
+      $infile = Bio::Root::IO->catfile($self->infile_dir,$infile) if $self->infile_dir;
+      $infile = $infile.$self->infile_suffix if $self->infile_suffix;
+      $self->{'_infile'} = $infile;
+  }
+
+  return $self->{'_infile'};
+}
+
+=head2 infile_suffix
+
+ Title   :   infile_suffix
+ Usage   :   $self->infile_suffix()
+ Function:   get/set
+             holds the file extension of the input file
+ Returns :   a string
+ Args    :   a string (optional)
+
+=cut
+
+sub infile_suffix {
+    my ($self,$val) = @_;
+    if($val){
+        $val = $val=~/^\.\S*/ ? $val : ".$val";
+        $self->{'_infile_suffix'} = $val;
+    }
+    return $self->{'_infile_suffix'};
 }
 
 =head2 _load_inputcreate_module
