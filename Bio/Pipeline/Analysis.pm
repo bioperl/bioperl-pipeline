@@ -340,6 +340,26 @@ sub adaptor {
     return $self->{_adaptor};
 }
 
+=head2 data_monger
+
+  Title   : data_monger
+  Usage   : $self->data_monger
+  Function: Get/set method for the data_monger
+  Returns : int
+  Args    : int
+
+=cut
+
+sub data_monger {
+    my ($self,$data_monger) = @_;
+    if(defined $data_monger){
+        $self->{'_data_monger'} = $data_monger;
+    }
+
+    return $self->{'_data_monger'};
+}
+
+
 =head2 data_monger_id
 
   Title   : data_monger_id
