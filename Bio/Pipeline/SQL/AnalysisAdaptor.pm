@@ -93,7 +93,7 @@ sub fetch_by_dbID {
   my $node_group = $self->db->get_NodeGroupAdaptor->fetch_by_dbID($node_group_id);
   
 
-  my $query = " SELECT  ai.iohandler_id 
+  my $query = " SELECT  DISTINCT ai.iohandler_id 
                 FROM    analysis_iohandler ai
                 WHERE   ai.analysis_id = $id";
                         
@@ -107,7 +107,7 @@ sub fetch_by_dbID {
 
   foreach my $ioh(@iohs) {
      my $iohid = $ioh->dbID;
-     my $query = " SELECT  ai.converter_id, ai.rank 
+     my $query = " SELECT  ai.converter_id, ai.converter_rank 
                    FROM    analysis_iohandler ai
                    WHERE   ai.analysis_id = $id AND ai.iohandler_id = $iohid";
 
@@ -141,6 +141,7 @@ sub fetch_by_dbID {
                 FROM    iohandler_map  
                 WHERE   analysis_id = $id";
 
+
   $sth = $self->prepare($query);
   $sth->execute ();
   my %iomap;
@@ -173,6 +174,41 @@ sub fetch_by_dbID {
 
   return $anal;
 }
+
+sub fetch_converters_by_iohandler {
+   my ($self, $analid, $iohid) = @_;
+
+     my $query = " SELECT  ai.converter_id, ai.converter_rank
+                   FROM    analysis_iohandler ai
+                   WHERE   ai.analysis_id = ? AND ai.iohandler_id = ? ";
+
+     my $sth = $self->prepare($query);
+     $sth->execute ($analid,$iohid);
+
+     my @converters;
+     while (my ($converter_id,$rank) = $sth->fetchrow_array){
+        if (defined $converter_id){
+                $query = " SELECT  module, method
+                              FROM    converter
+                          WHERE   converter_id = ? " ;
+
+               my $sth1 = $self->prepare($query);
+                 $sth1->execute ($converter_id);
+                my ($module, $method) = $sth1->fetchrow_array;
+                my $converter = new Bio::Pipeline::Converter ( -dbID => $converter_id,
+                                                       -module => $module,
+                                                       -method => $method,
+                                                       -rank => $rank
+                                                     );
+
+
+               push @converters, $converter;
+        }
+     }
+     return @converters;
+}
+
+
 
 =head2 fetch_next_analysis
 
@@ -225,6 +261,35 @@ sub fetch_create_input_id_ioh{
 
 }
 
+#####################################################################3
+=head2 fetch_analysis_iohandler
+
+  Title   : fetch_analysis_iohandler
+  Usage   : my $analysis = $adaptor->fetch_analysis_iohandler
+  Function: fetches a particular iohandler for a particular analysis 
+  Returns : throws exception when something goes wrong.
+            undef if the id is not in the db.
+  Args    : L<Bio::Pipeline::Analysis>
+
+=cut
+
+sub fetch_analysis_iohandler{
+  my ($self,$analysis) = @_;
+
+  my $query = "SELECT iohandler_id
+               FROM analysis_iohandler ai, iohandler ioh
+               WHERE ai.analysis_id=? AND ioh.type=?";
+  my $sth = $self->prepare($query);
+  $sth->execute($analysis->dbID,'INPUT_CREATION');
+  my ($io_id) = $sth->fetchrow_array;
+  if($io_id){
+    my $ioh = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($io_id) || $self->throw("Unable to fetch iohandler $io_id");
+    return $ioh;
+  }
+  return undef;
+
+}
+#############################################################################
 sub fetch_all {
     my ($self) = @_;
     my @analysis;
@@ -330,6 +395,10 @@ sub store {
               $analysis->gff_feature
               );
       }
+      if (defined $analysis->data_monger) {
+          $self->db->get_DataMongerAdaptor->store($analysis->data_monger, $analysis->dbID);
+          #next; 
+      }
       my $nodegroup_adaptor = $self->db->get_NodeGroupAdaptor;
       #foreach my $node_group($analysis->node_group) {
         #check if it exitst in the db and do not store if it already exists
@@ -343,10 +412,20 @@ sub store {
      my @ioh = @{$analysis->iohandler};
 
      foreach my $ioh (@ioh){
-         my $sth = $self->prepare("INSERT INTO analysis_iohandler 
-                                   SET analysis_id = ?,
-                                       iohandler_id = ?");
-         $sth->execute($analysis->dbID,$ioh->dbID);
+        my $sth = $self->prepare("INSERT INTO analysis_iohandler 
+                                 SET analysis_id = ?,
+                                     iohandler_id = ?");
+        $sth->execute($analysis->dbID,$ioh->dbID);
+        my $converters = $ioh->converters;
+            foreach my $converter(@{$converters}) {
+              
+              my $sth = $self->prepare("INSERT INTO analysis_iohandler 
+                                        SET analysis_id = ?,
+                                            iohandler_id = ?,
+                                            converter_id = ?,
+                                            converter_rank = ?");
+              $sth->execute($analysis->dbID,$ioh->dbID, $converter->dbID, $converter->rank);
+        }
      }
      if (defined ($analysis->io_map)) {
 	     my %iomap = %{$analysis->io_map};
