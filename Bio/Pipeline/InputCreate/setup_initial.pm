@@ -145,20 +145,17 @@ sub run {
        }
        my @input;
        if(ref $input->{$key} eq "ARRAY"){
-        @input = @{$input->{$key}};
+        @input = [$key,@{$input->{$key}}];
        }
        else {
-        push @input, $input->{$key};
+        push @input, [$key,$input->{$key}];
        }
-       my $count = 1;
        foreach my $in(@input){
-        my $input1 = $self->create_input($in,$ioh);
+        my $input1 = $self->create_input($in->[1],$ioh,$in->[0]);
 
         my $job = $self->create_job($next_anal,[$input1]);
 
         $self->dbadaptor->get_JobAdaptor->store($job);
-        last if $count==5;
-        $count++;
        }
         
     }
