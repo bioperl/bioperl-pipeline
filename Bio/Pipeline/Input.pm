@@ -114,12 +114,12 @@ sub new {
 =cut
 
 sub fetch{
-  my ($self) = @_;
+  my ($self,$notransformer) = @_;
   if(!$self->input_handler) {
       return $self->name;
   }
   else {
-    return $self->input_handler->fetch_input($self);
+    return $self->input_handler->fetch_input($self,$notransformer);
   }
 }
 
