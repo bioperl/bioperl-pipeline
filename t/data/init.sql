@@ -51,8 +51,8 @@ INSERT INTO datahandler VALUES (4,2,'write_seq',1);
 # Dumping data for table 'input'
 #
 
-INSERT INTO input VALUES (1,'test1',1,1);
-INSERT INTO input VALUES (2,'test2',2,1);
+INSERT INTO input VALUES (1,'test1','',1,1);
+INSERT INTO input VALUES (2,'test2','',2,1);
 
 #
 # Dumping data for table 'iohandler'
