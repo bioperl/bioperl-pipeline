@@ -79,51 +79,39 @@ sub fetch_by_dbID {
     $id || $self->throw("Need a db ID");
     
     my $sth = $self->prepare("SELECT 
-                              dbadaptor_id,
-                              biodbadaptor_method,
-                              biodbname,
-                              data_adaptor,
-                              data_adaptor_method
-                              FROM input_dba 
-                              WHERE input_dba_id = '$id'"
+                              dba.dbname,
+                              dba.driver,
+                              dba.host,
+                              dba.user,
+                              dba.pass,
+                              dba.module,
+                              inp.biodbadaptor_method,
+                              inp.biodbname,
+                              inp.data_adaptor,
+                              inp.data_adaptor_method
+                              FROM input_dba inp, dbadaptor dba
+                              WHERE inp.input_dba_id = '$id' AND
+                              inp.dbadaptor_id = dba.dbadaptor_id"
                               );
     $sth->execute();
     
-    my ($dbadaptor_id,$biodbadaptor,$biodbname,$data_adaptor,$data_adaptor_method) = $sth->fetchrow_array;
-
-    #fetch dbadaptor
-    my $adaptor;
-    if($dbadaptor_id){ 
-      $adaptor = $self->_fetch_db_adaptor($dbadaptor_id);
-    }
-    
+     my ($dbname,$driver,$host,$user,$pass,$module,$biodbadaptor,$biodbname,$data_adaptor,$data_adaptor_method)  = $sth->fetchrow_array;
     #if biodbadaptor exist, need another layer to get the dbadaptor
-    if ($biodbadaptor && $biodbname){
-      $adaptor = $adaptor->${biodbadaptor}($biodbname);
-    }
-    my $ioadpt = Bio::Pipeline::IO->new(-dbadaptor=>$adaptor,
-                                        -dataadaptor=>$data_adaptor,
-                                        -dataadaptormethod=>$data_adaptor_method);
-
+    print $dbname;
+    my $ioadpt = Bio::Pipeline::IO->new(-dbadaptor_dbname =>$dbname,
+                                        -dbadaptor_driver =>$driver,
+                                        -dbadaptor_host   =>$host,
+                                        -dbadaptor_user   =>$user,
+                                        -dbadaptor_pass   =>$pass,
+                                        -dbadaptor_module =>$module,
+                                        -biodbadaptor     =>$biodbadaptor,
+                                        -biodbname        =>$biodbname,
+                                        -data_adaptor     =>$data_adaptor,
+                                        -data_adaptor_method  =>$data_adaptor_method);
+                                    
     return $ioadpt;
 }
 
-sub _fetch_db_adaptor {
-    my ($self,$id) = @_;
-    my $sth = $self->prepare("SELECT dbname,driver,host,user,pass,module 
-                              FROM dbadaptor
-                              WHERE dbadaptor_id = $id");
-    $sth->execute();
-    my ($dbname,$driver,$host,$user,$pass,$module) = $sth->fetchrow_array();
-    if($module =~/::/)  {
-         $module =~ s/::/\//g;
-         require "${module}.pm";
-         $module =~s/\//::/g;
-     }
-    my $db_adaptor = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass);
-
-    return $db_adaptor;
-}
 
 
 1;

@@ -82,16 +82,38 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($dbadaptor,$data_adpt,$data_adpt_method) = $self->_rearrange([qw(DBADAPTOR
-                                                                     DATAADAPTOR
-                                                                     DATAADAPTORMETHOD)],@args);
-  $dbadaptor || $self->throw("Need a dbadaptor");
-  $data_adpt || $self->throw("Need a data adaptor");
-  $data_adpt_method || $self->throw("Need a data adaptor method");
+  my ($dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
+      $dbadaptor_user,$dbadaptor_pass,$dbadaptor_module,
+      $biodbadaptor,$biodbname,$data_adaptor,
+      $data_adaptor_method) = $self->_rearrange([qw(DBADAPTOR_DBNAME
+                                                    DBADAPTOR_DRIVER
+                                                    DBADAPTOR_HOST
+                                                    DBADAPTOR_USER
+                                                    DBADAPTOR_PASS
+                                                    DBADAPTOR_MODULE
+                                                    BIODBADAPTOR
+                                                    BIODBNAME
+                                                    DATA_ADAPTOR
+                                                    DATA_ADAPTOR_METHOD)],@args);
 
-  $self->dbadaptor($dbadaptor);
-  $self->data_adaptor($data_adpt);
-  $self->data_adaptor_method($data_adpt_method);
+  $dbadaptor_dbname || $self->throw("Need a dbadaptor name");
+  $dbadaptor_driver || "mysql";
+  $dbadaptor_host   || "localhost";
+  $dbadaptor_pass   || "";
+  $dbadaptor_module || $self->throw("Need a module for db adaptor");
+  $data_adaptor || $self->throw("Need a data adaptor");
+  $data_adaptor_method || $self->throw("Need a data adaptor method");
+
+  $self->dbadaptor_dbname($dbadaptor_dbname);
+  $self->dbadaptor_driver($dbadaptor_driver);
+  $self->dbadaptor_host($dbadaptor_host);
+  $self->dbadaptor_user($dbadaptor_user);
+  $self->dbadaptor_pass($dbadaptor_pass);
+  $self->dbadaptor_module($dbadaptor_module);
+  $biodbadaptor && $self->biodbadpator($biodbadaptor);
+  $biodbname && $self->biodbname($biodbname);
+  $self->data_adaptor($data_adaptor);
+  $self->data_adaptor_method($data_adaptor_method);
   
   return $self;
 }    
@@ -112,12 +134,13 @@ These methods calls adaptors to fetch and write inputs and outputs to database
 sub fetch_input {
   my ($self,$name) = @_;
   $name || $self->throw("Need a name to fetch the input");
-  my $adaptor;
-  if($self->dbadaptor){
-    $adaptor = $self->dbadaptor;
-  }
-  else {
-    $self->throw("Need a db adaptor");
+  my $adaptor = $self->_fetch_dbadaptor();
+  $adaptor || $self->throw("Need a db adaptor");
+
+  if ($self->biodbadaptor() && $self->biodbname()){
+      my $biodbadaptor = $self->biodbadaptor();
+      my $biodbname = $self->biodbname();
+      $adaptor = $adaptor->${biodbadaptor}($biodbname);
   }
   my $data_adaptor = $self->data_adaptor;
   my $data_method = $self->data_adaptor_method;
@@ -157,12 +180,13 @@ sub _get_method_ref {
 sub write_output {
   my ($self, $object) = @_;
   $object || $self->throw("Need an object to write to database");
-  my $adaptor;
-  if($self->dbadaptor){
-    $adaptor = $self->dbadaptor;
-  }
-  else {
-    $self->throw("Need a db adaptor");
+  my $adaptor = $self->_fetch_dbadaptor();
+  $adaptor || $self->throw("Need a db adaptor");
+
+  if ($self->biodbadaptor() && $self->biodbname()){
+      my $biodbadaptor = $self->biodbadaptor();
+      my $biodbname = $self->biodbname();
+      $adaptor = $adaptor->${biodbadaptor}($biodbname);
   }
   my $data_adaptor = $self->data_adaptor;
   my $data_method = $self->data_adaptor_method;
@@ -231,6 +255,86 @@ sub data_adaptor_method {
         $self->{'_data_adaptor_method'} = $method;
     }
     return $self->{'_data_adaptor_method'};
+}
+sub dbadaptor_dbname {
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_dbadaptor_dbname'} = $value;
+  }
+  return $self->{'_dbadaptor_dbname'};
+}
+
+#get/set methods for dbadaptor params
+sub dbadaptor_driver {
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_dbadaptor_driver'} = $value;
+  }
+  return $self->{'_dbadaptor_driver'};
+}
+
+sub dbadaptor_user {
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_dbadaptor_user'} = $value;
+  }
+  return $self->{'_dbadaptor_user'};
+}
+
+sub dbadaptor_pass {
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_dbadaptor_pass'} = $value;
+  }
+  return $self->{'_dbadaptor_pass'};
+}
+sub dbadaptor_module {
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_dbadaptor_module'} = $value;
+  }
+  return $self->{'_dbadaptor_module'};
+}
+sub dbadaptor_host {
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_dbadaptor_host'} = $value;
+  }
+  return $self->{'_dbadaptor_host'};
+}
+
+sub biodbadaptor{
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_biodbadaptor'} = $value;
+  }
+  return $self->{'_biodadaptor'};
+}
+sub biodbname{
+  my ($self,$value) = @_;
+  if ($value){
+    $self->{'_biodbname'} = $value;
+  }
+  return $self->{'_biodbname'};
+}
+sub _fetch_dbadaptor {
+    my ($self,) = @_;
+    my $dbname = $self->dbadaptor_dbname();
+    my $driver = $self->dbadaptor_driver();
+    my $host   = $self->dbadaptor_host();
+    my $user   = $self->dbadaptor_user();
+    my $pass   = $self->dbadaptor_pass();
+    my $module = $self->dbadaptor_module();
+
+    if($module =~/::/)  {
+         $module =~ s/::/\//g;
+         require "${module}.pm";
+         $module =~s/\//::/g;
+    }
+    
+    my $db_adaptor = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass);
+
+    return $db_adaptor;
 }
 
 1;

@@ -73,35 +73,41 @@ These methods retrievs the adaptors
 sub fetch_by_dbID {
     my ($self,$id) = @_;
     $id || $self->throw("Need a db ID");
-    
+ $id || $self->throw("Need a db ID");
+
     my $sth = $self->prepare("SELECT 
-                              dbadaptor_id,
-                              biodbadaptor_method,
-                              biodbname,
-                              data_adaptor,
-                              data_adaptor_method
-                              FROM output_dba 
-                              WHERE output_dba_id = '$id'"
+                              dba.dbname,
+                              dba.driver,
+                              dba.host,
+                              dba.user,
+                              dba.pass,
+                              dba.module,
+                              oup.biodbadaptor_method,
+                              oup.biodbname,
+                              oup.data_adaptor,
+                              oup.data_adaptor_method
+                              FROM output_dba oup, dbadaptor dba
+                              WHERE oup.output_dba_id = '$id' AND
+                              oup.dbadaptor_id = dba.dbadaptor_id"
                               );
     $sth->execute();
-    
-    my ($dbadaptor_id,$biodbadaptor,$biodbname,$data_adaptor,$data_adaptor_method) = $sth->fetchrow_array;
 
-    #fetch dbadaptor
-    my $adaptor;
-    if($dbadaptor_id){ 
-      $adaptor = $self->_fetch_db_adaptor($dbadaptor_id);
-    }
-    
+     my ($dbname,$driver,$host,$user,$pass,$module,$biodbadaptor,$biodbname,$data_adaptor,$data_adaptor_method)  = $sth->fetchrow_array;
     #if biodbadaptor exist, need another layer to get the dbadaptor
-    if ($biodbadaptor && $biodbname){
-      $adaptor = $adaptor->${biodbadaptor}($biodbname);
-    }
-    my $ioadpt = Bio::Pipeline::IO->new(-dbadaptor=>$adaptor,
-                                        -dataadaptor=>$data_adaptor,
-                                        -dataadaptormethod=>$data_adaptor_method);
+    print $dbname;
+    my $ioadpt = Bio::Pipeline::IO->new(-dbadaptor_dbname =>$dbname,
+                                        -dbadaptor_driver =>$driver,
+                                        -dbadaptor_host   =>$host,
+                                        -dbadaptor_user   =>$user,
+                                        -dbadaptor_pass   =>$pass,
+                                        -dbadaptor_module =>$module,
+                                        -biodbadaptor     =>$biodbadaptor,
+                                        -biodbname        =>$biodbname,
+                                        -data_adaptor     =>$data_adaptor,
+                                        -data_adaptor_method  =>$data_adaptor_method);
 
     return $ioadpt;
+    
 }
 #assume 1 analysis, 1 output dbadaptor
 sub fetch_by_analysisID {
