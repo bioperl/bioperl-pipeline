@@ -33,13 +33,13 @@ use vars qw (%PipeConf);
 %PipeConf = ( 
 
     # working directory for err/outfiles
-    NFSTMP_DIR => '/home/jerm/tmp/',
+    NFSTMP_DIR => '/tmp/',
     WORKDIR    => '/tmp/',
 
     # database specific variables
     DBI_DRIVER => 'mysql',
     DBHOST     => 'localhost',
-    DBNAME     => 'biopipe',
+    DBNAME     => 'yourdbhere',
     DBUSER     => 'root',
     DBPASS     => '',	     
 
@@ -68,6 +68,11 @@ use vars qw (%PipeConf);
     RUNNER     => '',   
     #sleep time in Rulemanager
     SLEEP      => 3,
+
+    #no functional parameters.
+    #future work 
+    WAIT_FOR_ALL_PERCENT => 0,
+    TIMEOUT    => 100,
     );
 
 sub import {
