@@ -43,11 +43,15 @@ use Bio::Pipeline::Job;
 use Bio::Pipeline::SQL::InputAdaptor;
 use Bio::Root::Root;
 use Bio::Pipeline::IOHandler;
-use vars qw(@ISA);
+use vars qw(@ISA %VALID_STATUS %VALID_STAGE);
 use strict;
 
 @ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
+BEGIN {
+    %VALID_STATUS = ('NEW'=>1,'FAILED'=>1,'SUBMITTED'=>1,'COMPLETED'=>1);
+    %VALID_STAGE  = ('READING'=>1,'WRITING'=>1,'RUNNING'=>1);
+}
 
 =head2 fetch_by_dbID
 
@@ -122,98 +126,104 @@ sub fetch_by_dbID {
 }
 
 
-sub fetch_incomplete_jobs {
-    my ($self,$num_jobs) = @_;
+=head2 fetch_jobs 
 
+  Title   : fetch_jobs
+  Usage   : my @jobs = $adaptor->fetch_jobs(-number=>100, -status=>['NEW','FAILED'],-stage=>['WRITING']);
+  Function: Flexible method used for fetching jobs based on status or stage. Behavior is as such
+            each tag of status will be treated as an OR property. Likewise for stage.
+            Each set of tag between stage and status will be treated with the AND property.
+            So for this example, it will be WHERE ((status="NEW" OR status="FAILED") AND (stage="WRITING")) 
+  Returns : Arary of L<Bio::Pipeline::Job> 
+  Args    : -number: Number of jobs to limit for the fetch
+            -status: The list of status types (allowed: NEW,FAILED,BATCHED,COMPLETED)
+            -stage : The list of stage types (allowed: READING, WRITING,RUNNING)
+=cut
+
+sub fetch_jobs{
+    my ($self,@args) = @_;
+    my ($number,$status,$stage) = $self->_rearrange([qw(NUMBER
+                                                        STATUS
+                                                        STAGE
+                                                        )],@args);
     my @jobs;
+    #prepare the query
 
-    my $sth = $self->prepare( q{
-     SELECT job_id, process_id, analysis_id, queue_id, object_file,
-        stdout_file, stderr_file, retry_count,status,stage
-     FROM job
-     WHERE status = 'NEW' OR status = 'FAILED' 
-     LIMIT ? } );
+    my $query =" SELECT job_id, process_id, analysis_id, queue_id, object_file,
+                        stdout_file, stderr_file, retry_count,status,stage
+                FROM job";
 
-    $sth->execute($num_jobs);
+    if(defined $status){
+        if(ref($status) eq "ARRAY"){
+            #do for first
+            my $st= shift @{$status};
+            $VALID_STATUS{$st} || $self->throw("Invalid state $st requested");
+            $query .= " WHERE ((status='$st')";
 
+            foreach my $st(@{$status}){
+                $VALID_STATUS{$st} || $self->throw("Invalid state $st requested");
+                $query .= " OR (status='$st')";
+            }
+            $query .= " )";
+        }
+        else {
+            $VALID_STATUS{$status} || $self->throw("Invalid state $status requested");
+            $query .= " WHERE (status='$status)'";
+        }
+    }
+    if(defined $stage){
+
+        if(ref ($stage) eq "ARRAY"){
+          my $st = shift @{$stage};
+          $VALID_STAGE{$st} || $self->throw("Invalid stage $st requested");
+          $query .= ($query =~/where/i) ? " AND ((stage='$st')" : " ((stage='$st')";
+
+          foreach my $st(@{$stage}){
+              $VALID_STAGE{$st} || $self->throw("Invalid stage $st requested");
+              $query .= " OR ($status='$st')";
+          }
+          $query .= " )";
+        }
+        else {
+            $VALID_STAGE{$stage} || $self->throw("Invalid stage $stage requested");
+            $query .= ($query =~/where/i) ? " AND ((stage='$stage')" : " ((stage='$stage')";
+        }
+    }
+            
+    $query .= defined $number ? " LIMIT $number": "";
+
+    #Get the jobs
+    my $sth = $self->prepare($query);
+    $sth->execute;
+    
     while (my ($job_id, $process_id, $analysis_id, $queue_id, $object_file,
                $stdout_file, $stderr_file, $retry_count, $status, $stage ) = $sth->fetchrow_array){
 
-   	 my $analysis =
-    	   $self->db->get_AnalysisAdaptor->
-       		fetch_by_dbID( $analysis_id );
+      my $analysis = $self->db->get_AnalysisAdaptor-> fetch_by_dbID( $analysis_id );
 
- 	   # getting the inputs
-	    my @inputs= $self->db->get_InputAdaptor->fetch_inputs_by_jobID($job_id);
+     # getting the inputs
+      my @inputs= $self->db->get_InputAdaptor->fetch_inputs_by_jobID($job_id);
 
- 	   my $job = Bio::Pipeline::Job->new
-   	   (
-	     '-dbobj'    => $self->db,
-             '-adaptor'  => $self,
-	     '-id'       => $job_id,
-	     '-process_id' => $process_id,
-	     '-queue_id' => $queue_id,
- 	    '-inputs'   => \@inputs,
- 	    '-stdout'   => $stdout_file,
-	     '-stderr'   => $stderr_file,
- 	    '-input_object_file' => $object_file,
-	     '-analysis' => $analysis,
- 	    '-retry_count' => $retry_count,
- 	    '-stage'     => $stage,
- 	    '-status'    => $status,
-  	  );
-        push (@jobs,$job);
+      my $job = Bio::Pipeline::Job->new
+       (
+       '-dbobj'       => $self->db,
+       '-adaptor'     => $self,
+       '-id'          => $job_id,
+       '-process_id'  => $process_id,
+       '-queue_id'    => $queue_id,
+       '-inputs'      => \@inputs,
+       '-stdout'      => $stdout_file,
+       '-stderr'      => $stderr_file,
+       '-input_object_file' => $object_file,
+       '-analysis'    => $analysis,
+       '-retry_count' => $retry_count,
+       '-stage'       => $stage,
+       '-status'      => $status,
+      );
+      push (@jobs,$job);
     }
     return @jobs;
 }
-
-
-sub fetch_completed_jobs {
-    my ($self,$num_jobs) = @_;
-
-    my @jobs;
-
-    my $sth = $self->prepare( q{
-     SELECT job_id, process_id, analysis_id, queue_id, object_file,
-        stdout_file, stderr_file, retry_count,status,stage
-     FROM job
-     WHERE status = 'COMPLETED'
-     LIMIT ? } );
-
-    $sth->execute($num_jobs);
-
-    while (my ($job_id, $process_id, $analysis_id, $queue_id, $object_file,
-               $stdout_file, $stderr_file, $retry_count, $status, $stage ) = $sth->fetchrow_array){
-
-         my $analysis =
-           $self->db->get_AnalysisAdaptor->
-                fetch_by_dbID( $analysis_id );
-
-           # getting the inputs
-            my @inputs= $self->db->get_InputAdaptor->fetch_inputs_by_jobID($job_id);
-
-           my $job = Bio::Pipeline::Job->new
-           (
-             '-dbobj'    => $self->db,
-             '-adaptor'  => $self,
-             '-id'       => $job_id,
-             '-process_id' => $process_id,
-             '-queue_id' => $queue_id,
-            '-inputs'   => \@inputs,
-            '-stdout'   => $stdout_file,
-             '-stderr'   => $stderr_file,
-            '-input_object_file' => $object_file,
-             '-analysis' => $analysis,
-            '-retry_count' => $retry_count,
-            '-stage'     => $stage,
-            '-status'    => $status,
-          );
-        push (@jobs,$job);
-    }
-    return @jobs;
-}
-
-
 
 =head2 fetch_by_analysisId_and_processId_
 
