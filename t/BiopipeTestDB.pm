@@ -335,27 +335,12 @@ sub do_sql_file {
     return $i;
 }                                       # do_sql_file
 
-sub do_xml_file {
-    my ($self,$file) = @_;
-    $file || confess "Must pass in XML file";
-
-    my $xml_script = "perl ".$self->xml_script;
-    $xml_script .= " -dbhost ".$self->host if $self->host;
-    $xml_script .= " -dbname ".$self->dbname if $self->dbname;
-    $xml_script .= " -dbuser ".$self->user if $self->user;
-    $xml_script .= " -schema ".@{$self->schema_sql}[0] if $self->schema_sql;
-    $xml_script .= " -p ".$file ." -f\n";
-
-    my $status = system($xml_script);
-    confess ("Problem running $xml_script") if $status > 0;
-    return;
-}
-
 sub run_pipeline {
-    my ($self) = @_;
+    my ($self,$xml_file) = @_;
     my $manager = "perl ".$self->pipeline_manager;
-    $manager.= " -dbname ".$self->dbname;
-    $manager.=" -l -f ";
+    $manager.= " -dbname ".$self->dbname ." -xml $xml_file ";
+    $manager.= " -schema ".@{$self->schema_sql}[0] if $self->schema_sql;
+    $manager.=" -l -f -xf ";
     my $status = system($manager);
     confess ("Problem running $manager ") if $status > 0;
     return;
