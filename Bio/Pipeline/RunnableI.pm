@@ -151,8 +151,11 @@ Return a list of objects created by the analysis
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($result_dir) = $self->_rearrange([qw(RESULT_DIR)],@args);
-  $result_dir && $self->result_dir($result_dir);
+  my ($result_dir,$infile_suffix,$infile_dir) = $self->_rearrange([qw(RESULT_DIR INFILE_SUFFIX INFILE_DIR)],@args);
+  $self->result_dir($result_dir) if $result_dir;
+  $self->infile_suffix($infile_suffix) if $infile_suffix;
+  $self->infile_dir($infile_dir) if $infile_dir;
+
   return $self;
 
 }
@@ -200,6 +203,32 @@ sub result_dir{
       $self->{'_result_dir'} = $result_dir;
   }
   return $self->{'_result_dir'};
+}
+sub infile_dir {
+  my ($self, $infile_dir) = @_;
+  if($infile_dir) {
+      $self->{'_infile_dir'} = $infile_dir;
+  }
+  return $self->{'_infile_dir'};
+}
+sub file{
+  my ($self, $file) = @_;
+  if($file) {
+      $file = Bio::Root::IO->catfile($self->infile_dir,$file) if $self->infile_dir;
+      $file = $file.$self->infile_suffix if $self->infile_suffix;
+      $self->{'_file'} = $file;
+  }
+  
+  return $self->{'_file'};
+}
+
+sub infile_suffix {
+    my ($self,$val) = @_;
+    if($val){
+        $val = $val=~/^\.\S*/ ? $val : ".$val";
+        $self->{'_infile_suffix'} = $val;
+    }
+    return $self->{'_infile_suffix'};
 }
 
 sub parse_params {
