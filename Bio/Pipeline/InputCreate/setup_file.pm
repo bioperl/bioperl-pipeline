@@ -433,7 +433,7 @@ NEW_FILE:
     $filename = (split /\//, $filename)[-1]; #get the filename only
     my $file = Bio::Root::IO->catfile($workdir,"$filename.$index");
     if($self->full_path){
-      push @filenames, $file;
+      push @filenames, "$file.$index";
     }
     else {
       push @filenames, "$filename.$index";
@@ -449,7 +449,7 @@ NEW_FILE:
             $sio->close;
             $sio = Bio::SeqIO->new(-file=>">$file",-format=>$outformat);
             if($self->full_path){
-              push @filenames, $file;
+              push @filenames, "$file.$index";
             }
             else {
               push @filenames, "$filename.$index";
