@@ -57,7 +57,7 @@ sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
   my ($blastdir) = $self->_rearrange([qw(BLASTDIR)],@args);
-
+  $self->blastdir($blastdir);
   return $self;
 
 }
@@ -119,15 +119,14 @@ sub run {
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
   my $file;
+
   my @params = $self->parse_params($analysis->analysis_parameters);
   my $blastdir = $self->blastdir  || $self->throw("Need the location of the blast directory");
-  $file = $blastdir."/blast_out.".time().rand(1000);
+  $file = "/tmp/blast_out.".time().rand(1000); 
   system("echo $blastdir/* | xargs cat > $file");
   push @params, ("scorefile"=>$file);
 
   $factory = Bio::Tools::Run::TribeMCL->new(@params);
-  $factory->executable($analysis->program_file) if $analysis->program_file;
-
 
   my @clusters;
   eval {
