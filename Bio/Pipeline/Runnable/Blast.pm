@@ -89,8 +89,10 @@ use Bio::AlignIO;
  Usage   :   $self->new()
  Function:
  Returns :
- Args    :
-
+ Args    : -return_type => Hit or Hsp
+           -formatdb    => boolean to run formatdb
+           -formatdb_alphabet => dna or aa
+ 
 =cut
 
 sub new {
