@@ -85,7 +85,8 @@ sub fetch_by_dbID {
                               dba.user,
                               dba.pass,
                               dba.module,
-                              inp.biodbadaptor_method,
+                              inp.input_dba_id,
+                              inp.biodbadaptor,
                               inp.biodbname,
                               inp.data_adaptor,
                               inp.data_adaptor_method
@@ -95,26 +96,45 @@ sub fetch_by_dbID {
                               );
     $sth->execute();
     
-     my ($dbname,$driver,$host,$user,$pass,$module,$biodbadaptor,$biodbname,$data_adaptor,$data_adaptor_method)  = $sth->fetchrow_array;
+     my ($dbname,$driver,$host,$user,$pass,$module,$dbID,$biodbadaptor,$biodbname,$data_adaptor,$data_adaptor_method)  = $sth->fetchrow_array;
      ($dbname && $module) || $self->throw("No DBadaptor found.");
      ($data_adaptor && $data_adaptor_method) || $self->throw("No data adaptor or data adaptor method found.");
 
-    #if biodbadaptor exist, need another layer to get the dbadaptor
     my $ioadpt = Bio::Pipeline::IO->new(-dbadaptor_dbname =>$dbname,
                                         -dbadaptor_driver =>$driver,
                                         -dbadaptor_host   =>$host,
                                         -dbadaptor_user   =>$user,
                                         -dbadaptor_pass   =>$pass,
                                         -dbadaptor_module =>$module,
+                                        -dbID             =>$dbID,
                                         -biodbadaptor     =>$biodbadaptor,
                                         -biodbname        =>$biodbname,
                                         -data_adaptor     =>$data_adaptor,
                                         -data_adaptor_method  =>$data_adaptor_method);
+
+    $ioadpt->adaptor($self);
                                     
     return $ioadpt;
 }
 
 
+sub fetch_dbIDs_by_analysis_id{
+    my ($self,$analysis_id) = @_;
+
+    my $query = "   SELECT input_dba_id 
+                    FROM   analysis_input_dba
+                    WHERE  analysis_id = ? ";
+    my $sth = $self->prepare($query);
+    $sth->execute($analysis_id);
+
+    my @dbIDs;
+
+    while (my ($id) = $sth->fetchrow_array){
+        push (@dbIDs,$id);
+    }
+
+    return @dbIDs;
+}
 
 1;
 

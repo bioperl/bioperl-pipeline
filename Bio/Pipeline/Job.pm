@@ -81,9 +81,7 @@ sub new {
     $dbID    = -1 unless defined($dbID);
     $queueid = -1 unless defined($queueid);
 
-    $inputs || $self->throw("Can't create a job object without inputs");
     $analysis   || $self->throw("Can't create a job object without an analysis object");
-    $output_adp || $self->throw("Can't create a job object without an output adaptor");
     $analysis->isa("Bio::Pipeline::Analysis") ||
 	  $self->throw("Analysis object [$analysis] is not a Bio::Pipeline::Analysis");
 
@@ -123,11 +121,9 @@ sub new {
 sub create_by_analysis_inputId {
   my $dummy = shift;
   my $analysis = shift;
-  my $inputId = shift;
 
   my $job = Bio::Pipeline::Job->new
-    ( -input_id    => $inputId,
-      -analysis    => $analysis,
+    ( -analysis    => $analysis,
       -retry_count => 0,
     );
   $job->make_filenames;
@@ -135,6 +131,54 @@ sub create_by_analysis_inputId {
 }
 
 
+=head2 create_next_job
+
+  Title   : create_next_job
+  Usage   : $class->create_.....
+  Function: Creates a job given an analysis object and the previous job
+  Returns : a job object, not connected to db
+  Args    : 
+
+=cut
+
+sub create_next_job{
+  my $self = shift;
+  my $next_analysis = shift;
+
+  my $new_job = Bio::Pipeline::Job->new
+    ( -analysis    => $next_analysis,
+    );
+
+  $self->adaptor->store($new_job);
+  $new_job->make_filenames;
+
+  # this is going to be the default method to create the next job. 
+  # taking the same inputs as those from the previous analysis.
+  
+  my @new_inputs;
+  my @new_inputdb_dbIDs = sort { $a<=>$b }$self->adaptor->db->get_InputDBAAdaptor->fetch_dbIDs_by_analysis_id($next_analysis->dbID);
+  my $new_dbID = join ('\t',@new_inputdb_dbIDs);
+  
+  my @old_inputdb_dbIDs;
+  foreach my $input ($self->inputs){
+    push (@old_inputdb_dbIDs,$input->input_dba->dbID);
+  }
+  @old_inputdb_dbIDs =sort {$a<=>$b}@old_inputdb_dbIDs;
+  my $old_dbID = join ('\t',@old_inputdb_dbIDs);
+
+  if ($new_dbID eq $old_dbID){
+    foreach my $old_input ($self->inputs){
+        my $new_input = Bio::Pipeline::Input->new ( -name => $old_input->name,
+                                                    -input_dba => $old_input->input_dba,);
+        $new_input->job_id($new_job->dbID);
+        $self->adaptor->db->get_InputAdaptor->store($new_input);
+    }
+  }else {
+    $self->throw("Input jump not implemented yet.");
+  }
+  
+  return $new_job;
+} 
 
 =head2 dbID
 

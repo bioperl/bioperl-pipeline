@@ -71,13 +71,15 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($name,$inputDBA,$dbobj) = $self->_rearrange([qw(  NAME
-                                                        INPUT_DBA
-                                                        )],@args);
+  my ($name,$inputDBA,$job_id) = $self->_rearrange([qw(  NAME
+                                                         INPUT_DBA
+                                                         JOB_ID
+                                                       )],@args);
 
   $name || $self->throw("Need an input name");
   $inputDBA|| $self->throw("Need an input_dba");
 
+  $self->job_id($job_id) if defined $job_id;
   $self->name($name);
   $self->input_dba($inputDBA);
   
@@ -140,6 +142,42 @@ sub input_dba{
         $self->{'_input_dba'} = $inputDBA;
     }
     return $self->{'_input_dba'};
+}
+
+=head2 job_id
+
+  Title    : job_id
+  Function : 
+  Example  : 
+  Returns  : 
+  Args     : 
+
+=cut
+
+sub job_id{
+    my ($self,$job_id) = @_;
+    if (defined $job_id) {
+        $self->{'_job_id'} = $job_id;
+    }
+    return $self->{'_job_id'};
+}
+
+=head2 adaptor
+
+  Title    : adaptor
+  Function : 
+  Example  : 
+  Returns  : 
+  Args     : 
+
+=cut
+
+sub adaptor{
+    my ($self,$adaptor) = @_;
+    if (defined $adaptor) {
+        $self->{'_adaptor'} = $adaptor;
+    }
+    return $self->{'_adaptor'};
 }
 
 1;

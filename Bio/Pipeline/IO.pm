@@ -110,7 +110,7 @@ sub new {
   $self->dbadaptor_user($dbadaptor_user);
   $self->dbadaptor_pass($dbadaptor_pass);
   $self->dbadaptor_module($dbadaptor_module);
-  $biodbadaptor && $self->biodbadpator($biodbadaptor);
+  $biodbadaptor && $self->biodbadaptor($biodbadaptor);
   $biodbname && $self->biodbname($biodbname);
   $self->data_adaptor($data_adaptor);
   $self->data_adaptor_method($data_adaptor_method);
@@ -335,6 +335,48 @@ sub _fetch_dbadaptor {
     my $db_adaptor = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass);
 
     return $db_adaptor;
+}
+
+=head2 dbID
+
+  Title   : dbID
+  Usage   : $self->dbID($id)
+  Function: get set the dbID for this object, only used by Adaptor
+  Returns : int
+  Args    : int
+
+=cut
+
+
+sub dbID {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+        $self->{'_dbID'} = $arg;
+    }
+    return $self->{'_dbID'};
+
+}
+
+=head2 adaptor
+
+  Title   : adaptor
+  Usage   : $self->adaptor
+  Function: get database adaptor, set only for constructor and adaptor usage.
+  Returns :
+  Args    :
+
+=cut
+
+
+sub adaptor {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+    $self->{'_adaptor'} = $arg;
+    }
+    return $self->{'_adaptor'};
+
 }
 
 1;

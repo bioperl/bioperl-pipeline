@@ -82,7 +82,7 @@ sub fetch_by_dbID {
                               dba.user,
                               dba.pass,
                               dba.module,
-                              oup.biodbadaptor_method,
+                              oup.biodbadaptor,
                               oup.biodbname,
                               oup.data_adaptor,
                               oup.data_adaptor_method
@@ -96,7 +96,6 @@ sub fetch_by_dbID {
      ($dbname && $module) || $self->throw("No DBadaptor found.");
      ($data_adaptor && $data_adaptor_method) || $self->throw("No data adaptor or data adaptor method found.");
 
-    #if biodbadaptor exist, need another layer to get the dbadaptor
     my $ioadpt = Bio::Pipeline::IO->new(-dbadaptor_dbname =>$dbname,
                                         -dbadaptor_driver =>$driver,
                                         -dbadaptor_host   =>$host,

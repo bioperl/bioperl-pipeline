@@ -37,13 +37,13 @@ sub fetch_by_dbID {
     my ($self,$id) = @_;
     $id || $self->throw("Need a db ID");
     
-    my $sth = $self->prepare("SELECT name, input_dba_id
+    my $sth = $self->prepare("SELECT name, input_dba_id,job_id
                               FROM input 
                               WHERE input_id = '$id'"
                               );
     $sth->execute();
     
-    my ($name,$input_dba_id) = $sth->fetchrow_array;
+    my ($name,$input_dba_id,$job_id) = $sth->fetchrow_array;
 
     $input_dba_id || $self->throw("No input adaptor for input with id $id");
 
@@ -52,13 +52,31 @@ sub fetch_by_dbID {
 
     my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
+                                    -job_id => $job_id,
                                     -input_dba => $input_dba);
                                                     
     return $input;
     
 }
 
-sub store {}
+sub store {
+    my ($self,$input) =@_;
+    $input || $self->throw("Need input obj to store");
+
+    my $sql = " INSERT INTO input (input_dba_id, job_id, name) 
+                VAULES (?,?,?)";
+    my $sth = $self->prepare($sql);
+    eval{
+        $sth->execute($input->input_dba->dbID,$input->job_id,$input->name);
+    };if ($@){$self->throw("Error storing new input.\n$@");}
+
+
+    $input->dbID($sth->{'mysql_insertid'});
+    $input->adaptor($self);
+    
+    return $input->dbID;
+
+}
 
 
 

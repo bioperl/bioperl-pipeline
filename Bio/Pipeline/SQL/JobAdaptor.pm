@@ -74,6 +74,10 @@ sub fetch_by_dbID {
 
   my $hashref = $sth->fetchrow_hashref;
 
+  if( ! defined $hashref ) {
+    return undef;
+  }
+
   my $analysis = 
     $self->db->get_AnalysisAdaptor->
       fetch_by_dbID( $hashref->{analysis_id} );
@@ -92,8 +96,10 @@ sub fetch_by_dbID {
       push (@inputs,$input);
   }
 
+
   #getting the output adaptor
   my $output_adp = $self->db->get_OutputDBAAdaptor->fetch_by_analysisID($hashref->{analysis_id});
+
   $job = Bio::Pipeline::Job->new
   (
    '-dbobj'    => $self->db,
@@ -111,9 +117,6 @@ sub fetch_by_dbID {
    '-status'    => $hashref->{'status'}
   );
 
-  if( ! defined $hashref ) {
-    return undef;
-  }
 
   
 
@@ -230,18 +233,16 @@ sub store {
   }
 
   my $sth = $self->prepare( q{
-    INSERT into job( input_id, analysis_id,
-      queue_id, stdout_file, stderr_file, object_file,
-      retry_count ) 
-    VALUES ( ?, ?, ?, ?, ?, ?, ?, ? ) } );
+    INSERT into job( analysis_id,
+      stdout_file, stderr_file, object_file,
+      status,time) 
+    VALUES ( ?, ?, ?, ?, ?, now() ) } );
 
-  $sth->execute( $job->input_id,
-                 $job->analysis->dbID,
-                 $job->queue_id,
+  $sth->execute( $job->analysis->dbID,
                  $job->stdout_file,
                  $job->stderr_file,
                  $job->input_object_file,
-                 $job->retry_count );
+                 'NEW');
 
   $sth = $self->prepare( "SELECT LAST_INSERT_ID()" );
   $sth->execute;
@@ -250,7 +251,6 @@ sub store {
   $job->dbID( $dbId );
   $job->adaptor( $self );
 
-  $self->set_status( $job, "CREATED" );
 }
 =head2 remove
 
