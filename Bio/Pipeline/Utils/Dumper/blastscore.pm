@@ -19,6 +19,7 @@ Bio::Pipeline::Dumper::blastscore
   use Bio::SearchIO;
 
   my $dumper = Bio::Pipeline::Dumper->new(-module=>'BlastScore',
+                                        -format=>"score",
                                         -file=>">shawn.out",
                                         -significance=>"<0.001",
                                         -query_frac_identical=>">0.21");
@@ -111,7 +112,7 @@ use Bio::Pipeline::Dumper;
 
 @ISA = qw(Bio::Pipeline::Dumper);
 BEGIN {
-  @BS_PARAMS = qw(LENGTH RAW_SCORE SIGNIFICANCE BITS N P QUERY_LENGTH_ALN
+  @BS_PARAMS = qw(FORMAT LENGTH RAW_SCORE SIGNIFICANCE BITS N P QUERY_LENGTH_ALN
                   SUBJECT_LENGTH_ALN QUERY_GAPS SUBJECT_GAPS ID_MATCHES
                   CONS_MATCHES QUERY_FRAC_IDENTICAL SUBJECT_FRAC_IDENTICAL
                   QUERY_FRAC_CONSERVED SUBJECT_FRAC_CONSERVED FRAC_ALIGNED_QUERY
@@ -158,12 +159,18 @@ sub dump {
     my ($self,@hit) = @_;
 
     my $outfile = $self->file;
-
+    my $format = $self->format;
     foreach my $hit(@hit){
         $hit->isa("Bio::Search::Hit::HitI") || $self->throw("Not a Bio::Search::Hit::HitI object!");
         if($self->_include($hit)){
             my ($hsp) = $hit->hsps;
-            $self->_print($hsp->feature1->seq_id."\t".$hsp->feature2->seq_id."\t".$hit->significance."\n");
+            if($format =~/gff/){
+                $self->_print($hsp->query->gff_string."\n");
+                $self->_print($hsp->subject->gff_string."\n");
+            }
+            else {
+              $self->_print($hsp->feature1->seq_id."\t".$hsp->feature2->seq_id."\t".$hit->significance."\n");
+            }
         }
     }
 }
