@@ -257,6 +257,7 @@ DT: foreach my $in(@input){
       else {
         my %r_datatypes = $runnable->datatypes;
         foreach my $r_key(keys %r_datatypes){
+          next if($self->runnable->can($r_key) && $self->runnable->$r_key());#already set 
           if (ref($r_datatypes{$r_key}) eq "ARRAY"){
             foreach my $dt (@{$r_datatypes{$r_key}}){
               if ($self->match_data_type($in_obj,$dt)) {
