@@ -109,12 +109,17 @@ sub new {
       my $module= $param{'-module'};
       $module || Bio::Root::Root->throw("Must you must provided a Dumper module found in Bio::Pipeline::Dumper::*");
       my $file= $param{'-file'};
-      $module || Bio::Root::Root->throw("Must you must provided a Dumper module found in Bio::Pipeline::Dumper::*");
+      $file || Bio::Root::Root->throw("You must provide an output file ");
+
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_Dumper_module($module));
       my ($self) =  "Bio::Pipeline::Dumper::$module"->new(@args);
       $self->module($module);
+      my $sem = $file.".lck";
+      $sem=~s/>//g;
+      $self->_semaphore($sem);
+      $self->_file($file);
       return $self;
     }
 }
@@ -126,6 +131,21 @@ sub _initialize {
     $self->_initialize_io(@args);
 }
 
+sub _semaphore {
+    my ($self,$semaphore) = @_;
+    if($semaphore){
+        $self->{'_semaphore'} = $semaphore;
+    }
+    return $self->{'_semaphore'};
+}
+
+sub _file {
+    my ($self,$file) = @_;
+    if($file) {
+        $self->{'_file'} = $file;
+    }
+    return $self->{'_file'};
+}
 =head2 _load_Dumper_module
 
   Title   : _load_Dumper_module
@@ -220,9 +240,15 @@ sub dump{
 =cut
 
 sub _lock {
-  my ($self,$FH) = @_;
-  flock($FH,LOCK_EX);
-  seek($FH, 0, 2);
+  my ($self) = @_;
+
+  my $dir= $self->_semaphore;
+  mkdir $dir, 0777 or die "Can't make lock directory";
+  my %db;
+  dbmopen %db, "$dir/db", 0666;
+    $db{'started'} = time();
+    $db{'user'}    = getlogin();
+  dbmclose %db;
 }
 
 =head2 _unlock
@@ -236,13 +262,21 @@ sub _lock {
 =cut
 
 sub _unlock {
-  my ($self,$FH) = @_;
-  flock($FH,LOCK_UN);
+  my ($self) = @_;
+  my $dir = $self->_semaphore;
+  unlink "$dir/db.pag";
+  unlink "$dir/db.dir";
+  unlink "$dir/db.db";
+  unlink "$dir/db";
+  rmdir $dir;
 }
 
 sub _print {
     my ($self) = shift;
+
     my $fh = $self->_fh;
+    while(-e $self->_semaphore){
+    }
     $self->_lock($fh);
     print $fh @_;
     $self->_unlock($fh);
