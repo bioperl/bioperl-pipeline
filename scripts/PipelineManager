@@ -1,0 +1,157 @@
+#!/usr/local/bin/perl
+#########################################################
+#Script for loading a XML pipeline and running the Pipeline Manager
+#
+# Creator: Arne Stabenau <stabenau@ebi.ac.uk>
+# Date of creation: 05.09.2000
+#
+# rewritten for biopipe by Jer-Ming Chia, Shawn Hoon and Xiao Juguang
+#<jerm@post1.com>, <shawnh@fugu-sg.org> <juguang@fugu-sg.org>
+# 
+#
+# You may distribute this code under the same terms as perl itself
+#########################################################
+
+
+use strict;
+use Getopt::Long;
+use Bio::Pipeline::Manager;
+use Bio::Pipeline::XMLImporter;
+use vars qw($XMLFORCE $XML $SCHEMA $FLUSH $LOCAL $VERBOSE $NOTEST $NORUN);
+
+# defaults: command line options override pipeConf variables,
+
+use Bio::Pipeline::PipeConf qw (DBI_DRIVER
+				DBHOST 
+                                DBNAME
+                                DBUSER
+                                DBPASS
+                                NFSTMP_DIR
+                                QUEUE
+                                BATCHSIZE
+                                FETCH_JOB_SIZE
+                                JOBNAME
+                                RETRY
+                                SLEEP
+			        );
+
+$| = 1; #flush all print statements
+my $INPUT_LIMIT = undef;
+my $HELP = undef;
+my $NUMBER=undef;
+my $VERBOSE = 0;
+
+my $USAGE =<<END;
+************************************
+*PipelineManager
+************************************
+This is the central script used to run the pipeline.
+
+Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
+
+Options:
+Default values are read from PipeConf.pm
+
+     -dbhost	The database host name (localhost)
+     -dbname 	The pipeline database name (required)
+     -dbuser 	User for connecting to db (root)
+     -dbpass 	The password to mysql database(null)
+     -dbdriver 	Database driver (mysql)
+     -schema 	The Biopipe database schema (../sql/schema)
+     -xml	The xml pipeline template file. It will run XMLImporter if provided
+     -xf        Force drop of any existing Biopipe database with the same name
+     -flush  	flush all locks on pipeline and remove any that exists. 
+             	Should only be used for debugging or development.
+     -batchsize The number ofjobs to be batched to one node
+     -local     Whether to run jobs in local mode 
+                (on the node where this script is run)
+     -jobnbr 	Number of jobs to run (for testing)
+     -queue     Specify the queue on which to submit jobs
+     -retry	Number of times to retry failed jobs
+     -notest    Don't run pre-pipeline checks
+     -norun     Use when you just want to load the XML without running
+     -verbose 	Whether to show warning during test and setup
+     -help      Display this help
+
+END
+
+GetOptions(
+    'dbhost=s'    => \$DBHOST,
+    'dbname=s'    => \$DBNAME,
+    'dbuser=s'    => \$DBUSER,
+    'dbpass=s'    => \$DBPASS,
+    'dbdriver=s'  => \$DBI_DRIVER,
+    'schema=s'    => \$SCHEMA,
+    'xml=s'	  => \$XML,
+    'xf'	  => \$XMLFORCE,
+    'flush'       => \$FLUSH,
+    'batchsize=i' => \$BATCHSIZE,
+    'local'       => \$LOCAL,
+    'queue=s'     => \$QUEUE,
+    'retry=i'     => \$RETRY,
+    'verbose'     => \$VERBOSE,
+    'jobnbr=s'    => \$NUMBER,
+    'notest'     => \$NOTEST,
+    'norun'     => \$NORUN,
+    'help'        => \$HELP
+)
+or die $USAGE;
+
+$HELP && die($USAGE);
+$QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
+$DBHOST ||="localhost";
+$DBUSER ||="root";
+$DBPASS ||=undef;
+$DBNAME || die("Need a biopipe database name\n$USAGE");
+$SCHEMA ||= "../sql/schema.sql";
+
+#############################################################
+#Load the XML template first
+#############################################################
+if($XML){
+my $importer = Bio::Pipeline::XMLImporter->new (
+						-dbhost=>$DBHOST,
+						-dbname=>$DBNAME,
+						-dbuser=>$DBUSER,
+						-dbpass=>$DBPASS,
+						-schema=>$SCHEMA,
+						-xml   =>$XML);	
+
+my $loaded = $importer->run($XMLFORCE);
+
+	if (!$loaded){
+		print "Unable to load XML successfully\n Please check your parameters and the xml template\n";
+	   exit(0);
+	}
+}
+
+if(!$NORUN){
+my $manager = Bio::Pipeline::Manager->new(
+    -driver	=> $DBI_DRIVER,
+    -host       => $DBHOST,
+    -dbname     => $DBNAME,
+    -user       => $DBUSER,
+    -pass       => $DBPASS,
+    -flush      => $FLUSH,
+    -batchsize  => $BATCHSIZE,
+    -local      => $LOCAL,
+    -queue      => $QUEUE,
+    -retry      => $RETRY,
+    -verbose    => $VERBOSE,
+    -jobnbr     => $NUMBER,
+    -nfstmp_dir => $NFSTMP_DIR,
+    -fetch_job_size => $FETCH_JOB_SIZE,
+    -sleep      => $SLEEP,
+    -batchsize  => $BATCHSIZE,
+    -input_limit    => $INPUT_LIMIT
+);
+
+$manager->check_lock;
+$manager->create_lock;
+$manager->test_analysis if !$NOTEST;
+my $ok = $manager->run;
+$manager->remove_lock if $ok;
+}
+else {
+	print "PipelineManager exited\n";
+}
