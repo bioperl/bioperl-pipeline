@@ -162,6 +162,10 @@ sub _get_io_module {
         open (FILE, $self->file);
         return (\*FILE, "print_matrix");
     }
+    elsif($obj->isa("Bio::SeqFeatureI")){
+        open(FILE, $self->file);
+        return(\*FILE,"gff_string");
+    }
     else {
         $self->throw(ref $obj. " cannot be dumped through this module");
     }
