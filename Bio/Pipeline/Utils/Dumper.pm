@@ -77,6 +77,7 @@ use vars qw(@ISA);
 use strict;
 use Bio::Root::Root;
 use Bio::Root::IO;
+use Fcntl ':flock';
 
 @ISA = qw(Bio::Root::Root Bio::Root::IO);
 
@@ -208,4 +209,42 @@ sub dump{
   $self->throw_not_implemented();
 }
 
+=head2 _lock 
+
+  Title   : _lock 
+  Usage   : $self->lock($FH);
+  Function: locks a file handle 
+  Returns :
+  Args    : a FileHandle
+
+=cut
+
+sub _lock {
+  my ($self,$FH) = @_;
+  flock($FH,LOCK_EX);
+  seek($FH, 0, 2);
+}
+
+=head2 _unlock
+
+  Title   : _unlock
+  Usage   : $self->_lock($FH);
+  Function: unlocks a file handle
+  Returns :
+  Args    : a FileHandle
+
+=cut
+
+sub _unlock {
+  my ($self,$FH) = @_;
+  flock($FH,LOCK_UN);
+}
+
+sub _print {
+    my ($self) = shift;
+    my $fh = $self->_fh;
+    $self->_lock($fh);
+    print $fh @_;
+    $self->_unlock($fh);
+}
 1;
