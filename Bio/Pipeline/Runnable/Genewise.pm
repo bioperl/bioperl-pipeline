@@ -59,7 +59,16 @@ use vars qw(@ISA);
 use strict;
 use Bio::Root::RootI;
 use Bio::Pipeline::DataType;
-use Bio::Tools::Run::Genewise
+use Bio::Tools::Run::Genewise;
+use FileHandle;
+use Bio::PrimarySeq;
+use Bio::SeqFeature::FeaturePair;
+use Bio::SeqFeature::Generic;
+use Bio::SeqI;
+use Bio::SeqIO;
+use Bio::Root::Root;
+use Bio::Pipeline::RunnableI;
+
 
 @ISA = qw(Bio::Pipeline::RunnableI);
 
@@ -135,12 +144,12 @@ sub run {
     else {
       $factory = Bio::Tools::Run::Genewise->new();
     }
-    my $genes;
+    my @genes;
     eval {
-      $genes = $factory->predict_genes($seq1, $seq2);
+     @genes = $factory->predict_genes($seq1, $seq2);
     };
-    $self->output($genes);
-    return $genes;
+    $self->output(\@genes);
+    return \@genes;
  }
   
 =head2 output
@@ -156,7 +165,7 @@ Args    :   A Bio::Seqfeature::Gene:GeneStructure object
 sub output{
     my ($self,$gene) = @_;
     if(defined $gene){
-      ($gene->isa('Bio::Seqfeature::Gene:GeneStructure object')) || $self->throw("Output must be a Bio::Seqfeature::Gene:GeneStructure object.");
+      (ref($gene) eq "ARRAY") || $self->throw("Output must be an array reference.");
       $self->{'_gene'} = $gene;
     }
     return @{$self->{'_gene'}};
