@@ -843,6 +843,8 @@ sub type {
 
 sub _load_dbadaptor {
     my ($self,) = @_;
+    return $self->{'_dbadaptor'} unless !$self->{'_dbadaptor'};
+
     my $dbname = $self->dbadaptor_dbname();
     my $driver = $self->dbadaptor_driver();
     my $host   = $self->dbadaptor_host();
@@ -853,9 +855,9 @@ sub _load_dbadaptor {
 
     $self->_load_module($module);
 
-    my $db_adaptor = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass,-port=>$port);
-
-    return $db_adaptor;
+    $self->{'_dbadaptor'} = "${module}"->new(-dbname=>$dbname,-user=>$user,-host=>$host,-driver=>$driver,-pass=>$pass,-port=>$port);
+    
+    return $self->{'_dbadaptor'};
 }
 
 =head2 _load_obj
