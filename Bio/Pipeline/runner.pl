@@ -3,7 +3,7 @@
 # 
 # adapted from EnsEMBL::Pipeline runner.pl
 #
-# Copyright EMBL-EBI 2000
+# Copyright FuguI IMCB 
 # 
 # You may distribute this code under the same terms as perl itself
 #
