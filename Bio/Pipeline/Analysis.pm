@@ -169,6 +169,36 @@ sub io_map{
     return $self->{'_io_map'};
 }
 
+=head2 fetch_next_analysis
+
+  Title   : fetch_next_analysis
+  Usage   : $self->fetch_prev_analysis
+  Function: fetches the next analysis  based on current analysis
+  Returns : L<Bio::Pipeline::Analysis>
+  Args    :
+
+=cut
+
+sub fetch_next_analysis {
+    my ($self) = @_;
+    return $self->adaptor->fetch_next_analysis($self);
+}
+
+=head2 fetch_prev_analysis
+
+  Title   : fetch_prev_analysis
+  Usage   : $self->fetch_prev_analysis
+  Function: fetches the previous analysis  based on current analysis
+  Returns : L<Bio::Pipeline::Analysis>
+  Args    : 
+
+=cut
+
+sub fetch_prev_analysis {
+    my ($self) = @_;
+    return $self->adaptor->fetch_prev_analysis($self);
+}
+
 =head2 exists_db_file
 
   Title   : exists_db_file
