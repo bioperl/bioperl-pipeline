@@ -48,7 +48,7 @@ sub run {
     my $ioh_map = $self->iohandler_map;
 
     foreach my $key (keys %{$input}){
-       $key = lc $key;
+#       $key = lc $key;
        my $ioh = $ioh_map->{$key};
        if(!$input->{$key}){
            $self->throw("Iohandler map for $key does not have inputs");
