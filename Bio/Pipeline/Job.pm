@@ -270,12 +270,12 @@ sub run {
   if( ! open ( STDOUT, ">".$self->stdout_file )) {
   print STDERR $self->stdout_file;
     $self->set_status( "FAILED" );
-	$self->throw("Cannot pipe STDOUT to stdout_file.");
+	$self->throw("Cannot pipe STDOUT to stdout_file. Please check that your NFSTMP_DIR is writeable");
   }
         
   if( ! open ( STDERR, ">".$self->stderr_file )) {
     $self->set_status( "FAILED" );
-	$self->throw("Cannot pipe STDERR to stderr_file.");
+	$self->throw("Cannot pipe STDERR to stderr_file. Please check that your NFSTMP_DIR is writeable.");
   }
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
