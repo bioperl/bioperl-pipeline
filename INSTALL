@@ -1,15 +1,14 @@
 The bioperl-pipeline relies on a mysql database for its job management and tracking.
 This allows persistency of most operations inherent to the pipeline, which
 in turn allows the pipeline to restart seemlessly even after an abrupt halt due
-to some system failure (e.g. network problems, power cut,etc.)
+to some system failure (e.g. network problems, power cut, etc.)
 
-The SQL schema for the pipeline is in a separate cvs module called
-biosql-schema, as in theory the same system could be ported to other languages
-though at the moment the only software development effort is in bioperl.
+1) Create a pipeline database:
 
-1)Create a pipeline database:
-mysqladmin -u root create biopipe
+>mysqladmin -u root create biopipe
 
-2)Populate the database with the schema from the biosql-schema cvs modules:
-mysql -u root biopipe < ../biosql-schema/sql/biopipelinedb-mysql.sql
+2) Populate the database with the schema:
+
+>cd bioperl-pipeline
+>mysql -u root biopipe < sql/schema.sql
 
