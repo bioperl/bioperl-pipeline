@@ -1,0 +1,171 @@
+------------------------------------------------------------------------
+This document seeks to explain the organization the XML file.
+14/4/03
+Shawn Hoon
+shawnh@fugu-sg.org
+------------------------------------------------------------------------
+
+o The way it works
+  Each pipeline is defined by an XML file. The XML file encapsulates the
+  entire definition of the pipeline. The major components that it describes
+  are 
+    1) Where input data resides and how to access the data
+    2) What analysis to run on the data
+    3) The order in which analysis to are executed and any special rule conditions
+    4) Where and how to store the results of the analysis
+  
+  This XML file is passed into the PipelineManager script found in the scripts
+  directory. Thereafter, it will be passed into the Bio::Pipeline::XMLImporter module
+  that parses the template and stores the information into the biopipe mysql
+  database. The use of the XML file at this stage is completed.
+  The entire definition of the pipeline is then completely defined inside
+  the database and the actually running of the pipeline will run off database.    
+  
+  Benefits:
+      -An organized way of defining the pipeline in a coherent manner
+      -Easy format for the exchanging pipelines and easy modifications of parameters
+      -Easy to reload pipelines
+
+o XML Organization
+  <pipeline_setup>
+    <global>
+    <database_setup>
+    <iohandler_setup>
+    <pipeline_flow_setup>
+    <job_setup>(optional) 
+  </pipeline_setup>                                                                     
+           
+  <global>
+  This defines any variables that may be used in the xml document itself.
+  Variables are of denoted by a '$' character like $variable.
+  Anywhere in the code where a $ character is placed, the XMLImporter will replace
+  with the value defined in the global tag. This makes path definitions and centralized
+  and users of the XML template should only need to modify things here.
+                                                                             
+  <database_setup>                                                                      
+  This specifies the databases that the pipeline connects to and the                    
+  adaptor modules that intefaces with them.                                             
+                                                                                        
+  <iohandler_setup>                                                                     
+  This specifies the method calls that will be used by the pipeline                     
+  to access the databases. These methods are contained in the modules                   
+  specified by the database setup section above.                                        
+                                                                                        
+  <pipeline_flow_setup>                                                                 
+  This specifies the analysis and rules of the pipeline. Analysis                       
+  refer to the runnables that will be used in this pipeline while the                   
+  rules specify the order in which these analysis are to be run, including              
+  any specific pre-processing actions that are to be carried out.    
+
+  <job_setup>                                                                           
+  This is an optional part that allows specific inputs to be inserted.                  
+  Usually, this is done using DataMongers and Input Create modules.                     
+
+o Special System Variables 
+
+  You will notice special variables within the IOHandler setup portion of the
+   XML that are demarcated by 2 '!' symbols like !INPUT!. 
+  This variable are all found within the <value> tags of arguments like so:
+  <argument>
+    <value>!INPUT!<value>
+  </argument>
+ This is a Biopipe system variable that has a special context. There are two IOHandler
+ types: INPUT and OUTPUT. Do not confuse the INPUT in <adaptor_type> with the value INPUT
+ in the <value> tag. Here INPUT and OUTPUT refers to the type of IOHandler while the other
+ has meaning explained below. The OUTPUT iohandler has certain additional system variables.
+ Each variable is defined within the context of a input of a given job.
+
+ -Common System Variables
+
+  !INPUT! - This is the input id name specified for the particular input.
+          It corresponds to the name column in the input table.
+          For example, say we are fetching a sequence via an IOHandler that 
+          repsents in code:
+          my $db = Bio::DB::Fasta->new('/some/file');
+          my $seq = $db->get_Seq_by_id("scaffold_1");
+          Here the value of INPUT would be "scaffold_1".
+
+  !ANALYSISX! - Here X refers to a digit character and it corresponds to the analysis id 
+               specified in the analysis definition portion of the XML file:
+               eg. <analysis id="1"> would be ANALYSIS1
+
+  !ANALYSIS!   - Without a number appended, this would correspond to the current analysis.
+
+  !ANALYSIS_NAME! - This refers to the value of the Analysis logic name of the current analysis
+
+  !IOHANDLERX! - Here X refers to a digit character and it corresponds to the iohandler id 
+               specified in the iohandler_setup portion of the XML file.
+               e.g. <iohandler_id="2"> would be IOHANDLER2
+
+  -Additional Variable for IOHandlers of type OUTPUT
+
+    !INPUTOBJ! - This corresponds to the actual input obj fetched by the iohandler.
+               For the example above, this would correspond to the $seq objct.
+
+    !INPUTOBJX! - If a job has more than one input, you can specify which particular input obj
+                where X is a digit representing the rank of the input. Here the inputs are ranked according
+                to their input id in the input table. You will thus need to know the order of the
+                inputs that are created by the InputCreate modules 
+
+   Developers note: These variables are used in Bio::Pipeline::IOHandler in particular: the 
+                    _format_input_arguments and _format_output_args methods.
+
+  o Special Rule Tags
+
+    There are special Rule conditional tags that are specified in the <action> tags of the rules.
+     e.g.:    For the action NOTHING here: 
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+
+    These are special Rule conditionals that are used by the Bio::Pipeline::Manager module to figure
+    out what to do upon completion of a job. Upon completion of a job of analysis id 1, the Manager
+    will lookup the rule table to find all rules of id 1. It will then do the action specified for
+    the next analysis 2. In this case, the action is NOTHING, so it does nothing and exits.
+
+    Current Condtionals provided are :
+
+    NOTHING - Do not do anything. No job for the next analysis is created. Usually this are used for
+              InputCreate analysis jobs which job itself is to create jobs so the subsequent analyis
+              jobs are already handled.
+
+    COPY_ID - This copys the input id from the previous analysis job to the next analysis job.
+              The iohandler for the input however may be remapped using the following xml definition:
+
+              <input_iohandler_mapping>
+               <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+               <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+              </input_iohandler_mapping>
+ 
+              What the above snippet means is that having finished the previous analysis, map inputs
+              with iohandlers 2 to iohandler 4 for the next analysis. So for a COPY_ID, the id used
+              to fetch the input will be the same but it may be fetched in a different way. A common
+              example would be an RepeatMasker analysis followed by a blast. The first analysis wil have
+              the sequence fetched raw, while for blast, the repeat_masked sequence would be fetched, same
+              id, different iohandler.
+              If an iohandler mapping is not provided, the current iohandler is assumed to be used.
+
+    COPY_ID_FILE - This are for file based analysis where the input ids are actuallly file paths.
+                   They are given special tags "infile".
+
+    UPDATE       - This takes the output ids that were generated from the previous analysis and create jobs
+                   for the next analysis. This will soon be deprecated. Recommended way of doing things
+                   would be to use an input create.
+
+    WAITFORALL   - This is a special action that specifies that all jobs of the previous analysis are to
+                   be completed before running the next job. 
+
+    WAITFORALL_AND_UPDATE - This is a waitforall followed by copying output ids from the last analysis to create
+                            jobs for the next analysis. Soon to be deprecated.
+
+o Individual Pipeline
+  Each of pipeline templates will have its own configuration documentation and usage. Developers
+  should as much as possible defined the assumptions and system requirements in that document.
+  Pls refer to the individual pipeline examples for more information on using them. Individual
+  pipeline examples are located in the bioperl-pipeline/xml/examples directory. Sample data
+  and instructions are provided.
+  
+              
+__END__
