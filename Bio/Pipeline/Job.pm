@@ -276,7 +276,6 @@ sub run {
 
   print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
 
-=jerm
   local *STDOUT;
   local *STDERR;
 
@@ -290,7 +289,6 @@ sub run {
     $self->set_status( "FAILED" );
     return;
   }
-=cut
   
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
@@ -305,9 +303,9 @@ sub run {
                         );
   };                      
   if ($err = $@) {
-      print (STDERR "CREATE: Lost the will to live Error\n");
       $self->set_status( "FAILED" );
-      $self->throw( "Problems creating runnabledb  [$err]\n");
+      print (STDERR "CREATE: Lost the will to live Error. Problems creating runnabledb \n[$err]\n");
+      $self->throw( "Problems creating runnabledb \n[$err]\n");
   }
   eval {   
       $self->set_stage( "READING" );
@@ -315,8 +313,8 @@ sub run {
   };
   if ($err = $@) {
       $self->set_status( "FAILED" );
-      print (STDERR "READING: Lost the will to live Error\n");
-      $self->throw ("Problems with runnableDB fetching input [$err]\n");
+      print (STDERR "READING: Lost the will to live Error. Problems with runnableDB fetching input \n[$err]\n");
+      $self->throw ("Problems with runnableDB fetching input\n[$err]\n");
   }
   if ($rdb->input_is_void) {
       $self->set_status( "VOID" );
@@ -328,8 +326,8 @@ sub run {
   };
   if ($err = $@) {
       $self->set_status( "FAILED" );
-      print (STDERR "RUNNING: Lost the will to live Error\n");
-      $self->throw("Problems running runnableDB for [$err]\n");
+      print (STDERR "RUNNING: Lost the will to live Error. Problems running runnableDB\n[$err]\n");
+      $self->throw ("Problems running runnableDB for\n[$err]\n")
   }
   eval {
       $self->set_stage( "WRITING" );
@@ -337,12 +335,20 @@ sub run {
   }; 
   if ($err = $@) {
       $self->set_status( "FAILED" );
-      print (STDERR "WRITING: Lost the will to live Error\n");
-      $self->throw( "Problems for runnableDB writing output for  [$err]") ;
+      print (STDERR "WRITING: Lost the will to live Error\nProblems for runnableDB writing output for \n[$err]") ;
+      $self->throw( "Problems for runnableDB writing output for \n[$err]") ;
   }
   $self->stage('UPDATING');
   $self->status( "COMPLETED" );
   $self->update;
+
+  eval{
+    $self->adaptor->update_completed_job($self);
+  };
+  if($err = $@){
+      print STDERR ("Error updating completed job\n$err");
+  }
+  
   return 1;
 }
 

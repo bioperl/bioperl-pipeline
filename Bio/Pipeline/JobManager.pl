@@ -93,11 +93,7 @@ while ($run) {
     
     foreach my $job($jobAdaptor->fetch_all($RETRY)){
         if ($job->get_status eq 'COMPLETED'){
-            eval{
-                $job->update_completed;
-            };if ($@){
-                $job->set_status('FAILED');
-             }else{$job->remove;}
+            $job->remove;
         }else {
             if ($job->get_status eq 'FAILED'){ 
                 my $retry_count = $job->retry_count;
@@ -125,7 +121,7 @@ while ($run) {
 
     $batchsubmitter->submit_batch if ($batchsubmitter->batched_jobs);
     
-    my $count = $jobAdaptor->job_count;
+    my $count = $jobAdaptor->job_count($RETRY);
     $run =  0 if ($once || !$count);
     sleep($SLEEP);
     print "Waking up and run again!\n";
