@@ -352,7 +352,6 @@ sub runnable {
 	      $self->{'_runnable'}=$runnable;
 
 	}
-    print STDERR $self->{'_runnable'}; 
     return $self->{'_runnable'};  
 }
 
