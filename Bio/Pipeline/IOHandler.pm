@@ -45,7 +45,7 @@ Bio::Pipeline::IOHandler input/output object for pipeline
                                      -job_id=>1);
   my $input = $io_db->fetch_input($in); #$input is an array of ref ensembl contigs
 
-  print $input->seq;
+  rint $input->seq;
 
   #alternatively you can use any modules to read, here we are reading from a database
   #of fasta formatted files
@@ -357,7 +357,6 @@ sub fetch_input {
     if (defined $self->converters) {
       my @converters = sort {$a->rank <=> $b->rank} @{$self->converters};
       foreach my $converter(@converters){
-          print $converter;
           
           if(defined $converter){
               $obj = $converter->convert($obj);
@@ -543,12 +542,9 @@ sub write_output {
                     }else{
                         ($object) = $converter->convert([$object]);
                     }
-                    print "order of convert\t$i\n"
                 }else{
                     my @arguments = sort { $a->rank <=> $b->rank} @{$method->arguments};
                     my @args = $self->_format_output_args($input, $object, @arguments);
-                    print "$method_name, the order\t$i\n";
-                    print "@args\n";
                     $converter->$method_name(@args);
                 }
                 $i++;
