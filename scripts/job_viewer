@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 #######################################################
 #Job Viewer 0.1
 #Simple interactive script for viewing job status and err
@@ -8,11 +8,40 @@
 #Requires Data::ShowTable
 #######################################################
 
-use Data::ShowTable;
+=head1 NAME
+
+jobviewer - View jobs and status from Biopipe Database
+
+=head1 SYNOPSIS
+
+  Usage: jobviewer -dbname biopipe -dbuser root -dbhost localhost -dbpass xxx -dbdriver mysql
+
+  -dbname
+  -dbhost
+  -dbpass
+  -dbdriver
+  -help
+
+  Default values are taken from PipeConf.pm
+
+=head1 DESCRIPTION
+
+  This script will query the specified Biopipe database for the analysis
+  in the pipeline. It will summarize the various job status and provide
+  access to the error log files for failed jobs. The perl module
+  Data::ShowTables is required for this script. 
+
+=head1 AUTHOR
+
+Shawn Hoon shawnh@fugu-sg.org
+
+=cut
+
 use strict;
 use Bio::Pipeline::SQL::DBAdaptor;
 use ExtUtils::MakeMaker;
 use Getopt::Long;
+use Data::ShowTable;
 use vars qw($theRow %ANAL_ALLOWED %STAGE_ALLOWED $HELP);
 use Bio::Pipeline::PipeConf qw (DBI_DRIVER
                                 DBHOST 
@@ -28,27 +57,14 @@ GetOptions(
     'dbuser=s'    => \$DBUSER,
     'dbpass=s'    => \$DBPASS,
     'dbdriver=s'  => \$DBI_DRIVER,
-    'help'=>\$HELP
+    'help'=> sub {exec('perldoc',$0); 
+                  exit(0)},
 );
 
-my $USAGE=<<END;
-****************************************
-Biopipe JobView 0.1
-****************************************
-Usage: jobviewer -dbname biopipe -dbuser root -dbhost localhost -dbpass xxx -dbdriver mysql
-
-  -dbname
-  -dbhost
-  -dbpass
-  -dbdriver
-  -help
-
-Default values are taken from PipeConf.pm
-
-END
-
-die($USAGE) unless $DBNAME;
-die($USAGE) if $HELP;
+unless  ($DBNAME) {
+  exec('perldoc',$0);
+  exit(0)
+};
 
 #connect to the database
 my $db = Bio::Pipeline::SQL::DBAdaptor->new(-dbname=>$DBNAME,
@@ -58,13 +74,13 @@ my $db = Bio::Pipeline::SQL::DBAdaptor->new(-dbname=>$DBNAME,
 
 #fetch all analysis
 my @anal = $db->get_AnalysisAdaptor->fetch_all;
-my @anal_logicname = map{$_->logic_name}@anal;
+my @anal_logicname = map{[$_->dbID,$_->logic_name]}@anal;
 my $title = ['id',"Analysis"];
 my (@types,@width,@Data);
 foreach my $i(0..$#anal_logicname){
-    push @Data,[$i+1,$anal_logicname[$i]];
+    push @Data,[$anal_logicname[$i]->[0],$anal_logicname[$i]->[1]];
     push @types,'char';
-    $ANAL_ALLOWED{$i+1}++;
+    $ANAL_ALLOWED{$anal_logicname[$i]->[0]}++;
 }
 
 
@@ -82,7 +98,7 @@ while(1){
   #select analysis
   my $anal_id= prompt("Select an analysis to get view job status [1-".@anal_logicname."]","1");
   next ANALYSIS unless $ANAL_ALLOWED{$anal_id};
-  my $analysis_name = $anal_logicname[$anal_id-1];
+  my $analysis_name = $anal_logicname[$anal_id-1]->[1];
 
 #get job status information
   foreach my $status(@STATUS){
@@ -121,11 +137,11 @@ while(1){
   foreach my $count(@failed){
     if($count > 0){
         push @stagedata,([$i+1,$STAGE[$i]]);
-        push @types,'char';
         push @width,100;
         $STAGE_ALLOWED{$i+1}++;
         $total+=$count;
     }
+        push @types,'char';
         $i++;
   }
 
@@ -135,7 +151,7 @@ while(1){
   ShowData('Simple',['id','STAGE'],\@types,\@width,@stagedata) ;
 
   STAGE: while(1){
-    my $failed_stage = prompt("Select a stage to view a sample err file for failed jobs of analysis ".$anal_logicname[$anal_id-1]."[1-$i]","1"); 
+    my $failed_stage = prompt("Select a stage to view a sample err file for failed jobs of analysis ".$anal_logicname[$anal_id-1]->[1]."[1-$i]","1"); 
      next STAGE unless $STAGE_ALLOWED{$failed_stage};
     my ($job) = $db->get_JobAdaptor->fetch_jobs(-number=>1,analysis_id=>$anal_id,-status=>['FAILED'],-stage=>[$STAGE[$failed_stage-1]]);
     next ANALYSIS unless $job;
@@ -144,7 +160,7 @@ while(1){
   open(FILE,$job->stderr_file);
   my @err_out = <FILE>;
   my $cont = 'y';
-  ShowData('Simple',['job_id','analysis','stderr_file','description'],['char','char','char'],[100,100,100], ([$job->dbID,$anal_logicname[$anal_id-1],$job->stderr_file]));
+  ShowData('Simple',['job_id','analysis','stderr_file','description'],['char','char','char'],[100,100,100], ([$job->dbID,$anal_logicname[$anal_id-1]->[1],$job->stderr_file]));
   my $start = 0;
   while ($cont=='y'){
     print join('',@err_out[$start..$start+20]);
