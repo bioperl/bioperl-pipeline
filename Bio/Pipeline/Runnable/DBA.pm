@@ -5,27 +5,51 @@
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
-#
-# =pod 
-#
-# =head1 NAME
-#
-# Bio::Pipeline::Runnable::DBA
-#
+
+=pod 
+
+=head1 NAME
+
+ Bio::Pipeline::Runnable::DBA
+
 =head1 SYNOPSIS
 
 =head1 DESCRIPTION
 Runnable for Dna Block Aligner program by Ewan Birney available at
 ftp://ftp.sanger.ac.uk/pub/birney/wise2/
 
-=head1 CONTACT
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-l@bio.perl.org
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution. Bug reports can be submitted via email
+    or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bio.perl.org/bioperl-bugs/
+
+=head1 AUTHOR - Shawn Hoon 
+
+Email shawnh@fugu-sg.org 
 
 Describe contact details here
 
 =head1 APPENDIX
 
+The rest of the documentation details each of the object methods.
+Internal methods are usually preceded with a _
 
 =cut
+
 
 package Bio::Pipeline::Runnable::DBA;
 use vars qw(@ISA);
@@ -39,6 +63,7 @@ use Bio::SeqIO;
 use Bio::Root::Root;
 use Bio::Pipeline::DataType;
 use Bio::Pipeline::RunnableI;
+use Bio::Tools::Run::Alignment::DBA;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
 
@@ -48,6 +73,7 @@ sub new {
   return $self;
 
 }
+
 =head2 datatypes
 
 Title   :   datatypes 
@@ -62,10 +88,10 @@ Args    :
 
 sub datatypes {
     my ($self) = @_;
-    my $dt1 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqI',
+    my $dt1 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::PrimarySeqI',
                                            '-name'=>'sequence',
                                            '-reftype'=>'SCALAR');
-    my $dt2 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqI',
+    my $dt2 = Bio::Pipeline::DataType->new('-object_type'=>'Bio::PrimarySeqI',
                                            '-name'=>'sequence',
                                            '-reftype'=>'SCALAR');
     my %dts;
@@ -92,6 +118,7 @@ sub feat1{
     }
     return $self->{'_feat1'};
 }
+
 =head2 feat2
   
 Title   :   feat2
@@ -108,26 +135,6 @@ sub feat2{
         $self->{'_feat2'} = $feat;
     }
     return $self->{'_feat2'};
-}
-
-  
-
-=head2 params
-  
-Title   :   params
-Usage   :   $self->params($seq)
-Function:   Get/set method for params 
-Returns :   String 
-Args    :   String 
-
-=cut
-
-sub params{
-    my ($self,$params) = @_;
-    if (defined($params)){
-        $self->{'_params'} = $params;
-    }
-    return $self->{'_params'};
 }
 
 =head2 dba
@@ -148,23 +155,6 @@ sub dba{
     return $self->{'_dba'};
 }
 
-=head2 alignpair
-  
-Title   :   alignpair
-Usage   :   $self->alignpair($seq)
-Function:   Get/set method for alignpair 
-Returns :   Bio::SeqFeature::FeaturePair 
-Args    :   Bio::SeqFeature::FeaturePair 
-
-=cut
-
-sub alignpair{
-    my ($self,$alignpair) = @_;
-    if (defined($alignpair)){
-        $self->{'_alignpair'} = $alignpair;
-    }
-    return $self->{'_alignpair'};
-}
 
 =head2 run
   
@@ -175,152 +165,52 @@ Returns :
 Args    :  
 
 =cut
+
 sub run {
   my ($self) = @_;
-  my $seq1 = $self->feat1->seq ;
-  my $seq2 = $self->feat2->seq;
-
+  my @seq = ($self->feat1,$self->feat2);
   my $params = $self->params;
   my $dba = $self->dba;
-  if (!defined $dba) {
-    $dba =  $self->analysis->program_file;
-  }
 
-  my $infile1 = "/tmp/$ENV{USER}-$$.dba_1";
-  my $infile2 = "/tmp/$ENV{USER}-$$.dba_2";
-  my $resultfile = "/tmp/_dbaresult_".$$;
-  my $out1 = Bio::SeqIO->new(-file => ">$infile1",'format'=>'fasta');
-  my $out2 = Bio::SeqIO->new(-file => ">$infile2",'format'=>'fasta');
-
-  print $out1->write_seq($seq1);
-  print $out2->write_seq($seq2);
-  $out1->close;
-  $out2->close;
-  my $command = "$dba $infile1 $infile2 > $resultfile";
-  eval {
-    print STDERR "Running command $command \n";
-    system($command);
-    $self->parse_results($resultfile);
-  };
-# delete tmp files
-  unlink $infile1;
-  unlink $infile2;
-  unlink $resultfile;
-
-}
-
-=head2 parse_results
-  
-  Title   :   parse_results
-  Usage   :   $self->parse_results($seq)
-  Function:   Parse results into a feature pair 
-  Returns :   Bio::SeqFeature::FeaturePair 
-  Args    :   filepath to results 
-
-=cut
-  
-sub parse_results {
-  my($self,$resultfile) = @_;
-  print $resultfile;
-  my ($score,$feat1_start,$feat1_end,$feat2_start,$feat2_end,$pid);
-	my ($global_end1,$global_end2);
-	$global_end1 	 = $self->feat1->end;
-	$global_end2	 = $self->feat2->end;
-
-  #do the parsing	
-  if (-e $resultfile) {
-    open(DBA, "<$resultfile") || $self->throw("Error opening $resultfile \n");
+  $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
+  my $factory;
+  if($self->analysis->parameters){
+    my @params = $self->parse_params($self->analysis->parameters);
+    $factory = Bio::Tools::Run::Alignment::DBA->new(@params);
   }
   else {
-    $self->throw("$resultfile doesn't exist.\n");
-  }
-  while (<DBA>){
-    print $_;   
-    if (/score =\s+(\S+)/){
-      $score = $1;
-    }
-    if (/\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)%/){
-      $feat1_start = $1;
-      $feat1_end = $2;
-      $feat2_start = $3;
-      $feat2_end = $4;
-      $pid = $5;
-    }
-  }
-  if (!$feat1_start){#no alignment
-      $self->warn("No alignment for ".$self->feat1->seqname);
-      return;
+    $factory = Bio::Tools::Run::Alignment::DBA->new();
   }
 
- #create the coordinates. Note here have to map back to original coordinates if
- #negative strand since what was given was reverse complemented sequence
- my ($feature1_start,$feature1_end,$feature2_start,$feature2_end);
- if ($self->feat1->strand < 0){
+  my @hsps;
+  eval {
+    @hsps = $factory->align(\@seq);
+  };
+  $self->output(\@hsps);
+  return \@hsps;
 
-		 $feature1_start = $self->feat1->end - $feat1_end;
-		 $feature1_end = $self->feat1->end - $feat1_start;
- }
- else {
-		 $feature1_start = $feat1_start + $self->feat1->start;
-		 $feature1_end   = $feat1_end + $self->feat1->start;
- }
- if ($self->feat2->strand < 0){
-		 $feature2_start = $self->feat2->end - $feat2_end;
-		 $feature2_end = $self->feat2->end - $feat2_start;
- }
- else {
-		 $feature2_start = $self->feat2->start + $feat2_start;
-		 $feature2_end = $self->feat2->start + $feat2_end;
-	}
-
- 
-  my $feat1 = Bio::SeqFeature::Generic->new (-seqname => $self->feat1->seqname,
-                                             -strand  => $self->feat1->strand,
-                                             -score   => $score,
-                                             -start   => $feature1_start,
-                                             -end     => $feature1_end,
-                                             -frame   => $self->feat1->frame,
-                                             -source  => "dba",
-                                             -primary => $self->feat2->seqname,
-                                             -tag     => {
-                                                          percent_id=>$pid});
-
- my $feat2 = Bio::SeqFeature::Generic->new (-seqname => $self->feat2->seqname,
-                                             -strand  => $self->feat2->strand,
-                                             -score   => $score,
-                                             -start   => $feature2_start,
-                                             -end     => $feature2_end,
-                                             -frame   => $self->feat2->frame,
-                                             -source  => "dba",
-                                             -primary => $self->feat2->seqname,
-                                             -tag     => {percent_id=>$pid});
-
-
- my $featurepair = Bio::SeqFeature::FeaturePair->new(-feature1 => $feat1,
-                                                  -feature2 => $feat2);
- 
- print "#####\n".$featurepair->gff_string."\n";
- $self->alignpair($featurepair);
- return $featurepair;
 }
-    
+
 =head2 output
   
 Title   :   output
 Usage   :   $self->output($seq)
 Function:   Get/set method for output 
-Returns :   Bio::SeqFeature::FeaturePair 
-Args    :   Bio::SeqFeature::FeaturePair 
+Returns :   An array of Bio::Search::HSP::GenericHSP objects 
+Args    :   An array ref to an array of Bio::Search::HSP::GenericHSP objects
 
 =cut
 
 sub output{
-    my ($self) = @_;
-    
-    return $self->alignpair;
+    my ($self,$hsp) = @_;
+    if(defined $hsp){
+      (ref($hsp) eq "ARRAY") || $self->throw("Output must be an array reference.");
+      $self->{'_hsp'} = $hsp;
+    }
+    return @{$self->{'_hsp'}};
 }
 
-  
+1;  
 
 
 
