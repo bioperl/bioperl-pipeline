@@ -1,0 +1,27 @@
+#!/usr/bin/perl
+
+=head1 NAME
+
+monitorClient - users' side client communcating with monitorAgent.
+
+=head1 SYNOPSIS
+
+Usage: monitorClient <addr> [<port>]
+
+=head1 AUTHOR
+
+Juguang Xiao, juguang@tll.org.sg
+
+=cut
+
+use strict;
+
+my $addr = shift @ARGV;
+my $port = shift @ARGV;
+$port ||= 2003;
+
+use Socket;
+
+use IO::Socket::INET;
+
+

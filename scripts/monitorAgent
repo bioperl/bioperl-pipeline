@@ -1,0 +1,73 @@
+#!/usr/bin/perl
+
+=head1 NAME
+
+monitorAgent - agent server between the pipeline database and monitor client.
+
+=head1 SYNOPSIS
+
+Usage: monitorAgent [<port>]
+
+port is optional and the default port is 2003
+
+=head1 DESCRIPTION
+
+=head1 AUTHOR
+
+Juguang Xiao, juguang@tll.org.sg
+
+=cut
+
+use strict;
+
+my $port = shift @ARGV;
+$port ||= 2003;
+my $max_clients = 4;
+
+
+use Socket;
+
+socket(SERVER, PF_INET, SOCK_STREAM, getprotobyname('tcp')) || die "$!\n";
+bind(SERVER, sockaddr_in($port, INADDR_ANY)) || die "$!\n";
+listen(SERVER, $max_clients);
+
+REQUEST:
+while(accept(CLIENT, SERVER)){
+    my $pid;
+    if($pid = fork){
+        close CLIENT;
+        next  REQUEST;
+    }
+    defined($pid) or die "cannot fork:\t$!\n";
+
+    close SERVER;
+
+    &handlt_client(*CLIENT);
+
+    close CLIENT;
+    exit;
+}
+
+close SERVER;
+
+sub handle_client {
+    local *CLIENT = shift;
+
+    select CLIENT;
+    $| = 1;
+
+    my $othee = getpeername(CLIENT) or die  "can't identify other end:\t$!\n";
+    my ($port, $iaddr) = unpack_sockaddr_in($other);
+    my $ip = inet_ntoa($iaddr);
+    my $message;
+    while(<CLIENT>){
+        $message .= $_;
+    }
+
+    my $request = Bio::Pipeline::Control::Request->decode($message);
+    my $protocol = Bio::Pipeline::Control::Protocol->new;
+    my $request = $protcol->server_handle($request);
+
+    $message = Bio::Pipeline::Control::Response->encode($response);
+    print $message;
+}
