@@ -219,6 +219,7 @@ CREATE TABLE converter (
   converter_id		int(10) unsigned DEFAULT'0' NOT NULL auto_increment,
   module		varchar(255) NOT NULL,
   method                varchar(255) NOT NULL,
+	arugment	varchar(255) NOT NULL,
 
   PRIMARY KEY (converter_id)
 );
