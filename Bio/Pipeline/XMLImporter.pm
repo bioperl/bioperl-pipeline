@@ -83,8 +83,7 @@ use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
-use Bio::Pipeline::Filter;
-use Bio::Pipeline::Converter;
+use Bio::Pipeline::Transformer;
 use Bio::Pipeline::Utils::SaxHandler;
 use XML::SAX::PurePerl;
 use ExtUtils::MakeMaker;
@@ -353,17 +352,17 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
    }
 }
 
-print "Doing Converters..\n";
-my @pipeline_converter_objs;
-$iohandler_setup->children('converter') || goto PIPELINE_FLOW_SETUP;
-foreach my $converter ($iohandler_setup->children('converter')){
-#       print "".(defined($converter)?"defined":"not defined").(ref($converter))."\n";
-       next unless (defined $converter);
-       next unless ref $converter;
-       my $id = &verify_attr($converter, 'id', 1);
-       my $module = &verify_attr($converter, 'module');
+print "Doing Transformers..\n";
+my @pipeline_transformer_objs;
+$iohandler_setup->children('transformer') || goto PIPELINE_FLOW_SETUP;
+foreach my $transformer ($iohandler_setup->children('transformer')){
+#       print "".(defined($transformer)?"defined":"not defined").(ref($transformer))."\n";
+       next unless (defined $transformer);
+       next unless ref $transformer;
+       my $id = &verify_attr($transformer, 'id', 1);
+       my $module = &verify_attr($transformer, 'module');
        my @method_objs;
-       foreach my $method ($converter->children('method')){
+       foreach my $method ($transformer->children('method')){
            next unless(defined $method);
            next unless ref $method;
            my $method_id = &verify_attr($method, 'id', 1);
@@ -402,13 +401,13 @@ foreach my $converter ($iohandler_setup->children('converter')){
            push @method_objs, $method_obj;
            
        }
-       my $converter_obj = new Bio::Pipeline::Converter(
+       my $transformer_obj = new Bio::Pipeline::Transformer(
          -dbID => $id,
          -module => $module,
          -method => \@method_objs
        );
-#       print "now , we got one converter\n";
-       push @pipeline_converter_objs, $converter_obj;
+#       print "now , we got one transformer\n";
+       push @pipeline_transformer_objs, $transformer_obj;
 }       
 
 ############################################
@@ -445,17 +444,6 @@ foreach my $node_group ($pipeline_flow_setup->children('node_group')) {
   }
 }
 
-foreach my $converter ($pipeline_flow_setup->children('converter')) {
-   
-  if (ref($converter)) {
-      my $module = &verify($converter,'module','REQUIRED');
-      my $method= &verify($converter,'method','REQUIRED');
-     my $converter_obj = Bio::Pipeline::Converter->new(-dbID => $converter->attribute('id'),
-                                                     -module => $module,
-                                                     -method => $method);
-     push @pipeline_converter_objs, $converter_obj;
-  }
-}
 
 
 my @analysis_objs;
@@ -496,23 +484,6 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
 
         my $datamonger_obj = Bio::Pipeline::Runnable::DataMonger->new();
-    	foreach my $filter ($datamonger->children('filter')){
-         if (ref ($filter)) {
-           my $module = &verify($filter,'module','REQUIRED');
-           my $rank = &verify($filter,'rank','OPTIONAL',1);
-           my @arguments = ();      
-           foreach my $argument ($filter->children('argument')){
-           	my $tag = &verify($argument,'tag','OPTIONAL');
-           	my $value = &verify($argument,'value','REQUIRED');
-            my $argument = Bio::Pipeline::Argument->new(-tag => $tag, -value => $value);
-            push @arguments, $argument;
-           }
-           my $filter = Bio::Pipeline::Filter->new(-module => $module, -rank => $rank);
-           $filter->arguments(\@arguments);
-           $datamonger_obj->add_filter($filter);
-         }
- 
-        }
 
         foreach my $input_create ($datamonger->children('input_create')){
          if(ref ($input_create)) {
@@ -591,17 +562,17 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          if(!defined($input_iohandler_obj)){
             print "input iohandler for analysis $analysis->dbID not found\n";
          } else {
-            my @converter_objs;
-            foreach my $converter ($input_iohandler->child('converter')) {
-              my $converter_obj = $self->_get_converter(\@pipeline_converter_objs, $converter->attribute("id")); 
-              if(defined($converter_obj)){
-                 $converter_obj->rank($converter->attribute("rank"));
-                 push @converter_objs, $converter_obj;
+            my @transformer_objs;
+            foreach my $transformer ($input_iohandler->child('transformer')) {
+              my $transformer_obj = $self->_get_transformer(\@pipeline_transformer_objs, $transformer->attribute("id")); 
+              if(defined($transformer_obj)){
+                 $transformer_obj->rank($transformer->attribute("rank"));
+                 push @transformer_objs, $transformer_obj;
               } else {
-                 print "converter for analysis  not found\n";
+                 print "transformer for analysis  not found\n";
               }
             }
-            $input_iohandler_obj->converters(\@converter_objs);
+            $input_iohandler_obj->transformers(\@transformer_objs);
             $input_iohandler_obj->type('INPUT');;
             push @ioh, $input_iohandler_obj;
          }
@@ -613,10 +584,10 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          if(!defined($output_iohandler_obj)){
             print "output iohandler for analysis $analysis->dbID not found\n";
          } else {
-            my @converter_objs;
-            my $converter_obj = $self->_get_converter(\@pipeline_converter_objs, &verify_attr($output_iohandler, 'converter_id', 0));
-            push @converter_objs, $converter_obj if $converter_obj;
-            $output_iohandler_obj->converters(\@converter_objs) if $#converter_objs >= 0;
+            my @transformer_objs;
+            my $transformer_obj = $self->_get_transformer(\@pipeline_transformer_objs, &verify_attr($output_iohandler, 'transformer_id', 0));
+            push @transformer_objs, $transformer_obj if $transformer_obj;
+            $output_iohandler_obj->transformers(\@transformer_objs) if $#transformer_objs >= 0;
             $output_iohandler_obj->type('OUTPUT');
             push @ioh, $output_iohandler_obj;
          }
@@ -645,17 +616,17 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          if(!defined($new_input_iohandler_obj)){
             print "new_input iohandler for analysis $analysis->dbID not found\n";
          } else {
-            my @converter_objs;
-            foreach my $converter ($new_input_iohandler->child('converter')) {
-              my $converter_obj = $self->_get_converter(\@pipeline_converter_objs, $converter->attribute("id"));
-              if(defined($converter_obj)){
-                 $converter_obj->rank($converter->attribute("rank"));
-                 push @converter_objs, $converter_obj;
+            my @transformer_objs;
+            foreach my $transformer ($new_input_iohandler->child('transformer')) {
+              my $transformer_obj = $self->_get_transformer(\@pipeline_transformer_objs, $transformer->attribute("id"));
+              if(defined($transformer_obj)){
+                 $transformer_obj->rank($transformer->attribute("rank"));
+                 push @transformer_objs, $transformer_obj;
               } else {
-                 print "converter for analysis  not found\n";
+                 print "transformer for analysis  not found\n";
               }
             }
-            $new_input_iohandler_obj->converters(\@converter_objs);
+            $new_input_iohandler_obj->transformers(\@transformer_objs);
             $new_input_iohandler_obj->type('NEW_INPUT');
             push @ioh, $new_input_iohandler_obj;
          }
@@ -762,9 +733,10 @@ foreach my $job ($job_setup->children('job')) {
 ###############################################################################################
 
 
-foreach my $converter (@pipeline_converter_objs) {
-  $dba->get_ConverterAdaptor->store($converter);
-}
+#foreach my $transformer (@pipeline_transformer_objs) {
+  #$dba->get_TransformerAdaptor->store($transformer);
+#}
+  $dba->get_TransformerAdaptor->store(\@pipeline_transformer_objs);
 foreach my $analysis (@analysis_objs) {
   $dba->get_AnalysisAdaptor->store($analysis);
 }
@@ -842,9 +814,9 @@ sub _create_initial_input_and_job {
   $self->dba->get_JobAdaptor->store($job_obj);
 }
 
-sub _get_converter {
-    my ($self, $pipeline_converter_objs, $id) = @_;
-    return $self->_search_array_by($pipeline_converter_objs, 'dbID', $id);
+sub _get_transformer {
+    my ($self, $pipeline_transformer_objs, $id) = @_;
+    return $self->_search_array_by($pipeline_transformer_objs, 'dbID', $id);
 }
 
 
