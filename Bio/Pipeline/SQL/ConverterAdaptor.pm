@@ -104,7 +104,7 @@ sub _store_converter_method{
 		$sth->execute($converter_id, 
 			$converter_method->name, 
 			$converter_method->rank);
-		$converter_method->dbID($sth->{mysql_inserted});
+		$converter_method->dbID($sth->{mysql_insertid});
 	}
    
 	my $converter_arguments_ref = $converter_method->arguments;
@@ -135,7 +135,7 @@ sub _store_converter_argument{
 			$converter_argument->tag, 
 			$converter_argument->value, 
 			$converter_argument->rank);
-		$converter_argument->dbID($sth->{mysql_inserted});
+		$converter_argument->dbID($sth->{mysql_insertid});
 	}
 }
 
