@@ -1,0 +1,162 @@
+<!DOCTYPE article PUBLIC "-//OASIS//DTD DocBook V4.1//EN">
+
+<article>
+
+<!-- Header -->
+
+<articleinfo>
+
+<title>Trouble Shooting BioPipee</title>
+<author>
+  <firstname>Shawn</firstname>
+  <surname>Hoon</surname>
+  <affiliation>
+    <address>
+      <email>shawnh@fugu-sg.org</email>
+    </address>
+  </affiliation>
+</author>
+
+<revhistory>
+  <revision>
+    <revnumber>0.1</revnumber>
+    <date>2002-12-02</date>
+    <authorinitials>shawnh</authorinitials>
+    <revremark>First Draft </revremark>
+  </revision>
+</revhistory>
+
+<!--<legalnotice>
+<para>
+This document is copyright Shawn Hoon, 2002. For reproduction other than
+personal use, please contact me at shawnh@fugu-sg.org
+</para>
+</legalnotice>//-->
+
+<abstract>
+<para>
+This document notes down various installation issues that one may encounter during the use of Biopipe.
+</para>
+</abstract>
+
+ </articleinfo>
+
+
+<!-- Section1: intro -->
+
+<section id="TroubleShooting">
+<title>TroubleShooting</title>
+<para>
+The complexity involved in installation of bioinformatics pipelines arise from the hetereogenity of the
+various systems it integrates. This variety stems from disparate database schemas, program versions and operating
+environment. One main aim of biopipe is to make these things explicit so that it becomes clear to the user and
+others what these parameters are and will hopefully make for better appreciation of work processes. This particular document
+seeks to address some of the problems that one may face in the course of installing and using Biopipe.
+</para>
+<para>
+<emphasis>Let us know!</emphasis>
+</para>
+<para>
+Please let us know if you meet any difficulties in the course of using Biopipe. We also appreciate any feedback of any workarounds
+that you might have to do for your specific environment.
+It is hard to pre-empt various hardware and software quirks and so we need your help for that. 
+</para>
+<para>
+cheers,
+Biopipe Team
+</para>
+<para>
+<email>bioperl-pipeline@bioperl.org</email>
+</para>
+</section>
+
+<section id="XML2DB">
+<title>XML::SimpleObject</title>
+
+    <para>
+      This module is required for the XML loading script to work. It works with XML::Parser which is built on XML::Parser::Expat.
+      Some people have encountered problems installing SimpleObject. This may have something to do with LibXML which is another
+      library that comes with XML::SimpleObject. Some error one might find:
+      <programlisting>
+      [shawnh@sashimi XML-SimpleObject0.51]$ perl Makefile.PL
+      NOTE: XML::SimpleObject requires XML::Parser. If you have XML::LibXML, you
+      can install XML::SimpleObject::LibXML instead.
+
+      Checking for XML::Parser ...
+      OK
+      Checking if your kit is complete...
+      Looks good
+      NOTE: XML::SimpleObject::LibXML requires XML::LibXML. If you have XML::Parser
+      you can install XML::SimpleObject instead.
+
+      Checking for XML::LibXML ...
+      WARNING from evaluation of /home/shawnh/_download/XML-SimpleObject0.51/LibXML/Makefile.PL:
+      Can't locate XML/LibXML.pm in @INC (@INC contains: /home/shawnh/cvs_src/bioperl-run/ /home/
+      shawnh/cvs_src/ensembl/modules/ /home/shawnh/cvs_src/ensembl-compara/modules/ /home/shawnh/
+      cvs_src/bioperl-live/ /home/shawnh/cvs_src/bioperl-pipeline/ /home/shawnh/cvs_src/bioperl-d
+      b/ /home/shawnh/cvs_src/ensembl-pipeline/modules/ /home/shawnh/download/ /usr/lib/perl5/5.6
+      .0/i386-linux /usr/lib/perl5/5.6.0 /usr/lib/perl5/site_perl/5.6.0/i386-linux /usr/lib/perl5
+      /site_perl/5.6.0 /usr/lib/perl5/site_perl .) at (eval 20) line 8.
+      </programlisting>
+    The simple solution we found was to simply remove the LibXML directory before running perl Makefile.PL
+    As there have been some significant difficulties with this, a sample installation session is  shown below.
+    This installation was done on an Intel Box running RedHat 7.1
+    <programlisting>
+      [shawnh@sashimi _download]$ tar -xvf XML-SimpleObject0.51.tar
+      XML-SimpleObject0.51
+      XML-SimpleObject0.51/Changes
+      XML-SimpleObject0.51/ex.pl
+      XML-SimpleObject0.51/LibXML
+      XML-SimpleObject0.51/LibXML/ex.pl
+      XML-SimpleObject0.51/LibXML/LibXML.pm
+      XML-SimpleObject0.51/LibXML/Makefile.old
+      XML-SimpleObject0.51/LibXML/Makefile.PL
+      XML-SimpleObject0.51/LibXML/test.pl
+      XML-SimpleObject0.51/Makefile.old
+      XML-SimpleObject0.51/Makefile.PL
+      XML-SimpleObject0.51/MANIFEST
+      XML-SimpleObject0.51/README
+      XML-SimpleObject0.51/SimpleObject.pm
+      XML-SimpleObject0.51/test.pl
+      [shawnh@sashimi _download]$ cd XML-SimpleObject0.51
+      [shawnh@sashimi XML-SimpleObject0.51]$ ls
+      Changes  ex.pl  LibXML  Makefile.old  Makefile.PL  MANIFEST  README  SimpleObject.pm  test.pl
+      [shawnh@sashimi XML-SimpleObject0.51]$ rm -rf LibXML/
+      [shawnh@sashimi XML-SimpleObject0.51]$ perl Makefile.PL
+      NOTE: XML::SimpleObject requires XML::Parser. If you have XML::LibXML, you
+      can install XML::SimpleObject::LibXML instead.
+
+      Checking for XML::Parser ...
+      OK
+      Checking if your kit is complete...
+      Warning: the following files are missing in your kit:
+              LibXML/LibXML.pm
+              Please inform the author.
+              Writing Makefile for XML::SimpleObject
+              [shawnh@sashimi XML-SimpleObject0.51]$ make
+              mkdir blib
+              mkdir blib/lib
+              mkdir blib/lib/XML
+              mkdir blib/arch
+              mkdir blib/arch/auto
+              mkdir blib/arch/auto/XML
+              mkdir blib/arch/auto/XML/SimpleObject
+              mkdir blib/lib/auto
+              mkdir blib/lib/auto/XML
+              mkdir blib/lib/auto/XML/SimpleObject
+              mkdir blib/man3
+              scp SimpleObject.pm blib/lib/XML/SimpleObject.pm
+              cp ex.pl blib/lib/XML/ex.pl
+              Manifying blib/man3/XML::SimpleObject.3pm
+              u[shawnh@sashimi XML-SimpleObject0.51]$ su
+              Password:
+              [root@sashimi XML-SimpleObject0.51]# make install
+              Installing /usr/lib/perl5/site_perl/5.6.0/XML/SimpleObject.pm
+              Installing /usr/lib/perl5/site_perl/5.6.0/XML/ex.pl
+              Installing /usr/share/man/man3/XML::SimpleObject.3pm
+              Writing /usr/lib/perl5/site_perl/5.6.0/i386-linux/auto/XML/SimpleObject/.packlist
+              Appending installation info to /usr/lib/perl5/5.6.0/i386-linux/perllocal.pod
+    </programlisting>
+    </para>
+</section>
+</article>
