@@ -53,7 +53,7 @@
 
     eval {
        open (STDERR, ">/dev/null");
-       $job->run;
+       $job->run_local;
     };
     $err = $@;
 
