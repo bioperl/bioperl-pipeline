@@ -8,7 +8,6 @@
 #
 # rewritten for bioperl-pipeline <jerm@fugu-sg.org>
 #
-# Copyright EMBL-EBI 2000
 #
 # You may distribute this code under the same terms as perl itself
 
@@ -22,8 +21,12 @@ use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::BatchSubmission;
 
+############################################
+#Pipeline Setup
+############################################
 # defaults: command line options override pipeConf variables,
 # which override anything set in the environment variables.
+
 
 use Bio::Pipeline::PipeConf qw (DBHOST 
                                 DBNAME
@@ -48,6 +51,10 @@ $| = 1;
 my $local        = 0;       # Run failed jobs locally
 my $analysis;               # Only run this analysis ids
 my $JOBNAME;                # Meaningful name displayed by bjobs
+my $pipeline_time = time(); #tracks how long pipeline has been running in seconds
+                            #use to see whether timeout has occured
+my %pipeline_state;         #hash used to store state of all jobs in the pipeline 
+
 			    # aka "bsub -J <name>"
 			    # maybe this should be compulsory, as
 			    # the default jobname really isn't any use
@@ -82,6 +89,17 @@ my $jobAdaptor  = $db->get_JobAdaptor;
 my $inputAdaptor  = $db->get_InputAdaptor;
 my $analysisAdaptor = $db->get_AnalysisAdaptor;
 
+###############################
+#Pipeline Test
+#more sophistication here as we 
+#develop more tests
+###############################
+#Fetch all analysis and for each analysis, run test and setup to ensure
+#program exists if specified
+#figure out program version if exist
+#map the runnable module to the program if not specified
+#check db_file exists if not specified
+
 print "Fetching Analysis From Pipeline $DBNAME\n";
 
 my @analysis = $analysisAdaptor->fetch_all;
@@ -92,9 +110,12 @@ foreach my $anal (@analysis) {
     $anal->test_and_setup;
 }
 
-print "///////////////////////////////////////\n\nTests Completed. Starting Pipeline\n";
+print "///////////////Tests Completed////////////////////////\n\n";
 
+print "///////////////Starting Pipeline//////////////////////\n";
 
+######################################################################
+#Running the Pipeline
 # scp
 # $QUEUE_params - send certain (LSF) parameters to Job. This hash contains
 # things QUEUE wants to know, i.e. queue name, nodelist, jobname (things that
@@ -111,23 +132,26 @@ print "///////////////////////////////////////\n\nTests Completed. Starting Pipe
 # Fetch all the analysis rules.  These contain details of all the
 # analyses we want to run and the dependences between them. e.g. the
 # fact that we only want to run blast jobs after we've repeat masked etc.
+######################################################################
 
 my @rules       = $ruleAdaptor->fetch_all;
 
 my $run = 1;
 my $submitted;
-my $total_jobs = scalar($jobAdaptor->fetch_all);
+my $total_jobs;
 while ($run) {
     
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db,-queue=>$QUEUE);
     my @jobs = $jobAdaptor->fetch_all;
+    if(!$total_jobs) {
+        $total_jobs = scalar(@jobs);
+    }
     print STDERR "Fetched ".scalar(@jobs)." jobs\n";
     $submitted = 0;
 
     foreach my $job(@jobs){
    
-        if (($job->status eq 'NEW')   ||
-	    ( ($job->status eq 'FAILED') && ($job->retry_count < $RETRY) )){ 
+        if (($job->status eq 'NEW')   || ( ($job->status eq 'FAILED') && ($job->retry_count < $RETRY) )){ 
             $submitted = 1;
 
             if ($job->status eq 'FAILED'){
@@ -140,17 +164,16 @@ while ($run) {
                 $job->make_filenames unless $job->filenames;
                 $job->update;
                 $job->run;
-	        }else{
+  	        }else{
                 $batchsubmitter->add_job($job);
                 $job->status('SUBMITTED');
                 $job->stage ('BATCHED');
                 $job->update;
-
                 &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
             }
         }
         elsif ($job->status eq 'COMPLETED'){
-            my ($action,$new_jobs) = &create_new_job($job);
+            my ($new_jobs) = &create_new_job($job);
             print STDERR "Creating ".scalar(@{$new_jobs})." jobs\n";
             foreach my $new_job (@{$new_jobs}){
 
@@ -165,7 +188,7 @@ while ($run) {
                     $new_job->stage('BATCHED');
                     $new_job->update;
 
-                    &submit_batch($batchsubmitter,$action) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
+                    &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
                 }
             }
             $job->remove;
@@ -182,6 +205,10 @@ while ($run) {
     #$currentStart = 0;
     print "Waking up and run again!\n";
 }
+
+############################
+#Utiltiy methods
+############################
 
 =head
 #used to check whether state of pipeline has changed since last.
@@ -257,8 +284,18 @@ sub create_new_job {
 
         }
     }
-    return ($action,\@new_jobs);
+    return (\@new_jobs);
 }
+
+sub _get_action_by_next_anal {
+    my ($job,@rules) = @_;
+    foreach my $rule (@rules){
+        if ($rule->next == $job->analysis->dbID){
+            return $rule->action;
+        }
+    }
+}
+    
 
 sub _update_inputs {
    my ($old_job, $new_job) = @_;
@@ -306,16 +343,56 @@ sub _check_all_jobs_complete {
   my ($job) = @_;
   my $status = 1;
   my @jobs = $jobAdaptor->fetch_by_analysisId_and_processId($job->analysis->dbID, $job->process_id);
-  my $nbr;
+  my $nbr = 0;
   foreach my $old_job (@jobs) {
     if ($old_job->status ne 'COMPLETED') {
       $nbr++;
     }
   }
-  if((int($nbr/$total_jobs) * 100) < $WAIT_FOR_ALL_PERCENT){
+  return $status unless $nbr != 0;
+  if(_timeout(\@jobs)){
+    if((int($nbr/$total_jobs) * 100) < (100-$WAIT_FOR_ALL_PERCENT)){
+      $status = 1;
+    }
+    else {
+      $status = 0;
+    }
+  }
+  else {
       $status = 0;
   }
+  
   return $status;
+}
+
+#check whether pipeline has timeout with not status changed for more than $TIMEOUT hours
+sub _timeout {
+  my ($jobs) = @_;
+  my $curr_time = time();
+  if(_pipeline_state_changed($jobs)){
+      $pipeline_time = $curr_time;
+  }
+  elsif(int(($curr_time - $pipeline_time)/3600) > $TIMEOUT){
+      return 1;
+  }
+  else {}
+  return 0;
+}
+
+sub _pipeline_state_changed {
+    my($jobs) = @_;
+    my %last_state = %pipeline_state;
+    %pipeline_state = {};
+    foreach my $job(@{$jobs}){
+      $pipeline_state{$job->status}++;
+      $pipeline_state{$job->stage}++;
+    }
+    foreach my $key (keys %pipeline_state){
+      if ($pipeline_state{$key} != $last_state{$key}){
+        return 1;
+      }
+    }
+    return 0 
 }
 
 

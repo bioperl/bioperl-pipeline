@@ -38,7 +38,6 @@ GetOptions(
     'dbuser=s'  => \$dbuser,
     'pass=s'    => \$pass,
     'check!'    => \$check,
-    'action=s'  => \$action,
 )
 or die ("Couldn't get options");
 my (@job_ids) = @ARGV;
@@ -87,7 +86,7 @@ print STDERR "Fetching job " . $job_id . "\n";
 foreach my $job_id (@job_ids){
 
 #    my $job         = $job_adaptor->fetch_by_dbID($job_id);
-    my $job = &create_new_job($job_id,$action);
+    my $job = &create_new_job($job_id);
 
     if( !defined $job) {
         print STDERR ( "Couldnt recreate job $job_id\n" );
@@ -115,14 +114,27 @@ $db->{'_db_handle'}->disconnect();
 #from new_input table 
 
 sub create_new_job{
-    my ($job_id,$action) = @_;
+    my ($job_id) = @_;
     my $job = $job_adaptor->fetch_by_dbID($job_id);
     my @rules       = $job_adaptor->db->get_RuleAdaptor->fetch_all;
+    my $action = _get_action_by_next_anal($job,@rules);
     if ($action eq 'WAITFORALL_AND_UPDATE'){
       my @inputs = $job->inputs;
       $job->flush_inputs();
       $job->add_input(\@inputs);
     }
     return $job;
+}
+
+#get the previous action for current analysis. Used to check
+#whether the last aciton was a WAITFORALL_AND_UPDATE and handle
+#input acoordingly
+sub _get_action_by_next_anal {
+    my ($job,@rules) = @_;
+    foreach my $rule (@rules){
+        if ($rule->next == $job->analysis->dbID){
+            return $rule->action;
+        }
+    }
 }
 

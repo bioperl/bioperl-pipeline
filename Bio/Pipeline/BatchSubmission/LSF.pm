@@ -37,7 +37,7 @@ package Bio::Pipeline::BatchSubmission::LSF;
 
 use Bio::Pipeline::BatchSubmission;
 use Bio::Root::Root;
-use vars qw(@ISA %OK_FIELD @ACTIONS);
+use vars qw(@ISA); 
 use strict;
 
 use Bio::Pipeline::PipeConf qw (RUNNER
@@ -47,22 +47,9 @@ use Bio::Pipeline::PipeConf qw (RUNNER
 
 @ISA = qw(Bio::Pipeline::BatchSubmission) ;
 
-BEGIN {
-
-    @ACTIONS  = qw(WAITFORALL WAITFORALL_AND_UPDATE UPDATE NOTHING);
-
-    # Authorize attribute fields
-    foreach my $attr ( @ACTIONS) {
-      $OK_FIELD{$attr}++;
-    }
-}
 
 sub submit_batch{
-    my ($self,$action) = @_;
-    if($action) {
-        $self->throw ("Action $action not allowed. Use only WAITFORALL WAITFORALL_AND_UPDATE UPDATE NOTHING")
-        unless $OK_FIELD{$action};
-    }
+    my ($self) = @_;
 
     my @job_ids;
 
@@ -96,8 +83,6 @@ sub submit_batch{
         $runner =~ s:/([^/]*/[^/]*)$:/runner.pl:;
         $self->throw("Can't locate runner.pl - needs to be set in PipeConf.pm") unless -x $runner;
     }
-
-    $runner.= " -action $action" if defined $action;
 
     $bsub .= "$runner ".join(" ",@job_ids);
 
