@@ -27,6 +27,8 @@ use Bio::Pipeline::Runnable::TribeMCL;
 use Bio::GFD::SQL::Aggregator::Family;
 
 
+#DEBUG
+use Bio::Pipeline::Runnable::OrthologFinder;
 
 ############################################
 #Pipeline Setup
@@ -205,7 +207,7 @@ print "\n///////////////Tests Completed////////////////////////\n\n";
 my @rules       = $ruleAdaptor->fetch_all;
 
 # Create initial inputs and jobs in bulk if necessary
-&initialise();
+#&initialise();
 
 #variables
 my $run = 1;
@@ -221,6 +223,10 @@ while ($run) {
     if ($#incomplete_jobs < ($FETCH_JOB_SIZE-1)){
         my $nbr_left = $FETCH_JOB_SIZE - (scalar(@incomplete_jobs));
         push @incomplete_jobs, $jobAdaptor->fetch_jobs(-number =>$nbr_left ,-status=>['FAILED']);
+    }
+    if($#incomplete_jobs < ($FETCH_JOB_SIZE-1)){
+        my $nbr_left = $FETCH_JOB_SIZE - (scalar(@incomplete_jobs));
+        push @incomplete_jobs, $jobAdaptor->fetch_jobs(-number =>$nbr_left ,-status=>['WAITFORALL']);
     }
     print STDERR "Fetched ".scalar(@incomplete_jobs)." incomplete jobs\n";
 
@@ -239,6 +245,21 @@ while ($run) {
                 my $retry_count = $job->retry_count;
                 $retry_count++;
                 $job->retry_count($retry_count);
+            }
+            if ($job->status eq 'WAITFORALL'){
+              my ($prev_analysis) = $job->analysis->fetch_prev_analysis();
+              my $nbr_prev_jobs = $jobAdaptor->get_job_count(-number=>1,
+                                                             -analysis_id=>$prev_analysis->dbID,
+                                                             -retry_count=>$RETRY);
+              my $completed_prev_jobs =  $jobAdaptor->get_completed_job_count(-number=>1,
+                                                                              -analysis_id=>$prev_analysis->dbID);
+              if (!$nbr_prev_jobs && !$completed_prev_jobs){
+                  next;
+              }
+              #as long as a single job of previous analysis not done yet, don't run
+              if($nbr_prev_jobs != 0){
+                  next;
+              }
             }
             if ($local){
                 $job->status('SUBMITTED');
@@ -390,9 +411,8 @@ sub create_new_job {
             }
 
            elsif($action eq "WAITFORALL"){
-              print STDERR "Checking whether all jobs are completed\n";
               if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
-                  print STDERR "Analysis " .$job->analysis->logic_name ." finished.\n
+               print STDERR "Analysis " .$job->analysis->logic_name ." finished.\n
                                Creating next job\n";
                my $new_job = $job->create_next_job($next_analysis);
                my @inputs = $inputAdaptor->copy_inputs_map_ioh($job,$new_job);
@@ -401,9 +421,6 @@ sub create_new_job {
                  $new_job->add_input($input);
                }
                push (@new_jobs,$new_job);
-              }
-              else {
-                  print STDERR "Jobs for analysis " .$job->analysis->logic_name ." still running\n";
               }
             }
             elsif ($action eq 'WAITFORALL_AND_UPDATE') {
@@ -663,6 +680,7 @@ sub remove_lock{
 
     unlink "$dir/db.pag";
     unlink "$dir/db.dir";
+    unlink "$dir/db.db";
     rmdir $dir;
 }
 
