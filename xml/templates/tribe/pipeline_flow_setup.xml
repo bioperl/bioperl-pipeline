@@ -1,0 +1,31 @@
+<pipeline_flow_setup>
+    <analysis id="1">
+    <logic_name>blast</logic_name>
+    <runnable>Bio::Pipeline:Runnable::Blast</runnable>
+    <dbfile>/data0/family_run_17_6_2002/all_pep</dbfile>
+    <program>blastall</program>
+    <parameters>-p blastp -e 0.00001</parameters>
+    <output_iohandler_id>1</output_iohandler_id>
+    <nodegroup_id>1</nodegroup_id>
+  </analysis>
+    <analysis id="2">
+    <logic_name>tribe_mcl</logic_name>
+    <runnable>Bio::Pipeline:Runnable::TribeMCL</runnable>
+    <parameters>-inputtype pairs -I 3.0 </parameters>
+    <new_input_iohandler_id>3</new_input_iohandler_id>
+    <output_iohandler_id>4</output_iohandler_id>
+    <nodegroup_id>1</nodegroup_id>
+  </analysis>
+  <node_group id="1">
+    <name>gr1</name>
+    <description>desc1</description>
+    <node name="59"></node>
+  </node_group>
+  <rule>
+    <current_analysis_id>1</current_analysis_id>
+    <next_analysis_id>2</next_analysis_id>
+    <action>WAITFORALL_AND_UPDATE</action>
+  </rule>
+</pipeline_flow_setup>
+
+
