@@ -48,6 +48,7 @@ use vars qw(@ISA);
 use strict;
 use DBI;
 
+use Bio::Pipeline::SQL::InputAdaptor;
 use Bio::Pipeline::SQL::InputDBAAdaptor;
 use Bio::Pipeline::SQL::OutputDBAAdaptor;
 use Bio::Pipeline::SQL::RuleAdaptor;
@@ -220,6 +221,27 @@ sub get_output_dba_adaptor{
   }
 
   return $self->{_OutputDBAdaptor};
+}
+
+=head2 get_InputAdaptor
+
+ Title   : get_InputAdaptor
+ Usage   : $db->get_InputAdaptor
+ Function: The Adaptor for Input objects in this db
+ Example :
+ Returns : Bio::Pipeline::SQL::InputAdaptor
+ Args    : nothing
+
+=cut
+
+sub get_InputAdaptor {
+  my ($self) = @_;
+
+  if( ! defined $self->{_InputAdaptor} ) {
+    require Bio::Pipeline::SQL::InputAdaptor;
+    $self->{_InputAdaptor} = Bio::Pipeline::SQL::InputAdaptor->new
+      ( $self );
+  }
 }
 
 =head2 get_AnalysisAdaptor
