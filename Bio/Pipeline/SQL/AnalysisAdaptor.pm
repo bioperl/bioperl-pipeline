@@ -44,6 +44,7 @@ package Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::Analysis;
 use Bio::Pipeline::SQL::BaseAdaptor;
 use Bio::Root::Root;
+use Bio::Pipeline::Converter;
 
 use vars qw(@ISA);
 use strict;
@@ -99,9 +100,41 @@ sub fetch_by_dbID {
   $sth = $self->prepare($query);                  
   $sth->execute ();
 
-  my @ioh;
+  my @iohs;
   while (my ($ioid) = $sth->fetchrow_array){
-      push @ioh, $self->db->get_IOHandlerAdaptor->fetch_by_dbID($ioid);
+      push @iohs, $self->db->get_IOHandlerAdaptor->fetch_by_dbID($ioid);
+  }
+
+  foreach my $ioh(@iohs) {
+     my $iohid = $ioh->dbID;
+     my $query = " SELECT  ai.converter_id, ai.rank 
+                   FROM    analysis_iohandler ai
+                   WHERE   ai.analysis_id = $id AND ai.iohandler_id = $iohid";
+
+     $sth = $self->prepare($query);
+     $sth->execute ();
+ 
+     my @converters;
+     while (my ($converter_id,$rank) = $sth->fetchrow_array){
+        if (defined $converter_id){
+        	$query = " SELECT  module, method 
+                	      FROM    converter 
+                    	  WHERE   converter_id = ? " ;
+
+ 	       my $sth1 = $self->prepare($query);
+       		 $sth1->execute ($converter_id);        
+        	my ($module, $method) = $sth1->fetchrow_array;
+        	my $converter = new Bio::Pipeline::Converter ( -dbID => $converter_id,
+                                                       -module => $module,
+                                                       -method => $method,
+                                                       -rank => $rank
+                                                     );
+ 
+
+ 	       push @converters, $converter;
+        }
+     }    
+     $ioh->converters(\@converters);
   }
 
   $query = " SELECT  prev_iohandler_id, map_iohandler_id
@@ -133,7 +166,7 @@ sub fetch_by_dbID {
                                             -DATA_MONGER_ID => $data_monger_id,
                                             -CREATED        => $created,
                                             -LOGIC_NAME     => $logic_name,
-                                            -IOHANDLER      =>\@ioh,
+                                            -IOHANDLER      =>\@iohs,
                                             -NODE_GROUP     => $node_group,
                                             -IO_MAP         => \%iomap);
 
