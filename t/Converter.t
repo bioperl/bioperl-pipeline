@@ -66,7 +66,7 @@ sub _check_converter{
 
 	ok $converter->isa("Bio::Pipeline::Converter");
 	ok $converter->dbID, $dbID;
-	my $module = $converter->module;
+	$module = $converter->module;
 	ok $module, $module;
 
 	my @methods = @{$converter->method};
@@ -91,7 +91,7 @@ sub _check_converter_method{
 	
 	my @arguments = @{$method->argument};
 
-	return unless(defined(@arguments));
+	return unless $#arguments >= 0;
 		 
 	foreach my $argument (@arguments){
 		my $argument_id = $argument->dbID;
