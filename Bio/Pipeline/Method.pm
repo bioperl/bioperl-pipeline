@@ -140,7 +140,10 @@ sub name{
 =cut
 
 sub arguments{
-    my ($self) = @_;
+    my ($self,$val) = @_;
+    if($val) {
+        $self->{'_argument'} = $val;
+    }
     return $self->{'_argument'};
 }
 
