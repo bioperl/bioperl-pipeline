@@ -16,12 +16,11 @@ Bio::Pipeline::BatchSubmission
 
 =head1 SYNOPSIS
 
-   # There are two ways to create a BatchSubmission modules Either you
-   # can call new on this top-level module as below, and the batch
-   # module will be specified by the BATCH_MOD from PipeConf.pm
-   # variable, or you can call new directly on one of the
-   # BatchSubmission modules such as Bio::Pipeline::LSF or
-   # Bio::Pipeline::PBS
+   #There are two ways to create a BatchSubmission modules
+   #Either you can call new on this top-level module
+   #as below, and the batch module will be specified by the BATCH_MOD  from PipeConf.pm
+   #variable, or you can call new directly on one of the BatchSubmission 
+   #modules such as Bio::Pipeline::LSF or Bio::Pipeline::PBS
 
    my $batchsub = Bio::Pipeline::BatchSubmission->new(
 						      -dbobj => $dbobj,
@@ -32,26 +31,27 @@ Bio::Pipeline::BatchSubmission
 						      -command => $command,
 						      -queue => $queue,
 						      -jobname => $jobn,
-						      -nodes => $nodes
+						      -nodes => $nodes,
+  						      -priority =>$priority
 						      );
 
 =head1 DESCRIPTION
 
 This module is a generic representation of different Batch Submission
 systems, which allow distribution of work across a cluster. The logic
-was abstracted in this module to allow users to write different
-modules for different systems. Specific modules have been written for
-PBS and LSF and are stored in the BatchSubmission directory.
+was abstracted in this module to allow users to write different modules
+for different systems. Specific modules have been written for PBS and LSF
+and are stored in the BatchSubmission directory.
 
-The module's getset deal with the STDOUT and STDERR files required,
-the actual command to be issued as well as the pre-execution command
-to use as test, parameters to be passed onto the submission system,
-the queue to send the job to, and the name of the job.
+The module's getset deal with the STDOUT and STDERR files required, the 
+actual command to be issued as well as the pre-execution command to use as 
+test, parameters to be passed onto the submission system, the queue to send 
+the job to, and the name of the job.
 
 =head1 AUTHOR
 
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::BatchSubmission
-originally written by Laura Clarke, lec@sanger.ac.uk.
+originally written by Laura Clarke <lec@sanger.ac.uk>
 
 Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
@@ -74,7 +74,6 @@ package Bio::Pipeline::BatchSubmission;
 use vars qw(@ISA);
 use strict;
 use Bio::Root::Root;
-use Bio::Pipeline::BatchSubmission;
 
 use Bio::Pipeline::PipeConf qw(BATCH_MOD
                                BATCH_PARAM);
@@ -94,7 +93,8 @@ use Bio::Pipeline::PipeConf qw(BATCH_MOD
                   -command => $command,
                   -queue => $queue,
                   -jobname => $jobn,
-                  -nodes => $nodes
+                  -nodes => $nodes,
+                  -priority =>$priority
                   );
   Function: Constructor for BatchSubmission objet
   Returns : L<Bio::Pipeline::BatchSubmission>
@@ -116,7 +116,7 @@ sub new{
 
     if ($class =~ /Bio::Pipeline::BatchSubmission::(\S+)/){
         my ($self) = $class->SUPER::new(@args);
-        my ($dbobj,$stdout,$stderr,$parameters,$pre_exec,$command,$queue,$jobname,$nodes) =  
+        my ($dbobj,$stdout,$stderr,$parameters,$pre_exec,$command,$queue,$jobname,$nodes,$priority) =  
                        $self->_rearrange([qw(   DBOBJ
                                                 STDOUT
                                                 STDERR
@@ -126,6 +126,7 @@ sub new{
                                                 QUEUE
                                                 JOBNAME
                                                 NODES
+						PRIORITY
                                             )],@args);
 
         $self->throw("BatchSubmission object requires a dbobj") unless $dbobj;
@@ -158,6 +159,9 @@ sub new{
         }
         if (defined($nodes)){
             $self->nodes($nodes);
+        }
+        if (defined($priority)){
+   	    $self->priority($priority);
         }
 
         @{$self->{'_jobs'}}=();
@@ -450,6 +454,27 @@ sub nodes{
    return $self->{'_nodes'};
 }
 
+=head2 priority 
+
+  Title    : priority 
+  Function : get/set for priority 
+  Example  : $bs->priority
+  Returns  : priority 
+  Args     :
+
+=cut
+
+sub  priority{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_priority'} = $arg;
+   }
+
+   return $self->{'_priority'};
+}
+
+
 #############
 #run methods#
 #############
@@ -515,20 +540,5 @@ sub submit_batch{
   $self->throw("Sorry, you cannot call this method from a generic BatchSumission Object");
 
 }
-
-sub get_host_name{
-    my ($queue_id) = @_;
-    my $module = "Bio/Pipeline/BatchSubmission/$BATCH_MOD.pm";
-    eval {
-      require $module;
-   };
-   if ($@) { 
-    print STDERR "Module $module can't be found.\nException $@";
-    return;
-  }
-  my $mod = "Bio::Pipeline::BatchSubmission::$BATCH_MOD";
-  return $mod->get_host_name($queue_id);
-}
-
 
 1;
