@@ -526,19 +526,7 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          } else {
             my @converter_objs;
             my $converter_obj = _get_converter(&verify_attr($output_iohandler, 'converter_id', 0));
-            push @converter_objs, $converter_obj;
-#            foreach my $converter ($output_iohandler->child('converter')) {
-#              my $converter_obj = _get_converter($converter->attribute("id"));
-#              if(defined($converter_obj)){
-#                 $converter_obj->rank($converter->attribute("rank"));
-#                 push @converter_objs, $converter_obj;
-#              } else {
-#                 print "converter for analysis  not found\n";
-#              }
-#            }
-
-# print "\n$converter_obj\n@converter_objs\n$#converter_objs\n";
-            
+            push @converter_objs, $converter_obj if $converter_obj;
             $output_iohandler_obj->converters(\@converter_objs) if $#converter_objs >= 0;
             $output_iohandler_obj->type('OUTPUT');
             push @ioh, $output_iohandler_obj;
