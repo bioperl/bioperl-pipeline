@@ -367,6 +367,7 @@ both to database or files depending on one's specification.
   <pipeline_flow_setup>
     <analysis id="1">
       <data_monger>
+        <initial/>
         <input>
           <name>input_file</name>
         </input>
