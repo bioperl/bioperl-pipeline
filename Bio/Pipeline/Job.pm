@@ -426,7 +426,7 @@ sub set_stage{
 
   Title   : make_filenames
   Usage   : $job->make_filenames();
-  Function: creates the stout,stderr,obj file names for the job 
+  
   Returns :
   Args    : 
 
@@ -436,7 +436,10 @@ sub make_filenames {
   my ($self) = @_;
   
   my $num = int(rand(10));
-  my $dir = $NFSTMP_DIR;
+  my $dir = $NFSTMP_DIR . "/$num/";
+  if( ! -e $dir ) {
+    mkdir $dir,0777;
+  }
   my $stub='';
   $stub .= $self->adaptor->db->dbname."_" if $self->adaptor;
   $stub .= ".job_".$self->dbID."." if $self->dbID;
@@ -524,9 +527,9 @@ sub filenames{
 sub remove {
   my $self = shift;
   
-  if( -e $self->stdout_file ) { unlink( $self->stdout_file ) };
-  if( -e $self->stderr_file ) { unlink( $self->stderr_file ) };
-  if( -e $self->input_object_file ) { unlink( $self->input_object_file ) };
+  if( -e $self->stdout_file ) { unlink( $self->stdout_file )  || $self->throw("Unable to remove stdout_file ".$self->stdout_file)};
+  if( -e $self->stderr_file ) { unlink( $self->stderr_file ) || $self->throw("Unable to remove stderr file".$self->stderr_file)};
+  if( -e $self->input_object_file ) { unlink( $self->input_object_file )|| $self->throw("Unable to remove object file ".$self->input_object_file)};
 
    if( defined $self->adaptor ) {
    $self->adaptor->remove( $self );
