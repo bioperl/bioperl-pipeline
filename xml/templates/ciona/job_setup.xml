@@ -1,11 +1,6 @@
 <job_setup>
 <!-- it can now just load all the ids using get_all_Contig_id method//-->
-  <input_create>
-      <iohandler id="5">
-      </iohandler>
-      <map_ioh   id="1">
-      </map_ioh>
-  </input_create>
+
 <!--  <job id="1">
   <fixed_input>
     <name>8</name>
