@@ -40,7 +40,6 @@ use Bio::Pipeline::RunnableDB;
 # several variables needed from PipeConf.pm
 use Bio::Pipeline::PipeConf qw ( RUNNER 
                                  NFSTMP_DIR
-                                 AUTOUPDATE
                                );
 
 use vars qw(@ISA);
@@ -80,7 +79,7 @@ sub new {
 
 				
     $dbID    = undef unless defined($dbID);
-    $queueid = undef unless defined($queueid);
+    $queueid = 0 unless defined($queueid);
 
     $analysis   || $self->throw("Can't create a job object without an analysis object");
     $analysis->isa("Bio::Pipeline::Analysis") ||
@@ -337,7 +336,6 @@ sub run {
 
   my $self = shift;
   my $err;
-  my $autoupdate = $AUTOUPDATE;
   my $rdb;
   $self->make_filenames unless $self->filenames;
   my @inputs = $self->inputs;
