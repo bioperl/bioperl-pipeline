@@ -96,7 +96,7 @@ CREATE TABLE argument (
   argument_id     int(10) unsigned NOT NULL auto_increment,
   datahandler_id  int(10) unsigned NOT NULL ,
   tag             varchar(40) DEFAULT '',
-  value           varchar(40) DEFAULT '',
+  value           varchar(255) DEFAULT '',
   rank            int(10) DEFAULT 1 NOT NULL,
   type            enum('SCALAR','ARRAY') DEFAULT 'SCALAR' NOT NULL,
 
@@ -173,7 +173,7 @@ CREATE TABLE rule (
   rule_id          int(10) unsigned DEFAULT'0' NOT NULL auto_increment,
   current          int(10) unsigned DEFAULT '',
   next             int(10) unsigned NOT NULL,
-  action           enum('WAITFORALL','WAITFORALL_AND_UPDATE','UPDATE','NOTHING','COPY_INPUT','COPY_ID','CREATE_INPUT'),
+  action           enum('WAITFORALL','WAITFORALL_AND_UPDATE','UPDATE','NOTHING','COPY_INPUT','COPY_ID','CREATE_INPUT','COPY_ID_FILE'),
   
   PRIMARY KEY (rule_id)
 );
@@ -250,7 +250,7 @@ CREATE TABLE converter_arguments(
 
 CREATE TABLE completed_jobs (
   completed_job_id      int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
-  process_id         varchar(100) DEFAULT 'NEW' NOT NULL,
+  process_id            varchar(100) DEFAULT 'NEW' NOT NULL,
   analysis_id           int(10) unsigned DEFAULT '0',
   queue_id              int(10) unsigned DEFAULT '0',
   stdout_file           varchar(100) DEFAULT '' NOT NULL,
