@@ -1,12 +1,13 @@
-# Bioperl module for Bio::Pipeline::RunnableDB
 #
-# Adapted from Michele Clamp's EnsEMBL::Pipeline
+# BioPerl module for Bio::Pipeline::RunnableDB
+#
+# Cared for by FuguI Team <fugui@fugu-sg.org>
+#
 #
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
-
-=pod 
+#
 
 =head1 NAME
 
@@ -14,33 +15,55 @@ Bio::Pipeline::RunnableDB
 
 =head1 SYNOPSIS
 
-# get a Bio::Pipeline::RunnableDB object somehow
+  use Bio::Pipeline::RunnableDB
 
-  $runnabledb->fetch_input();
-  $runnabledb->run();
-  $runnabledb->output();
-  $runnabledb->write_output(); #writes to DB
+  my $rdb = Bio::Pipeline::RunnableDB->new ( -analysis   => $self->analysis,
+                                             -inputs     => \@inputs,
+                                           );
+
+  $rdb->fetch_input;
+  $rdb->run;
+  $rdb->write_output;
+
 
 =head1 DESCRIPTION
 
-parameters to new
--job    A Bio::Pipeline::Job(required), 
+This object encapsulates the handling of input and output fetching
+and execution of the runnable. It is used by Bio::Pipeline::Job.
 
-This object wraps Bio::Pipeline::Runnables to add
-functionality for reading and writing to databases.  The appropriate
-Bio::Job object must be passed for extraction
-of appropriate parameters.
+=head1 FEEDBACK
 
-=head1 CONTACT
+=head2 Mailing Lists
 
-bioperl-l@bioperl.org
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html     - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - FuguI Team
+
+Email fugui@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. 
-Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
+
+# Let the code begin...
+
 
 package Bio::Pipeline::RunnableDB;
 
@@ -52,25 +75,23 @@ use vars qw(@ISA);
 
 @ISA = qw(Bio::Root::Root);
 
-
-
 =head2 new
 
     Title   :   new
-    Usage   :   $self->new(-JOB => $job,
-			              );
+    Usage   :   $self->new(-analysis=>$self->analysis,
+                           -inputs  =>\@inputs);
     Function:   creates a Bio::Pipeline::RunnableDB object
     Returns :   A Bio::Pipeline::RunnableDB object
-    Args    :   -job:   A Bio::Pipeline::Job (required), 
+    Args    :   -analysis: L<Bio::Pipeline::Analysis>
+                -inputs   :array ref of L<Bio::Pipeline::Input>
+
 =cut
 
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($analysis,$inputs) = $self->_rearrange ([qw  (   
-                                                                 ANALYSIS
-                                                                 INPUTS
-                                                                )],@args);
+    my ($analysis,$inputs) = $self->_rearrange ([qw(ANALYSIS
+                                                    INPUTS)],@args);
     
     $self->throw("No analysis provided to RunnableDB") unless defined($analysis);
     $self->throw("No inputs provided to RunnableDB") unless defined($inputs);
@@ -80,7 +101,6 @@ sub new {
 
     $self->{'_input_objs'}=[];
     $self->{'_data_types'}=[];
-    $self->setup_runnable_params($analysis->parameters);
 
     return $self;
 }
@@ -89,9 +109,9 @@ sub new {
 
     Title   :   analysis
     Usage   :   $self->analysis($analysis);
-    Function:   Gets or sets the stored Analusis object
-    Returns :   Bio::Pipeline::Analysis object
-    Args    :   Bio::Pipeline::Analysis object
+    Function:   Gets or sets the analysis object 
+    Returns :   L<Bio::Pipeline::Analysis> 
+    Args    :   L<Bio::Pipeline::Analysis>
 
 =cut
 
@@ -107,59 +127,45 @@ sub analysis {
     return $self->{'_analysis'};
 }
 
+=head2 inputs
+
+    Title   :   inputs
+    Usage   :   $self->inputs($inputs);
+    Function:   Get/set for inputs
+    Returns :   L<Bio::Pipeline::Input>
+    Args    :   L<Bio::Pipeline::Input>
+
+=cut
+
 sub inputs {
     my ($self,$inputs) = @_;
     if($inputs) {
         $self->{'_inputs'} = $inputs;
     }
-    return @{$self->{'_inputs'}};
+    return wantarray ? @{$self->{'_inputs'}} : $self->{'_inputs'};
 }
-
-
-sub setup_runnable_params {
-    my ($self,$parameters) = @_;
-    my @params = split("--",$parameters);
-    shift @params; #first element is empty
-    my %param;
-    foreach my $param(@params){
-      my @list = split(" ",$param);
-      my $routine = shift @list;
-      my $string = join " ",@list[0..$#list];
-      $param{$routine} = $string;
-    }
-    #set the pamaters in the runnable
-    my $runnable = $self->runnable;
-    foreach my $routine (keys %param){
-      $self->throw("Cannot call $routine using $runnable") unless $runnable->can($routine);
-      $runnable->$routine($param{$routine});
-    }
-    return;
-}
-
 
 =head2 add_input_obj
 
     Title   :   add_input_obj
-    Usage   :   
-    Function:   
+    Usage   :   $self->add_input_obj($input);
+    Function:   adds inputs to array
     Returns :   
-    Args    :   
+    Args    :  L<Bio::Pipeline::Input> 
 
 =cut
 
 sub add_input_obj{
     my ($self,$input_obj) = @_;
-
     push (@{$self->{'_input_objs'}},$input_obj);
-
 }
 
 =head2 input_objs
 
     Title   :   input_objs
-    Usage   :   
-    Function:   
-    Returns :   
+    Usage   :   $self->input_objs 
+    Function:   returns inputs
+    Returns :   L<Bio::Pipeline::Input>
     Args    :   
 
 =cut
@@ -167,7 +173,7 @@ sub add_input_obj{
 sub input_objs{
     my ($self) = @_;
 
-    return @{$self->{'_input_objs'}};
+    return wantarray ? return @{$self->{'_input_objs'}} : $self->{'_input_objs'};
 
 }
 
@@ -175,8 +181,8 @@ sub input_objs{
 
     Title   :   output
     Usage   :   $self->output()
-    Function:   
-    Returns :   Array of Bio::FeaturePair
+    Function:   stores the actual output objects from the analysis
+    Returns :   array or ref of output objects 
     Args    :   None
 
 =cut
@@ -188,15 +194,15 @@ sub output {
     
     
     if (defined $self->runnable->output){
-	if(ref($self->runnable->output) eq "ARRAY"){
-  		push @{$self->{'_output'}}, @{$self->runnable->output};
-	}
-	else {
-  		push @{$self->{'_output'}}, $self->runnable->output;
-	}
+    	if(ref($self->runnable->output) eq "ARRAY"){
+    		push @{$self->{'_output'}}, @{$self->runnable->output};
+	    }
+	    else {
+  		  push @{$self->{'_output'}}, $self->runnable->output;
+	    }
 		
     }
-    return @{$self->{'_output'}};
+    return wantarray ?  @{$self->{'_output'}} : $self->{'_output'};
 }
 
 =head2 setup_runnable_inputs
@@ -217,6 +223,7 @@ sub setup_runnable_inputs {
     my @to_match;
     my %match_datatype={};
 
+    #handle DataMonger specially
     if ($self->runnable->isa("Bio::Pipeline::Runnable::DataMonger")){
         my %hash;
         my $tag;
@@ -225,7 +232,7 @@ sub setup_runnable_inputs {
             my $in_obj = $in->[2];
                $hash{$in->[0]} = $in_obj;
         }
-        #default to input method call for DataMonger is no tag specified.
+        #default to input method call for DataMonger if no tag specified.
         if($tag eq "no_tag"){
             $self->runnable->can('input') || $self->throw("Runnable $runnable cannot call $tag");
             $self->runnable->input(\%hash);
@@ -331,7 +338,7 @@ sub match_data_type {
 
 sub run {
     my ($self) = @_;
-    
+
     my $runnable = $self->runnable; 
     $runnable->analysis($self->analysis);
     $self->throw("Runnable module not set") unless ($runnable);
@@ -370,7 +377,9 @@ sub runnable {
         $arg =~ s/\::/\//g;
         require "${arg}.pm";
         $arg =~ s/\//\::/g;
-
+        
+        #pass the runnable parameters along with any command line parameters
+        #to the runnable
         my $runnable = "${arg}"->new($self->analysis->parameters);
 	      $self->{'_runnable'}=$runnable;
       }
@@ -384,7 +393,7 @@ sub runnable {
     Title   :   write_output
     Usage   :   $self->write_output
     Function:   Writes output data to db
-    Returns :   array of repeats (with start and end)
+    Returns :   the dbIDs from the store method is any 
     Args    :   none
 
 =cut
@@ -395,17 +404,18 @@ sub write_output {
     my @output = $self->output();
     my @inputs = $self->inputs;
     return () unless scalar(@output);    
-    my @output_ids = $self->analysis->output_handler->write_output(\@inputs,\@output);
+    my @output_ids = $self->analysis->output_handler->write_output(-input=>\@inputs,-output=>\@output);
 
-    return @output_ids;
+    return wantarray ? @output_ids : \@output_ids;
 }
 
 =head2 fetch_input
 
     Title   :   fetch_input
     Usage   :   $self->fetch_input
-    Function:   
-    Returns :   
+    Function:   fetch the actual objects to be passed on the runnable 
+                and set it in the runnable
+    Returns :   L<Bio::Pipeline::Input> 
     Args    :   
 
 =cut

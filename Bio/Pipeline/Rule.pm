@@ -1,14 +1,13 @@
-# Perl module for Bio::Pipeline::Rule
 #
-# Creator: Shawn Hoon <shawnh@fugu-sg.org>
-# Date of creation: 04.04.2002 
-# Last modified : 04.04.2002 by Shawn Hoon
+# BioPerl module for Bio::Pipeline::Rule
 #
-# 
+# Cared for by FuguI Team <fugui@fugu-sg.org>
+#
 #
 # You may distribute this module under the same terms as perl itself
-
+#
 # POD documentation - main docs before the code
+#
 
 =head1 NAME
 
@@ -16,18 +15,83 @@ Bio::Pipeline::Rule
 
 =head1 SYNOPSIS
 
+  use Bio::Pipeline::Rule
+
+   my $rule = Bio::Pipeline::Rule->new ( '-dbid'    => 1,
+                                         '-current' => 1, 
+                                         '-next'    => 2,
+                                         '-action'  => 'NOTHING');
 
 =head1 DESCRIPTION
 
+This object represents the conditional logic for workflow in the pipeline.
+Each Rule dictates for a given analysis what the next analysis will be.
+It also specifies any action to be taken before going to the next job.
+Usually this involves setting up of inputs for the next analysis.
 
-=head1 CONTACT
+Each job runs a certain analysis on a specfic input.
+When the job finishes, it looks up the rule for its analysis (current)
+and see what the next analysis to do will be. If there is one,
+depending on what the action will be, it will create the next
+job with the same input but for the next analysis.
+
+  $job->current
+
+the analysis dbID for the current analysis
+
+  $job->next 
+
+the analysis dbID for the next analysis
+
+  $job->action
+
+Specifies the preprocessing to be doing before next
+analysis is to be carried out.
+
+Action
+-------------------------
+COPY_ID        copy the input id from the current 
+               analysis for the next analysis 
+               the new iohandler for the input is looked up
+               in the iohandler_map table
+NOTHING        Do nothing, tells the job to go quietly
+COPY_INPUT     copy this input means to copy the input_id along
+               with the iohandler for the input
+WAITFORALL     Wait for all jobs of this analysis to finish before
+               executing the rule.
+
+
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html     - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - FuguI Team
+
+Email fugui@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
-
 
 # Let the code begin...
 
@@ -40,14 +104,19 @@ use strict;
 
 @ISA = qw( Bio::Root::Root );
 
-=head2 Constructor
+=head2 new 
 
   Title   : new
-  Usage   : ...
+  Usage   :  my $rule = Bio::Pipeline::Rule->new ( '-dbid'    => 1,
+                                         '-current' => 1,
+                                         '-next'    => 2,
+                                         '-action'  => 'NOTHING');
   Function: Constructor for Rule object
-  Returns : Bio::Pipeline::Rule
-  Args    : A Bio::Analysis object. Conditions are added later,
-            adaptor and dbid only used from the adaptor.
+  Returns : L<Bio::Pipeline::Rule>
+  Args    : -dbid     its dbID
+            -current  the current analysis dbID
+            -next     the next analysis dbID
+            -action   what to do for the next analysis
 
 =cut
 
@@ -74,7 +143,7 @@ sub new {
 
 =head2 current
 
-
+  Title   : current 
   Usage   : $self->current(analysis->dbID);
   Function: Add/Set method for condition for the rule.
   Returns : nothing
@@ -82,7 +151,6 @@ sub new {
             for this next analysis.
 
 =cut
-
 
 sub current {
   my $self = shift;
@@ -97,14 +165,13 @@ sub current {
 
 =head2 next
 
-
+  Title   : next 
   Usage   : $self->next(analysis->dbID);
   Function: Add/Set method for condition for the rule.
-  Returns : nothing
+  Returns : string 
   Args    : the dbID of an analysis that needs to be started after finishing the current analysis 
 
 =cut
-
 
 sub next {
   my $self = shift;
@@ -117,6 +184,16 @@ sub next {
   return $self->{'_next'};
 }
 
+=head2 action
+
+  Title   : action 
+  Usage   : $self->action('NOTHING')
+  Function: get/set the rule action 
+  Returns : string 
+  Args    : NOTHING|COPY_ID|COPY_INPUT|WAITFORALL 
+
+=cut
+
 sub action {
   my $self = shift;
   my $action = shift;
@@ -128,6 +205,15 @@ sub action {
   return $self->{'_action'};
 }
 
+=head2 dbID
+
+  Title   : dbID
+  Usage   : $self->dbID(1)
+  Function: get/set the rule dbID 
+  Returns : string
+  Args    : integer 
+
+=cut
 
 sub dbID {
   my ( $self, $dbID ) = @_;
@@ -135,6 +221,17 @@ sub dbID {
     ( $self->{'_dbID'} = $dbID );
   $self->{'_dbID'};
 }
+
+
+=head2 adaptor
+
+  Title   : adaptor
+  Usage   : $self->adaptor($adaptor)
+  Function: get/set for the Rule Adaptor object 
+  Returns : L<Bio::Pipeline::SQL::RuleAdaptor 
+  Args    :  
+
+=cut
 
 sub adaptor {
   my ( $self, $adaptor ) = @_;

@@ -1,39 +1,57 @@
+#
 # BioPerl module for Bio::Pipeline::Job
 #
-# Adapted from Michele Clamp's EnsEMBL::Job.pm
-# 
+# Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+#
 #
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
-
-=pod 
-
+#
 =head1 NAME
 
 Bio::Pipeline::Job
 
 =head1 SYNOPSIS
 
-my $job = $jobAdaptor->fetch_jobs(-number=>1,analysis_id=>1);
+   my $input = Bio::Pipeline::Input->new(-name=>"sequence1",
+                                         -tag=>"sequence",
+                                         -input_handler=>$iohandler,
+                                         -dynamic_arguments=>"-length 10",
+                                         -job_id=>1);
+  my $input = $io->fetch_input();
 
-$job->set_status("SUBMITTED");
-$job->set_stage("RUNNING");
-$job->run;
-
- 
 =head1 DESCRIPTION
 
-Stores run and status details of an analysis job
+The input/output object for reading input and writing output.
 
-=head1 CONTACT
+=head1 FEEDBACK
 
-shawn hoon
-email: shawnh@fugu-sg.org
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - Shawn Hoon
+
+Email shawnh@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
 
@@ -60,7 +78,7 @@ use strict;
 =head2 new
 
   Title   : new
-  Usage   : my $job = $adaptor->new
+  Usage   : my $job = $->new
   Function: Constructor for Job object 
   Returns : L<Bio::Pipeline::Job> 
   Args    : -adaptor      the job adaptor object
