@@ -7,20 +7,23 @@
 #
 
 =head1 NAME
-Bio::Pipeline::Argument 
 
+Bio::Pipeline::Argument 
 
 =head1 SYNOPSIS
 
-This object is used by the IO adaptors to fetch data.
-
-my $data_adaptor = Bio::Pipeline::Argument->new(-d
+    use Bio::Pipeline::Argument
+    my $arg = new Bio::Pipeline::Argument(-dbID => $argument_id,
+                                          -rank => $rank,
+                                          -value=> $value,
+                                          -tag  => $tag,
+                                          -type => $type);
 
 
 =head1 DESCRIPTION 
 
-Arguments specifiy the adaptor methods and the correspoding 
-arguments needed by a IO to fetch or store output. 
+An encapsulation of the arguments to be passed to each datahandler method using
+a tag value system.
 
 =head1 FEEDBACK
 
@@ -30,7 +33,7 @@ User feedback is an integral part of the evolution of this and other
 Bioperl modules. Send your comments and suggestions preferably to one
 of the Bioperl mailing lists.  Your participation is much appreciated.
 
-  bioperl-l@bioperl.org          - General discussion
+  bioperl-pipeline@bioperl.org          - General discussion
   http://bio.perl.org/MailList.html             - About the mailing lists
 
 =head2 Reporting Bugs
@@ -40,7 +43,7 @@ the bugs and their resolution.  Bug reports can be submitted via email
 or the web:
 
   bioperl-bugs@bio.perl.org
-  http://bio.perl.org/bioperl-bugs/
+  http://bugzilla.bioperl.org/
 
 =head1 AUTHOR 
 
@@ -60,8 +63,6 @@ use strict;
 use Bio::Root::Root;
 @ISA = qw(Bio::Root::Root);
 
-=head1 Constructors
-
 =head2 new
 
   Title   : new
@@ -74,8 +75,14 @@ use Bio::Root::Root;
   Args    : dbID: the dbID of the argument (optional)
             tag : the tag of the argument(optional)
             value: the value of the argument(required)
-            type : the type of the arugment(required, SCALAR or ARRAY)
-  
+            type : the type of the argument(SCALAR(DEFAULT) or ARRAY)
+            rank : the order of the argument in the method call, 
+            eg. fetch(1,"swissprot");
+            Argument 1 would have rank 1,
+            Argument swissprot would have rank 2.
+            If tag-value is used e.g. fetch(-id=>1, -db=>"swissprot")
+            rank is probably not needed.
+
 =cut
 
 sub new {
@@ -88,9 +95,9 @@ sub new {
                                                      DHID
                                                      TYPE)],@args);
 
-  #$rank || $self->throw("Argument constructor needs a rank");
   $value|| $self->throw("Argument needs a method arg.");
-  #$type || $self->throw("Argument needs a type");
+  $type  = $type || 'SCALAR';
+  $rank = $rank || 1;
   $dbID && $self->dbID($dbID);
   $self->value($value);
   $self->type($type);
@@ -114,7 +121,7 @@ These methods let you get at and set the member variables
   Args     : 
 
 =cut
- 
+
 sub dbID {
     my ($self,$dbID) = @_;
     if($dbID){
@@ -150,7 +157,7 @@ sub dhID {
   Args     : 
 
 =cut
- 
+
 sub value{
     my ($self,$value) = @_;
     if($value){
@@ -158,6 +165,16 @@ sub value{
     }
     return $self->{'_value'};
 }
+
+=head2 tag
+
+  Title    : tag
+  Function : returns tag
+  Example  : $arg->tag ();
+  Returns  : tag of the Argument
+  Args     :
+
+=cut
 
 sub tag {
     my ($self,$tag) = @_;
@@ -167,36 +184,35 @@ sub tag {
     return $self->{'_tag'};
 }
 
-=head2 argument
+=head2 type
 
-  Title    : argument
-  Function : returns argument
-  Example  : $dh->adpator_arg(); 
-  Returns  : argument of the Argument
+  Title    : type
+  Function : returns type
+  Example  : $arg->type (); 
+  Returns  : type of the Argument ('SCALAR' or 'ARRAY')
   Args     : 
 
 =cut
- 
+
 sub type{
     my ($self,$type) = @_;
     if($type){
+      $self->throw("Invalid argument type") unless (($type =~/SCALAR/m) || ($type=~/ARRAY/m));
       $self->{'_type'} = $type;
     }
     return $self->{'_type'};
 }
 
-
 =head2 rank
 
   Title    : rank
   Function : returns rank
-  Example  : $dh->rank(); 
+  Example  : $argument->rank(); 
   Returns  : rank the Argument
   Args     : 
 
-
 =cut
- 
+
 sub rank{
     my ($self,$rank) = @_;
     if($rank) {

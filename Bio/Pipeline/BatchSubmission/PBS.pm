@@ -1,15 +1,11 @@
-#
-# Object for submitting jobs to and querying the PBS queue
-#
-# Cared for by Michele Clamp  <michele@sanger.ac.uk>
-#
-# Copyright Michele Clamp
-#
+# BioPerl runnable for Bio::Pipeline::BatchSubmission::PBS
+
+# Written by FuguI team (fugui@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
 
-=pod 
+=pod
 
 =head1 NAME
 
@@ -17,19 +13,49 @@ Bio::Pipeline::BatchSubmission::PBS
 
 =head1 SYNOPSIS
 
+   my $batchsub = Bio::Pipeline::BatchSubmission::PBS->new(
+                  -dbobj => $dbobj,
+                  -stdout => $stdout,
+                  -stderr => $stderr,
+                  -parameters => $pars,
+                  -pre_exec => $pre,
+                  -command => $command,
+                  -queue => $queue,
+                  -jobname => $jobn,
+                  -nodes => $nodes
+                  );
+
 =head1 DESCRIPTION
 
-Stores run and status details of an analysis job
+Wrapper for PBS job management system
 
-=head1 CONTACT
+=head1 FEEDBACK
 
-Describe contact details here
+=head2 Mailing Lists
 
-tania <gisoht@nus.edu.sg>
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR
+
+Email fugui@fugu-sg.org
 
 =head1 APPENDIX
-
-The rest of the documentation details each of the object methods. Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
 
@@ -49,6 +75,15 @@ use Bio::Pipeline::PipeConf qw (RUNNER
 
 @ISA = qw(Bio::Pipeline::BatchSubmission) ;
 
+=head2 submit_batch
+
+  Title    : submit_batch
+  Function : do the actual job submission to PBS
+  Example  : $bs->submit_batch
+  Returns  : true if successful
+  Args     :
+
+=cut
 
 sub submit_batch{
     my ($self) = @_;
@@ -141,22 +176,15 @@ sub submit_batch{
 
 }
 
-sub construct_runner_param {
-  my ($self,$runner) = @_;
-  my $dbobj = $self->dbobj;
+=head2 construct_command_line
 
-  $runner .= defined $dbobj->dbname ? " -dbname ".$dbobj->dbname : "";
-  $runner .= defined $dbobj->host ? " -host ".$dbobj->host : "";
-  $runner .= defined $dbobj->port ? " -port ".$dbobj->port: "";
-  $runner .= defined $dbobj->password ? " -pass ".$dbobj->password : "";
-  $runner .= defined $dbobj->username ? " -dbuser ".$dbobj->username: "";
-  return $runner;
-}
+  Title    : construct_command_line
+  Function : constructs the PBS command line
+  Example  : $command = $bs->construct_command_line;
+  Returns  : a string
+  Args     : a string
 
-
-
-
-
+=cut
 
 sub construct_command_line{
 

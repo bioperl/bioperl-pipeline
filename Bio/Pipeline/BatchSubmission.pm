@@ -15,7 +15,7 @@ Bio::Pipeline::BatchSubmission
 
    #There are two ways to create a BatchSubmission modules
    #Either you can call new on this top-level module
-   #as below, and the batch module will be specified by the BATCH_MOD 
+   #as below, and the batch module will be specified by the BATCH_MOD  from PipeConf.pm
    #variable, or you can call new directly on one of the BatchSubmission 
    #modules such as Bio::Pipeline::LSF or Bio::Pipeline::PBS
 
@@ -69,6 +69,34 @@ use Bio::Pipeline::PipeConf qw(BATCH_MOD
 
 
 @ISA = qw(Bio::Root::Root);
+
+=head2 new
+
+  Title   : new
+  Usage   : my $batchsub = Bio::Pipeline::BatchSubmission->new(
+                  -dbobj => $dbobj,
+                  -stdout => $stdout,
+                  -stderr => $stderr,
+                  -parameters => $pars,
+                  -pre_exec => $pre,
+                  -command => $command,
+                  -queue => $queue,
+                  -jobname => $jobn,
+                  -nodes => $nodes
+                  );
+  Function: Constructor for BatchSubmission objet
+  Returns : L<Bio::Pipeline::BatchSubmission>
+  Args    : -dbobj  the dbadaptor object to the pipeline database 
+            -stdout the stdout file to which to pipe STDOUT
+            -stderr the stderr file to which to pipe STDERR
+            -parameters any parameters to be passed to the BatchSubmission object
+            -pre_exec any pre_exec commands to be passed to the load sharing software
+            -command the command name for submitting jobs
+            -queue the queue name to which to submit jobs to
+            -jobname  the name of the job
+            -nodes the array ref node ids to limit submission to
+
+=cut
 
 sub new{
     my ($caller, @args) = @_;
@@ -142,15 +170,35 @@ sub new{
 #get/sets        #
 ##################
 
+=head2 add_job
+
+  Title    : add_job
+  Function : adds a job  
+  Example  : $bs->add_job($job);
+  Returns  : 
+  Args     : L<Bio::Pipeline::Job>
+
+=cut
+
 sub add_job{
     my ($self,$job) = @_;
-
+    
     $self->throw("Job missing in BatchSubmission->add_job") unless $job;
+    $self->throw("Improper job object passed") unless $job->isa("Bio::Pipeline::Job");
 
     push (@{$self->{'_jobs'}}, $job);
 }
 
-    
+=head2 get_jobs
+
+  Title    : get_jobs
+  Function : returns the jobs in the BS object
+  Example  : $bs->get_jobs();
+  Returns  : An array of L<Bio::Pipeline::Job>
+  Args     :
+
+=cut
+
 sub get_jobs{
     my ($self) = @_;
 
@@ -159,26 +207,66 @@ sub get_jobs{
     return @{$self->{'_jobs'}};
 }
 
+=head2 batched_jobs
+
+  Title    : batched_jobs
+  Function : returns the number of jobs in the BS object 
+  Example  : $bs->batched_jobs();
+  Returns  : an int
+  Args     :
+
+=cut
+
 sub batched_jobs{
     my ($self) = @_;
     return scalar(@{$self->{'_jobs'}});
 }
+
+=head2 empty_batch
+
+  Title    : empty_batch
+  Function : flushes the list of jobs in the object 
+  Example  : $bs->empty_batch
+  Returns  : 
+  Args     :
+
+=cut
 
 sub empty_batch{
     my ($self) = @_;
     @{$self->{'_jobs'}} = ();
 }
 
+=head2 dbobj
+
+  Title    : dbobj
+  Function : get/set for the pipeline database object 
+  Example  : $bs->dbobj($dbadaptor)
+  Returns  : L<Bio::Pipeline::SQL::DBAdaptor> 
+  Args     : L<Bio::Pipeline::SQL::DBAdaptor>
+
+=cut
 
 sub dbobj{
     my ($self,$arg) = @_;
     
     if (defined $arg){
+        $self->throw("Need a Bio::Pipeline::DBAdaptor object") unless $arg->isa("Bio::Pipeline::SQL::DBAdaptor");
         $self->{'_dbobj'} = $arg; 
     }
 
     return $self->{'_dbobj'};
 }
+
+=head2 stdout_file
+
+  Title    : stdout_file
+  Function : get/set for the file to pipe STDOUT to
+  Example  : $bs->stdout_file('/tmp/1.out');
+  Returns  : a string
+  Args     : a string
+
+=cut
 
 sub stdout_file{
    my ($self, $arg) = @_;
@@ -190,7 +278,15 @@ sub stdout_file{
    return $self->{'_stdout'};
 }
 
+=head2 stderr_file
 
+  Title    : stderr_file
+  Function : get/set for the file to pipe STDERR to
+  Example  : $bs->stderr_file('/tmp/1.err');
+  Returns  : a string
+  Args     : a string
+
+=cut
 
 sub stderr_file{
    my ($self, $arg) = @_;
@@ -202,6 +298,16 @@ sub stderr_file{
    return $self->{'_stderr'};
 }
 
+=head2 parameters
+
+  Title    : parameters
+  Function : get/set for parameters to be passed to the sub command 
+  Example  : $bs->parameters()
+  Returns  : String
+  Args     : String
+
+=cut
+
 sub parameters{
    my ($self, $arg) = @_;
 
@@ -211,6 +317,17 @@ sub parameters{
 
    return $self->{'_parameters'};
 }
+
+=head2 pre_exec
+
+  Title    : pre_exec
+  Function : get/set for the pre_exec command 
+  Example  : $bs->pre_exec()
+  Returns  : string
+  Args     : string
+
+=cut
+
 sub pre_exec{
    my ($self, $arg) = @_;
 
@@ -220,6 +337,17 @@ sub pre_exec{
 
    return $self->{'_pre_exec'};
 }
+
+=head2 command
+
+  Title    : command
+  Function : get/set for command
+  Example  : $bs->command
+  Returns  : string
+  Args     : string
+
+=cut
+
 sub command{
    my ($self, $arg) = @_;
 
@@ -229,6 +357,17 @@ sub command{
 
    return $self->{'_command'};
 }
+
+=head2 queue
+
+  Title    : queue
+  Function : get/set for queue id
+  Example  : $bs->queue('normal4');
+  Returns  : string
+  Args     : string
+
+=cut
+
 sub queue{
    my ($self, $arg) = @_;
 
@@ -238,6 +377,17 @@ sub queue{
 
    return $self->{'_queue'};
 }
+
+=head2 jobname
+
+  Title    : jobname
+  Function : get/set jobname
+  Example  : $bs->jobname()
+  Returns  : String
+  Args     : String
+
+=cut
+
 sub jobname{
    my ($self, $arg) = @_;
 
@@ -247,6 +397,17 @@ sub jobname{
 
    return $self->{'_jobname'};
 }
+
+=head2 nodes
+
+  Title    : nodes
+  Function : get/set for nodes
+  Example  : $bs->nodes
+  Returns  : list of node ids
+  Args     :
+
+=cut
+
 sub nodes{
    my ($self, $arg) = @_;
 
@@ -261,6 +422,39 @@ sub nodes{
 #run methods#
 #############
 
+=head2 construct_runner_param
+
+  Title    : construct_runner_param
+  Function : method that constructs the parameters to runner.pl
+  Example  : $command = $bs->construct_runner_paam
+  Returns  : a string
+  Args     : a string
+
+=cut
+
+sub construct_runner_param {
+  my ($self,$runner) = @_;
+  my $dbobj = $self->dbobj;
+
+  $runner .= defined $dbobj->dbname ? " -dbname ".$dbobj->dbname : "";
+  $runner .= defined $dbobj->host ? " -host ".$dbobj->host : "";
+  $runner .= defined $dbobj->port ? " -port ".$dbobj->port: "";
+  $runner .= defined $dbobj->password ? " -pass ".$dbobj->password : "";
+  $runner .= defined $dbobj->username ? " -dbuser ".$dbobj->username: "";
+  return $runner;
+}
+
+=head2 construct_command_line
+
+  Title    : construct_command_line
+  Function : Abstract method that constructs the command line for 
+             submitting jobs
+  Example  : $command = $bs->construct_command_line;
+  Returns  : a string
+  Args     : a string
+
+=cut
+
 sub construct_command_line{
   my($self) = @_;
 
@@ -269,15 +463,19 @@ sub construct_command_line{
 }
 
 
-sub open_command_line{
-  my ($self)= @_;
-  
-  $self->throw("Sorry, you cannot call this method from a generic BatchSumission Object");
-
-}
-
 #implemeted submit_batch should implement the action parameter to pass to runner.pl which
 #specifies the action to that the job undergoes according to the rule table
+
+=head2 submit_batch
+
+  Title    : submit_batch
+  Function : abstract method for doing the job submissions
+  Example  : $bs->submit_batch
+  Returns  : true if successful
+  Args     : 
+
+=cut
+
 sub submit_batch{
 
   my ($self,$action)= @_;
@@ -285,3 +483,5 @@ sub submit_batch{
   $self->throw("Sorry, you cannot call this method from a generic BatchSumission Object");
 
 }
+
+1;

@@ -1,20 +1,21 @@
-# BioPerl runnable for Bio::Pipeline::Analysisbject for storing sequence analysis details
 #
-# Adapted from Michele Clamp's EnsEMBL::Analysis  <michele@sanger.ac.uk>
-# Written by FuguI team (fugui@fugu-sg.org)
-# You may distribute this runnable under the same terms as perl itself
+# BioPerl module for Bio::Pipeline::Analysis
+#
+# Cared for by FuguI Team <fugui@fugu-sg.org>
+#
+#
+# You may distribute this module under the same terms as perl itself
 #
 # POD documentation - main docs before the code
-
-=pod 
+#
 
 =head1 NAME
 
-Bio::Pipeline::Analysis.pm - Stores details of an analysis run
+Bio::Pipeline::Analysis
 
 =head1 SYNOPSIS
 
-    my $obj    = new Bio::Pipeline::Analysis(
+    my $analysis = new Bio::Pipeline::Analysis(
         -id              => $id,
         -adaptor         =>$adaptor,
         -logic_name      => 'SWIRBlast',
@@ -37,16 +38,37 @@ Bio::Pipeline::Analysis.pm - Stores details of an analysis run
 
 =head1 DESCRIPTION
 
-Object to store details of an analysis run
+This is the object representation of an analysis in the pipeline. Each analysis
+will have a runnable which is in turn an interface to the wrapper modules or scripts.
 
-=head1 CONTACT
+=head1 FEEDBACK
 
-FuguI team Singapore: fugui@fugu-sg.org
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-pipeline@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html     - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bugzilla.bioperl.org/
+
+=head1 AUTHOR - FuguI Team 
+
+Email fugui@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods. 
-Internal methods are usually preceded with a _
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
 
 =cut
 
@@ -62,6 +84,52 @@ use Bio::Root::IO;
 # Inherits from the base bioperl object
 @ISA = qw(Bio::Root::Root);
 
+=head2 new
+
+  Title   : new
+  Usage   : my $analysis = new Bio::Pipeline::Analysis(
+                                  -id              => $id,
+                                  -adaptor         =>$adaptor,
+                                  -logic_name      => 'SWIRBlast',
+                                  -db              => $db,
+                                  -db_version      => $db_version,
+                                  -db_file         => $db_file,
+                                  -program         => $program,
+                                  -program_version => $program_version,
+                                  -program_file    => $program_file,
+                                  -gff_source      => $gff_source,
+                                  -gff_feature     => $gff_feature,
+                                  -runnable        => $module,
+                                  -parameters      => $parameters,
+                                  -created         => $created,
+                                  -iohandler       => $iohandler,
+                                  -node_group      => $node_group,
+                                  -io_map          => $io_map
+                                  );
+
+  Function: constructor for analysis object
+  Returns : L<Bio::Pipeline::Analysis> 
+  Args    : -id           the analysis dbID
+            -adaptor      the analysis adaptor object
+            -logic_name   the logic name representing the analysis e.g. blast
+            -db           the database name that the analysis uses (optional)
+            -db_version   the version of the database if required
+            -db_file      the name and path to the database file (e.g. a blast formatted database)
+            -program      the name of the binary program that the analysis calls 
+            -program_version the program version
+            -program_file   the path to the binary
+            -gff_source   the source name of the generic feature format for the features 
+                          that that the analysis generates 
+            -gff_feature  the type of generic feature that the analysis generates
+            -runnable     the name of the runnable that the analysis uses 
+                          (e.g. Bio::Pipeline::Runnable::Blast)
+            -parameters   Any runnable or binary parameters
+            -created      the timestamp of the analysis entry in the Analysis table
+            -iohandler    an array reference of iohandler that belong to this analysis.
+            -node_group   the node group object that this analysis belongs to
+            -io_map       a hash containing the mappings of iohandler for this analysis to the next
+
+=cut
 
 sub new {
   my($class,@args) = @_;
@@ -115,6 +183,20 @@ sub new {
 }
 
 
+=head2 test_and_setup
+
+  Title   : test_and_setup 
+  Usage   : Bio::Pipeline::Analysis->test_and_setup(1);
+  Function: Basic test to check that the various analysis parameters provided are correct.
+            For example, to check that the specified program, db_files exist and are
+            accessible. It also tries to figure out the logic_name of the analysis,the program version
+            and match the provided program to the runnable. 
+  Returns : Throws if paths provided do not exist 
+  Args    : verbose parameters 1/0 which sets the level of output print to stderr.
+
+=cut
+
+
 sub test_and_setup {
   my ($self,$verbose) = @_;
   if($self->data_monger_id){
@@ -138,7 +220,7 @@ sub test_and_setup {
 
   Title   : exists_program
   Usage   : $self->exists_program
-  Function: Determines whether executable exists 
+  Function: Determines whether executable exists for the analysis
   Returns : int
   Args    : int
 
@@ -153,21 +235,6 @@ sub exists_program{
     return 0;
 }
 
-sub iohandler {
-    my ($self, $ioh) = @_;
-    if($ioh) {
-        $self->{'_iohandler'} = $ioh;
-    }
-    return $self->{'_iohandler'};
-}
-
-sub io_map{
-    my ($self, $io_map) = @_;
-    if($io_map) {
-        $self->{'_io_map'} = $io_map;
-    }
-    return $self->{'_io_map'};
-}
 
 =head2 fetch_next_analysis
 
@@ -181,7 +248,10 @@ sub io_map{
 
 sub fetch_next_analysis {
     my ($self) = @_;
-    return $self->adaptor->fetch_next_analysis($self);
+    if(!$self->{'_next_analysis'}){
+        push @{$self->{'_next_analysis'}} , $self->adaptor->fetch_next_analysis($self);
+    }
+    return @{$self->{'_next_analysis'}};
 }
 
 =head2 fetch_prev_analysis
@@ -196,14 +266,17 @@ sub fetch_next_analysis {
 
 sub fetch_prev_analysis {
     my ($self) = @_;
-    return $self->adaptor->fetch_prev_analysis($self);
+    if(!$self->{'prev_analysis'}){
+        push @{$self->{'_prev_analysis'}}, $self->adaptor->fetch_prev_analysis($self);
+    }
+    return @{$self->{'_prev_analysis'}};
 }
 
 =head2 exists_db_file
 
   Title   : exists_db_file
   Usage   : $self->exists_db_file
-  Function: determine where db file exists 
+  Function: determine whetherthe  db file exists 
   Returns : int
   Args    : int
 
@@ -216,6 +289,16 @@ sub exists_db_file {
   }
   return 0;
 }
+
+=head2 exists_runnable
+
+  Title   : exists_runnable
+  Usage   : $self->exists_runnable
+  Function: determine whether the runnable exists
+  Returns : int
+  Args    : int
+
+=cut
 
 sub exists_runnable {
   my ($self) = @_;
@@ -240,7 +323,8 @@ sub exists_runnable {
 
   Title   : set_logic_name_if_needed
   Usage   : $self->set_logic_name_if_needed
-  Function: set the logic name if not provided by user  
+  Function: set the logic name if not provided by 
+            user by using the program name
   Returns : int
   Args    : int
 
@@ -350,6 +434,8 @@ sub match_program_to_runnable {
     }
     return 0;
 }
+
+###########__GET/SETS FROM HERE ON #############
 
 =head2 adaptor
 
@@ -596,8 +682,6 @@ sub runnable {
     return $self->{_runnable};
 }
 
-
-
 =head2 gff_source
 
   Title   : gff_source
@@ -696,6 +780,42 @@ sub logic_name {
         $self->{_logic_name} = $arg;
     }
     return $self->{_logic_name};
+}
+
+=head2 iohandler
+
+  Title   : iohandler
+  Usage   : $self->iohandler
+  Function: Get/set method for the iohandlers belonging to the analysis
+  Returns : L<Bio::Pipeline::IOHandler> 
+  Args    : L<Bio::Pipeline::IOHandler> 
+
+=cut
+
+sub iohandler {
+    my ($self, $ioh) = @_;
+    if($ioh) {
+        $self->{'_iohandler'} = $ioh;
+    }
+    return $self->{'_iohandler'};
+}
+
+=head2 io_map
+
+  Title   : io_map
+  Usage   : $self->io_map
+  Function: Get/set method for the io_map
+  Returns : Hash 
+  Args    : Hash 
+
+=cut
+
+sub io_map{
+    my ($self, $io_map) = @_;
+    if($io_map) {
+        $self->{'_io_map'} = $io_map;
+    }
+    return $self->{'_io_map'};
 }
 
 =head2 output_handler
