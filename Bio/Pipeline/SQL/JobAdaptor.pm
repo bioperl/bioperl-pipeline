@@ -79,7 +79,7 @@ use strict;
 
 BEGIN {
     %VALID_STATUS = ('NEW'=>1,'FAILED'=>1,'SUBMITTED'=>1,'COMPLETED'=>1,'WAITFORALL'=>1);
-    %VALID_STAGE  = ('READING'=>1,'WRITING'=>1,'RUNNING'=>1);
+    %VALID_STAGE  = ('READING'=>1,'WRITING'=>1,'RUNNING'=>1,'BATCHED'=>1);
 }
 
 ################################################################################
