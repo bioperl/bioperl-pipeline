@@ -138,20 +138,19 @@ sub run {
     my $ioh_map = $self->iohandler_map;
 
     foreach my $key (keys %{$input}){
-#       $key = lc $key;
        my $ioh = $ioh_map->{$key};
        if(!$input->{$key}){
            $self->throw("Iohandler map for $key does not have inputs");
        }
        my @input;
        if(ref $input->{$key} eq "ARRAY"){
-        @input = [$key,@{$input->{$key}}];
+        @input = @{$input->{$key}};
        }
        else {
-        push @input, [$key,$input->{$key}];
+        push @input, $input->{$key};
        }
        foreach my $in(@input){
-        my $input1 = $self->create_input($in->[1],$ioh,$in->[0]);
+        my $input1 = $self->create_input($in,$ioh);
 
         my $job = $self->create_job($next_anal,[$input1]);
 
