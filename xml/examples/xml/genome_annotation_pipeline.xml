@@ -1,7 +1,61 @@
+<!--
 
-<pipeline_setup>
- <global rootdir="/Users/shawn/cvs_src/biopipe-release/examples/genome_annotation_pipeline/"
-         ens_dbname="ensembl_db2"
+genome_annotation_pipeline.xml
+
+genome_annotation pipeline
+14 Apr 2003
+Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+http://www.biopipe.org
+
+<PIPELINE SUMMARY>
+
+Contig sequences stored in an ensembl database are run through the following analysis:
+
+RepeatMasker->Blast->Genewise
+
+Blast hits are filtered for features that provide maximum coverage and extra exons
+before jobs for genewise are selected.
+
+Results are stored back into the Ensembl database.
+
+</PIPELINE SUMMARY>
+
+<THE GENOME ANNOTATIONPIPELINE>
+
+  <INSTALLATION REQUIREMENTS>
+
+    <PERL PACKAGES>
+      Standard Biopipe installation (pls refer to bioperl-pipeline/INSTALL)
+      Ensembl 
+    </PERL PACKAGES>
+
+    <BINARIES> 
+      RepeatMasker from  http://repeatmasker.genome.washington.edu
+      NCBI's blastall ftp://ftp.ncbi.nih.gov/pub/blast/executables/
+      Genewise http://www.sanger.ac.uk/software/wise2
+
+    </BINARIES>
+ 
+  <CONFIGURING PIPELINE>
+
+    You will first need an ensembl database loaded with your sequences of interest
+    for annotation. You can load scaffolds into the database using the load_scaffolds.pl 
+    script found in ensembl/scripts/load_scaffolds.pl . You will also need to fill up
+    the assembly information to work with slices. Pls refer to the ensembl documentation
+    for doing so. Also provided is a ensembl.sql which contains a dump of the ensembl database
+    with 1 contig loaded. The dump is found in:
+    bioperl-pipeline/xml/examples/genome_annotation_pipeline/data/ensembl.sql
+
+    To create and load the database:
+
+    mysqladmin -u root ensembl
+    mysql -u dbuser -pdbpass -h dbhost < bioperl-pipeline/xml/examples/genome_annotation_pipeline/data/ensembl.sql
+
+    Modify the following parameters under the <global> tag to point to the directories,
+    files and parameters appropriately.
+
+    <global rootdir="/Users/shawn/cvs_src/biopipe-release/examples/genome_annotation_pipeline/"
+         ens_dbname="ensembl"
          ens_dbdriver="mysql"
          ens_dbhost="localhost"
          ens_dbuser="root"
@@ -23,7 +77,150 @@
     
         slice_ioh="8"
         protein_ioh="9"
-        genewise_ioh="$slice_ioh"
+    />
+
+   rootdir - root working directory
+   ens_dbname  - the ensembl database name
+   ens_dbdriver - the ensembl database driver
+   ens_dbhost  - the ensembl database host
+   ens_dbuser  - the ensembl database uer
+   ens_dbpasswd - the ensembl database password
+  
+  repeatmasker_param - the RepeatMasker parameter string
+
+  blast1_logicname - logic name for the first blast analysis
+  blast1_dbname    - the name of the blast database 
+  blast1_dbfile    - the path to the database file
+  blast1_dbversion - the blast database version
+  blast1_param     - parameters to blast
+
+  same for blast2*
+
+  slice_ioh - the iohandler id for the slice to be fed to genewise
+  protein_ioh - the iohandler id for the slice to be fed to genewise
+  
+
+   genomic_input  - the genomic input file
+   blast_dir      - the directory where blast results are stored
+   blast_param    - blast parameters
+   blast_program_file - the path to blastall
+   analysis_logic_name - the est alignment program 
+                         supported either: Sim4 or Est2Genome
+   analysis_runnable   - the module running the est alignment program
+                         supported either : Bio::Pipeline::Runnable::Sim4
+                                            Bio::Pipeline::Runnable::Est2Genome
+   analysis_program   - the program binary name 
+                        supported either: sim4 or est2genome
+   analysis_program_file - path to either sim4 or est2genome
+   analysis_parameters   - parameters to sim4 or est2genome
+   
+  </CONFIGURING PIPELINE>    
+
+  <LOADING PIPELINE>
+     
+       The pipeline is loaded up using this XML file.
+       A new database will be automtically created maybe created for you. 
+       This is done using the PipelineManager script found in bioperl-pipeline/scripts.
+       Using the script:
+
+      ************************************
+      *PipelineManager
+      ************************************
+      This is the central script used to run the pipeline.
+
+      Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
+
+      Options:
+      Default values are read from PipeConf.pm
+
+           -dbhost    The database host name (localhost)
+           -dbname    The pipeline database name (annotate_pipeline)
+           -dbuser    User for connecting to db (root)
+           -dbpass    The password to mysql database()
+           -dbdriver  Database driver (mysql)
+           -schema    The Biopipe database schema (../sql/schema)
+           -xml       The xml pipeline template file. It will run XMLImporter if provided
+           -xf        Force drop of any existing Biopipe database with the same name
+           -flush     flush all locks on pipeline and remove any that exists. 
+                      Should only be used for debugging or development.
+           -batchsize The number ofjobs to be batched to one node
+           -local     Whether to run jobs in local mode 
+                      (on the node where this script is run)
+           -jobnbr    Number of jobs to run (for testing)
+           -queue     Specify the queue on which to submit jobs
+           -retry     Number of times to retry failed jobs
+           -notest    Don't run pre-pipeline checks
+           -norun     Use when you just want to load the XML without running
+           -verbose   Whether to show warning during test and setup
+           -help      Display this help
+
+        Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in 
+        the Bio/Pipeline/PipeConf.pm file, for convenience.
+
+  </LOADING THE PIPELINE>
+
+  <RUNNING THE PIPELINE>
+
+  <RUNNING THE PIPELINE>
+
+    Go to bioperl-pipeline/Bio/Pipeline
+
+    Edit PipeConf.pm accordingly for your environment variables.
+
+    Go to bioperl-pipeline/scripts, to load the pipeline without running:
+
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -xml ~/biopipe-release/xml/templates/examble/blast_file_pipeline.xml
+                         -norun 
+
+    run the pipeline:
+
+    
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -queue priority
+
+    you may use the -local option to run it in local mode without submitting to the nodes yet.
+    This will be a good test before submitting, and is recommended for debugging.
+  
+    If you encounter any errors, you can simply rerun the first command with the xml option
+    and the biopipe database will be automatically recreated once the errors have been fixed.
+
+  </RUNNING THE PIPELINE>
+
+<CHANGE LOG>
+14 APR 2003 - First Addition - shawn
+</CHANGE LOG>
+
+//-->
+
+<pipeline_setup>
+ <global rootdir="/Users/shawn/cvs_src/biopipe-release/examples/genome_annotation_pipeline/"
+         ens_dbname="ensembl"
+         ens_dbdriver="mysql"
+         ens_dbhost="localhost"
+         ens_dbuser="root"
+         ens_dbpasswd=""
+     
+         repeatmasker_param=""
+
+         blast1_logicname="BlastCdna"
+         blast1_dbname="FishCdna"
+         blast1_dbfile="$rootdir/data/fugu_cdna.fa"
+         blast1_dbversion ="test version"
+         blast1_param = "-p blastn -e 1e-10"
+         
+         blast2_logicname="BlastPep"
+         blast2_dbname="FishCdna"
+         blast2_dbfile="$rootdir/data/arp3_prot.fa"
+         blast2_dbversion ="test version"
+         blast2_param = "-p blastx -e 1e-10"
+    
+        slice_ioh="8"
+        protein_ioh="9"
  />
   <database_setup>
     <dbadaptor id="1">
