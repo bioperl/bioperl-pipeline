@@ -2,6 +2,9 @@
 #
 # configuration information
 
+=head1 NAME
+Bio::Pipeline::PipeConf
+
 =head1 DESCRIPTION
 PipeConf is a copy of humConf written by James Gilbert.
 
@@ -21,6 +24,9 @@ The variables can also be references to arrays or hashes.
 
 All the variables are in capitals, so that they resemble environment
 variables.
+
+=head1
+
 =cut
 
 
@@ -32,47 +38,56 @@ use vars qw (%PipeConf);
 
 %PipeConf = ( 
 
+    # You will need to modify these variables
+
     # working directory for err/outfiles
     NFSTMP_DIR => '/tmp/',
     WORKDIR    => '/tmp/',
 
     # database specific variables
+    
     DBI_DRIVER => 'mysql',
     DBHOST     => 'localhost',
     DBNAME     => 'yourdbhere',
     DBUSER     => 'root',
     DBPASS     => '',	     
 
-    # default directory for data files and binary files
-    BINDIR     => '',
-    DATADIR    => '',
-
     # Batch Management system module
+    # Currently supports PBS and LSF
     BATCH_MOD   =>  'LSF',
     # farm queue
-    QUEUE      => '', 
+    QUEUE      => 'normal3', 
     # farm nodes to use, default all
-    USENODES    =>'',
-    # jobname
-    JOBNAME    =>'',
-    # true->update InputIdAnalysis via Job
-    AUTOUPDATE => 1,    
-
+    
     # no of jobs to send to Batch Management system at one go
-    BATCHSIZE  => 5,        
+    BATCHSIZE  => 3,        
+
+    #bsub opt
     BSUB_OPT   => '-C0',
 
     # number of times to retry a failed job
     RETRY       => '1000',
-    # path to runner.pl, needed by Job.pm
-    RUNNER     => '',   
-    #sleep time in Rulemanager
-    SLEEP      => 3,
 
-    #no functional parameters.
-    #future work 
-    WAIT_FOR_ALL_PERCENT => 0,
-    TIMEOUT    => 100,
+    # path to runner.pl, use by the BatchSubmission objects
+    # to look for runner.pl. If not supplied it looks in the default 
+    # directory where PipelineManager lies
+    RUNNER     => '',   
+
+    #sleep time in PipelineManager before waking up and looking for jobs to run 
+    SLEEP      => 100,
+
+    ##############################################
+    # NOT SUPPORTED CURRENTLY FOR FUTURE DEV
+    # default directory for data files and binary files
+    #BINDIR     => '',
+    #DATADIR    => '',
+    #USENODES    =>'',
+    # jobname
+    #JOBNAME    =>'',
+    # true->update InputIdAnalysis via Job
+    #AUTOUPDATE => 1,    
+    #WAIT_FOR_ALL_PERCENT => 0,
+    #TIMEOUT    => 100,
     );
 
 sub import {
