@@ -99,8 +99,8 @@ next do the following to setup your pipeline.
    files that you want to blast against.
 
   Thus replace
-      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
-  with the full path to your db file.
+      <db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
+  uith the full path to your db file.
 
 3) Next you can load up the pipeline using the xml file with the Xml2Db.pl script
 
@@ -119,6 +119,15 @@ Default values in ()
 
 To run this script, you will need XML::SimpleObject available at http://www.cpan.org
 
+4) You will also need the BioToEns module, a set of conversion modules that
+interoperate between bioperl and ensembl objects. It is currently a hacky way
+of converting between them but we are working on a more generalize conversion
+functionality between them. BioToEns is available at here :
+
+cvs -d :pserver:cvs@cvs.fugu-sg.org:/home/cvs/repository co BioToEns
+
+no password necessary
+
 
 
 You are now ready to run. Go to the bioperl-pipeline/Bio/Pipeline/
@@ -134,7 +143,7 @@ and run PipelineManager.pl to start the pipeline.
     <dbadaptor id="1">
       <dbname>ens_test</dbname>
       <driver>mysql</driver>
-      <host>localhost</host>
+      <host>mysql</host>
       <user>root</user>
       <password></password>
       <module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
@@ -144,7 +153,7 @@ and run PipelineManager.pl to start the pipeline.
     <dbadaptor id="2">
       <dbname>ens_test</dbname>
       <driver>mysql</driver>
-      <host>localhost</host>
+      <host>mysql</host>
       <user>root</user>
       <password></password>
       <module>Bio::BioToEns::Beacon</module>
@@ -241,37 +250,50 @@ and run PipelineManager.pl to start the pipeline.
   </iohandler_setup>
 
   <pipeline_flow_setup>
+   <!-- Data Monger anallysis for setting up the inputs for first analysis-->
+    <analysis id="1">
+      <data_monger>
+        <input>
+          <name>Ensembl_ids</name>
+          <iohandler>1</iohandler>
+        </input>
+        <input_create>
+           <module>setup_initial</module>
+           <rank>1</rank>
+           <argument>
+                <tag>Ensembl_ids</tag>
+                <value>2</value>
+            </argument>
+         </input_create>
+      </data_monger>
+      <input_iohandler id="1"/>
+    </analysis>
 
     <!--Analysis 1 Repeat Masker -->
-    <analysis id="1">
+    <analysis id="2">
       <logic_name>RepeatMasker</logic_name>
       <runnable>Bio::Pipeline::Runnable::RepeatMasker</runnable>
       <program>RepeatMasker</program>
       <nodegroup_id>1</nodegroup_id>
       <parameters></parameters>
 
-       <!--Set up iohandler for Create_Input -->
-      <create_input_setup>
-	      <fetch_input_ids_iohandler_id>1</fetch_input_ids_iohandler_id>
-	      <fetch_input_iohandler_id>2</fetch_input_iohandler_id>
-      </create_input_setup>
-
       <!-- Specify which iohandler to use to store mask features -->
-      <output_iohandler_id>3</output_iohandler_id>
+      <output_iohandler id="3"/>
+      <input_iohandler id="2"/>
     </analysis>
 
     <!--Analysis 2 Blast SwissProt-->
-    <analysis id="2">
+    <analysis id="3">
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>swissprot</db>
-      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
+      <db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
     
       <!-- Specify which iohandler to use to store blast features -->
-      <output_iohandler_id>5</output_iohandler_id>
+      <output_iohandler id="5"/>
 
       <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
            in analysis 1, now use iohandler that fetches masked seq -->
@@ -282,17 +304,17 @@ and run PipelineManager.pl to start the pipeline.
     </analysis>
 
     <!--Analysis 3 Blast Trembl-->
-    <analysis id="3">
+    <analysis id="4">
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>trembl</db>
-      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
+      <db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
 
       <!-- Specify which iohandler to use to store blast features -->
-      <output_iohandler_id>5</output_iohandler_id>
+      <output_iohandler id="5"/>
 
       <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
            in analysis 1, now use iohandler that fetches masked seq -->
@@ -303,17 +325,17 @@ and run PipelineManager.pl to start the pipeline.
     </analysis>
 
     <!--Analysis 4 Blast Ensembl Human Pep-->
-    <analysis id="4">
+    <analysis id="5">
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>ensembl_hum_pep</db>
-      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
+      <db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
 
       <!-- Specify which iohandler to use to store blast features -->
-      <output_iohandler_id>5</output_iohandler_id>
+      <output_iohandler id="5"/>
 
       <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
            in analysis 1, now use iohandler that fetches masked seq -->
@@ -324,18 +346,17 @@ and run PipelineManager.pl to start the pipeline.
     </analysis>
 
     <!--Analysis 5 Blast Ensembl Mouse Pep-->
-    <analysis id="5">
+    <analysis id="6">
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>ensembl_mus_pep</db>
-      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
+      <db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
 
       <!-- Specify which iohandler to use to store blast features -->
-      <output_iohandler_id>5</output_iohandler_id>
-
+      <output_iohandler id="5"/>
       <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
            in analysis 1, now use iohandler that fetches masked seq -->
       <input_iohandler_mapping>
@@ -345,17 +366,17 @@ and run PipelineManager.pl to start the pipeline.
     </analysis>
 
     <!--Analysis 6 Blast Ensembl Human Genscan Pep-->
-    <analysis id="6">
+    <analysis id="7">
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>ensembl_hum_genscan</db>
-      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
+      <db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
 
       <!-- Specify which iohandler to use to store blast features -->
-      <output_iohandler_id>5</output_iohandler_id>
+      <output_iohandler id="5"/>
 
       <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
            in analysis 1, now use iohandler that fetches masked seq -->
@@ -366,18 +387,18 @@ and run PipelineManager.pl to start the pipeline.
     </analysis>
 
     <!--Analysis 7 Blast Fugu Pep-->
-    <analysis id="7">
+    <analysis id="8">
       <logic_name>blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>Fugu_Pep</db>
-      <db_file>/home/shawn/download/genome_annotate/db.fa</db_file>
+      <db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
       <program>blastall</program>
       <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
       <nodegroup_id>1</nodegroup_id>
 
       <!-- Specify which iohandler to use to store blast features -->
-      <output_iohandler_id>5</output_iohandler_id>
 
+      <output_iohandler id="5"/>
       <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
            in analysis 1, now use iohandler that fetches masked seq -->
       <input_iohandler_mapping>
@@ -390,41 +411,35 @@ and run PipelineManager.pl to start the pipeline.
 
     <!-- Rules that specify the order of analysis to be executed -->
 
-    <!-- The first order of business is to setup the input ids and jobs for analysis 1-->
-    <rule>
-     <next_analysis_id>1</next_analysis_id>
-      <action>CREATE_INPUT</action>
-    </rule>
-
     <!-- Once analysis 1 is finished, copy input id from previous analysis, do the appropriate 
          iohandler mapping and create job for analysis 2 -->
     <rule>
       <current_analysis_id>1</current_analysis_id>
       <next_analysis_id>2</next_analysis_id>
-      <action>COPY_ID</action>
+      <action>NOTHING</action>
     </rule>
     <rule>
-      <current_analysis_id>1</current_analysis_id>
+      <current_analysis_id>2</current_analysis_id>
       <next_analysis_id>3</next_analysis_id>
       <action>COPY_ID</action>
     </rule>
     <rule>
-      <current_analysis_id>1</current_analysis_id>
+      <current_analysis_id>2</current_analysis_id>
       <next_analysis_id>4</next_analysis_id>
       <action>COPY_ID</action>
     </rule>
     <rule>
-      <current_analysis_id>1</current_analysis_id>
+      <current_analysis_id>2</current_analysis_id>
       <next_analysis_id>5</next_analysis_id>
       <action>COPY_ID</action>
     </rule>
     <rule>
-      <current_analysis_id>1</current_analysis_id>
+      <current_analysis_id>2</current_analysis_id>
       <next_analysis_id>6</next_analysis_id>
       <action>COPY_ID</action>
     </rule>
     <rule>
-      <current_analysis_id>1</current_analysis_id>
+      <current_analysis_id>2</current_analysis_id>
       <next_analysis_id>7</next_analysis_id>
       <action>COPY_ID</action>
     </rule>
