@@ -395,7 +395,7 @@ sub fetch_input {
         my @new_method;
         foreach my $method(@methods){
             my @arguments = @{$method->arguments};
-            my @args = $self->_format_input_args($input,$obj,@arguments);
+            my @args = $self->_format_input_arguments($input,$obj,@arguments);
             $method->arguments(\@args);
             push @new_method, $method;
         }
