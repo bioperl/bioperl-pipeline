@@ -91,18 +91,13 @@ sub submit_batch{
         $self->throw("Can't locate runner.pl - needs to be set in PipeConf.pm") unless -x $runner;
     }
    
-    my $jobID_file = "/tmp/$num.jobid";   
+    my $jobID_file = $NFSTMP_DIR."/$num.jobid";   
     open (JOBID, ">$jobID_file");
-=head
-   print "******hello\n";
-    print JOBID @job_ids; 
-   print "******bye\n";
-=cut
 
 # Create Script
-    my $pbs_script = "/tmp/$num.pbs"; #bad to hard code..will change it..
+    my $pbs_script = $NFSTMP_DIR."/$num.pbs"; 
     open (PBS_SCRIPT, ">$pbs_script");
-    print PBS_SCRIPT $runner . " " . @job_ids;
+    print PBS_SCRIPT $runner . " " . join(" ",@job_ids);
     close (PBS_SCRIPT);
 # Finish Script
 
