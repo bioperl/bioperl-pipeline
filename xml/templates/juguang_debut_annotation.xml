@@ -94,7 +94,7 @@ and will store the feature information the pipeline generates.
 		</method>
 	</iohandler>
 
-   <converter id="1" module="repeatmasker_2ens">
+   <converter id="1" module="FeaturePairToEnsEMBLConverter">
       <method name="new" rank="1">
          <argument tag = "-host" value = "mysql"/>
          <argument tag = "-driver" value = "mysql"/>
@@ -110,7 +110,7 @@ and will store the feature information the pipeline generates.
       </method>
       <method name="convert" rank="3"/>
   </converter>    
-  <converter id="2" module="blastall_2ens">
+  <converter id="2" module="HSPToEnsEMBLConverter">
       <method name="new" rank="1">
          <argument tag = "-program" value = "blastx"/>
          <argument tag = "-host" value ="mysql"/>
