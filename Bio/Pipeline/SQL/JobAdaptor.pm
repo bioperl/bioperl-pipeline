@@ -350,28 +350,58 @@ sub store {
   my $self = shift;
   my $job = shift;
 
-  if( ! defined( $job->analysis->dbID )) {
-    $self->throw( "Need to store analysis first" );
+  if ( !defined ($job->dbID)) {
+
+   if( ! defined( $job->analysis->dbID )) {
+     $self->throw( "Need to store analysis first" );
+   }
+
+   my $sth = $self->prepare( q{
+     INSERT into job( analysis_id,
+       stdout_file, stderr_file, object_file,
+       status,time) 
+       VALUES ( ?, ?, ?, ?, ?, now() ) } );
+
+   $sth->execute( $job->analysis->dbID,
+                  $job->stdout_file,
+                  $job->stderr_file,
+                  $job->input_object_file,
+                  'NEW');
+
+   $sth = $self->prepare( "SELECT LAST_INSERT_ID()" );
+   $sth->execute;
+
+   my $dbId = ($sth->fetchrow_arrayref)->[0];
+   $job->dbID( $dbId );
+   $job->adaptor( $self );
   }
+  else {
+   if( ! defined( $job->analysis->dbID )) {
+     $self->throw( "Need to store analysis first" );
+   }
 
-  my $sth = $self->prepare( q{
-    INSERT into job( analysis_id,
-      stdout_file, stderr_file, object_file,
-      status,time) 
-    VALUES ( ?, ?, ?, ?, ?, now() ) } );
+   my $sth = $self->prepare( q{
+     INSERT into job( job_id, analysis_id,
+       stdout_file, stderr_file, object_file,
+       status,time)
+     VALUES ( ?, ?, ?, ?, ?, ?, now() ) } );
 
-  $sth->execute( $job->analysis->dbID,
+   $sth->execute($job->dbID, 
+                 $job->analysis->dbID,
                  $job->stdout_file,
                  $job->stderr_file,
                  $job->input_object_file,
                  'NEW');
 
-  $sth = $self->prepare( "SELECT LAST_INSERT_ID()" );
-  $sth->execute;
+   $job->adaptor( $self );
+  }
+  
+  my $input_adaptor = $self->db->get_InputAdaptor;
 
-  my $dbId = ($sth->fetchrow_arrayref)->[0];
-  $job->dbID( $dbId );
-  $job->adaptor( $self );
+  foreach my $input($job->inputs) {
+    $input->job_id($job->dbID);
+    $input_adaptor->store_fixed_input($input);
+  }
 
   return $job->dbID;
 
