@@ -1,0 +1,436 @@
+<!--
+TRIBE-MCL Pipeline XML Template
+
+27 Nov 2002
+Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+http://www.biopipe.org
+
+
+This pipeline replicates the protein family clustering process developed by
+Anton Enright ,Philip Lijnzaad and Abel Ureta-Vidal at Ensembl. The families
+generated are stored in the ensembl family database. It is currently developed
+for the ensembl-branch-9 schema.
+
+A) Organization of this file
+
+  <pipeline_setup>
+    <database_setup>
+    <iohandler_setup>
+    <pipeline_flow_setup>
+    <job_setup>(optional)
+  </pipeline_setup>
+
+  <database_setup>
+  This specifies the databases that the pipeline connects to and the
+  adaptor modules that intefaces with them.
+
+  <iohandler_setup>
+  This specifies the method calls that will be used by the pipeline
+  to access the databases. These methods are contained in the modules
+  specified by the database setup section above.
+
+  <pipeline_flow_setup>
+  This specifies the analysis and rules of the pipeline. Analysis
+  refer to the runnables that will be used in this pipeline while the
+  rules specify the order in which these analysis are to be run, including
+  any specific pre-processing actions that are to be carried out.
+
+  <job_setup>
+  This is an optional part that allows specific inputs to be inserted.
+  Usually, this is done using DataMongers and Input Create modules.
+
+B) The Family Clustering Pipeline
+
+
+  <INSTALLATION>
+
+  The following packages are required:
+  
+  <Bioperl>
+  bioperl-pipeline
+  bioperl-live
+  bioperl-run
+
+  Available thru this:
+
+  cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-live
+  cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
+  cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline
+
+
+  This is bleeding edge stuff so it is recommended that you use main trunk code for all three packages.
+ 
+  Note the schema for biopipe has moved to bioperl-pipeline/sql/schema.sql for convenience
+
+  <Ensembl>
+
+   The latest stable branch for
+
+   ensembl
+   ensembl-external
+
+   You will need to load up an empty family database from ensembl-external/sql/family.sql:
+
+   mysqladmin -u root create ensembl_family
+   mysql -u root < family.sql 
+ 
+ 
+  This pipeline consist of the following stages:
+
+  <Binaries>
+
+   To run tribe, you will need the NCBI's blastall and the TribeMCL package.
+   In particular, you must be able to run:
+
+   1) tribe-matrix (also called markov) used for generating the mcl input from blast score file)
+   2) mcl          (the clusterer)
+  
+   This pipeline was tested on the mcl-02-172 distribution.
+
+
+   <Data Preparation>
+
+   Requirements:
+
+              1) Download the vertebrate Swissprot and Trembl data in Swissprot format (we need the descriptions)
+              2) Dump your ensembl peptides in fasta format
+
+   You will need to do some preparation of data to setup this pipeline.
+   
+
+    1) Peptide files
+
+       Extract the proteins that you want from Swissprot and Trembl.
+       Dump the ensembl proteins that you want.
+       'cat' these files into one peptide file in a directory that
+       is accessible by blast.
+
+    2) Peptide description file
+
+       For family consensus description generation, you will need one
+       protein description file which contains the descriptions for proteins from
+       swissprot and trembl.
+
+      Assuming you have downloaded the files in swissprot format,
+
+    This 2 steps may be done thru using the script bioperl-pipeline/scripts/family/prepare_protein.pl
+    ******************************
+    *prepare_protein.pl
+    ******************************
+    This script creates the description and fasta  file necessary for the protein family pipeline to run
+
+    Usage: prepare_protein.pl -swiss  path_to_swissprot_peptides_file
+                              -trembl path_to_trembl_peptide_file
+                              -fasta  the blast db of the peptide file dumped in fasta format
+                              -desc   the path to the description file name from swissprot and trembl entires
+                              -help    displays this help
+
+    Note after the peptide file for swissprot and trembl are created, you will want to cat your ensembl
+    proteins to the fasta generated file. 
+
+    cat homo_sapien_ens_pep.fa swiss_trembl.fa > total.fa
+
+
+  <Loading Up Your Pipeline>
+
+  The pipeline is loaded up using this XML file.
+  A new database will be automtically created maybe created for you. This is done using the Xml2Db.pl script found in bioperl-pipeline/xml/Xml2Db.pl
+  Using the script:
+
+  ******************************
+  *Xml2DB.pl
+  ******************************
+  This script configures and creates a pipeline based on xml definitions.
+
+    Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+
+    Default values in ()
+    -dbhost host (mysql)
+    -dbname name of pipeline database (test_XML)
+    -dbuser user name (root)
+    -dbpass db password()
+    -schema The path to the bioperl-pipeline schema.
+        Needed if you want to create a new db.
+        (../sql/schema.sql)
+    -p      the pipeline setup xml file (required)
+
+    For this case you will choose -p templates/protein_family.xml
+
+  Once this is done you are ready to run the pipeline.
+
+   <Running the Pipeline>
+
+    Go to bioperl-pipeline/Bio/Pipeline
+
+    Edit PipeConf.pm accordingly for your environment variables.
+
+    run the pipeline by doing:
+
+    perl PipelineManager.pl -dbname Name_of_pipeline_database -dbuser root -dbhost pulse
+
+    you may use the -l option to run it in local mode without job submission
+
+
+  <CONFIGURATION>
+
+   You will need to modify some parts of this XML file to point files correctly.
+   The following sections describe that.
+
+  <analysis 1> Setting Up the Blast Jobs
+
+  This involves a DataMonger Analysis using the <setup_family> module.
+  The datamonger will split the peptide file specified below in to chunks.
+  It will create a blast job in the pipeline for each chunk. It will also 
+  create the working directory for storing these files and format the db file for 
+  blasting if not already done so. Note, the biopipe and bioperl only support 
+  NCBI's blastall for now.
+
+  In this analysis , 3 parameters are set.
+
+            <argument>
+                <tag>peptide_file</tag>
+                <value>/data0/family_run_17_6_2002/all_pep</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>chopsize</tag>
+                <value>400</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>workdir</tag>
+                <value>/data0/family_blast_dir</value>
+                <type>SCALAR</type>
+            </argument>
+
+   peptide_file: This is the peptide file that consist of all the peptides
+                 concatenated. Basically all the verterbrate proteins that include
+                 Ensmebl, Swissprot and Trembl.
+
+   chopsize    : This is the number of chunks to split the peptide file into.
+                 It corresponds to the number of blast jobs that are created for the farm.
+                 Default value is 400.
+
+   workdir     : This is the working directory that the chunk files will be created. It 
+                 should be an NFS mounted directory that all the nodes may access.
+ 
+   <analysis 2> Blast Analysis
+
+    This actually runs the blast jobs, blasting each chunk against the peptide_file specified
+    above.
+
+    Default parameters:
+      <parameters>-p blastp -e 0.001 -return_type hit</parameters>
+    You may modify the parameters as u which. Here, blast parameters are mixed with blast runnable
+    parameters. NOTE! -retury_type must be hit for it to work. You can add any additional blast
+    parameters here.
+
+    Each blast job dumps its blast score  using the Bio::Pipeline::Dumper::blastscore module. 
+
+    The directory in which the scores are dumped have to be configured at iohandler id='1'
+     
+    at:
+
+      <argument>
+          <tag>-dir</tag>
+          <value>/data0/family_blast_dir/blast_results</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+      </argument>
+
+    After this analysis, there will be 'n' number of files that contain the blast score in the format
+    that tribe-matrix takes:
+
+    SINFRUP00000000003      SINFRUP00000114146      1       48
+    SINFRUP00000000003      SINFRUP00000000004      1       48
+    SINFRUP00000000003      SINFRUP00000000003      1       48
+
+    Here it corresponds to hits between sets of proteins with evalues 1e-48
+ 
+    <analysis 3> TribeMCL
+    This analysis does the clustering. The Bio::Pipeline::Runnable::TribeMCL makes use of the Bio::Tools::Run::TribeMCL
+    wrapper. Parameters to this analysis:
+
+    <analysis id="3">
+      <logic_name>TribeMCL</logic_name>
+      <runnable>Bio::Pipeline::Runnable::TribeMCL</runnable>
+      <program>TribeMCL</program>
+      <parameters>-blastdir /data0/family_blast_dir/blast_results -inputtype scorefile -description_file /data0/tmp_family/family.desc</parameters>
+      <output_iohandler id="2"/>
+    </analysis>
+
+    -blastdir            this corresponds to the blast results directory specified in the blastscore module above
+    -inputtype           this tells the TribeMCL that it is using direct scorefile (don't change)
+                        (it actually can take in Blast SearchIO results too but this is more efficient for our purpose)
+
+    -description_file    this is the description file that is generated along by preprare_protein.pl script of the form:
+
+                         <data_source>  <accession_nbr> <description> <taxon information>
+                          eg:
+ swissprot  104K_THEPA  104 kDa microneme-rhoptry antigen.  taxon_id=5875;taxon_genus=Theileria;taxon_species=parva;taxon_sub_species=;taxon_common_name=;taxon_classification=parva:Theileria:Theileriidae:Piroplasmida:Apicomplexa:Alveolata:Eukaryota
+
+    <output iohandler>    specifies the output iohandler to store the families generated.
+                          The TribeMCL  runnable return Bio::Cluster::SequenceFamily objects.
+                          Here we use the convert_store_family method in Bio::EnsEMBL::ExternalData::Family::DBSQL::FamilyAdaptor
+                          to convert the families and store into the ensembl database.
+
+                          Note iohandler 2 together with dbadaptor 2  basically represents the following code:
+
+                          my $db = Bio::EnsEMBL::ExternalData::Family::DBSQL::DBAdaptor->new(-dbname=>"ensembl_family",
+                                                                                             -driver=>"mysql",
+                                                                                             -host  =>"mysql",
+                                                                                             -user  =>"root");
+                          $db->get_FamilyAdaptor->convert_store_family($family)
+
+                          where $family is an array reference of Bio::Cluster::SequenceFamily objects
+                                                                                             
+ 
+
+-->
+
+<pipeline_setup>
+  <database_setup>
+    <streamadaptor id="1">
+      <module>Bio::Pipeline::Dumper</module>
+    </streamadaptor>
+
+    <dbadaptor id="2">
+      <dbname>ensembl_family</dbname>
+      <driver>mysql</driver>
+      <host>mysql</host>
+      <user>root</user>
+      <password></password>
+      <module>Bio::EnsEMBL::ExternalData::Family::DBSQL::DBAdaptor</module>
+    </dbadaptor>
+
+  </database_setup>
+
+  <iohandler_setup>
+
+    <!-- fetch the sequence -->
+    <iohandler id="1">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>STREAM</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>new</name>
+        <rank>1</rank>
+        <argument>
+          <tag>-dir</tag>
+          <value>/data0/family_blast_dir/blast_results</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <tag>-module</tag>
+          <value>blastscore</value>
+          <type>SCALAR</type>
+          <rank>2</rank>
+        </argument>
+        <argument>
+          <tag>-prefix</tag>
+          <type>SCALAR</type>
+          <value>INPUT</value>
+          <rank>3</rank>
+        </argument>
+        <argument>
+          <tag>-format</tag>
+          <type>SCALAR</type>
+          <value>tribe</value>
+          <rank>3</rank>
+        </argument>
+      </method>
+      <method>
+        <name>dump</name>
+        <rank>2</rank>
+        <argument>
+          <value>OUTPUT</value>
+          <type>ARRAY</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+    </iohandler>
+    <iohandler id="2">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>get_FamilyAdaptor</name>
+        <rank>1</rank>
+      </method>
+      <method>
+        <name>convert_store_family</name>
+        <rank>2</rank>
+        <argument>
+          <tag>-family</tag>
+          <value>OUTPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+      </iohandler>
+  </iohandler_setup>
+
+  <pipeline_flow_setup>
+    <analysis id="1">
+      <data_monger>
+        <input>
+          <name>pep_ids</name>
+        </input>
+        <input_create>
+           <module>setup_family</module>
+           <rank>1</rank>
+            <argument>
+                <tag>peptide_file</tag>
+                <value>/data0/family_run_17_6_2002/all_pep</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>chopsize</tag>
+                <value>400</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>workdir</tag>
+                <value>/data0/family_blast_dir</value>
+                <type>SCALAR</type>
+            </argument>
+         </input_create>
+      </data_monger>
+    </analysis>
+
+
+    <analysis id="2">
+      <logic_name>Blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>family</db>
+      <db_file>/data0/family_run_17_6_2002/all_pep</db_file>
+      <program>blastall</program>
+      <parameters>-p blastp -e 0.00001 -return_type hit</parameters>
+      <output_iohandler id="1"/>
+    </analysis>
+
+    <analysis id="3">
+      <logic_name>TribeMCL</logic_name>
+      <runnable>Bio::Pipeline::Runnable::TribeMCL</runnable>
+      <program>TribeMCL</program>
+      <parameters>-blastdir /data0/family_blast_dir/blast_results -inputtype scorefile -description_file /data0/tmp_family/family.desc</parameters>
+      <output_iohandler id="2"/>
+    </analysis>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+     <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+     <next_analysis_id>3</next_analysis_id>
+      <action>WAITFORALL</action>
+    </rule>
+
+  </pipeline_flow_setup>
+
+  <job_setup>
+ </job_setup>
+
+</pipeline_setup>
