@@ -192,7 +192,7 @@ CREATE TABLE analysis (
   program_file     varchar(80),
   data_monger_id   int(10) unsigned DEFAULT '',
   runnable_parameters varchar(255),
-  analysis_parameters       varchar(255),
+  analysis_parameters       mediumtext,
   gff_source       varchar(40),
   gff_feature      varchar(40),
   node_group_id    int(10) unsigned DEFAULT '0' NOT NULL,
