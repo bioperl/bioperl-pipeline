@@ -139,7 +139,8 @@ sub submit_batch{
 
     $runner = $self->construct_runner_param($runner);
 
-    print SunGrid_SCRIPT "perl ".  $runner . " " . join(" ",@job_ids);
+    print SunGrid_SCRIPT  $runner . " " . join(" ",@job_ids);
+   #bug fix! need this \n else script never executes!!
     print SunGrid_SCRIPT ";\n";
     close (SunGrid_SCRIPT);
 # Finish Script
