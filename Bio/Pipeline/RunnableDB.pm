@@ -347,6 +347,7 @@ sub run {
     my ($self) = @_;
     
     my $runnable = $self->runnable; 
+    $runnable->analysis($self->analysis);
     $self->throw("Runnable module not set") unless ($runnable);
     $self->throw("Inputs not fetched") unless ($self->input_objs());
     $runnable->run();

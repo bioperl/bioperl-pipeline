@@ -38,7 +38,7 @@ use vars qw (%PipeConf);
     # database specific variables
     DBI_DRIVER => 'mysql',
     DBHOST     => 'localhost',
-    DBNAME     => 'bioperl_pipeline',
+    DBNAME     => 'biopipeline',
     DBUSER     => 'root',
     DBPASS     => '',	     
 
@@ -66,7 +66,7 @@ use vars qw (%PipeConf);
     # path to runner.pl, needed by Job.pm
     RUNNER     => '',   
     #sleep time in Rulemanager
-    SLEEP      => 3600,
+    SLEEP      => 3,
     );
 
 sub import {

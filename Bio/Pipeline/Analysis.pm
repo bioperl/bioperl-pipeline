@@ -52,9 +52,9 @@ package Bio::Pipeline::Analysis;
 use vars qw(@ISA);
 use strict;
 use Bio::Root::RootI;
-
+use Bio::EnsEMBL::AnalysisI;
 # Inherits from the base bioperl object
-@ISA = qw(Bio::Root::Root);
+@ISA = qw(Bio::Root::Root Bio::EnsEMBL::AnalysisI);
 
 
 sub new {

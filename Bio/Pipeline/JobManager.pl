@@ -122,5 +122,8 @@ while ($run) {
     exit 0 if $once;
     sleep($SLEEP);
     @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
+    $run = 0 unless @jobs;
     print "Waking up and run again!\n";
 }
+
+print STDERR "exiting jobmanager...\n";

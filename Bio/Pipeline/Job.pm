@@ -334,20 +334,21 @@ sub run {
   eval {
       $self->set_stage( "WRITING" );
       $rdb->write_output;
-      $self->set_status( "COMPLETED" );
   }; 
   if ($err = $@) {
       $self->set_status( "FAILED" );
       print (STDERR "WRITING: Lost the will to live Error\n");
       die "Problems for runnableDB writing output for  [$err]" ;
   }
+  $self->set_status( "COMPLETED" );
   if ($autoupdate) {
-      if ($self->{'_status'} = 'COMPLETED'){
+      if ($self->{'_status'} eq 'COMPLETED'){
         eval {
             $self->set_stage("EXITING");
             $self->update_complete_job; 
         };
         if ($err = $@) {
+         $self->set_status('FAILED');
          print STDERR "Error updating completed job".$self->dbID." [$err]\n";
         }
       }
@@ -523,6 +524,11 @@ sub update {
 
     $self->adaptor->update($self);
 
+}
+
+sub update_complete_job{
+  my ($self)=@_;
+  print STDERR "This method is not implemented yet\n";
 }
 
     

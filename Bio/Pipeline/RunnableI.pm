@@ -65,8 +65,10 @@ use strict;
 
 
 use Bio::Root::Root;
+use Bio::Root::IO;
+use Bio::Pipeline::DataType;
 
-@ISA = qw(Bio::Root::Root);
+@ISA = qw(Bio::Root::Root Bio::Root::IO);
 
 =head1 ABSTRACT METHODS
 
