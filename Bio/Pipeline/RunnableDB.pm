@@ -214,13 +214,27 @@ sub setup_runnable_inputs {
     my $runnable = $self->runnable;
     $runnable->can("datatypes") || $self->throw("Runnable $runnable has no sub datatypes implemeted.");
     my %r_datatypes = $runnable->datatypes;
-#    my @inputs = $self->input_objs;
     my @to_match;
     my %match_datatype={};
 
+    if ($self->runnable->isa("Bio::Pipeline::Runnable::DataMonger")){
+        my %hash;
+        my $tag;
+        foreach my $in(@input){
+            $tag = $in->[1];
+            my $in_obj = $in->[2];
+            if($tag ne "no_tag"){
+               $hash{$in->[0]} = $in_obj;
+            }
+        }
+        $self->runnable->can($tag) || $self->throw("Runnable $runnable cannot call $tag");
+        $self->runnable->$tag(\%hash);
+        return;
+    }
+
 DT: foreach my $in(@input){
-      my $tag = $in->[0];
-      my $in_obj = $in->[1];
+      my $tag = $in->[1];
+      my $in_obj = $in->[2];
       if($tag ne "no_tag"){
         $self->runnable->can($tag) || $self->throw("Runnable $runnable cannot call $tag");
         $self->runnable->$tag($in_obj);
@@ -340,7 +354,7 @@ sub runnable {
     }
   
     if (defined($arg)) {
-      if($self->analysis->data_monger_id){
+      if($self->analysis->runnable->isa("Bio::Pipeline::Runnable::DataMonger")){
           my $dm_adaptor = $self->analysis->adaptor->db->get_DataMongerAdaptor;
           my $runnable = $dm_adaptor->fetch_by_analysis($self->analysis);
           $runnable->next_analysis($self->analysis->adaptor->fetch_next_analysis($self->analysis));
@@ -411,10 +425,10 @@ sub fetch_input {
             }
             $self->add_input_obj(\@input_objs);
             if($input->tag){
-              push @input_table, [$input->tag,\@input_objs];        
+              push @input_table, [$input->name,$input->tag,\@input_objs];        
             }
             else {
-              push @input_table, ['no_tag',\@input_objs];
+              push @input_table, [$input->name,'no_tag',\@input_objs];
             }
 
         }
@@ -423,10 +437,10 @@ sub fetch_input {
           my $datatype =  Bio::Pipeline::DataType->create_from_input($input_obj);
           $self->add_input_obj($input_obj);
           if($input->tag){
-            push @input_table, [$input->tag,$input_obj];        
+            push @input_table, [$input->name,$input->tag,$input_obj];        
           }
           else {
-            push @input_table, ['no_tag',$input_obj];
+            push @input_table, [$input->name,'no_tag',$input_obj];
           }
 
         }
