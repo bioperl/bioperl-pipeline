@@ -5,14 +5,22 @@
     BEGIN {
     use lib 't';
     use Test;
-    plan tests => 4;
+    $NTESTS = 4;
+    plan tests => $NTESTS;
     }
     use BiopipeTestDB;
     use Bio::Pipeline::SQL::DBAdaptor;
     use Bio::Pipeline::BatchSubmission;
+    use Bio::Root::IO;
 
-
-
+    unless (Bio::Root::IO->exists_exe('bsub') || Bio::Root::IO->exists_exe('qsub')){
+	exit(0);
+    }
+    END {
+	for ( $Test::ntest..$NTESTS ) {
+                skip("LSF OR PBS program not found. Skipping.\n",1);
+          }
+    }
     my $biopipe_test = BiopipeTestDB->new();
 
     ok $biopipe_test;
