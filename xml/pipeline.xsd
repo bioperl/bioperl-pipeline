@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schema xmlns="http://www.w3.org/2001/XMLSchema">
+  <element name="pipeline_setup" minOccurs="1" maxOccurs="1">
+    <complexType>
+      <element name="database_setup" type="database_def"/>
+      <element name="iohandler_setup" type="iohandler_def"/>
+      <element name="pipeline_flow_setup" type="pipeline_flow_def"/>
+    </complexType>
+  </element>
+  <complexType name="pipeline_flow_def">
+   <element name="analysis" type="analysis_def" minOccurs="1" maxOccurs="unbounded"/>
+   <element name="rule" type="rule_def" minOccurs="1"/>
+  </complexType>  
+  <complexType name="analysis_def">
+    <attribute name="id" type="string" use="required"/>
+      <element name="data_monger" type="data_monger_def" minOccurs="0"/>
+      <element name="logic_name" type="string" minOccurs="0"/>
+      <element name="runnable" type="string" minOccurs="0"/>
+      <element name="db" type="string" minOccurs="0"/>
+      <element name="db_file" type="string" minOccurs="0"/>
+      <element name="db_version" type="string" minOccurs="0"/>
+      <element name="program" type="string" minOccurs="0"/>
+      <element name="program_file" type="string" minOccurs="0"/>
+      <element name="analysis_parameters" type="string" minOccurs="0"/>
+      <element name="runnable_parameters" type="string" minOccurs="0"/>
+      <element name="input_iohandler" minOccurs="0">
+        <attribute name="id" type="integer"/> 
+        <element name="transformer">
+          <attribute name="id" type="string"/>
+          <element name='rank' type="integer"/>
+        </element>
+      </element>
+      <element name="output_iohandler" minOccurs="0">
+        <attribute name="id" type="integer"/> 
+        <element name="transformer">
+          <attribute name="id" type="string"/>
+          <element name='rank' type="integer"/>
+        </element>
+      </element>
+      <element name="input_iohandler_mapping">
+        <element name="prev_analysis_iohandler_id" type="string"/>
+        <element name="current_analysis_iohandler_id" type="string"/>
+      </element>
+  </complexType>
+  <complexType name="data_monger_def">
+      <element name="initial" minOccurs="0"/>
+      <element name="input" type="input_def" minOccurs="1"/>
+      <element name="input_create" type="input_create_def" minOccurs="1"/>
+  </complexType>
+  <complexType name="input_def">
+      <element name="name" type="string" minOccurs="0"/>
+      <element name="iohandler" type="integer" minOccurs="1"/>
+  </complexType>
+  <complexType name="input_create_def">
+      <element name="module" type="string" minOccurs="1"/>
+      <element name="rank" type="integer" minOccurs="0"/>
+      <element name="argument" type="argument_def" minOccurs="0"/>
+  </complexType>
+  <complexType name="rule_def">
+      <element name="current_analysis_id" type="integer" minOccurs="1"/>
+      <element name="next_analysis_id" type="integer" minOccurs="1"/>
+      <element name="action" type="action_type_def" minOccurs="1"/>
+  </complexType> 
+  <simpleType name="action_type_def">
+    <restriction base="string">
+      <pattern value="NOTHING|COPY_ID|COPY_ID_FILE|CHAIN|WAITFORALL"/>
+    </restriction>
+  </simpleType>
+  <complexType name="database_def">
+        <element name="streamadaptor" minOccurs="0" maxOccurs="unbounded">
+          <attribute name="id" type="integer"/>
+          <complexType>
+            <element  name="module" type="string"/>
+          </complexType>
+        </element> 
+        <element name="dbadaptor" minOccurs="0" maxOccurs="unbounded">
+          <attribute name="id" type="integer" use ="required"/>
+          <complexType>
+            <element name="dbname" type="string"/> 
+            <element name="driver" type="string"/>
+            <element name="host" type="string"/> 
+            <element name="user" type="string"/> 
+            <element name="password" type="string"/> 
+            <element name="module" type="string"/>
+          </complexType>
+        </element>
+  </complexType>
+  <simpleType name="adaptor_def">
+    <restriction base="string">
+      <pattern value="STREAM|DB|CHAIN"/>
+    </restriction>
+  </simpleType>
+  <simpleType name="argument_type_def">
+    <restriction base="string">
+      <pattern value="SCALAR|ARRAY"/>
+    </restriction>
+  </simpleType>
+  <simpleType name="iohandler_type_def">
+    <restriction base="string">
+      <pattern value="INPUT|OUTPUT|CHAIN"/>
+    </restriction>
+  </simpleType>
+  <complexType name="method_def">
+    <element name="name" type="string" minOccurs="0"/>
+    <element name="rank" type="integer" minOccurs="0"/>
+    <element name="argument" type="argument_def" minOccurs="0" maxOccurs="unbounded"/>
+  </complexType>   
+  <complexType name="argument_def">
+    <element name="tag" type="string" minOccurs="0"/>
+    <element name="value" type="string"/>
+    <element name="type" type="argument_type_def" minOccurs="0"/> 
+    <element name="rank" type="integer" minOccurs="0"/>
+  </complexType>   
+  <complexType name="iohandler_def">
+      <element name="transformer" type="transformer_def" minOccurs="0" maxOccurs="unbounded"/>
+      <element name="iohandler" maxOccurs="unbounded">
+        <attribute name="id" type="string"/> 
+        <complexType>
+            <element name="adaptor_id" type="string" minOccurs="0"/> 
+            <element name="adaptor_type" type="adaptor_def"/>
+            <element name="iohandler_type" type="iohandler_type_def"/> 
+            <element name="method" type="method_def" maxOccurs="unbounded" minOccurs="0"/> 
+        </complexType>
+      </element>
+  </complexType>
+  <complexType name="transformer_def">
+    <attribute name="id" type="string"/> 
+    <element name="module" type="string"/>
+    <element name="method" type="method_def" maxOccurs="unbounded"/>
+  </complexType>
+</schema>
+
