@@ -89,6 +89,25 @@ and will store the feature information the pipeline generates.
 		</method>
 	</iohandler>
 
+   <converter id="1" module="seq_feature_bio2ens">
+      <method id="1" name="dbadaptor">
+         <argument id = "11" tag = "-host" value = "mysql"/>
+         <argument id = "12" tag = "-driver" value = "mysql"/>
+         <argument id = "13" tag = "-dbname" value = "juguang_homo_core_9_30"/>
+         <argument id = "14" tag = "-user" value = "root"/>
+         <!-- argument id = "15" tag = "-passwd" value = ""/ -->
+      </method>
+  </converter>    
+  <converter id="2" module="seq_pair_bio2ens">
+      <method id="2" name="dbadaptor">
+         <argument id="21" tag = "-host" value ="mysql"/>
+         <argument id="22" tag = "-driver" value = "mysql"/>
+         <argument id="23" tag = "-dbname" value = "juguang_homo_core_9_30"/>
+         <argument id="24" tag = "-user" value = "root"/>
+         <!--argument id="25" tag = "-passwd" value = ""/ -->
+      </method>
+   </converter>
+                                                                                                            
 </iohandler_setup>
 
 <pipeline_flow_setup>
@@ -118,9 +137,7 @@ and will store the feature information the pipeline generates.
 		<parameters>-lib all.lib</parameters>
 			
 		<input_iohandler_mapping current="" next=""/>
-		<output_iohandler id="3">
-			<converter id="1" module="seq_bio2ens"/>
-		</output_iohandler>
+		<output_iohandler id="3" converter_id="1" />
 			
 	</analysis>
 	
@@ -131,9 +148,7 @@ and will store the feature information the pipeline generates.
 		<db_file>/data0/swissprot</db_file>
 		<program>blastall</program>
 		<parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
-		<output_iohandler id="5">
-			<converter id="2" module="seq_pair_bio2ens"/>
-		</output_iohandler>
+		<output_iohandler id="5" converter_id="2"/>
 	</analysis>
 	
 	<analysis id="4">
@@ -143,9 +158,7 @@ and will store the feature information the pipeline generates.
 		<db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
 		<program>blastall</program>
 		<parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
-		<output_iohandler id="5">
-			<converter id="3" module="seq_pair_bio2ens"/>
-		</output_iohandler>
+		<output_iohandler id="5" converter_id="3"/>
 	</analysis>
 	<!-- Simplified the rule tag.
 		current - current_analysis_id

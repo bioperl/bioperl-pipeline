@@ -15,6 +15,7 @@ use Bio::Pipeline::Job;
 use Bio::Pipeline::Input;
 use Bio::Pipeline::IOHandler;
 use Bio::Pipeline::DataHandler;
+use Bio::Pipeline::Method;
 use Bio::Pipeline::Argument;
 use Bio::Pipeline::Rule;
 use Bio::Pipeline::NodeGroup;
@@ -97,7 +98,7 @@ else {
 #connect string
 my $str;
 $str .= defined $DBHOST ? "-h $DBHOST " : "";
-$str .= defined $DBPASS ? "-p$DBPASS " : "";
+$str .= defined $DBPASS ? "-p $DBPASS " : "";
 $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
 
 if($db_exist){
@@ -261,7 +262,52 @@ if(defined $iohandler->child('adaptor_id') ){
      }
    }
 }
-    
+
+print "Doing Converters..\n";
+my @pipeline_converter_objs;
+$iohandler_setup->children('converter') || goto PIPELINE_FLOW_SETUP;
+foreach my $converter ($iohandler_setup->children('converter')){
+#       print "".(defined($converter)?"defined":"not defined").(ref($converter))."\n";
+       my $id = &verify_attr($converter, 'id', 1);
+       my $module = &verify_attr($converter, 'module');
+       my @method_objs;
+       foreach my $method ($converter->children('method')){
+           my $method_id = &verify_attr($method, 'id', 1);
+           my $method_name = &verify_attr($method, 'name', 1);
+           my $method_rank = &verify_attr($method, 'rank', 0);
+           my @method_arguments;
+           foreach my $argument ($method->children('argument')){
+               my $argument_id = &verify_attr($argument, 'id', 1);
+               my $argument_tag = &verify_attr($argument, 'tag', 0);
+               my $argument_value = &verify_attr($argument, 'value', 1);
+               my $argument_rank = &verify_attr($argument, 'rank', 0);
+               my $argument_type = &verify_attr($argument, 'type', 0);
+               my $argument_obj = new Bio::Pipeline::Argument(
+                  -dbID => $argument_id,
+                  -tag => $argument_tag,
+                  -value => $argument_value,
+                  -rank => $argument_rank,
+                  -type => $argument_type
+                  );
+               push @method_arguments, $argument_obj;
+               
+           }
+           my $method_obj = new Bio::Pipeline::Method(
+               -dbID => $method_id,
+               -name => $method_name,
+               -rank => $method_rank,
+               -argument => \@method_arguments
+               );
+           
+           push @method_objs, $method_obj;      
+       }
+       my $converter_obj = new Bio::Pipeline::Converter(
+         -dbID => $id,
+         -module => $module,
+         -method => \@method_objs
+       );
+       push @pipeline_converter_objs, $converter_obj;
+}       
 
 ############################################
 #Load Analysis and Rules information 
@@ -297,8 +343,6 @@ foreach my $node_group ($pipeline_flow_setup->children('node_group')) {
   }
 }
 
-my @pipeline_converter_objs;
-print "Doing Converters..\n";
 foreach my $converter ($pipeline_flow_setup->children('converter')) {
    
   if (ref($converter)) {
@@ -660,7 +704,20 @@ sub verify {
     }
     return $default;
 } 
-    
+
+sub verify_attr{
+    my $obj=shift;
+    my ($attr_name, $required, $default) = @_;
+    my %obj_attrs = $obj->attributes;
+
+    if(defined $attr_name && exists $obj_attrs{$attr_name}){
+        return $obj_attrs{$attr_name};
+    }elsif(defined $required && $required){
+        $default || return $default;
+        die($obj->name . " ". $obj->attribute('id') . " is missing an attr as " . $attr_name);
+    }
+}
+
 sub _create_initial_input_and_job {
   my ($analysis_obj, @initial_input_objs)= @_;
   my $job_obj = Bio::Pipeline::Job->new(-analysis => $analysis_obj,
