@@ -67,21 +67,19 @@ use vars qw(@ISA);
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($dbobj,$analysis,$runnable,$inputs) = $self->_rearrange ([qw  (   
-                                            DBOBJ
-                                            ANALYSIS
-                                            RUNNABLE
-                                            INPUTS
-                                        )],@args);
+    my ($dbobj,$analysis,$inputs) = $self->_rearrange ([qw  (   
+                                                        DBOBJ
+                                                        ANALYSIS
+                                                        INPUTS
+                                                        )],@args);
     
     $self->throw("No DB_obj provided to RunnableDB") unless defined($dbobj);
     $self->throw("No analysis provided to RunnableDB") unless defined($analysis);
-    $self->throw("No runnable provided to RunnableDB") unless defined($runnable);
     $self->throw("No inputs provided to RunnableDB") unless defined($inputs);
 
     $self->dbobj($dbobj);
     $self->analysis($analysis);
-    $self->runnable($runnable);
+    $self->runnable($analysis->runnable);
 
     @{$self->{'_input_objs'}}=[];
     @{$self->{'_data_types'}}=[];
@@ -114,7 +112,6 @@ sub analysis {
         $self->throw("Not a Bio::Pipeline::Analysis object")
             unless ($analysis->isa("Bio::Pipeline::Analysis"));
         $self->{'_analysis'} = $analysis;
-        $self->parameters($analysis->parameters);
     }
     return $self->{'_analysis'};
 }
@@ -297,7 +294,11 @@ sub runnable {
   
     if (defined($arg)) {
         #create empty runnable
+
+        $arg =~ s/\::/\//g;
         require "${arg}.pm";
+        $arg =~ s/\//\::/g;
+
         my $runnable = "${arg}"->new();
 
         if ($runnable->isa("Bio::Pipeline::RunnableI")) {

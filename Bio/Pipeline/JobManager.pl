@@ -17,7 +17,6 @@ use Getopt::Long;
 use Bio::Pipeline::SQL::RuleAdaptor;;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
-use Bio::Pipeline::SQL::StateInfoContainer;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::SQL::BaseAdaptor;
 
@@ -30,55 +29,32 @@ use Bio::Pipeline::PipeConf qw ( DBHOST
                                  DBPASS
                                  QUEUE
                                  USENODES
-                				 NFSTMP_DIR
                                  BATCHSIZE
                                  JOBNAME
                                  RETRY
 				                 SLEEP
-			        );
-
-my $DBHOST    = $DBHOST;
-my $DBNAME    = $DBNAME;
-my $DBUSER    = $DBUSER;
-my $DBPASS    = $DBPASS;
-my $QUEUE     = $QUEUE;
-my $NODES     = $USENODES;
-my $workdir   = $NFSTMP_DIR;
-my $FLUSHSIZE = $BATCHSIZE;
-my $JOBNAME   = $JOBNAME;
-my $RETRY     = $RETRY;
-my $SLEEP     = $SLEEP;
-
-
+            			        );
 $| = 1;
 
-my $chunksize    = 500000;  # How many InputIds to fetch at one time
-my $currentStart = 0;       # Running total of job ids
-my $completeRead = 0;       # Have we got all the input ids yet?
-my $local        = 0;       # Run failed jobs locally
-my $analysis;               # Only run this analysis ids
-my $submitted;
+my $local        = 1;       # Run failed jobs locally
 my $JOBNAME;                # Meaningful name displayed by bjobs
-			    # aka "bsub -J <name>"
-			    # maybe this should be compulsory, as
-			    # the default jobname really isn't any use
-my $idlist;
-my ($done, $once);
+		            	    # aka "bsub -J <name>"
+			                # maybe this should be compulsory, as
+			                # the default jobname really isn't any use
+my $once;
 
 GetOptions(
     'host=s'      => \$DBHOST,
     'dbname=s'    => \$DBNAME,
     'dbuser=s'    => \$DBUSER,
     'dbpass=s'    => \$DBPASS,
-    'flushsize=i' => \$FLUSHSIZE,
+    'flushsize=i' => \$BATCHSIZE,
     'local'       => \$local,
-    'idlist=s'    => \$idlist,
     'queue=s'     => \$QUEUE,
     'jobname=s'   => \$JOBNAME,
-    'usenodes=s'  => \$NODES,
+    'usenodes=s'  => \$USENODES,
     'once!'       => \$once,
-    'retry=i'     => \$RETRY,
-    'analysis=s'  => \$analysis
+    'retry=i'     => \$RETRY
 )
 or die ("Couldn't get options");
 
@@ -89,64 +65,48 @@ my $db = Bio::Pipeline::SQL::DBAdaptor->new(
     -pass   => $DBPASS,
 );
 
-my $ruleAdaptor = $db->get_RuleAdaptor;
 my $jobAdaptor  = $db->get_JobAdaptor;
-#my $sic         = $db->get_StateInfoContainer;
-
 
 # scp
-# $LSF_params - send certain (LSF) parameters to Job. This hash contains
-# things LSF wants to know, i.e. queue name, nodelist, jobname (things that
+# $QUEUE_params - send certain (QUEUE) parameters to Job. This hash contains
+# things QUEUE wants to know, i.e. queue name, nodelist, jobname (things that
 # go on the bsub command line), plus the queue flushsize. This hash is
 # passed to batch_runRemote which passes them on to flush_runs.
 #
 # The idea is that you could have more than one of these hashes to suit
-# different types of jobs, with different LSF options. You would then define
+# different types of jobs, with different QUEUE options. You would then define
 # a queue 'resolver' function. This would take the Job object and return the
 # queue type, based on variables in the Job/underlying Analysis object.
 #
 # For example, you could put slow (e.g., blastx) jobs in a different queue,
 # or on certain nodes, or simply label them with a different jobname.
 
-my $LSF_params = {};
-$LSF_params->{'queue'}     = $QUEUE if defined $QUEUE;
-$LSF_params->{'nodes'}     = $NODES if $NODES;
-$LSF_params->{'flushsize'} = $FLUSHSIZE if defined $FLUSHSIZE;
-$LSF_params->{'jobname'}   = $JOBNAME if defined $JOBNAME;
+my $QUEUE_params = {};
+$QUEUE_params->{'queue'}     = $QUEUE if defined $QUEUE;
+$QUEUE_params->{'nodes'}     = $USENODES if $USENODES;
+$QUEUE_params->{'flushsize'} = $BATCHSIZE if defined $BATCHSIZE;
+$QUEUE_params->{'jobname'}   = $JOBNAME if defined $JOBNAME;
 
-# Fetch all the analysis rules.  These contain details of all the
-# analyses we want to run and the dependences between them. e.g. the
-# fact that we only want to run blast jobs after we've repeat masked etc.
+#fetching jobs that are have status NEW or 
+#have failed with a retry count less than the variable set in PipeConf.
+my @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
 
-my @rules       = $ruleAdaptor->fetch_all;
-my @jobs;
-
-my @idList;     # All the input ids to check
-
-while (1) {
+while (@jobs) {
     
-    @jobs = $jobAdaptor->fetch_all;
-
     foreach my $job(@jobs){
-        print $job."\n";die;
-        if (($job->status eq 'NEW')   ||
-	    (($job->status eq 'FAILED') && ($job->retry_count < $RETRY))){ 
-            if ($local){
-                $job->run_Locally;
-	        }else{
-                $job>run_BatchRemote($LSF_params);
-            }
+        $job->set_status('SUBMITTED');
+        $job->make_filenames unless $job->filenames;
+        if ($local){
+            $job->runLocally;
+        }else{
+            $job->run_BatchRemote($QUEUE_params);
         }
-
     }	    
 
-    #Bio::EnsEMBL::Pipeline::Job->flush_runs($jobAdaptor, $LSF_params);
-    #WHAT's THE ABOVE LINE?
+    #Bio::EnsEMBL::Pipeline::Job->flush_runs($jobAdaptor, $QUEUE_params);
     
-    exit 0 if $done || $once;
-    sleep($SLEEP) if $submitted == 0;
-    $completeRead = 0;
-    $currentStart = 0;
-    @idList = ();
+    exit 0 if $once;
+    sleep($SLEEP);
+    @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
     print "Waking up and run again!\n";
 }

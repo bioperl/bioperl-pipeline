@@ -84,14 +84,14 @@ sub new {
     $analysis->isa("Bio::Pipeline::Analysis") ||
 	$self->throw("Analysis object [$analysis] is not a Bio::Pipeline::Analysis");
 
-    $self->dbID         ($dbID);
-    $self->adaptor  ($adaptor);
-    $self->analysis   ($analysis);
-    $self->stdout_file($stdout);
-    $self->stderr_file($stderr);
+    $self->dbID             ($dbID);
+    $self->adaptor          ($adaptor);
+    $self->analysis         ($analysis);
+    $self->stdout_file      ($stdout);
+    $self->stderr_file      ($stderr);
     $self->input_object_file($obj_file);
-    $self->retry_count( $retry_count );
-    $self->QUEUE_id( $queueid );
+    $self->retry_count      ($retry_count);
+    $self->QUEUE_ID         ($queueid);
 
     @{$self->{'_inputs'}}= ();
 
@@ -408,15 +408,15 @@ sub batch_runRemote {
 =cut
 
 sub runLocally {
-  print STDERR "Running locally\n"; 
   my $self = shift;
 
   print STDERR "Running locally " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
-
+=jerm
   local *STDOUT;
   local *STDERR;
 
   if( ! open ( STDOUT, ">".$self->stdout_file )) {
+
     $self->set_status( "FAILED" );
     return;
   }
@@ -425,7 +425,8 @@ sub runLocally {
     $self->set_status( "FAILED" );
     return;
   }
-       print STDERR "Running inQUEUE\n"; 
+=cut
+  print STDERR "Running inQUEUE\n"; 
   $self->runInQUEUE();
 }
 
@@ -514,22 +515,22 @@ sub runInQUEUE {
   my $self = shift;
   my $err;
   my $autoupdate = $AUTOUPDATE;
+  my $rdb;
   
-
-  my $rdb = Bio::Pipeline::RunnableDB->new ( 
-                        -obobj      => $self->adaptor->db,
+  eval {
+    $rdb = Bio::Pipeline::RunnableDB->new ( 
+                        -dbobj      => $self->adaptor->db,
                         -analysis   => $self->analysis,
-                        -runnable   => $self->runnable,
-                        -inputs     => \@{$self->inputs},
+                        -inputs     => \$self->inputs,
                         );
-
+  };                      
   if ($err = $@) {
       print (STDERR "CREATE: Lost the will to live Error\n");
       $self->set_status( "FAILED" );
       $self->throw( "Problems creating runnabledb  [$err]\n");
   }
   eval {   
-      $self->set_status( "READING" );
+      $self->set_stage( "READING" );
       $rdb->fetch_input;
   };
   if ($err = $@) {
@@ -542,7 +543,7 @@ sub runInQUEUE {
       return;
   }
   eval {
-      $self->set_status( "RUNNING" );
+      $self->set_stage( "RUNNING" );
       $rdb->run;
   };
   if ($err = $@) {
@@ -551,9 +552,9 @@ sub runInQUEUE {
       die "Problems running runnableDB for [$err]\n";
   }
   eval {
-      $self->set_status( "WRITING" );
+      $self->set_stage( "WRITING" );
       $rdb->write_output;
-      $self->set_status( "SUCCESSFUL" );
+      $self->set_status( "COMPLETED" );
   }; 
   if ($err = $@) {
       $self->set_status( "FAILED" );
@@ -627,7 +628,7 @@ sub write_object_file {
   Usage   : my $status = $job->set_status
   Function: Sets the job status
   Returns : nothing
-  Args    : Bio::Pipeline::Status
+  Args    : status str.
 
 =cut
 
@@ -646,66 +647,72 @@ sub set_status {
 }
 
 
-=head2 current_status
+=head2 get_status
 
-  Title   : current_status
-  Usage   : my $status = $job->current_status
-  Function: Get/set method for the current status
-  Returns : Bio::Pipeline::Status
-  Args    : Bio::Pipeline::Status
+  Title   : get_status
+  Usage   : my $status = $job->get_status
+  Function: Get method for the job status
+  Returns : status str.
+  Args    : 
 
 =cut
 
-sub current_status {
-  my ($self,$arg) = @_;
+sub get_status{
+  my ($self) = @_;
   
   if( ! defined( $self->adaptor )) {
     return undef;
   }
  
-  return $self->adaptor->current_status( $self, $arg );
+  return $self->adaptor->get_status( $self );
 }
 
-=head2 get_all_status
 
-  Title   : get_all_status
-  Usage   : my @status = $job->get_all_status
-  Function: Get all status objects associated with this job
-  Returns : @Bio::Pipeline::Status
-  Args    : @Bio::Pipeline::Status
+=head2 set_stage
+
+  Title   : set_stage
+  Usage   : my $stage = $job->set_stage
+  Function: Sets the stage the job is currently in
+  Returns : nothing
+  Args    : stage str.
 
 =cut
 
-sub get_all_status {
-  my ($self) = @_;
+sub set_stage {
+  my ($self,$arg) = @_;
   
-  if( $self->adaptor ) {
-    return $self->adaptor->get_all_status( $self );
-  } else {
-    return undef;
+  $self->throw("No stage input" ) unless defined($arg);
+  
+  
+  if (!(defined($self->adaptor))) {
+    $self->warn("No database connection.  Can't set stage to $arg");
+    return;
   }
+  
+  return $self->adaptor->set_stage( $self, $arg );
 }
 
 
-=head2 get_last_status
+=head2 get_stage
 
-  Title   : get_last_status
-  Usage   : my @status = $job->get_all_status ($status)
-  Function: Get latest status object associated with this job
-  Returns : Bio::Pipeline::Status
-  Args    : status string
+  Title   : get_stage
+  Usage   : my $stage = $job->get_stage
+  Function: Get method to find out which stage a job is in
+  Returns : stage str.
+  Args    : 
 
 =cut
 
-sub get_last_status {
+sub get_stage{
   my ($self) = @_;
   
-  if( $self->adaptor ) {
-    return $self->adaptor->get_last_status( $self );
-  } else {
+  if( ! defined( $self->adaptor )) {
     return undef;
   }
+ 
+  return $self->adaptor->get_stage( $self );
 }
+
 
 
 sub make_filenames {
@@ -725,19 +732,15 @@ sub make_filenames {
 # nasty but it seems to work...
 
 
-  my $stub = $self->input_id.".";
+  my $stub = $self->adaptor->db->dbname.".job_".$self->dbID.".";
   $stub .= $self->analysis->logic_name.".";
   $stub .= time().".".int(rand(1000));
-#   $stub .= time().".".int(rand(1000)) . '.0';
 
-#  my @files = $self->get_files( $self->input_id,"obj","out","err" );
-#  for (@files) {
-#    open( FILE, ">".$_ ); close( FILE );
-#  }
- 
   $self->input_object_file($dir.$stub.".obj");
   $self->stdout_file($dir.$stub.".out");
   $self->stderr_file($dir.$stub.".err");
+
+  $self->adaptor->update($self);
 }
 
 
@@ -758,54 +761,29 @@ sub create_queuelogfile {
 }
 
 
-sub get_files {
-  my ($self,$stub,@exts) = @_;
-  my @result;
-  my @files;
-  my $dir;
+=head2 filenames
 
-  my $count = 0;
+  Title   : filenames
+  Usage   : $job->stdout_file
+  Function: dumb check method to see if job's files have been set
+  Returns : 1 or 0
+  Args    : 
 
-  while( 1 ) {
-    my $num = int(rand(10));
-    $dir = $NFSTMP_DIR . "/$num/";
-    if( ! -e $dir ) {
-      system( "mkdir $dir" );
-    }
-    opendir( DIR, $dir );
-    @files = readdir( DIR );
-    if( scalar( @files ) > 10000 ) {
-      if( $count++ > 10 ) {
-	$self->throw("10000 files in directory. Can't make a new file");
-      } else {
-	next;
-      }
-    } else {
-      last;
-    }
-  }
-  $count = 0;
-  # Should check disk space here.
-  
- OCCU: while( $count++ < 10 ) { 
-    my $rand  = int(rand(100000));
-    @result = ();
-    foreach my $ext ( @exts ) {
-      my $file  = $dir . $stub . "." . $rand . "." . $ext;
-      if( -e $file ) {
-	next OCCU;
-      }
-      push( @result, $file );
-    }
-    last;
-  }
+=cut
 
-  if( $count > 9 ) {
-    $self->throw( "File generation problem in $dir" );
-  }
-  return @result;
+sub filenames{
+    my ($self) = @_;
+
+    if (    $self->{'_stdout_file'} &&
+            $self->{'_stderr_file'} &&
+            $self->{'_input_object_file'}
+        )
+    {
+	    return 1;
+    }else{
+        return 0;
+    }
 }
-
 
 
 =head2 stdout_file
@@ -875,7 +853,7 @@ sub input_object_file {
 
 =cut
 
-sub QUEUE_id {
+sub QUEUE_ID{
   my ($self, $arg) = @_;
   (defined $arg) &&
     ( $self->{'_queueid'} = $arg );

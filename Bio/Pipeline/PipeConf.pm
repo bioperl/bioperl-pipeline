@@ -33,7 +33,7 @@ use vars qw (%PipeConf);
 %PipeConf = ( 
 
     # working directory for err/outfiles
-    NFSTMP_DIR => '',
+    NFSTMP_DIR => '/home/jerm/tmp/',
 
     # database specific variables
     DBI_DRIVER => 'mysql',
@@ -60,7 +60,7 @@ use vars qw (%PipeConf);
     BSUB_OPT   => '-C0',
 
     # number of times to retry a failed job
-    RETRY       => '',
+    RETRY       => '5',
     # path to runner.pl, needed by Job.pm
     RUNNER     => '',   
     #sleep time in Rulemanager
