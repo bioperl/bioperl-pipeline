@@ -32,8 +32,7 @@
          </answer>
       </q>
       <q id="2">
-         <question>What are the methods that I have to insert in the
-	 datahandler table?
+         <question>What are the methods that I have to insert in the datahandler table?
 	 </question>
 	 <answer>The methods in the datahandler table are used to get
 	 the input for the runnable and store the output of the runnable. If the input
@@ -78,9 +77,9 @@ entries in the arguments table. In the field 'name',there entries
       <q id="4">
          <question>When I create the database for the pipeline should I manually create the tables?</question>
          <answer>
-No. Users can copy the biopipelinedb-mysql.sql scheme when they create
+<p>No. Users can copy the biopipelinedb-mysql.sql scheme when they create
          a new database. Hence they don't have to manually create
-         tables. Steps:<p>- go to the directory where the schema file
+         tables. Go to the directory where the schema file
          is then type these commands (assuming the dbname is testdb):</p>
        <code>
        mysql>use testdb;
@@ -97,18 +96,15 @@ No. Users can copy the biopipelinedb-mysql.sql scheme when they create
 </answer>
       </q>
       <q id="6">
-         <question>There are 2 dbnames, one in the analysis table and
-         the other in the dbadaptor table. Are they the same?</question>
+         <question>There are 2 dbnames, one in the analysis table and the other in the dbadaptor table. Are they the same?</question>
          <answer>No. The db in the analysis table is for analysis like
          Blast where it requires a database to blast against. The
          dbname in the dbadaptor table is the database(s) where the input is retrieved or stored.
 </answer>
       </q>
       <q id="7">
-         <question>The pipeline ran well the first time but didn't the
-         second time. What could have gone wrong?</question>
-         <answer>There could be many reasons for this. The most
-         probable reason could be that you failed to empty the output
+         <question>The pipeline ran well the first time but didn't the second time. What could have gone wrong?</question>
+         <answer>There could be many reasons for this. The most probable reason could be that you failed to empty the output
          and job tables after running the pipeline the first time. You might get a message like this:
       <p><code>
       Tests Completed. Starting Pipeline
@@ -119,8 +115,7 @@ No. Users can copy the biopipelinedb-mysql.sql scheme when they create
 </answer>
       </q>
       <q id="8">
-         <question>The pipeline is not running. All the tables are
-         populated correctly. What went wrong?</question>
+         <question>The pipeline is not running. All the tables are populated correctly. What went wrong?</question>
          <answer>Again as in (7) there could be more than 1 reason for
          this. One possibility is that you might be getting messages like this:
 <p><code>
@@ -132,7 +127,7 @@ No. Users can copy the biopipelinedb-mysql.sql scheme when they create
      Waking up and run again!
 </code></p>
      This could be due to some problem in sending the job to LSF. Try
-         running it locally (i.e. perl PipelineManager.pl -l) if it runs then it confirms this.
+         running it locally (i.e. perl PipelineManager -local) if it runs then it confirms this.
 </answer>
       </q>
       <q id="9">
@@ -141,8 +136,14 @@ No. Users can copy the biopipelinedb-mysql.sql scheme when they create
       </q>
       <q id="10">
          <question>What about the output of the pipeline?</question>
-         <answer>The output of the pipeline (i.e. gene object etc.) can be stored in any database of choice (need the dbadaptor of course).</answer>
+         <answer>The output of the pipeline (i.e. gene object etc.)
+         can be stored in any database of choice, but you'll need a dbadaptor of course.</answer>
       </q>
-   </section>
+      <q id="11">
+         <question>When I run the pipeline software, if all of the nodes on our cluster are utilized, I start seeing database connection errors. The errors indicate that a connection to the database could not be made because too many connections are already open. What can I do?</question>
+         <answer>First make sure that your version of the Biopipe software is up-to-date, the more recent code handles this problem better. Second, there is a configuration parameter in mySQL that limits the number of connections that it can make to the database. This may be set when one starts up mysql with mysqld. Default is 100, way too low for Biopipe.  500-1000 mysql connections is recommended by mySQL for Linux systems. Third, make sure that release_dbconnection = 1 in PipeConf.
+</answer>
+      </q>  
+</section>
    <copyright>Copyright (c)2002-2003 Open Bioinformatics Foundation. You may distribute this FAQ under the same terms as perl itself.</copyright>
 </faq>
