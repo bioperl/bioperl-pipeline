@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::IO
+# BioPerl module for Bio::Pipeline::InputAdaptor
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -8,6 +8,55 @@
 #
 # POD documentation - main docs before the code
 #
+=head1 NAME
+
+Bio::Pipeline::InputAdaptor - input adaptors object for pipeline
+
+=head1 SYNOPSIS
+
+  my $in_adpt = Bio::Pipeline::InputAdaptor->new($db);
+  $in_adpt->fetch_fixed_input_by_dbID(1);
+  $in_adpt->create_new_input($name,$job_id);
+  $in_adpt->copy_inputs_map_ioh($job,$new_job);
+  $in_adpt->store_fixed_input($input);
+  $in_adpt->femove_by_dbID($input->dbID);
+
+=head1 DESCRIPTION
+
+The adaptor for input objects
+
+=head1 FEEDBACK
+
+=head2 Mailing Lists
+
+User feedback is an integral part of the evolution of this and other
+Bioperl modules. Send your comments and suggestions preferably to one
+of the Bioperl mailing lists.  Your participation is much appreciated.
+
+  bioperl-l@bioperl.org          - General discussion
+  http://bio.perl.org/MailList.html             - About the mailing lists
+
+=head2 Reporting Bugs
+
+Report bugs to the Bioperl bug tracking system to help us keep track
+the bugs and their resolution.  Bug reports can be submitted via email
+or the web:
+
+  bioperl-bugs@bio.perl.org
+  http://bio.perl.org/bioperl-bugs/
+
+=head1 AUTHOR - 
+
+Email fugui@fugu-sg.org
+
+=head1 APPENDIX
+
+The rest of the documentation details each of the object methods. Internal metho
+ds are usually preceded with a _
+
+=cut
+
+
 
 package Bio::Pipeline::SQL::InputAdaptor;
 
@@ -20,7 +69,14 @@ use Bio::Pipeline::Input;
 @ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
 
-=head1 Fetch methods
+
+=head2 fetch_by_dbID
+
+  Title    : fetch_by_dbID
+  Function : fetches the adaptor to the input adaptor 
+  Example  : $in_adpt = $io ->fetch_by_dbID(1)
+  Returns  : Bio::Pipeline::IO 
+  Args     : a string which specifies the id of the adaptor 
 
 =cut
 
@@ -231,36 +287,6 @@ sub copy_inputs_map_ioh {
     }
     return @inputs;
 }
-
-sub copy_fixed_inputs {
-    my ($self, $job_id, $new_job_id) = @_;
-    my @inputs = ();
-    
-    my $query = "SELECT name, tag,iohandler_id
-                              FROM input
-                              WHERE job_id = '$job_id'";
-
-    my $sth = $self->prepare($query);
-    $sth->execute();
-    while (my ($name, $tag,$iohandler_id) = $sth->fetchrow_array){
-      my $sql = " INSERT INTO input (name, tag,iohandler_id, job_id) 
-                VALUES (?,?,?,?)";
-      my $sth = $self->prepare($sql);
-      eval{
-          $sth->execute($name, $tag,$iohandler_id,$new_job_id);
-      };if ($@){$self->throw("Error copying fixed input.\n$@");}
-
-      my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id) unless !$iohandler_id;
-      my $input = Bio::Pipeline::Input->new (
-                                    -name => $name,
-                                    -tag  => $tag,
-                                    -input_handler => $input_handler,
-                                    -job_id => $new_job_id);
-      push (@inputs,$input);
-    }
-    return @inputs;
-}
-
 
 sub store_fixed_input {
     my ($self,$input) =@_;
