@@ -5,7 +5,7 @@
     BEGIN {
     use lib 't';
     use Test;
-    plan tests => 10;
+    plan tests => 4;
     }
     use BiopipeTestDB;
     use Bio::Pipeline::SQL::DBAdaptor;
@@ -16,9 +16,9 @@
     my $biopipe_test = BiopipeTestDB->new();
 
     ok $biopipe_test;
-    print "Test Database creation success\n";
 
-    $dbh = $biopipe_test->db_handle();
+    $biopipe_test->do_sql_file("t/data/init.sql");
+
 
     my $dba = $biopipe_test->get_DBAdaptor();
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$dba);
@@ -33,6 +33,7 @@
 
     $batchsubmitter->add_job($job);
     eval {
+       open (STDERR ,">/dev/null");
        $batchsubmitter->submit_batch;
     };
     my $err = $@;

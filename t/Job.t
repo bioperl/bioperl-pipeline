@@ -5,28 +5,27 @@
     BEGIN {
     use lib 't';
     use Test;
-    plan tests => 10;
+    plan tests => 13;
+    }
+
+    END {
+        unlink("t/data/testout.fa");
     }
 
     use BiopipeTestDB;
     use Bio::Pipeline::SQL::DBAdaptor; 
-
-
+    use Bio::SeqIO;
 
     my $biopipe_test = BiopipeTestDB->new();
     
     ok $biopipe_test; 
-    print "Test Database creation success\n";
 
-    #$biopipe_test->do_sql_file("sql/initdata.sql");
+    $biopipe_test->do_sql_file("t/data/init.sql");
      
     
-    $dbh = $biopipe_test->db_handle();
     my $dba = $biopipe_test->get_DBAdaptor();
     ok $dba;
 
-    print "Creating a job  object \n";
- 
     my $jobAdaptor = $dba->get_JobAdaptor;
     ok $jobAdaptor;
 
@@ -44,31 +43,35 @@
 
     ok $numinputs, 1;
 
-    my $input = @inputs[0];
-
-    ok $input;
+    ok $inputs[0]->isa("Bio::Pipeline::Input");
     
-    my $jobid = $input->job_id;
+    my $jobid = $inputs[0]->job_id;
     ok $jobid, 1;
 
-    print "Checking Job  details - Success \n";
-  
-    print "Running the job..\n"; 
     $status = $job->status;
     ok $status, 'NEW';
 
     eval {
+       open (STDERR, ">/dev/null");
        $job->run;
     };
     $err = $@;
 
     ok $err, '';
 
+    my $seqio = Bio::SeqIO->new(-file=>"t/data/testin.fa",-format=>'Fasta');
+    my $seq = $seqio->next_seq;
+    $seqio = Bio::SeqIO->new(-file=>"t/data/testout.fa",-format=>'Fasta');
+    my $seq2 = $seqio->next_seq;
+
+    #check test runnable completed correctly
+    ok ($seq->revcom->seq eq $seq2->seq);
+
     my @newjobs = create_new_job($job);
     my $numnewjobs = scalar(@newjobs);
     ok $numnewjobs, 1;
 
-    my $newjob = @newjobs[0];
+    my $newjob = $newjobs[0];
 
 sub create_new_job{
     my ($job) = @_;
@@ -76,8 +79,8 @@ sub create_new_job{
     my $ruleAdaptor = $dba->get_RuleAdaptor;
     my @rules = $ruleAdaptor->fetch_all;
     foreach my $rule (@rules){
-        if ($rule->condition == $job->analysis->dbID){
-            my $new_job = $job->create_next_job($rule->goalAnalysis);
+        if ($rule->current->dbID == $job->analysis->dbID){
+            my $new_job = $job->create_next_job($rule->next);
             push (@new_jobs,$new_job);
         }
     }

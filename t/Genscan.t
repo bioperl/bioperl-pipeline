@@ -14,9 +14,15 @@ use Bio::Root::IO;
       }
       use Test;
       use vars qw($NTESTS);
-      $NTESTS = 12;
+      $NTESTS = 2;
       plan tests => $NTESTS;
   }
+  END {
+          for ( $Test::ntest..$NTESTS ) {
+                skip("Genscan program not found. Skipping.\n",1);
+          }
+  }
+
   
   
   
@@ -30,15 +36,26 @@ use Bio::Root::IO;
    $seq1 = $seqstream->next_seq();
 
    # create a analysis object (with just enough arguments for now that the runnable needs)
-   my $parameters = '-MATRIX data/HumanIso.smat';
+   my $parameters = '-MATRIX t/data/HumanIso.smat';
    my $analysis = Bio::Pipeline::Analysis->new(-parameters => $parameters);
    
    # create Bio:Pipeline::Runnable::Genscan object
    my $genscan = Bio::Pipeline::Runnable::Genscan->new();
+
+
    $genscan->feat1($seq1);
  
    $genscan->analysis($analysis);
-   $genscan->run();
+   open (STDERR, ">/dev/null");
+   eval{ 
+       $genscan->run();
+   };
+   $@ && exit(1);
+   END {
+       foreach ( $Test::ntest .. $NTESTS ) {
+        skip("unable to run all of the PAML tests",1);
+      }
+   }
    my @feat = $genscan->output();
    my $no = scalar(@feat);
    print "No of genes $no\n";
