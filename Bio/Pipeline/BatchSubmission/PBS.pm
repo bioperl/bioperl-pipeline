@@ -26,10 +26,16 @@ Bio::Pipeline::BatchSubmission::PBS
                   -jobname => $jobn,
                   -nodes => $nodes
                   );
+   $batchsub->submit_batch();  
+   my $hostname = $batchsub->get_host_name(); #returns the hostname
+   my @killed_queue_ids = $batchsub->kill_jobs(@queue_ids);
+   
 
 =head1 DESCRIPTION
 
 Wrapper for PBS job management system
+This has been tested for the freely availabe Torque/Maui System.
+
 
 =head1 FEEDBACK
 
@@ -56,6 +62,7 @@ or the web:
 Email fugui@fugu-sg.org
 
 =head1 APPENDIX
+
 The rest of the documentation details each of the object methods. Internal metho
 ds are usually preceded with a _
 
@@ -67,6 +74,7 @@ package Bio::Pipeline::BatchSubmission::PBS;
 
 use Bio::Pipeline::BatchSubmission;
 use Bio::Root::Root;
+use Bio::Root::IO;
 use vars qw(@ISA);
 use strict;
 
@@ -90,11 +98,34 @@ use Bio::Pipeline::PipeConf qw (RUNNER
 sub submit_batch{
     my ($self) = @_;
 
-    my @job_ids;
-
     my $jobadaptor = $self->dbobj->get_JobAdaptor;
 
+    my @jobs = $self->get_jobs;
+     
+    my %sorted_jobs = %{$self->sort_by_queue(@jobs)};
 
+    #submit jobs to different queues
+    #a given batch of jobs may belong to different queues
+    foreach my $q(keys %sorted_jobs){
+      $self->submit_jobs($q,@{$sorted_jobs{$q}});
+    }
+    $self->empty_batch;
+}
+
+=head2 submit_jobs
+
+  Title    : submit_jobs
+  Function : submit jobs given a list of job ids and the queue
+  Example  : $bs->submit_jobs($queue, @jobs)
+  Returns  : true if successful
+  Args     : 1: the queue id (string)
+             2: an array of L<Bio::Pipeline::Job>
+
+=cut
+
+sub submit_jobs {
+  my ($self,$queue,@jobs) = @_;
+    
     #making the stderr and stdout files.
     my $num = int(rand(10));
     my $file = $NFSTMP_DIR."/$num/";
@@ -102,8 +133,7 @@ sub submit_batch{
         system ("mkdir $file");
     }
 
-    my @jobs = $self->get_jobs;
-    
+    my @job_ids;
     foreach my $job(@jobs){
         push (@job_ids,$job->dbID);
         $file .= $job->dbID."_";        
@@ -111,15 +141,14 @@ sub submit_batch{
 
     $file .= $jobs[0]->analysis->logic_name.".".time().".".int(rand(1000));
 
-#   Why are we creating the stdout & stderr file again??
-#    $self->stdout_file($file.".out");
-#    $self->stderr_file($file.".err");
+    #set the stdout and stderr files to that of the job
     $self->stdout_file($jobs[0]->stdout_file);
     $self->stderr_file($jobs[0]->stderr_file);
 
+    #create the qsub command
+    my $qsub = $self->construct_command_line($queue);
 
-    my $qsub = $self->construct_command_line;
-
+    #find the runner.pl script
     my $runner = $self->runner_path || $RUNNER || undef;
 
     unless (-x $runner) {
@@ -131,30 +160,31 @@ sub submit_batch{
     my $jobID_file = $NFSTMP_DIR."/$num.jobid";   
     open (JOBID, ">$jobID_file");
 
-# Create Script
-    my $pbs_script = $NFSTMP_DIR."/$num.pbs"; 
+    #PBS requires a script file to be submitted
+    my $pbs_script = "$file.pbs"; 
     open (PBS_SCRIPT, ">$pbs_script");
-
     $runner = $self->construct_runner_param($runner);
-
     print PBS_SCRIPT $runner . " " . join(" ",@job_ids);
-    close (PBS_SCRIPT);
-# Finish Script
 
-#    $qsub .= "$runner ". " < $jobID_file";
+    #remove script file upon completion
+    print PBS_SCRIPT "\nrm $pbs_script"; 
+    close (PBS_SCRIPT);
+    # Finish Script
+
     $qsub .= $pbs_script;
 
-    print STDERR "opening qsub command line:\n $qsub\n";
-    
+    $self->debug("Opening qsub command line:\n $qsub\n");
+
+   
+    #Submit the Jobs 
+    print STDERR "Submitting jobs ".join(",",@job_ids)." to queue ".$queue."\n";
     open (SUB,$qsub." 2>&1|");
 
     my $pbs;
-    #checks if jobs were submitted to PBS. checking for the hostname in 132.white.bii-sg.org
-
     while(<SUB>){
-
        if (/(\d+).(\w+)/){
            $pbs = $1;  
+           print STDERR "PBS OUT: $pbs\n";
        }
     }
 
@@ -171,9 +201,6 @@ sub submit_batch{
         }
     }
     close (SUB);
-
-    $self->empty_batch;
-    
     return 1;
 
 }
@@ -190,10 +217,9 @@ sub submit_batch{
 
 sub construct_command_line{
 
-    my ($self) = @_;
+    my ($self,$queue) = @_;
 
     my $qsub_line;
-     
 
     $qsub_line = "qsub -o  ".$self->stdout_file;
     
@@ -201,18 +227,18 @@ sub construct_command_line{
 
     $qsub_line .= " -N ".$self->jobname  if defined $self->jobname;
 
-    $qsub_line .= " -l nodes=1";
-
     if($self->nodes){
         my $nodes = $self->nodes;
-    # $nodes needs to be a space-delimited list
+        # $nodes needs to be a space-delimited list
         $nodes =~ s/,/ /;
         $nodes =~ s/ +/ /;
-    # undef $nodes unless $nodes =~ m{(\w+\ )*\w};
+        # undef $nodes unless $nodes =~ m{(\w+\ )*\w};
         $qsub_line .= " -m '".$nodes."' ";
     } 
 
-    $qsub_line .= " -q ".$self->queue    if defined $self->queue;
+    $queue ||= $self->queue; 
+    $qsub_line .= " -q ".$queue    if defined $queue;
+    $qsub_line .= " ".$self->parameters." "  if defined $self->parameters;
 
     $qsub_line .= " ";
     
@@ -220,10 +246,64 @@ sub construct_command_line{
 
 }
   
-#not implemented for PBS yet
+=head2 get_host_name
+
+  Title    : get_host_name
+  Function : gets the hostname of the node
+  Example  : $command = $bs->get_host_name;
+  Returns  : a string
+  Args     : a string
+
+=cut
+
 sub get_host_name {
-  my ($self,$log) = @_;
-  return;
+  my ($self,$queue_id) = @_; 
+  my $io = Bio::Root::IO->new();
+  my ($fh,$file) = $io->tempfile();
+
+  #Unix specific, simplest way I can think of right now
+  my $hostname = `hostname`;
+  return $hostname || "NULL";
 }
+
+=head2 kill_jobs
+
+  Title    : kill_jobs
+  Function : kills jobs in the queue using qdel command
+  Example  : $command = $bs->kill_jobs;
+  Returns  : 
+  Args     : a list of queue ids
+
+=cut
+
+sub kill_jobs {
+  my ($self,@queueIDs) = @_;
+  #hash it up to check against list of queue ids to kill
+  my %hash_q = map{$_=>1}@queueIDs;
+
+  my @queue = `qstat -f |grep 'Job Id'`;
+  my @queue_ids;
+  foreach my $q(@queue){
+    chomp($q);
+    $q=~/Job Id: (\w+)/;
+    my $qid = $1;
+    next unless $hash_q{$qid};
+    my $kill_str = "qdel $qid";
+    $self->debug($kill_str);
+    my $status = system($kill_str);  
+    if($status !=0){
+      $self->warn("Couldn't kill $status");
+    }
+    else {
+      push @queue_ids, $qid;
+
+    }
+  }
+ #return list of successfully killed jobs 
+ return @queue_ids;
+}
+
+
+
 
 1;
