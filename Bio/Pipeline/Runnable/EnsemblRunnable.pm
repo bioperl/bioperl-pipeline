@@ -33,6 +33,7 @@
 =head1 DESCRIPTION
 
 The runnable that enables biopipe to run Ensembl runnables.
+
 =head1 FEEDBACK
 
 =head2 Mailing Lists
@@ -79,9 +80,11 @@ use Bio::Pipeline::RunnableI;
 
 Title   :   new
 Usage   :   $self->new()
-Function:
-Returns :
-Args    :
+Function:   return a new EnsemblRunnable wrapper
+Returns :   L<Bio::Pipeline::Runnable::EnsemblRunnable>
+Args    :   -module the specific Ensembl Runnable to use
+            Any other parameters  that are passed to the 
+            Ensembl Runnable.
 
 =cut
 
@@ -90,17 +93,57 @@ sub new {
   my $self = $class->SUPER::new(@args);
   my ($module) = $self->_rearrange([qw(MODULE)],@args);
   $module && $self->module($module);
+  
 
   my %param = @args;
   @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
+
+ 
   foreach my $method (keys %param){
-    my $copy = $method;
-    $copy=~s/-//g;
-    $self->$copy($param{$method});
+      my $copy = $method;
+      $copy=~s/-//g;
+      $self->$copy($param{$method});
   }
-  $self->load_runnable($module,@args);
   return $self;
 }
+
+
+=head2 add_tag
+
+Title   :   add_tag
+Usage   :   $self->add_tag()
+Function:   add to the list of methods that EnsemblRunnable expects
+            this is to accomodate for some required parameters
+            in the new method of the specific EnsemblRunnable
+Returns :   Array of strings 
+Args    :
+
+=cut
+
+sub add_tag{
+    my ($self,$tag) = @_;
+    if($tag){
+      push @{$self->{'_tag'}}, $tag;
+    }
+
+    return @{$self->{'_tag'}};
+}
+
+=head2 get_tags
+
+Title   :   get_tags
+Usage   :   $self->get_tags()
+Function:   gets the list of tags 
+Returns :   Array of strings
+Args    :
+
+=cut
+
+sub get_tags {
+    my ($self) = @_;
+    return @{$self->{'_tag'}};
+}
+
 
 =head2 AUTOLOAD
 
@@ -112,14 +155,37 @@ Args    :
 
 =cut
 
-
 sub AUTOLOAD {
     my $self = shift;
-    my $attr = $AUTOLOAD;
-    $attr =~ s/.*:://;
-    $attr = uc $attr;
-    $self->{$attr} = shift if @_;
-    return $self->{$attr};
+    my $val = shift;
+
+    my $tag= $AUTOLOAD;
+    $tag=~ s/.*:://;
+    if($tag && $val){
+        $self->add_tag($tag);
+        $self->{$tag} = $val;
+    }
+    return $self->{$tag};
+}
+
+=head2 get_input_params
+
+Title   :   get_input_params
+Usage   :   $self->get_input_params()
+Function:   returns an array of tag-value parameters 
+Returns :   Array of tag-value pairs
+Args    :
+
+=cut
+
+sub get_input_params {
+    my ($self) = @_;
+    my @param;
+    foreach my $tag ($self->get_tags){
+        
+        push @param, ("-".$tag,$self->$tag);
+    }
+    return @param;
 }
 
 =head2 module
@@ -154,9 +220,16 @@ Args    :
 sub run {
   my ($self) = @_;
   my $module = $self->module;
-  my $runnable = $self->runnable;
+  my @params;
+  if($self->analysis && $self->analysis->parameters){
+    @params = $self->parse_params($self->analysis->parameters);
+  }
+  push @params, $self->get_input_params();
+  my $runnable = $self->load_runnable($self->module,@params);
+  
   $runnable->run;
-  $self->output($runnable->output);
+  my @output = $runnable->output;
+  $self->output(\@output);
   return $self->output;
 }
 
