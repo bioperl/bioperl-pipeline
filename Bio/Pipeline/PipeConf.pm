@@ -41,26 +41,29 @@ use vars qw (%PipeConf);
     # You will need to modify these variables
 
     # working directory for err/outfiles
-    NFSTMP_DIR => '/tmp/',
-    WORKDIR    => '/tmp/',
+    NFSTMP_DIR => '/data0/tmp/',
 
     # database specific variables
     
     DBI_DRIVER => 'mysql',
-    DBHOST     => 'locahost',
-    DBNAME     => 'yourdb',
+    DBHOST     => 'mysql',
+    DBNAME     => 'annotate_pipeline',
     DBUSER     => 'root',
     DBPASS     => '',	     
 
     # Batch Management system module
     # Currently supports PBS and LSF
+    # ignored if run in local mode
     BATCH_MOD   =>  'LSF',
+
     # farm queue
     QUEUE      => 'normal3', 
-    # farm nodes to use, default all
     
     # no of jobs to send to Batch Management system at one go
     BATCHSIZE  => 3,        
+
+    #bsub opt
+    BATCH_PARAM => '-C0',
 
     # no of jobs to fetch at a time and submit
     MAX_INCOMPLETE_JOBS_BATCHSIZE => 1000,
@@ -68,8 +71,6 @@ use vars qw (%PipeConf);
     # no of completed jobs to fetch at a time and create next jobs 
     MAX_CREATE_NEXT_JOBS_BATCHSIZE => 5,
 
-    #bsub opt
-    BSUB_OPT   => '-C0',
 
     # number of times to retry a failed job
     RETRY       => '1000',
@@ -80,11 +81,14 @@ use vars qw (%PipeConf);
     RUNNER     => '',   
 
     #sleep time in PipelineManager before waking up and looking for jobs to run 
-    SLEEP      => 100,
+    SLEEP      => 3,
+
+    FETCH_JOB_SIZE => 100,
 
     ##############################################
     # PARAMS FROM HERE ON NOT SUPPORTED CURRENTLY FOR FUTURE DEV
     # default directory for data files and binary files
+    WORKDIR    => '',
     BINDIR     => '',
     DATADIR    => '',
     USENODES    =>'',
