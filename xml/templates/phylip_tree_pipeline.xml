@@ -186,7 +186,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+        <value>t/data/phylip_result</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -221,7 +221,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+        <value>	t/data/phylip_result</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -256,7 +256,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+        <value>	t/data/phylip_result</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -291,7 +291,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+        <value>	t/data/phylip_result</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -326,7 +326,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+        <value>	t/data/phylip_result</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -371,7 +371,7 @@ both to database or files depending on one's specification.
            </argument>
             <argument>
                 <tag>input_file</tag>
-                <value>/usr/users/shawnh/src/bioperl-run/t/data/cysprot.fa</value>
+                <value>t/data/cysprot.fa</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -381,12 +381,12 @@ both to database or files depending on one's specification.
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>/data0/shawn_tmp/phylip_dir</value>
+                <value>t/data/phylip_dir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>result_dir</tag>
-                <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+                <value>	t/data/phylip_result</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -414,40 +414,40 @@ both to database or files depending on one's specification.
       <runnable>Bio::Pipeline::Runnable::Clustalw</runnable>
       <program>align</program>
       <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
-      <runnable_parameters>-infile_dir /data0/shawn_tmp/phylip_dir/</runnable_parameters>
+      <runnable_parameters>-infile_dir t/data/phylip_dir/</runnable_parameters>
       <output_iohandler id="1"/>
     </analysis>
     <analysis id="3">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program SeqBoot -infile_suffix cls -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <runnable_parameters>-program SeqBoot -infile_suffix cls -infile_dir 	t/data/phylip_result</runnable_parameters>
       <analysis_parameters>-replicates 10 </analysis_parameters>
       <output_iohandler id="2"/>
     </analysis>
     <analysis id="4">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program ProtDist -infile_suffix sb -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <runnable_parameters>-program ProtDist -infile_suffix sb -infile_dir 	t/data/phylip_result</runnable_parameters>
       <analysis_parameters>-multiple 10 </analysis_parameters>
       <output_iohandler id="3"/>
     </analysis>
     <analysis id="5">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program Neighbor -infile_suffix pd -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <runnable_parameters>-program Neighbor -infile_suffix pd -infile_dir 	t/data/phylip_result</runnable_parameters>
       <analysis_parameters>-multiple 10 </analysis_parameters>
       <output_iohandler id="4"/>
     </analysis>
     <analysis id="6">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program Consense -infile_suffix nb -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <runnable_parameters>-program Consense -infile_suffix nb -infile_dir 	t/data/phylip_result</runnable_parameters>
       <output_iohandler id="5"/>
     </analysis>
     <analysis id="7">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program DrawTree -infile_suffix con -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <runnable_parameters>-program DrawTree -infile_suffix con -infile_dir 	t/data/phylip_result</runnable_parameters>
     </analysis>
     <rule>
       <current_analysis_id>1</current_analysis_id>
