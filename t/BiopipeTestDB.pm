@@ -338,6 +338,7 @@ sub do_sql_file {
 sub run_pipeline {
     my ($self,$xml_file) = @_;
     my $manager = "perl ".$self->pipeline_manager;
+    $manager.= " -dbhost ".$self->host." ";
     $manager.= " -dbname ".$self->dbname ." -xml $xml_file ";
     $manager.= " -schema ".@{$self->schema_sql}[0] if $self->schema_sql;
     $manager.=" -l -f -xf ";
