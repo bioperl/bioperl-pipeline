@@ -16,6 +16,7 @@ Bio::Pipeline::Analysis.pm - Stores details of an analysis run
 
     my $obj    = new Bio::Pipeline::Analysis(
         -id              => $id,
+        -adaptor         =>$adaptor,
         -logic_name      => 'SWIRBlast',
         -db              => $db,
         -db_version      => $db_version,
@@ -25,10 +26,13 @@ Bio::Pipeline::Analysis.pm - Stores details of an analysis run
         -program_file    => $program_file,
         -gff_source      => $gff_source,
         -gff_feature     => $gff_feature,
-        -runnable          => $module,
-        -runnable_version  => $module_version,
+        -runnable        => $module,
         -parameters      => $parameters,
-        -created         => $created
+        -created         => $created,
+        -logic_name      => $logic_name,
+        -iohandler       => $iohandler,
+        -node_group      => $node_group,
+        -io_map          => $io_map
         );
 
 =head1 DESCRIPTION
@@ -54,6 +58,7 @@ use vars qw(@ISA);
 use strict;
 use Bio::Root::RootI;
 use Bio::Root::IO;
+
 # Inherits from the base bioperl object
 @ISA = qw(Bio::Root::Root);
 
@@ -81,9 +86,9 @@ sub new {
 				PARAMETERS
 				CREATED
 				LOGIC_NAME
-			        IOHANDLER
-       			 	NODE_GROUP
-                                IO_MAP
+			  IOHANDLER
+       	NODE_GROUP
+        IO_MAP
 				)],@args);
 
   $self->dbID           ($id);
@@ -108,7 +113,7 @@ sub new {
 }
 
 sub test_and_setup {
-  my ($self) = @_;
+  my ($self,$verbose) = @_;
   my $program = $self->program;
   my $db_file = $self->db_file;
 
@@ -117,9 +122,9 @@ sub test_and_setup {
   if($self->db_file){
     ($self->exists_db_file) || $self->throw("DB File $db_file doesn't exist");
   }
-  $self->set_logic_name_if_needed || (print "Logic name ".$self->logic_name."  already set.\n");
-  $self->set_program_version_if_needed || (print "Program version not set. Either already set or cannot determine.\n");  
-  $self->match_program_to_runnable || (print "Runnable not set, maybe already set or not found\n");
+  $self->set_logic_name_if_needed($verbose);
+  $self->set_program_version_if_needed($verbose);
+  $self->match_program_to_runnable($verbose);
 }
 
 =head2 exists_program
@@ -205,7 +210,7 @@ sub exists_runnable {
 =cut
 
 sub set_logic_name_if_needed {
-  my ($self) = @_;
+  my ($self,$verbose) = @_;
   if (!$self->logic_name){
     my $program = $self->program;
     #strip the program path
@@ -216,6 +221,12 @@ sub set_logic_name_if_needed {
     $self->logic_name($program);
     return 1;
   }
+  else {
+      if($verbose){
+          $self->warn("Logic name ".$self->logic_name."  already set.\n");
+      }
+  }
+
   
   return 0;
 }    
@@ -231,24 +242,31 @@ sub set_logic_name_if_needed {
 =cut
 
 sub set_program_version_if_needed {
-   my ($self) = @_;
+   my ($self,$verbose) = @_;
    if (!$self->program_version) {
     my $program = $self->program;
-#    my $string = `$program -- `; 
     my $string;
-    $string = $string || `$program -v `;
-    $string =~ /([\d.]+)/;
+    $string = $string || `$program -v 2>&1 `;
+    #parse data format of decimal digits
+    $string =~ /(\d+\/\d+\/\d+)|(\d+\.\d+)/;
     if($1){
       print STDERR "Updating Program version to $1\n";
       $self->adaptor->update_prog_version($self->dbID,$1);
       return 1;
     }
     else {
-      $self->warn("unable to determine program version");
+        if($verbose){
+          $self->warn("unable to determine program version");
+        }
       return 0;
     }
    }
-   return 0;
+   else {
+        if($verbose){
+          $self->warn("Program version already set");
+        }
+        return 0;
+   }
 }
 
 =head2 match_logic_name_to_runnable
@@ -262,7 +280,7 @@ sub set_program_version_if_needed {
 =cut
 
 sub match_program_to_runnable {
-    my ($self) = @_;
+    my ($self,$verbose) = @_;
     my $str = $ENV{PERL5LIB};
     my @str = split(":",$str);
     my $path;
@@ -274,6 +292,10 @@ sub match_program_to_runnable {
     }
     if ($self->runnable){
       $self->exists_runnable || $self->throw("Runnable doesn't seem to exist inside $path");
+      if($verbose){
+          $self->warn("runnable already set to ".$self->runnable);
+      }
+      
     }
     else {
     #do matching by looking up Runnable Dir through ENV variable
@@ -283,8 +305,6 @@ sub match_program_to_runnable {
         $run =~  m!.*/(.*).pm!;
         my $runnable_name = "Bio::Pipeline::Runnable::$1";
         if ($self->program =~ /$1/i){
-          #replace slash with ::
-#          $runnable_name =~ s/\//::/g;
           $self->runnable($runnable_name);
           $self->adaptor->update_runnable($self->dbID,$runnable_name);            
           return 1;
