@@ -97,14 +97,9 @@ and will store the feature information the pipeline generates.
 
    <converter id="1" module="FeaturePairToEnsEMBLConverter">
       <method name="new" rank="1">
-         <argument tag = "-host" value = "mysql"/>
-         <argument tag = "-driver" value = "mysql"/>
-         <argument tag = "-dbname" value = "juguang_homo_core_9_30"/>
-         <argument tag = "-user" value = "root"/>
          <!-- argument id = "15" tag = "-passwd" value = ""/ -->
          <!-- I think to make the analysis logic name build in the converter instance module, but gave up since that will decrease the flexibility. 
          -->
-         <argument tag="-analysis_logic_name" value="RepeatMask"/>
       </method >
       <method name="contig_name" rank="2">
          <argument value="INPUT" type="SCALAR" rank="1"/>
@@ -114,11 +109,6 @@ and will store the feature information the pipeline generates.
   <converter id="2" module="HSPToEnsEMBLConverter">
       <method name="new" rank="1">
          <argument tag = "-program" value = "blastx"/>
-         <argument tag = "-host" value ="mysql"/>
-         <argument tag = "-driver" value = "mysql"/>
-         <argument tag = "-dbname" value = "juguang_homo_core_9_30"/>
-         <argument tag = "-user" value = "root"/>
-         <argument tag="-analysis_logic_name" value="blastall"/>
       </method >
       <method name="contig_name" rank="2">
          <argument value="INPUT" type="SCALAR" rank="1"/>
@@ -151,12 +141,9 @@ and will store the feature information the pipeline generates.
 		<logic_name>RepeatMasker</logic_name>
 		<runnable>Bio::Pipeline::Runnable::RepeatMasker</runnable>
 		<program>RepeatMasker</program>
-		<nodegroup_id>1</nodegroup_id>
 		<analysis_parameters>-lib all.lib</analysis_parameters>
-			
 		<input_iohandler_mapping current="" next=""/>
 		<output_iohandler id="3" converter_id="1" />
-			
 	</analysis>
 	
 	<analysis id="3">
