@@ -97,6 +97,9 @@ sub submit_batch{
 # Create Script
     my $pbs_script = $NFSTMP_DIR."/$num.pbs"; 
     open (PBS_SCRIPT, ">$pbs_script");
+
+    $runner = $self->construct_runner_param($runner);
+
     print PBS_SCRIPT $runner . " " . join(" ",@job_ids);
     close (PBS_SCRIPT);
 # Finish Script
@@ -137,6 +140,22 @@ sub submit_batch{
     return 1;
 
 }
+
+sub construct_runner_param {
+  my ($self,$runner) = @_;
+  my $dbobj = $self->dbobj;
+
+  $runner .= defined $dbobj->dbname ? " -dbname ".$dbobj->dbname : "";
+  $runner .= defined $dbobj->host ? " -host ".$dbobj->host : "";
+  $runner .= defined $dbobj->port ? " -port ".$dbobj->port: "";
+  $runner .= defined $dbobj->password ? " -pass ".$dbobj->password : "";
+  $runner .= defined $dbobj->username ? " -dbuser ".$dbobj->username: "";
+  return $runner;
+}
+
+
+
+
 
 
 sub construct_command_line{

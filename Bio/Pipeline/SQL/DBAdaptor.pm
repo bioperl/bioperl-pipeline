@@ -92,7 +92,10 @@ sub new {
         $host = 'localhost';
     }
     if ( ! $port ) {
-        $port = '';
+        $port = undef; 
+    }
+    if (! $password) {
+        $password = undef;
     }
 
     my $dsn = "DBI:$driver:database=$db;host=$host;port=$port";
@@ -106,6 +109,7 @@ sub new {
   $self->host( $host );
   $self->dbname( $db );
   $self->port($port);
+  $self->password($password);
 
   return $self; # success - we hope!
 }
@@ -128,6 +132,12 @@ sub username {
   ( defined $arg ) &&
     ( $self->{_username} = $arg );
   $self->{_username};
+}
+sub password{
+  my ($self, $arg ) = @_;
+  ( defined $arg ) &&
+    ( $self->{_password} = $arg );
+  $self->{_password};
 }
 
 sub host {

@@ -46,23 +46,45 @@ use Bio::Pipeline::PipeConf qw (DBHOST
                                 
 			                    );
 
-$| = 1;
+$| = 1; #flush all print statements
 
 my $local        = 0;       # Run failed jobs locally
-my $resume       = 0;
-my $analysis;               # Only run this analysis ids
+my $resume       = 0;       # Flag to indicate whether resuming or doing a fresh run. 
+                            # Used to check whether to do a CREATE_INPUT
+                            #
+#my $analysis;               # Only run this analysis ids
 my $pipeline_time = time(); #tracks how long pipeline has been running in seconds
                             #use to see whether timeout has occured
 my %pipeline_state;         #hash used to store state of all jobs in the pipeline 
 
-			    # aka "bsub -J <name>"
-			    # maybe this should be compulsory, as
-			    # the default jobname really isn't any use
 my $once =0;
-my $INPUT_LIMIT = 10000;
+
+my $INPUT_LIMIT = undef;
+my $HELP = undef;
+
+my $USAGE =<<END;
+************************************
+*PipelineManager.pl
+************************************
+This is the central script used to run the pipeline.
+
+Usage: PipelineManager.pl 
+
+Options:
+Default values are read from PipeConf.pm
+
+     -dbhost The database host name (localhost)
+     -dbname The pipeline database name
+     -dbpass The password to mysql database
+     -batchsize The number ofjobs to be batched to one node
+     -local     Whether to run jobs in local mode 
+                (on the node where this script is run)
+     -queue     Specify the queue on which to submit jobs
+
+END
 
 GetOptions(
-    'host=s'      => \$DBHOST,
+    'dbhost=s'      => \$DBHOST,
     'dbname=s'    => \$DBNAME,
     'dbuser=s'    => \$DBUSER,
     'dbpass=s'    => \$DBPASS,
@@ -73,11 +95,14 @@ GetOptions(
     'usenodes=s'  => \$USENODES,
     'once!'       => \$once,
     'retry=i'     => \$RETRY,
-    'analysis=s'  => \$analysis,
+ #   'analysis=s'  => \$analysis,
     'wait_for_all_percent=i'=>\$WAIT_FOR_ALL_PERCENT,
-    'timeout=s'   => \$TIMEOUT
+    'timeout=s'   => \$TIMEOUT,
+    'help'        => \$HELP
 )
-or die ("Couldn't get options");
+or die $USAGE;
+
+$HELP && die($USAGE);
 
 my $db = Bio::Pipeline::SQL::DBAdaptor->new(
     -host   => $DBHOST,
@@ -323,6 +348,7 @@ sub _initialise {
         foreach my $rule (@rules) {
            if (! defined($rule->current) && ($rule->action eq 'CREATE_INPUT')) {
               $init_rule = $rule;
+              last;
            }
         }
         if (defined ($init_rule)) {

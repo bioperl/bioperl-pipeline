@@ -84,6 +84,9 @@ sub submit_batch{
         $self->throw("Can't locate runner.pl - needs to be set in PipeConf.pm") unless -x $runner;
     }
 
+    #pass runner the db info
+    $runner = $self->construct_runner_param($runner);
+
     $bsub .= "$runner ".join(" ",@job_ids);
 
     print STDERR "opening bsub command line:\n $bsub\n";
@@ -116,6 +119,20 @@ sub submit_batch{
     return 1;
 
 }
+
+sub construct_runner_param {
+    my ($self,$runner) = @_;
+    my $dbobj = $self->dbobj;
+
+    $runner .= defined $dbobj->dbname ? " -dbname ".$dbobj->dbname : "";
+    $runner .= defined $dbobj->host ? " -host ".$dbobj->host : "";
+    $runner .= defined $dbobj->port ? " -port ".$dbobj->port: "";
+    $runner .= defined $dbobj->password ? " -pass ".$dbobj->password : "";
+    $runner .= defined $dbobj->username ? " -dbuser ".$dbobj->username: "";
+    return $runner;
+}
+
+    
 
 sub construct_command_line{
 
