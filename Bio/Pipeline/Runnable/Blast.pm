@@ -143,12 +143,21 @@ Returns :
 Args    :
 
 =cut
+
 sub seq2{
     my ($self,$seq) = @_;
     if (defined($seq)){
         $self->{'_seq2'} = $seq;
     }
     return $self->{'_seq2'};
+}
+
+sub file {
+    my ($self,$file) = @_;
+    if(defined($file)){
+        $self->{'_file'} = $file;
+    }
+    return $self->{'_file'};
 }
 
 =head2 run 
@@ -165,6 +174,9 @@ sub run {
   my $analysis = $self->analysis;
   my $blast_obj;
   my $return_type = 'hsp';
+
+
+  #initialize the StandAloneBlast Module
 
   if ($self->analysis->parameters){
     my @params = $self->parse_params($self->analysis->parameters);
@@ -184,7 +196,7 @@ sub run {
   
   my $program = $analysis->program || 'blastall';
   
-  my $seq1 = $self->seq1;
+  my $seq1 = $self->seq1 || $self->file;
   my $seq2 = $self->seq2;
   my $blast_report;
 
@@ -208,6 +220,7 @@ sub run {
       my $IO = Bio::Root::IO->new();
       my ($fh,$newreport) = $IO->tempfile();
       $blast_obj->database($analysis->db_file);
+
       $blast_report = $blast_obj->$program($seq1);
 
       system("cp ". $blast_obj->o ." $newreport");
