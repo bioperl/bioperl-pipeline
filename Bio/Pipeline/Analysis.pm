@@ -316,17 +316,14 @@ sub exists_db_file {
 sub exists_runnable {
   my ($self) = @_;
   $self->runnable || $self->throw("Runnable not set yet");
-  my $str = $ENV{PERL5LIB};
-  my @str = split(":",$str);
-  foreach my $s(@str){
-    if ($s=~/bioperl-pipeline/){
-     my @runnables = `ls $s/Bio/Pipeline/Runnable/*.pm`;
-     foreach my $run(@runnables){
-        $run =~  m!.*/(.*).pm!;
-        if ($self->runnable =~ /Bio::Pipeline::Runnable::$1/){
-          return 1;
-        }
-      }
+  my $path= __FILE__;
+  $path=~m!(.*)/.*\.pm!;
+  my $dir = $1;
+  my @runnables = `ls $dir/Runnable/*.pm`;
+  foreach my $run(@runnables){
+    $run =~  m!.*/(.*).pm!;
+    if ($self->runnable =~ /Bio::Pipeline::Runnable::$1/){
+      return 1;
     }
   }
   return 0;
@@ -415,15 +412,9 @@ sub set_program_version_if_needed {
 
 sub match_program_to_runnable {
     my ($self,$verbose) = @_;
-    my $str = $ENV{PERL5LIB};
-    my @str = split(":",$str);
-    my $path;
-    foreach my $s (@str){
-      if($s =~ /bioperl-pipeline/){
-        $path = $s;
-        last;
-       }
-    }
+    my $path= __FILE__;
+    $path=~m!(.*)/.*\.pm!;
+    my $dir = $1;
     if ($self->runnable){
       $self->exists_runnable || $self->throw("Runnable doesn't seem to exist inside $path");
       if($verbose){
@@ -434,7 +425,7 @@ sub match_program_to_runnable {
     else {
     #do matching by looking up Runnable Dir through ENV variable
 
-      my @runnables = `ls $path/Bio/Pipeline/Runnable/*.pm`;
+      my @runnables = `ls $path/Runnable/*.pm`;
       foreach my $run(@runnables){
         $run =~  m!.*/(.*).pm!;
         my $runnable_name = "Bio::Pipeline::Runnable::$1";
