@@ -15,7 +15,8 @@
 use strict;
 use Getopt::Long;
 
-use Bio::Pipeline::SQL::RuleAdaptor;;
+use Bio::Pipeline::SQL::RuleAdaptor;
+use Bio::Pipeline::SQL::InputAdaptor;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
@@ -90,6 +91,8 @@ my $ruleAdaptor = $db->get_RuleAdaptor;
 my $jobAdaptor  = $db->get_JobAdaptor;
 my $inputAdaptor  = $db->get_InputAdaptor;
 my $analysisAdaptor = $db->get_AnalysisAdaptor;
+
+$QUEUE = length($QUEUE) > 0 ? $QUEUE:undef;
 
 ###############################
 #Pipeline Test
@@ -183,7 +186,9 @@ while ($run) {
                     $new_job->status('SUBMITTED');
                     $new_job->make_filenames unless $job->filenames;
                     $new_job->update;
-                    $new_job->run;
+                    eval {
+                      $new_job->run;
+                    }
 	            }else{
                     $batchsubmitter->add_job($new_job);
                     $new_job->status('SUBMITTED');
@@ -212,13 +217,6 @@ while ($run) {
 #Utiltiy methods
 ############################
 
-=head
-#used to check whether state of pipeline has changed since last.
-sub pipeline_state_changed {
-    my (@jobs) = @_;
-    foreach my $job(@jobs){
-=cut        
-
 
 sub create_new_job {
     my ($job) = @_;
@@ -230,9 +228,8 @@ sub create_new_job {
             my $next_analysis = $analysisAdaptor->fetch_by_dbID($rule->next);
             $action = $rule->action;
             if ($action eq 'NOTHING') {
-               print "Rule action : $action\n";
                my $new_job = $job->create_next_job($next_analysis);
-               my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
+               my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
                foreach my $input (@inputs) {
                  $new_job->add_input($input);
                }
@@ -240,14 +237,14 @@ sub create_new_job {
             }
 
             elsif ($action eq 'UPDATE') {
-               my @output_ids = $job->_output_ids;
+               my @output_ids = $job->output_ids;
                if (scalar(@output_ids) == 0) {  ## No outputs, so dont create any job 
                   print "No outputs from the previous job, so no job created\n";
                }
                else {
                   foreach my $output_id (@output_ids){
                      my $new_job = $job->create_next_job($next_analysis);
-                     my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
+                     my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
                      foreach my $input (@inputs) {
                        $new_job->add_input($input);
                      }
@@ -262,7 +259,7 @@ sub create_new_job {
             #waits for all the jobs of this analysis to finish before starting the new job
               if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
                   my $new_job = $job->create_next_job($next_analysis);
-                  my @inputs = $inputAdaptor->copy_fixed_input($job->dbID, $new_job->dbID);
+                  my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
                   foreach my $input (@inputs) {
                      $new_job->add_input($input);
                   }
