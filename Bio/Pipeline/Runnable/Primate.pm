@@ -71,12 +71,20 @@ sub datatypes {
                                         '-reftype'=>'SCALAR');
                                         
   my %dts;
-  $dts{seq} = $dt;
+  $dts{target} = $dt;
 
   return %dts;
 
 }
 
+sub target{
+    my ($self,$target) = @_;
+    if($target){
+        $self->{'_target'} = $target;
+    }
+
+    return $self->{'_target'};
+}
 =head2 run
 
 Title   :   run
@@ -88,25 +96,27 @@ Args    :
 =cut
 sub run {
   my ($self) = @_;
-  $self->analysisi->isa("Bio::Pipeline::Analysis") || $self->throw("Need an analysis object");
+  $self->analysis->isa("Bio::Pipeline::Analysis") || $self->throw("Need an analysis object");
   my $target = $self->target || $self->throw("Need a target sequence to run primate");
-  my $query = $self->analysis->db_file || $self->throw("Need a db file or primer tags");
+  my $query = $self->analysis->db_file || $self->throw("Need a db file of primer tags");
   (-e $query) || $self->throw("Query file doesn't seem to exist");
  
   my $param_str = $self->analysis->parameters;
-
-  $param_str .= " -q $query -t $target";
   my @params = $self->parse_params($param_str);
-
+  
   my $factory = Bio::Tools::Run::Primate->new(@params);
+  $factory->query($query);
 
-  my @feats = $factory->search;
+  my @feats = $factory->search($target);
 
   $self->output(\@feats);
 
   return \@feats;
   
 }
+
+
+
 
 
 1;
