@@ -12,7 +12,7 @@ http://www.biopipe.org
 
 Given files containing family of proteins run it through the following pipeline:
 
-Proteins->Clustalw->SeqBoot->ProtDist->Neighbor->Consense->DrawTree
+Proteins->Clustalw or TCoffee ->SeqBoot->ProtDist->Neighbor->Consense->DrawTree
 
 This is a file based analysis, that spits out files at each analysis.
 
@@ -28,65 +28,12 @@ both to database or files depending on one's specification.
 
 </DESCRIPTION>
 
-
-<XML ORGANIZATION>
-
-  <pipeline_setup>
-    <database_setup>
-    <iohandler_setup>
-    <pipeline_flow_setup>
-    <job_setup>(optional)
-  </pipeline_setup>
-
-  <database_setup>
-  This specifies the databases that the pipeline connects to and the
-  adaptor modules that intefaces with them.
-  
-  Since this case is file-based, stream adaptor, rather than db adaptor in other cases, is applied. 
-  The instance of stream adaptor we are using here is Bio::Pipeline::Dumper.
-  <iohandler_setup>
-  This specifies the method calls that will be used by the pipeline
-  to access the databases. These methods are contained in the modules
-  specified by the database setup section above.
-
-  <pipeline_flow_setup>
-  This specifies the analysis and rules of the pipeline. Analysis
-  refer to the runnables that will be used in this pipeline while the
-  rules specify the order in which these analysis are to be run, including
-  any specific pre-processing actions that are to be carried out.
-
-  <job_setup>
-  This is an optional part that allows specific inputs to be inserted.
-  Usually, this is done using DataMongers and Input Create modules.
-
-</XML ORGANIZATION>
-
-
 <THE PHYLO PIPELINE>
 
-  <INSTALLATION>
+  <INSTALLATION REQUIREMENTS>
 
     <PERL PACKAGES>
-      The following perl packages are required:
-
-        <Bioperl>
-          bioperl-pipeline
-          bioperl-live
-          bioperl-run
-
-          Available thru anonymous cvs:
-
-          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-live
-          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
-          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline
-
-
-          This is bleeding edge stuff so it is recommended 
-          that you use main trunk code for all three packages.
- 
-          Note the schema for biopipe has moved to 
-          bioperl-pipeline/sql/schema.sql for convenience
-        </Bioperl>
+      Standard Biopipe installation (pls refer to bioperl-pipeline/INSTALL)
     </PERL PACKAGES>
 
     <BINARIES>
@@ -94,64 +41,116 @@ both to database or files depending on one's specification.
          see: http://evolution.genetics.washington.edu/phylip.html
       2. clustalw: To align a group of Protein Sequences in table format.
          see: http://bmerc-www.bu.edu/examples/clustalw.html
+      3. Alternative to clustalw, you may install TCoffee, another multiple
+         sequence alignment program
+         see: http://igs-server.cnrs-mrs.fr/~cnotred/Projects_home_page/t_coffee_home_page.html
     </BINARIES>
  
   <CONFIGURING PIPELINE>
+    <global 
+          rootdir="t/"
+          datadir="$rootdir/data"
+          workdir="$datadir/phylipdir"
+          resultdir="$datadir/phylip_result"
+          inputfile="$datadir/cysprot.fa"
+          msa_logicname="Clustalw"
+          msa_program= "clustalw"
+          msa_param = "-ktuple 2 -matrix BLOSUM"
+    />
 
-      You will need to modify some parts of this XML file to point files to non-default places.
+    rootdir - specifies base directory where subsequent directories point to
+    datadir - directory where data files are stored 
+    workdir - working directory where input sequences are split. Each job will consist
+              of a single input file
+    resultdir - directory where the results of the phylo programs are stored. Each
+                file will have a different suffix based on the program:
+                cls - MSA(Multiple Sequence Alignment program
+                sb  - SeqBoot
+                pd  - ProtDist
+                nb  - Neighbor
+                con - consense
+                ps  - Draw Tree (postscript file)
+    inputfile - the path to the input file containing all the input protein sequences 
+    msa_logicname - the logic name of the MSA program. Either Clustalw of TCoffee (Case important)
+    msa_programname = the actual binary name. Either "clustalw or t_coffee" 
+    msa_param   - the parameters passed to the MSA programs
 
-      The following sections describe that.
-
-      TO WRITE
+    In theory one can also substitute different tree building program but currently
+    its not configurable using global variables. But it is trivial to modfiy the
+    XML to use for example Molphy's ProtML. This invovles removing the ProtDist and Neighbor
+    analysis with the ProtML analysis.
 
   </CONFIGURING PIPELINE>    
-
   <LOADING PIPELINE>
       
        The pipeline is loaded up using this XML file.
        A new database will be automtically created maybe created for you. 
-       This is done using the Xml2Db.pl script found in bioperl-pipeline/scripts/Xml2Db.pl
+       This is done using the PipelineManager script found in bioperl-pipeline/scripts.
        Using the script:
 
-        ******************************
-        *Xml2DB.pl
-        ******************************
-        This script configures and creates a pipeline based on xml definitions.
+      ************************************
+      *PipelineManager
+      ************************************
+      This is the central script used to run the pipeline.
 
-         Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+      Usage: PipelineManager -dbname test_pipe -xml template/blast_file_pipeline.xml -local 
 
-          Default values in ()
-            -dbhost host (mysql)
-            -dbname name of pipeline database (test_XML)
-            -dbuser user name (root)
-            -dbpass db password()
-            -schema The path to the bioperl-pipeline schema.
-                    Needed if you want to create a new db.
-                    (../sql/schema.sql)
-            -p      the pipeline setup xml file (required)
+      Options:
+      Default values are read from PipeConf.pm
 
-        
+           -dbhost    The database host name (localhost)
+           -dbname    The pipeline database name (annotate_pipeline)
+           -dbuser    User for connecting to db (root)
+           -dbpass    The password to mysql database()
+           -dbdriver  Database driver (mysql)
+           -schema    The Biopipe database schema (../sql/schema)
+           -xml       The xml pipeline template file. It will run XMLImporter if provided
+           -xf        Force drop of any existing Biopipe database with the same name
+           -flush     flush all locks on pipeline and remove any that exists. 
+                      Should only be used for debugging or development.
+           -batchsize The number ofjobs to be batched to one node
+           -local     Whether to run jobs in local mode 
+                      (on the node where this script is run)
+           -jobnbr    Number of jobs to run (for testing)
+           -queue     Specify the queue on which to submit jobs
+           -retry     Number of times to retry failed jobs
+           -notest    Don't run pre-pipeline checks
+           -norun     Use when you just want to load the XML without running
+           -verbose   Whether to show warning during test and setup
+           -help      Display this help
 
-        Load the pipeline by cd-ing to the xml directory at bioperl-pipeline/xml
-
-        perl Xml2DB.pl -dbname mydbname -host myshost -p template/phylip_tree_pipeline.xml
-
-        Once this is done you are ready to run the pipeline.
+        Note that -dbhost, -dbname, -dbuser, -dbpass can also be specified in 
+        the Bio/Pipeline/PipeConf.pm file, for convenience.
 
   </LOADING THE PIPELINE>
 
   <RUNNING THE PIPELINE>
 
-    Go to bioperl-pipeline/scripts
+    Go to bioperl-pipeline/Bio/Pipeline
 
     Edit PipeConf.pm accordingly for your environment variables.
 
-    run the pipeline by doing:
+    Go to bioperl-pipeline/scripts, to load the pipeline without running:
 
-    perl PipelineManager.pl -dbname mydbname -dbuser root -dbhost pulse
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -xml ~/biopipe_release/xml/templates/examble/blast_file_pipeline.xml
+                         -norun 
 
-    you may use the -l option to run it in local mode without submitting to the nodes yet.
-    This will be a good test before submitting, and is recommened for first time use.
+    run the pipeline:
+
+    
+    perl PipelineManager -dbname mydbname \
+                         -dbuser <user> \
+                         -dbhost <host> \
+                         -queue priority
+
+    you may use the -local option to run it in local mode without submitting to the nodes yet.
+    This will be a good test before submitting, and is recommended for debugging.
+  
+    If you encounter any errors, you can simply rerun the first command with the xml option
+    and the biopipe database will be automatically recreated once the errors have been fixed.
 
   </RUNNING THE PIPELINE>
 
@@ -172,12 +171,23 @@ both to database or files depending on one's specification.
 
 <CHANGE LOG>
 19 Dec 2002 - First Addition - Shawn
-03 Jan 2003 - Docs slightly Motified - Juguang
+03 Jan 2003 - Docs slightly Modified - Juguang
+11 Apr 2003 - Reorganized using global variables
 </CHANGE LOG>
 
 //-->
 
 <pipeline_setup>
+    <global 
+          rootdir="t/"
+          datadir="$rootdir/data"
+          resultdir="$datadir/phylip_result"
+          workdir="$datadir/phylipdir"
+          inputfile="$datadir/cysprot.fa"
+          msa_logicname="Clustalw"
+          msa_program= "clustalw"
+          msa_param = "-ktuple 2 -matrix BLOSUM"
+    />
   <database_setup>
     <streamadaptor id="1">
       <module>Bio::Pipeline::Utils::Dumper</module>
@@ -194,7 +204,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>t/data/phylip_result</value>
+        <value>$resultdir</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -229,7 +239,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>	t/data/phylip_result</value>
+        <value>	$resultdir</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -264,7 +274,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>	t/data/phylip_result</value>
+        <value>	$resultdir</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -299,7 +309,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>	t/data/phylip_result</value>
+        <value>	$resultdir</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -334,7 +344,7 @@ both to database or files depending on one's specification.
       <name>new</name>
       <argument>
         <tag>-dir</tag>
-        <value>	t/data/phylip_result</value>
+        <value>	$resultdir</value>
       </argument>
       <argument>
         <tag>-file_suffix</tag>
@@ -380,7 +390,7 @@ both to database or files depending on one's specification.
            </argument>
             <argument>
                 <tag>input_file</tag>
-                <value>t/data/cysprot.fa</value>
+                <value>$inputfile</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -390,12 +400,12 @@ both to database or files depending on one's specification.
             </argument>
             <argument>
                 <tag>workdir</tag>
-                <value>t/data/phylip_dir</value>
+                <value>$workdir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
                 <tag>result_dir</tag>
-                <value>	t/data/phylip_result</value>
+                <value>	$resultdir</value>
                 <type>SCALAR</type>
             </argument>
             <argument>
@@ -419,54 +429,45 @@ both to database or files depending on one's specification.
 
 
     <analysis id="2">
-      <logic_name>Clustalw</logic_name>
+      <logic_name>$msa_logicname</logic_name>
       <runnable>Bio::Pipeline::Runnable::MSA</runnable>
-      <program>clustalw</program>
-      <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
-      <runnable_parameters>-program Clustalw -align_type align -infile_dir t/data/phylip_dir/</runnable_parameters>
+      <program>$msa_program</program>
+      <analysis_parameters>$msa_param</analysis_parameters>
+      <runnable_parameters>-program $msa_logicname -align_type align -infile_dir $workdir </runnable_parameters>
       <output_iohandler id="1"/>
     </analysis>
 
-<!--    <analysis id="2">
-      <logic_name>TCoffee</logic_name>
-      <runnable>Bio::Pipeline::Runnable::MSA</runnable>
-      <program>align</program>
-      <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
-      <runnable_parameters>-program TCoffee -align_type align -infile_dir t/data/phylip_dir/</runnable_parameters>
-      <output_iohandler id="1"/>
-    </analysis>
--->
     <analysis id="3">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program SeqBoot -infile_suffix cls -infile_dir 	t/data/phylip_result</runnable_parameters>
+      <runnable_parameters>-program SeqBoot -infile_suffix cls -infile_dir 	$resultdir</runnable_parameters>
       <analysis_parameters>-replicates 10 </analysis_parameters>
       <output_iohandler id="2"/>
     </analysis>
     <analysis id="4">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program ProtDist -infile_suffix sb -infile_dir 	t/data/phylip_result</runnable_parameters>
+      <runnable_parameters>-program ProtDist -infile_suffix sb -infile_dir 	$resultdir</runnable_parameters>
       <analysis_parameters>-multiple 10 </analysis_parameters>
       <output_iohandler id="3"/>
     </analysis>
     <analysis id="5">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program Neighbor -infile_suffix pd -infile_dir 	t/data/phylip_result</runnable_parameters>
+      <runnable_parameters>-program Neighbor -infile_suffix pd -infile_dir 	$resultdir</runnable_parameters>
       <analysis_parameters>-multiple 10 </analysis_parameters>
       <output_iohandler id="4"/>
     </analysis>
     <analysis id="6">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program Consense -infile_suffix nb -infile_dir 	t/data/phylip_result</runnable_parameters>
+      <runnable_parameters>-program Consense -infile_suffix nb -infile_dir 	$resultdir</runnable_parameters>
       <output_iohandler id="5"/>
     </analysis>
     <analysis id="7">
       <logic_name>Phylip</logic_name>
       <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
-      <runnable_parameters>-program DrawTree -infile_suffix con -infile_dir 	t/data/phylip_result</runnable_parameters>
+      <runnable_parameters>-program DrawTree -infile_suffix con -infile_dir 	$resultdir</runnable_parameters>
     </analysis>
     <rule>
       <current_analysis_id>1</current_analysis_id>
