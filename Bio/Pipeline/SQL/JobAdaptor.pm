@@ -122,6 +122,99 @@ sub fetch_by_dbID {
 }
 
 
+sub fetch_incomplete_jobs {
+    my ($self,$num_jobs) = @_;
+
+    my @jobs;
+
+    my $sth = $self->prepare( q{
+     SELECT job_id, process_id, analysis_id, queue_id, object_file,
+        stdout_file, stderr_file, retry_count,status,stage
+     FROM job
+     WHERE status = 'NEW' OR status = 'FAILED' 
+     LIMIT ? } );
+
+    $sth->execute($num_jobs);
+
+    while (my ($job_id, $process_id, $analysis_id, $queue_id, $object_file,
+               $stdout_file, $stderr_file, $retry_count, $status, $stage ) = $sth->fetchrow_array){
+
+   	 my $analysis =
+    	   $self->db->get_AnalysisAdaptor->
+       		fetch_by_dbID( $analysis_id );
+
+ 	   # getting the inputs
+	    my @inputs= $self->db->get_InputAdaptor->fetch_inputs_by_jobID($job_id);
+
+ 	   my $job = Bio::Pipeline::Job->new
+   	   (
+	     '-dbobj'    => $self->db,
+             '-adaptor'  => $self,
+	     '-id'       => $job_id,
+	     '-process_id' => $process_id,
+	     '-queue_id' => $queue_id,
+ 	    '-inputs'   => \@inputs,
+ 	    '-stdout'   => $stdout_file,
+	     '-stderr'   => $stderr_file,
+ 	    '-input_object_file' => $object_file,
+	     '-analysis' => $analysis,
+ 	    '-retry_count' => $retry_count,
+ 	    '-stage'     => $stage,
+ 	    '-status'    => $status,
+  	  );
+        push (@jobs,$job);
+    }
+    return @jobs;
+}
+
+
+sub fetch_completed_jobs {
+    my ($self,$num_jobs) = @_;
+
+    my @jobs;
+
+    my $sth = $self->prepare( q{
+     SELECT job_id, process_id, analysis_id, queue_id, object_file,
+        stdout_file, stderr_file, retry_count,status,stage
+     FROM job
+     WHERE status = 'COMPLETED'
+     LIMIT ? } );
+
+    $sth->execute($num_jobs);
+
+    while (my ($job_id, $process_id, $analysis_id, $queue_id, $object_file,
+               $stdout_file, $stderr_file, $retry_count, $status, $stage ) = $sth->fetchrow_array){
+
+         my $analysis =
+           $self->db->get_AnalysisAdaptor->
+                fetch_by_dbID( $analysis_id );
+
+           # getting the inputs
+            my @inputs= $self->db->get_InputAdaptor->fetch_inputs_by_jobID($job_id);
+
+           my $job = Bio::Pipeline::Job->new
+           (
+             '-dbobj'    => $self->db,
+             '-adaptor'  => $self,
+             '-id'       => $job_id,
+             '-process_id' => $process_id,
+             '-queue_id' => $queue_id,
+            '-inputs'   => \@inputs,
+            '-stdout'   => $stdout_file,
+             '-stderr'   => $stderr_file,
+            '-input_object_file' => $object_file,
+             '-analysis' => $analysis,
+            '-retry_count' => $retry_count,
+            '-stage'     => $stage,
+            '-status'    => $status,
+          );
+        push (@jobs,$job);
+    }
+    return @jobs;
+}
+
+
+
 =head2 fetch_by_analysisId_and_processId_
 
   Title   : fetch_by_analysisId_and_processId
