@@ -8,7 +8,7 @@ INSERT INTO converter_methods VALUES (2, 1, 'convert', 2);
 
 INSERT INTO converter_arguments VALUES (1, 1, '-in', 'Bio::SeqFeature::Gene::GeneStructure', 1);
 INSERT INTO converter_arguments VALUES (2, 1, '-out', 'Bio::EnsEMBL::Gene', 2);
-INSERT INTO converter_arguments VALUES (3, 2, '-input', 'INPUT', 1);
+INSERT INTO converter_arguments VALUES (3, 2, '-input', 'INPUT', 3);
 
 
 INSERT INTO converters SET converter_id=4, module='jalfjalsfkajlsf';

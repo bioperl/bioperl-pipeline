@@ -5,7 +5,7 @@ use strict;
 BEGIN{
 	use lib 't';
 	use Test;
-	plan tests => 6;
+	plan tests => 29;
 }
 
 use BiopipeTestDB;
@@ -23,9 +23,8 @@ my $ca = new Bio::Pipeline::SQL::ConverterAdaptor($dba);
 my $converter = $ca->fetch_by_dbID("1");
 &_check_converter($converter, 1, "Bio::SeqFeatureIO");
 
-print "finishing the fetch test, and starting the store test\n";
 
-my $converter = new Bio::Pipeline::Converter(
+$converter = new Bio::Pipeline::Converter(
 	-dbid => 10,
 	-module => "foomodule"
 );
@@ -97,13 +96,11 @@ sub _check_converter_method{
 	foreach my $argument (@arguments){
 		my $argument_id = $argument->dbID;
 		if($argument_id ==1 && $dbID == 1){
-			&_check_converter_argument($argument, 1, '-in', 'Bio::SeqFeature::Gene::GeneStructure');
+			&_check_converter_argument($argument, 1, '-in', 'Bio::SeqFeature::Gene::GeneStructure',1);
 		}elsif($argument_id == 2 && $dbID == 1){
-			&_check_converter_argument($argument, 2, '-out', 'Bio::EnsEMBL::Gene');
+			&_check_converter_argument($argument, 2, '-out', 'Bio::EnsEMBL::Gene',2);
 		}elsif($argument_id ==3 && $dbID == 2){
-			&_check_converter_argument($argument, 3, '-input', 'INPUT');
-		}else{
-			print "error\n";
+			&_check_converter_argument($argument, 3, '-input', 'INPUT',3);
 		}
 	}
 
