@@ -78,11 +78,13 @@ sub new {
                                                                 JOB_ID)],@args);
 
   $name || $self->throw("Need an input name");
-  $input_handler || $self->throw("Need an input_handler attached to this input.");
+
+  #allow direct variable, string to be fed.
+  #$input_handler || $self->throw("Need an input_handler attached to this input.");
+  $input_handler && $self->input_handler($input_handler);
   $self->job_id($job_id) if defined $job_id;
   $self->tag($tag);
   $self->name($name);
-  $self->input_handler($input_handler);
   $self->dynamic_arguments($dyn_arg);
   
   return $self;
@@ -101,8 +103,12 @@ sub new {
 
 sub fetch{
   my ($self) = @_;
-
-  return $self->input_handler->fetch_input($self);
+  if(!$self->input_handler) {
+      return $self->name;
+  }
+  else {
+    return $self->input_handler->fetch_input($self);
+  }
 }
 
 

@@ -148,7 +148,6 @@ END
 sub create_input {
     my ($self,$name,$ioh) = @_;
     $name || $self->throw("Need an input name to create input");
-    $ioh  || $self->throw("Need an iohandler for input");
 
     my $input_obj = Bio::Pipeline::Input->new(-name => $name,
                                               -input_handler => $ioh);
