@@ -144,6 +144,15 @@ is to allow inputs from different database sources.
 
         Default parameters:
 
+          <program>blastall</program>
+
+          This specifies the program to use.
+
+          <program_file>/usr/local/bin/blastall</program_file>
+
+          This specifies the actual location of the executable. Modify accoordingly. Note if
+          this can be seen on command line at the nodes, then it is unnecessary. 
+
           <db_file>/data0/shawn_tmp/blast.fa</db_file>
 
           This is the blast database that you want to blast your input_file against.
@@ -297,6 +306,7 @@ is to allow inputs from different database sources.
       <db>family</db>
       <db_file>/data0/shawn_tmp/blast.fa</db_file>
       <program>blastall</program>
+      <program_file>/usr/local/bin/blastall</program_file>
       <parameters>-p blastp -e 1-e05 -formatdb 1 -result_dir /tmp/blast_dir/blast_result/ </parameters>
     </analysis>
 
