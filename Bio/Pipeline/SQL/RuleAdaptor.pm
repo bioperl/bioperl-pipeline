@@ -143,15 +143,9 @@ sub fetch_all {
   $sth->execute;
 
   while( @queryResult = $sth->fetchrow_array ) {
-    $rule = Bio::Pipeline::Rule->new
-      ( '-dbid'    => $queryResult[0],
-        '-current' => $queryResult[1],
-        '-next'    => $queryResult[2],
-        '-action'  => $queryResult[3],
-        '-adaptor' => $self );
+    $rule = $self->fetch_by_dbID($queryResult[0]);
     $rules{$queryResult[0]} = $rule;
   }
-
   return values %rules;
 }
 
@@ -182,14 +176,17 @@ sub fetch_by_dbID {
   if( ! defined $queryResult ) {
     return undef;
   }
-      
+
+  my $current = $self->db->get_AnalysisAdaptor->fetch_by_dbID($queryResult->{current});
+  my $next = $self->db->get_AnalysisAdaptor->fetch_by_dbID($queryResult->{next});
+
   $rule = Bio::Pipeline::Rule->new
     ( '-dbid'    => $queryResult->{rule_id} ,
-      '-current'    => $queryResult->{current} ,
-      '-next'    => $queryResult->{next} ,
+      '-current'    => $current,
+      '-next'    => $next ,
       '-action'  => $queryResult->{action} ,
       '-adaptor' => $self );
-
+      
   return $rule;
 }
 
