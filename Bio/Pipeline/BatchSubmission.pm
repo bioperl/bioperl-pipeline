@@ -272,9 +272,11 @@ sub open_command_line{
 
 }
 
+#implemeted submit_batch should implement the action parameter to pass to runner.pl which
+#specifies the action to that the job undergoes according to the rule table
 sub submit_batch{
 
-  my ($self)= @_;
+  my ($self,$action)= @_;
   
   $self->throw("Sorry, you cannot call this method from a generic BatchSumission Object");
 
