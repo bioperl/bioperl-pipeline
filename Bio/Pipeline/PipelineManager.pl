@@ -383,18 +383,17 @@ sub create_new_job {
                }
             }
 
-            elsif ($action eq 'WAITFORALL') {
-            #waits for all the jobs of this analysis to finish before starting the new job
+           elsif($action eq "WAITFORALL"){
               if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
-                  my $new_job = $job->create_next_job($next_analysis);
-                  my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID, $new_job->dbID);
-                  foreach my $input (@inputs) {
-                     $new_job->add_input($input);
-                  }
-                  push (@new_jobs,$new_job);
+               my $new_job = $job->create_next_job($next_analysis);
+               my @inputs = $inputAdaptor->copy_inputs_map_ioh($job,$new_job);
+
+               foreach my $input (@inputs) {
+                 $new_job->add_input($input);
+               }
+               push (@new_jobs,$new_job);
               }
             }
-
             elsif ($action eq 'WAITFORALL_AND_UPDATE') {
         
               if (_check_all_jobs_complete($job) && !_next_job_created($job, $rule)) {

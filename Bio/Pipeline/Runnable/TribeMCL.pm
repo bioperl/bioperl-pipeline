@@ -73,7 +73,7 @@ Args    :
 sub datatypes {
   
   my ($self) = @_;
-  my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::SeqFeature::FeaturePair',
+  my $dt = Bio::Pipeline::DataType->new('-object_type'=>'Bio::Search::Hit::GenericHit',
                                         '-name'=>'sequence',
                                         '-reftype'=>'ARRAY');
                                           
@@ -115,6 +115,7 @@ Args    :
 
 sub run {
   my ($self) = @_;
+  my $err;
   my $protein = $self->protein || $self->throw("Input Proteins not set!");
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
@@ -129,7 +130,10 @@ sub run {
   eval {
       @clusters = $factory->run($protein);
   };
-  $self->output(@clusters);
-  return \@clusters;
+  if($err = $@){
+      $self->throw("Problems running TribeMCL for \n[$err]\n");
+  }
+  $self->output(\@clusters);
+  return $self->output; 
 
 }
