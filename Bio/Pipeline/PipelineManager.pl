@@ -35,13 +35,16 @@ use Bio::Pipeline::PipeConf qw (DBHOST
                                 JOBNAME
                                 RETRY
                                 SLEEP
+                                WAIT_FOR_ALL_PERCENT
+                                TIMEOUT
+                                
 			                    );
 
 $| = 1;
 
-my $chunksize    = 500000;  # How many InputIds to fetch at one time
-my $currentStart = 0;       # Running total of job ids
-my $completeRead = 0;       # Have we got all the input ids yet?
+#my $chunksize    = 500000;  # How many InputIds to fetch at one time
+#my $currentStart = 0;       # Running total of job ids
+#my $completeRead = 0;       # Have we got all the input ids yet?
 my $local        = 0;       # Run failed jobs locally
 my $analysis;               # Only run this analysis ids
 my $JOBNAME;                # Meaningful name displayed by bjobs
@@ -61,7 +64,9 @@ GetOptions(
     'usenodes=s'  => \$USENODES,
     'once!'       => \$once,
     'retry=i'     => \$RETRY,
-    'analysis=s'  => \$analysis
+    'analysis=s'  => \$analysis,
+    'wait_for_all_percent=i'=>\$WAIT_FOR_ALL_PERCENT,
+    'timeout=s'   => \$TIMEOUT
 )
 or die ("Couldn't get options");
 
@@ -76,6 +81,18 @@ my $ruleAdaptor = $db->get_RuleAdaptor;
 my $jobAdaptor  = $db->get_JobAdaptor;
 my $inputAdaptor  = $db->get_InputAdaptor;
 my $analysisAdaptor = $db->get_AnalysisAdaptor;
+
+print "Fetching Analysis From Pipeline $DBNAME\n";
+
+my @analysis = $analysisAdaptor->fetch_all;
+
+print scalar(@analysis)." analysis found.\nRunning test and setup..\n\n//////////// Analysis Test ////////////\n";
+
+foreach my $anal (@analysis) {
+    $anal->test_and_setup;
+}
+
+print "///////////////////////////////////////\n\nTests Completed. Starting Pipeline\n";
 
 
 # scp
@@ -99,6 +116,7 @@ my @rules       = $ruleAdaptor->fetch_all;
 
 my $run = 1;
 my $submitted;
+my $total_jobs = scalar($jobAdaptor->fetch_all);
 while ($run) {
     
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db,-queue=>$QUEUE);
@@ -160,13 +178,20 @@ while ($run) {
     my $count = $jobAdaptor->job_count($RETRY);
     $run =  0 if ($once || !$count);
     sleep($SLEEP) if ($run && !$submitted);
-    $completeRead = 0;
-    $currentStart = 0;
+    #$completeRead = 0;
+    #$currentStart = 0;
     print "Waking up and run again!\n";
 }
 
+=head
+#used to check whether state of pipeline has changed since last.
+sub pipeline_state_changed {
+    my (@jobs) = @_;
+    foreach my $job(@jobs){
+=cut        
 
-sub create_new_job{
+
+sub create_new_job {
     my ($job) = @_;
     my @rules       = $ruleAdaptor->fetch_all;
     my @new_jobs;
@@ -278,15 +303,19 @@ sub _get_waiting_job {
 }
 
 sub _check_all_jobs_complete {
-my ($job) = @_;
-my $status = 1;
-    my @jobs = $jobAdaptor->fetch_by_analysisId_and_processId($job->analysis->dbID, $job->process_id);
-    foreach my $old_job (@jobs) {
-      if ($old_job->status ne 'COMPLETED') {
-         $status = 0;
-      }
+  my ($job) = @_;
+  my $status = 1;
+  my @jobs = $jobAdaptor->fetch_by_analysisId_and_processId($job->analysis->dbID, $job->process_id);
+  my $nbr;
+  foreach my $old_job (@jobs) {
+    if ($old_job->status ne 'COMPLETED') {
+      $nbr++;
     }
-    return $status;
+  }
+  if((int($nbr/$total_jobs) * 100) < $WAIT_FOR_ALL_PERCENT){
+      $status = 0;
+  }
+  return $status;
 }
 
 
