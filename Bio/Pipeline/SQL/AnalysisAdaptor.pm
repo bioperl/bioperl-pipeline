@@ -223,13 +223,37 @@ sub fetch_converters_by_iohandler {
 sub fetch_next_analysis {
     my ($self,$anal) = @_;
     my @rules = $self->db->get_RuleAdaptor->fetch_all;
+    my @analysis;
     foreach my $rule(@rules){
       if(defined ($rule->current) && $rule->current->dbID == $anal->dbID){
-          return $self->db->get_AnalysisAdaptor->fetch_by_dbID($rule->next->dbID);
+          push @analysis, $self->fetch_by_dbID($rule->next->dbID);
       }
     }
-    return undef;
+    return @analysis;
 }
+
+=head2 fetch_prev_analysis
+
+  Title   : fetch_prev_analysis
+  Usage   : my $analysis = $adaptor->fetch_prev_analysis
+  Function: fetches the previous analysis based on current analysis
+  Returns : the prev analysis based on rules, undef if not found
+  Args    : L<Bio::Pipeline::Analysis>
+
+=cut
+
+sub fetch_prev_analysis {
+    my ($self,$anal) = @_;
+    my @rules = $self->db->get_RuleAdaptor->fetch_all;
+    my @analysis;
+    foreach my $rule(@rules){
+      if(defined ($rule->next) && $rule->next->dbID == $anal->dbID){
+          push @analysis, $self->fetch_by_dbID($rule->current->dbID);
+      }
+    }
+    return @analysis;
+}
+
 
 
 =head2 fetch_create_input_id_ioh
