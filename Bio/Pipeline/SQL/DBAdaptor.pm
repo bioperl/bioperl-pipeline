@@ -135,17 +135,15 @@ sub new {
         $host = 'localhost';
     }
     if ( ! $port ) {
-        $port = undef; 
+        $port = 3306; 
     }
     if (! $password) {
-        $password = undef;
+        $password = '';
     }
 
-    my $dsn = "DBI:$driver:database=$db;host=$host;port=$port";
 
-  my $dbh = DBI->connect("$dsn","$user",$password, {RaiseError => 1});
-
-  $dbh || $self->throw("Could not connect to database $db user $user using [$dsn] as a locator");
+  my $dsn = "DBI:$driver:database=$db;host=$host;port=$port";
+  my $dbh = DBI->connect("$dsn","$user","$password", {RaiseError => 1}) || $self->throw("Could not connect to database $db user $user using [$dsn] as a locator");
 
   $self->_db_handle($dbh);
   $self->username( $user );
@@ -440,7 +438,7 @@ sub _unlock_tables{
 =head2 get_XXXAdaptor
 
  Title   : get_XXXAdaptor
- Usage   : my $feat = $dba->get_SeqFeatureAdaptor->fetch_by_entity_id
+ Usage   : my $feat = $dba->get_JobAdaptor
  Function: Fetches the adaptor for objects
            Uses the AUTOLOAD function to get the adaptor
            The available adaptors are specified in the ADAPTORS array
