@@ -5,11 +5,12 @@
 BEGIN {
     use lib 't';
     use Test;
-    plan tests => 12;
+    $NTESTS = 12;
+    plan tests => $NTESTS;
 }
 
 END {
-     foreach( $Test::ntest..NUMTESTS) {
+     foreach( $Test::ntest..$NTESTS) {
       skip('Blast or env variables not installed correctly',1);
      }
     unlink "t/data/blast_dir/blast.fa.1";
@@ -45,7 +46,15 @@ if( ! $blast_present ) {
 my $biopipe_test = BiopipeTestDB->new();
 ok $biopipe_test;
 
-open (STDERR, ">/dev/null");
+#open (STDERR, ">/dev/null");
+eval {
+   require('XML::Parser');
+};
+if ($@) {
+   warn(" XML::Parser not installed, skipping test"); 
+   skip('XML::Parser not installed',1);
+   exit;
+}  
 $biopipe_test->do_xml_file("xml/templates/blast_file_pipeline.xml"),0;
 
 $biopipe_test->run_pipeline(), 0;
@@ -60,10 +69,3 @@ ok -e "t/data/blast_result/blast.fa.2.bls";
 ok -e "t/data/blast_result/blast.fa.3.bls";
 ok -e "t/data/blast_result/blast.fa.4.bls";
 ok -e "t/data/blast_result/blast.fa.5.bls";
-
-
-
-
-
-
-
