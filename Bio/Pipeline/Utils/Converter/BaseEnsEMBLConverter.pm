@@ -59,6 +59,16 @@ sub contig_name{
     return $self->{"_contig_name"};
 }
 
+sub contig{
+    my ($self, $arg) = @_;
+    if(defined $arg && ref($arg) eq 'Bio::EnsEMBL::RawContig'){
+        $self->{'_contig'} = $arg;
+        $self->{'_contig_dbid'} = $arg->dbID;
+        $self->{'_contig_name'} = $arg->name;
+    }
+    return $self->{'_contig'};
+}
+
 sub analysis_logic_name{
     my ($self, $arg) = @_;
     if(defined $arg){
@@ -86,6 +96,7 @@ sub analysis_id{
             $self->{'_analysis_logic_name'} = $analysis->logic_name;
         };
         # This is not an honest implementation, but works with BaseFeatureAdaptor well.
+        # Because it just need an Analysis object with ID.
         if($@){
             $analysis = Bio::EnsEMBL::Analysis->new(
                 -ID => $arg
@@ -100,7 +111,7 @@ sub analysis_id{
     
 sub analysis{
     my ($self, $arg) = @_;
-    if(defined $arg){
+    if(defined $arg && ref($arg) eq 'Bio::EnsEMBL::Analysis'){
         $self->{'_analysis'} = $arg;
         $self->{'_analysis_id'} = $arg->dbID;
         $self->{'_analysis_logic_name'} = $arg->logic_name;

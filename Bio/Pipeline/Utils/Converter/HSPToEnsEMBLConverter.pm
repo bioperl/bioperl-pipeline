@@ -1,4 +1,4 @@
-:
+
 package Bio::Pipeline::Converter::HSPToEnsEMBLConverter;
 
 use vars qw(@ISA);
@@ -42,7 +42,7 @@ sub convert{
       my @hsps = @{$arg};
       my @align_features;
       foreach my $hsp (@hsps){
-          my $align_feature = $self->_hsp_2ens($hsp);
+          my $align_feature = $self->_convert_single($hsp);
           push @align_features, $align_feature;
       }
       return \@align_features;
@@ -74,8 +74,14 @@ sub program{
 
 =cut
 
-sub _hsp_2ens{
+sub _convert_single{
     my ($self, $hsp) = @_;
+    
+    $hsp || $self->throw("a input object needed");
+    unless($hsp->isa("Bio::Search::HSP::GenericHSP"){
+        $self->throw("a Bio::Search::HSP::GenericHSP object needed");
+    }
+    
     my $program = $self->program; 
     my $align_feature;
     

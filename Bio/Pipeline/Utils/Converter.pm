@@ -49,9 +49,10 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR - Kiran 
+=head1 AUTHOR - Juguang, Kiran
 
-Email kiran@fugu-sg.org
+Xiao Juguang <juguang@fugu-sg.org>
+Kiran <kiran@fugu-sg.org>
 
 =head1 APPENDIX
 
@@ -127,20 +128,28 @@ sub _initialize{
 =cut
 
 sub convert {
-	my ($self, $input) = @_;
+	 my ($self, $input_ref) = @_;
 
-	$input || $self->throw("Need an input object to convert");
-	my $obj = $self->_create_obj($self->module);
+	 $input_ref || $self->throw("Need a ref of array of input objects to convert");
+    unless(ref($input_ref) eq "ARRAY"){
+        $self->throw("The input of convert is supposed to be a ref of array");
+    }
+
+    my @inputs = @{$input_ref};
+    my @outputs;
+    foreach my $input (@inputs){
+        my $output = $self->_convert_single($input);
+        push @outputs, $output;
+    }
+    
+    return \@outputs;
+}
 
 
-	my @methods = sort {$a->rank <=> $b->rank} @{$self->method};
-	foreach my $method (@methods){
-				
-
-	}
-	my $method = $self->method;
-	my $output = $obj->$method($input);
-	return $output;
+sub _convert_single{
+    my ($self) = @_;    
+    $self->throw("Not implemented. Please check the instance subclass.");
+    
 }
 
 =head2 ens_dbadaptor
