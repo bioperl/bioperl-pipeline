@@ -66,7 +66,7 @@ sub fetch_by_dbID {
 
   my $sth = $self->prepare( q{
    SELECT job_id, analysis_id, queue_id, object_file,
-      stdout_file, stderr_file, retry_count
+      stdout_file, stderr_file, retry_count,status,stage
     FROM job
     WHERE job_id = ? } );
   
@@ -106,7 +106,9 @@ sub fetch_by_dbID {
    '-stderr'   => $hashref->{'stderr_file'},
    '-input_object_file' => $hashref->{'object_file'},
    '-analysis' => $analysis,
-   '-retry_count' => $hashref->{'retry_count'}
+   '-retry_count' => $hashref->{'retry_count'},
+   '-stage'     => $hashref->{'stage'},
+   '-status'    => $hashref->{'status'}
   );
 
   if( ! defined $hashref ) {
@@ -321,15 +323,21 @@ sub update {
            stderr_file = ?,
            object_file = ?,
            retry_count = ?,
-           queue_id = ?
+           queue_id = ?,
+           stage = ?,
+           status = ?
      WHERE job_id = ? } );
 
+  eval {
   $sth->execute( $job->stdout_file,
 		 $job->stderr_file,
 		 $job->input_object_file,
 		 $job->retry_count,
 		 $job->QUEUE_ID,
+		 $job->stage,
+		 $job->status,
 		 $job->dbID );
+  };if ($@) { $self->throw("ATTEMPT TO UPDATE JOB FAILED.\n.$@");}
 }
 
 
@@ -398,14 +406,14 @@ sub exists {
 =cut
 
 sub set_status {
-    my ($self,$job,$arg) = @_;
+    my ($self,$job) = @_;
 
     if( ! defined $job->dbID ) {
       $self->throw( "Job has to be in database" );
     }
 
     eval {	
-	    my $sth = $self->prepare(   "update job set status='$arg',time=now()
+	    my $sth = $self->prepare(   "update job set status='".$job->status."',time=now()
                                     where job_id = ".$job->dbID);
 	    $sth->execute();
     };
@@ -426,7 +434,7 @@ sub set_status {
 =cut
 
 sub set_stage {
-    my ($self,$job,$arg) = @_;
+    my ($self,$job) = @_;
 
     if( ! defined $job->dbID ) {
       $self->throw( "Job has to be in database" );
@@ -434,7 +442,7 @@ sub set_stage {
 
 
     eval {	
-	    my $sth = $self->prepare(   "update job set stage='$arg'
+	    my $sth = $self->prepare(   "update job set stage='".$job->status."' 
                                     where job_id = ". $job->dbID);
 	    $sth->execute();
     };
@@ -473,6 +481,8 @@ sub get_status {
     } 
 
     my ($status) = $sth->fetchrow_array();
+
+    $job->status($status);
     
     return $status;
 }
@@ -506,6 +516,7 @@ sub get_stage {
     } 
     my ($stage) = $sth->fetchrow_array();
     
+    $job->stage($stage);
     return $stage;
 }
 

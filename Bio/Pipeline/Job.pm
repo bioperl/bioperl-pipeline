@@ -62,17 +62,19 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$queueid,$inputs,$output_adp,$analysis,$stdout,$stderr,$obj_file, $retry_count ) 
+    my ($adaptor,$dbID,$queueid,$inputs,$output_adp,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage ) 
 	= $self->_rearrange([qw(ADAPTOR
             				ID
 			            	QUEUE_ID
 			            	INPUTS
-                    OUTPUT
+                            OUTPUT
 			            	ANALYSIS
 			            	STDOUT
 		            		STDERR
 	            			INPUT_OBJECT_FILE
             				RETRY_COUNT
+            				STATUS
+            				STAGE
 		        		)],@args);
 
 				
@@ -94,12 +96,14 @@ sub new {
     $self->retry_count      ($retry_count);
     $self->QUEUE_ID         ($queueid);
     $self->output_adaptor($output_adp);
+    $self->status($status);
+    $self->stage($stage);
 
     @{$self->{'_inputs'}}= ();
 
     foreach my $input (@{$inputs}){
         $self->add_input($input);
-    }  
+    }
 
     return $self;
 }
@@ -251,177 +255,11 @@ sub analysis {
 }
 
 
-=head2 flush_runs
+=head2 run
 
-  Title   : flush_runs
-  Usage   : $job->flush_runs( jobadaptor, [queue] );
-  Function: Issue all jobs in the queue and empty the queue.
-    Set QUEUE id in all jobs. Uses the given adaptor for connecting to
-    db. Uses last job in queue for stdout/stderr. 
-  Returns : 
-  Args    : 
-
-=cut
-
-sub flush_runs {
-  my $self = shift;
-
-  my $adaptor = shift;
-  my $QUEUE_params = shift;
-  my @queues;
-  
-  my $nodes   = $QUEUE_params->{'nodes'}   || undef;
-  my $queue   = $QUEUE_params->{'queue'}   || undef;
-  my $jobname = $QUEUE_params->{'jobname'} || undef;
-
-  if( !defined $adaptor ) {
-    $self->throw( "Cannot run remote without db connection" );
-  }
-
-  local *SUB;
-  local *FILE;
-
-  if( ! defined $queue ) {
-    @queues = keys %batched_jobs;
-  } else {
-    @queues = ( $queue );
-  }
-  
-  my $db       = $adaptor->db;
-  my $host     = $db->host;
-  my $username = $db->username;
-  my $dbname   = $db->dbname;
-  my $pass     = $db->password;
-  my $queueid;
-
-  # runner.pl: first look in PipeConf.pm,
-  # then in same directory as Job.pm,
-  # and fail if not found
-
-  my $runner = $RUNNER || undef;
-
-  unless (-x $runner) {
-    $runner = __FILE__;
-    $runner =~ s:/[^/]*$:/runner.pl:;
-    $self->throw("runner undefined - needs to be set in PipeConf.pm\n") unless defined $runner;
-  }
-
-  for my $queue ( @queues ) {
-
-    if (! (defined $batched_jobs{$queue}) || ! scalar (@{$batched_jobs{$queue}})) {
-      next;
-    }
-
-    my $lastjob = $adaptor->fetch_by_dbID( $batched_jobs{$queue}->[$#{$batched_jobs{$queue}}] );
-
-    if( ! defined $lastjob ) {
-      $self->throw( "Last batch job not in db" );
-    }
-  
-    my $cmd;
-  
-    $cmd = "bsub -o ".$lastjob->stdout_file;
-    if ($nodes) {
-	# $nodes needs to be a space-delimited list
-	$nodes =~ s/,/ /;
-	$nodes =~ s/ +/ /;
-	# undef $nodes unless $nodes =~ m{(\w+\ )*\w};
-        $cmd .= " -m '$nodes' ";
-    }
-    $cmd .= " -q $queue " if defined $queue;
-    $cmd .= " -J $jobname " if defined $jobname;
-    $cmd .= " -r -e ".$lastjob->stderr_file." -E \"$runner -check\" ";
-
-    # check if the password has been defined, and write the
-    # "connect" command line accordingly (otherwise -pass gets the
-    # first job id as password, instead of remaining undef)
-
-    if ($pass) {
-      $cmd .= $runner." -host $host -dbuser $username -dbname $dbname -pass $pass ".join( " ",@{$batched_jobs{$queue}} );
-    }
-    else {
-      $cmd .= $runner." -host $host -dbuser $username -dbname $dbname ".join( " ",@{$batched_jobs{$queue}} );
-    }
-    
-    print STDERR "$cmd\n";
-    open (SUB,"$cmd 2>&1 |");
-  
-    while (<SUB>) {
-      if (/Job <(\d+)>/) {
-        $queueid = $1;
-      }
-    }
-    close(SUB);
-
-    if( ! defined $queueid ) {
-      print STDERR ( "Couldnt submit ".join( " ",@{$batched_jobs{$queue}} )." to QUEUE" );
-      foreach my $jobid ( @{$batched_jobs{$queue}} ) {
-        my $job = $adaptor->fetch_by_dbID( $jobid );
-        $job->set_status( "FAILED" );
-      }
-    } else {
-    
-      foreach my $jobid ( @{$batched_jobs{$queue}} ) {
-        my $job = $adaptor->fetch_by_dbID( $jobid );
-        if( $job->retry_count > 0 ) {
-          for ( $job->stdout_file, $job->stderr_file ) {
-            open( FILE, ">".$_ ); close( FILE );
-          }
-        }
-	$job->QUEUE_id( $queueid );
-        # $job->create_queuelogfile;
-        $job->retry_count( $job->retry_count + 1 );
-        $job->set_status( "SUBMITTED" );
-        $adaptor->update( $job );
-      }
-    }
-    $batched_jobs{$queue} = [];
-    $batched_jobs_runtime{$queue} = 0;
-  }
-}
-
-
-=head2 batch_runRemote
-
-  Title   : batch_runRemote
-  Usage   : $job->batch_runRemote
-  Function: Issue more than one small job in one QUEUE job because 
-    job submission is very slow
-  Returns : 
-  Args    : Is static, private function, dont call with arrow notation.
-
-=cut
-
-sub batch_runRemote {
-  my $self = shift;
-  my $QUEUE_params = shift;
-
-  my $batchsize = $QUEUE_params->{'flushsize'} || 1;
-  my $queue     = $QUEUE_params->{'queue'};
-  
-  # should check job->analysis->runtime
-  # and add it to batched_jobs_runtime
-  # but for now just
-  push( @{$batched_jobs{$queue}}, $self->dbID );
-  if ( scalar( @{$batched_jobs{$queue}} ) >= $batchsize ) {
-    $self->flush_runs( $self->adaptor, $QUEUE_params );
-  }
-}
-
-
-
-
-
-=head2 runLocally
-=head2 runRemote( boolean withDB, queue )
-=head2 runInQUEUE
-
-  Title   : running
+  Title   : run
   Usage   : $self->run...;
-  Function: runLocally doesnt submit to QUEUE
-            runInQUEUE is like runLocally, but doesnt redirect STDOUT and 
-            STDERR. 
-            runRemote submits to QUEUE via the runner.pl script.
+  Function: 
   Returns : 
   Args    : 
 
@@ -437,6 +275,7 @@ sub run {
 
 
   print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
+
 =jerm
   local *STDOUT;
   local *STDERR;
@@ -452,7 +291,7 @@ sub run {
     return;
   }
 =cut
-
+  
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
   }
@@ -550,42 +389,39 @@ sub write_object_file {
 }
 
 
-=head2 set_status
+=head2 status
 
-  Title   : set_status
-  Usage   : my $status = $job->set_status
-  Function: Sets the job status
-  Returns : nothing
-  Args    : status str.
+  Title   : status
+  Usage   : my $status = $job->status
+  Function: Gets/Sets the job status
+  Returns : status str.
+  Args    : status str (opt)
 
 =cut
 
-sub set_status {
+sub status {
   my ($self,$arg) = @_;
   
-  $self->throw("No status input" ) unless defined($arg);
+  if (defined $arg){
+    $self->{'_status'} = $arg;
+  }
+
+  return $self->{'_status'}; 
+}
+
+sub set_status{
+  my ($self,$arg) = @_;
   
-  
-  if (!(defined($self->adaptor))) {
-    $self->warn("No database connection.  Can't set status to $arg");
-    return;
+  $self->throw("no argument supplied in Job set_status") unless defined $arg;
+
+  if( ! defined( $self->adaptor )) {
+    return undef;
   }
 
   $self->{'_status'} = $arg;
-  
-  return $self->adaptor->set_status( $self, $arg );
+ 
+  $self->adaptor->set_status( $self );
 }
-
-
-=head2 get_status
-
-  Title   : get_status
-  Usage   : my $status = $job->get_status
-  Function: Get method for the job status
-  Returns : status str.
-  Args    : 
-
-=cut
 
 sub get_status{
   my ($self) = @_;
@@ -597,29 +433,24 @@ sub get_status{
   return $self->adaptor->get_status( $self );
 }
 
+=head2 stage
 
-=head2 set_stage
-
-  Title   : set_stage
-  Usage   : my $stage = $job->set_stage
-  Function: Sets the stage the job is currently in
-  Returns : nothing
-  Args    : stage str.
+  Title   : stage
+  Usage   : my $stage = $job->stage
+  Function: Gets/Sets the stage the job is currently in
+  Returns : stage str.
+  Args    : stage str (opt).
 
 =cut
 
-sub set_stage {
+sub stage {
   my ($self,$arg) = @_;
   
-  $self->throw("No stage input" ) unless defined($arg);
-  
-  
-  if (!(defined($self->adaptor))) {
-    $self->warn("No database connection.  Can't set stage to $arg");
-    return;
+  if (defined $arg){
+    $self->{'_stage'} = $arg;
   }
   
-  return $self->adaptor->set_stage( $self, $arg );
+  return $self->{'_stage'} = $arg;
 }
 
 
@@ -644,6 +475,18 @@ sub get_stage{
 }
 
 
+sub set_stage{
+  my ($self,$arg) = @_;
+  
+  $self->throw("no argument supplied in Job set_stage") unless defined $arg;
+
+  if( ! defined( $self->adaptor )) {
+    return undef;
+  }
+  $self->{'_status'} = $arg;
+ 
+  $self->adaptor->set_stage( $self );
+}
 
 sub make_filenames {
   my ($self) = @_;
@@ -670,8 +513,19 @@ sub make_filenames {
   $self->stdout_file($dir.$stub.".out");
   $self->stderr_file($dir.$stub.".err");
 
-  $self->adaptor->update($self);
 }
+
+sub update {
+    my ($self)= @_;
+
+    $self->throw("Job update failed because job object has no db_adaptor attached")
+    unless defined $self->adaptor;
+
+    $self->adaptor->update($self);
+
+}
+
+    
 
 
 sub create_queuelogfile {

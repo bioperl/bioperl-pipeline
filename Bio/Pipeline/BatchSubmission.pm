@@ -15,8 +15,8 @@ sub new{
 
     if ($class =~ /Bio::Pipeline::BatchSubmission::(\S+)/){
         my ($self) = $class->SUPER::new(@args);
-        my ($dbobj,$stdout,$stderr,$parameters,$pre_exec,$command,$queue,$jobname) =  
-                       $self->_rearrange([qw(   ADAPTOR
+        my ($dbobj,$stdout,$stderr,$parameters,$pre_exec,$command,$queue,$jobname,$nodes) =  
+                       $self->_rearrange([qw(   DBOBJ
                                                 STDOUT
                                                 STDERR
                                                 PARAMETERS
@@ -52,6 +52,11 @@ sub new{
         if (defined($jobname)){
             $self->jobname($jobname);
         }
+        if (defined($nodes)){
+            $self->nodes($nodes);
+        }
+
+        @{$self->{'_jobs'}}=();
         
         return $self;
 
@@ -95,6 +100,11 @@ sub batched_jobs{
     return scalar(@{$self->{'_jobs'}});
 }
 
+sub _empty_batch{
+    my ($self) = @_;
+    @{$self->{'_jobs'}} = ();
+}
+
 
 sub dbobj{
     my ($self,$arg) = @_;
@@ -110,10 +120,10 @@ sub stdout_file{
    my ($self, $arg) = @_;
 
    if(defined($arg)){
-     $self->{'stdout'} = $arg;
+     $self->{'_stdout'} = $arg;
    }
 
-   return $self->{'stdout'};
+   return $self->{'_stdout'};
 }
 
 
@@ -122,10 +132,65 @@ sub stderr_file{
    my ($self, $arg) = @_;
 
    if(defined($arg)){
-     $self->{'stderr'} = $arg;
+     $self->{'_stderr'} = $arg;
    }
 
-   return $self->{'stderr'};
+   return $self->{'_stderr'};
+}
+
+sub parameters{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_paramemters'} = $arg;
+   }
+
+   return $self->{'_parameters'};
+}
+sub pre_exec{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_pre_exec'} = $arg;
+   }
+
+   return $self->{'_pre_exec'};
+}
+sub command{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_command'} = $arg;
+   }
+
+   return $self->{'_command'};
+}
+sub queue{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_queue'} = $arg;
+   }
+
+   return $self->{'_queue'};
+}
+sub jobname{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_jobname'} = $arg;
+   }
+
+   return $self->{'_jobname'};
+}
+sub nodes{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_nodes'} = $arg;
+   }
+
+   return $self->{'_nodes'};
 }
 
 #############

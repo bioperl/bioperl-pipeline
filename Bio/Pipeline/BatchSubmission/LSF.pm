@@ -111,6 +111,10 @@ sub submit_batch{
     }
     close (SUB);
 
+    $self->_empty_batch;
+    
+    return 1;
+
 }
 
 sub construct_command_line{

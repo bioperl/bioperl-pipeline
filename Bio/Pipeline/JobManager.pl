@@ -18,6 +18,7 @@ use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::SQL::BaseAdaptor;
+use Bio::Pipeline::BatchSubmission;
 
 # defaults: command line options override pipeConf variables,
 # which override anything set in the environment variables.
@@ -35,7 +36,7 @@ use Bio::Pipeline::PipeConf qw ( DBHOST
             			        );
 $| = 1;
 
-my $local        = 1;       # Run failed jobs locally
+my $local        = 0;       # Run failed jobs locally
 my $JOBNAME;                # Meaningful name displayed by bjobs
 		            	    # aka "bsub -J <name>"
 			                # maybe this should be compulsory, as
@@ -88,25 +89,35 @@ $QUEUE_params->{'jobname'}   = $JOBNAME if defined $JOBNAME;
 
 #fetching jobs that are have status NEW or 
 #have failed with a retry count less than the variable set in PipeConf.
-my @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
 
-my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db);
 
-while (@jobs) {
+my $run = 1;
+while ($run) {
+
+    my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db);
+    my @jobs = $jobAdaptor->fetch_new_failed_jobs($RETRY);
+    print STDERR "Running ".scalar(@jobs)."\n";
     
     foreach my $job(@jobs){
         if ($local){
-            $job->set_status('SUBMITTED');
+            $job->status('SUBMITTED');
             $job->make_filenames unless $job->filenames;
+            $job->update;
             $job->run;
         }else{
             $batchsubmitter->add_job($job);
-            $job->set_status('BATCHED');
-            $batchsubmitter->submit_batch unless $batchsubmitter->batched_jobs < $BATCHSIZE;
+            if ($job->status eq 'FAILED'){ 
+                my $retry_count = $job->retry_count;
+                $retry_count++;
+                $job->retry_count($retry_count);
+            }
+            $job->status('BATCHED');
+            $job->update;
+            $batchsubmitter->submit_batch unless ($batchsubmitter->batched_jobs < $BATCHSIZE);
         }
     }	    
 
-    $batchsubmitter->submit_batch;
+    $batchsubmitter->submit_batch if ($batchsubmitter->batched_jobs);
     
     exit 0 if $once;
     sleep($SLEEP);
