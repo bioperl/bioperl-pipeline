@@ -1,0 +1,488 @@
+<!--
+
+phylip_tree_pipeline.xml
+
+A Phylogenetic Tree Building Pipeline that uses the Phylip Suite 
+
+19 Nov 2002
+Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+http://www.biopipe.org
+
+<PIPELINE SUMMARY>
+
+Given files containing family of proteins run it through the following pipeline:
+
+Proteins->Clustalw->SeqBoot->ProtDist->Neighbor->Consense->DrawTree
+
+This is a file based analysis, that spits out files at each analysis.
+
+</PIPELINE SUMMARY>
+
+<DESCRIPTION>
+
+This pipeline is a phylogenetic pipeline that wraps certain phylip
+programs and allow for the jobs to be distributed.  It is currently
+tested and working on Phylip 3.5 but should work with Phylip3.6
+with some configuration. The aim is to allow objects to written
+both to database or files depending on one's specification.
+
+</DESCRIPTION>
+
+
+<XML ORGANIZATION>
+
+  <pipeline_setup>
+    <database_setup>
+    <iohandler_setup>
+    <pipeline_flow_setup>
+    <job_setup>(optional)
+  </pipeline_setup>
+
+  <database_setup>
+  This specifies the databases that the pipeline connects to and the
+  adaptor modules that intefaces with them.
+
+  <iohandler_setup>
+  This specifies the method calls that will be used by the pipeline
+  to access the databases. These methods are contained in the modules
+  specified by the database setup section above.
+
+  <pipeline_flow_setup>
+  This specifies the analysis and rules of the pipeline. Analysis
+  refer to the runnables that will be used in this pipeline while the
+  rules specify the order in which these analysis are to be run, including
+  any specific pre-processing actions that are to be carried out.
+
+  <job_setup>
+  This is an optional part that allows specific inputs to be inserted.
+  Usually, this is done using DataMongers and Input Create modules.
+
+</XML ORGANIZATION>
+
+
+<THE PHYLO PIPELINE>
+
+  <INSTALLATION>
+
+    <PERL PACKAGES>
+      The following perl packages are required:
+
+        <Bioperl>
+          bioperl-pipeline
+          bioperl-live
+          bioperl-run
+
+          Available thru anonymous cvs:
+
+          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-live
+          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
+          cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline
+
+
+          This is bleeding edge stuff so it is recommended that you use main trunk code for all three packages.
+ 
+          Note the schema for biopipe has moved to bioperl-pipeline/sql/schema.sql for convenience
+        </Bioperl>
+    </PERL PACKAGES>
+
+    <BINARIES>
+      NCBI's blastall
+    </BINARIES>
+ 
+  <CONFIGURING PIPELINE>
+
+      You will need to modify some parts of this XML file to point files to non-default places.
+
+      The following sections describe that.
+
+      TO WRITE
+
+  </CONFIGURING PIPELINE>    
+
+  <LOADING PIPELINE>
+      
+       The pipeline is loaded up using this XML file.
+       A new database will be automtically created maybe created for you. 
+       This is done using the Xml2Db.pl script found in bioperl-pipeline/scripts/Xml2Db.pl
+       Using the script:
+
+        ******************************
+        *Xml2DB.pl
+        ******************************
+        This script configures and creates a pipeline based on xml definitions.
+
+         Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+
+          Default values in ()
+            -dbhost host (mysql)
+            -dbname name of pipeline database (test_XML)
+            -dbuser user name (root)
+            -dbpass db password()
+            -schema The path to the bioperl-pipeline schema.
+                    Needed if you want to create a new db.
+                    (../sql/schema.sql)
+            -p      the pipeline setup xml file (required)
+
+        
+
+        Load the pipeline by cd-ing to the xml directory at bioperl-pipeline/xml
+
+        perl Xml2DB.pl -dbname mydbname -host myshost -p template/phylip_tree_pipeline.xml
+
+        Once this is done you are ready to run the pipeline.
+
+  </LOADING THE PIPELINE>
+
+  <RUNNING THE PIPELINE>
+
+    Go to bioperl-pipeline/scripts
+
+    Edit PipeConf.pm accordingly for your environment variables.
+
+    run the pipeline by doing:
+
+    perl PipelineManager.pl -dbname mydbname -dbuser root -dbhost pulse
+
+    you may use the -l option to run it in local mode without submitting to the nodes yet.
+    This will be a good test before submitting, and is recommened for first time use.
+
+  </RUNNING THE PIPELINE>
+
+  <AFTER NOTE>
+
+      Running pipelines are inherently for the brave hearted and we are glad you are willing to give
+      this a shot. We are working hard to ensure that it works as smoothly as possible.
+      Do let us know any problems that you face and suggestions that you have and we will do us best to help. 
+
+      In return, we ask that you keep a note down of your installation process and feedback that to us
+      so that we may make changes or improve our documentation.
+
+      cheers,
+
+      The Fugu Team
+
+   </AFTER NOTE>
+
+<CHANGE LOG>
+19 Dec 2002 - First Addition - shawn
+</CHANGE LOG>
+
+//-->
+
+<pipeline_setup>
+  <database_setup>
+    <streamadaptor id="1">
+      <module>Bio::Pipeline::Dumper</module>
+    </streamadaptor>
+  </database_setup>
+
+  <!-- fetch the sequence -->
+  <iohandler_setup>
+    <iohandler id="1">
+    <adaptor_id>1</adaptor_id>
+    <adaptor_type>STREAM</adaptor_type>
+    <iohandler_type>OUTPUT</iohandler_type>
+    <method>
+      <name>new</name>
+      <argument>
+        <tag>-dir</tag>
+        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+      </argument>
+      <argument>
+        <tag>-file_suffix</tag>
+        <value>cls</value>
+      </argument>
+      <argument>
+        <tag>-prefix</tag>
+        <value>INPUT</value>
+        <type>SCALAR</type>
+      </argument>
+      <argument>
+        <tag>-module</tag>
+        <value>generic</value>
+      </argument>
+      <argument>
+        <tag>-format</tag>
+        <value>phylip</value>
+      </argument>
+    </method>
+    <method>
+     <name>dump</name>
+     <argument>
+       <value>OUTPUT</value>
+     </argument>
+     </method>
+     </iohandler>
+   <iohandler id="2">
+    <adaptor_id>1</adaptor_id>
+    <adaptor_type>STREAM</adaptor_type>
+    <iohandler_type>OUTPUT</iohandler_type>
+    <method>
+      <name>new</name>
+      <argument>
+        <tag>-dir</tag>
+        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+      </argument>
+      <argument>
+        <tag>-file_suffix</tag>
+        <value>sb</value>
+      </argument>
+      <argument>
+        <tag>-prefix</tag>
+        <value>INPUT</value>
+        <type>SCALAR</type>
+      </argument>
+      <argument>
+        <tag>-module</tag>
+        <value>generic</value>
+      </argument>
+      <argument>
+        <tag>-format</tag>
+        <value>phylip</value>
+      </argument>
+    </method>
+    <method>
+     <name>dump</name>
+     <argument>
+       <value>OUTPUT</value>
+     </argument>
+     </method>
+     </iohandler>
+   <iohandler id="3">
+    <adaptor_id>1</adaptor_id>
+    <adaptor_type>STREAM</adaptor_type>
+    <iohandler_type>OUTPUT</iohandler_type>
+    <method>
+      <name>new</name>
+      <argument>
+        <tag>-dir</tag>
+        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+      </argument>
+      <argument>
+        <tag>-file_suffix</tag>
+        <value>pd</value>
+      </argument>
+      <argument>
+        <tag>-prefix</tag>
+        <value>INPUT</value>
+        <type>SCALAR</type>
+      </argument>
+      <argument>
+        <tag>-module</tag>
+        <value>generic</value>
+      </argument>
+      <argument>
+        <tag>-format</tag>
+        <value>phylip</value>
+      </argument>
+    </method>
+    <method>
+     <name>dump</name>
+     <argument>
+       <value>OUTPUT</value>
+     </argument>
+     </method>
+     </iohandler>
+   <iohandler id="4">
+    <adaptor_id>1</adaptor_id>
+    <adaptor_type>STREAM</adaptor_type>
+    <iohandler_type>OUTPUT</iohandler_type>
+    <method>
+      <name>new</name>
+      <argument>
+        <tag>-dir</tag>
+        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+      </argument>
+      <argument>
+        <tag>-file_suffix</tag>
+        <value>nb</value>
+      </argument>
+      <argument>
+        <tag>-prefix</tag>
+        <value>INPUT</value>
+        <type>SCALAR</type>
+      </argument>
+      <argument>
+        <tag>-module</tag>
+        <value>generic</value>
+      </argument>
+      <argument>
+        <tag>-format</tag>
+        <value>newick</value>
+      </argument>
+    </method>
+    <method>
+     <name>dump</name>
+     <argument>
+       <value>OUTPUT</value>
+     </argument>
+     </method>
+     </iohandler>
+   <iohandler id="5">
+    <adaptor_id>1</adaptor_id>
+    <adaptor_type>STREAM</adaptor_type>
+    <iohandler_type>OUTPUT</iohandler_type>
+    <method>
+      <name>new</name>
+      <argument>
+        <tag>-dir</tag>
+        <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+      </argument>
+      <argument>
+        <tag>-file_suffix</tag>
+        <value>con</value>
+      </argument>
+      <argument>
+        <tag>-prefix</tag>
+        <value>INPUT</value>
+        <type>SCALAR</type>
+      </argument>
+      <argument>
+        <tag>-module</tag>
+        <value>generic</value>
+      </argument>
+      <argument>
+        <tag>-format</tag>
+        <value>newick</value>
+      </argument>
+    </method>
+    <method>
+     <name>dump</name>
+     <argument>
+       <value>OUTPUT</value>
+     </argument>
+     </method>
+     </iohandler>
+  </iohandler_setup>
+
+        
+  <pipeline_flow_setup>
+    <analysis id="1">
+      <data_monger>
+        <input>
+          <name>input_file</name>
+        </input>
+        <input_create>
+           <module>setup_file</module>
+           <rank>1</rank>
+           <argument>
+             <tag>tag</tag>
+             <value>file</value>
+           </argument>
+            <argument>
+                <tag>input_file</tag>
+                <value>/usr/users/shawnh/src/bioperl-run/t/data/cysprot.fa</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>chop_nbr</tag>
+                <value>1</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>workdir</tag>
+                <value>/data0/shawn_tmp/phylip_dir</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>result_dir</tag>
+                <value>/data0/shawn_tmp/phylip_dir/phylip_result</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>runnable</tag>
+                <value>Bio::Pipeline::Runnable::Clustalw</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>informat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+            <argument>
+                <tag>outformat</tag>
+                <value>fasta</value>
+                <type>SCALAR</type>
+            </argument>
+         </input_create>
+      </data_monger>
+    </analysis>
+
+
+    <analysis id="2">
+      <logic_name>Clustalw</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Clustalw</runnable>
+      <program>align</program>
+      <analysis_parameters>-ktuple 2 -matrix BLOSUM </analysis_parameters>
+      <runnable_parameters>-infile_dir /data0/shawn_tmp/phylip_dir/</runnable_parameters>
+      <output_iohandler id="1"/>
+    </analysis>
+    <analysis id="3">
+      <logic_name>Phylip</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
+      <runnable_parameters>-program SeqBoot -infile_suffix cls -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <analysis_parameters>-replicates 10 </analysis_parameters>
+      <output_iohandler id="2"/>
+    </analysis>
+    <analysis id="4">
+      <logic_name>Phylip</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
+      <runnable_parameters>-program ProtDist -infile_suffix sb -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <analysis_parameters>-multiple 10 </analysis_parameters>
+      <output_iohandler id="3"/>
+    </analysis>
+    <analysis id="5">
+      <logic_name>Phylip</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
+      <runnable_parameters>-program Neighbor -infile_suffix pd -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <analysis_parameters>-multiple 10 </analysis_parameters>
+      <output_iohandler id="4"/>
+    </analysis>
+    <analysis id="6">
+      <logic_name>Phylip</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
+      <runnable_parameters>-program Consense -infile_suffix nb -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+      <output_iohandler id="5"/>
+    </analysis>
+    <analysis id="7">
+      <logic_name>Phylip</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Phylip</runnable>
+      <runnable_parameters>-program DrawTree -infile_suffix con -infile_dir /data0/shawn_tmp/phylip_dir/phylip_result</runnable_parameters>
+    </analysis>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+     <next_analysis_id>2</next_analysis_id>
+      <action>NOTHING</action>
+    </rule>
+    <rule>
+      <current_analysis_id>2</current_analysis_id>
+     <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID_FILE</action>
+    </rule>
+    <rule>
+      <current_analysis_id>3</current_analysis_id>
+     <next_analysis_id>4</next_analysis_id>
+      <action>COPY_ID_FILE</action>
+    </rule>
+    <rule>
+      <current_analysis_id>4</current_analysis_id>
+     <next_analysis_id>5</next_analysis_id>
+      <action>COPY_ID_FILE</action>
+    </rule>
+    <rule>
+      <current_analysis_id>5</current_analysis_id>
+     <next_analysis_id>6</next_analysis_id>
+      <action>COPY_ID_FILE</action>
+    </rule>
+    <rule>
+      <current_analysis_id>6</current_analysis_id>
+     <next_analysis_id>7</next_analysis_id>
+      <action>COPY_ID_FILE</action>
+    </rule>
+
+  </pipeline_flow_setup>
+
+  <job_setup>
+ </job_setup>
+
+</pipeline_setup>
