@@ -42,7 +42,6 @@ or the web:
 =head1 AUTHOR - Shawn Hoon
 
 Email shawnh@fugu-sg.org 
-
 =head1 APPENDIX
 
 The rest of the documentation details each of the object methods. Internal metho
@@ -50,8 +49,7 @@ ds are usually preceded with a _
 
 =cut
 
-
-package Bio::Pipeline::SQL::InputDBAAdaptor;
+package Bio::Pipeline::SQL::OutputDBAAdaptor;
 
 use vars qw(@ISA);
 use strict;
@@ -60,18 +58,16 @@ use Bio::DB::SQL::BaseAdaptor;
 use Bio::Pipeline::IO;
 @ISA = qw(Bio::DB::SQL::BaseAdaptor);
 
-
 =head 1 Fetch methods 
 These methods retrievs the adaptors
 
 =head2 fetch_by_dbID
 
   Title    : fetch_by_dbID
-  Function : fetches the adaptor to the input adaptor 
-  Example  : $in_adpt = $io ->fetch_by_dbID(1)
+  Function : fetches the adaptor to the output adaptor 
+  Example  : $out_adpt = $io->fetch_by_dbID(1)
   Returns  : Bio::Pipeline::IO 
   Args     : a string which specifies the id of the adaptor 
-
 =cut
 
 sub fetch_by_dbID {
@@ -84,8 +80,8 @@ sub fetch_by_dbID {
                               biodbname,
                               data_adaptor,
                               data_adaptor_method
-                              FROM input_dba 
-                              WHERE input_dba_id = '$id'"
+                              FROM output_dba 
+                              WHERE output_dba_id = '$id'"
                               );
     $sth->execute();
     
@@ -127,5 +123,4 @@ sub _fetch_db_adaptor {
 
 
 1;
-
 

@@ -49,7 +49,8 @@ use strict;
 use DBI;
 
 use Bio::DB::SQL::DBAdaptor;
-use Bio::Pipeline::SQL::IOAdaptor;
+use Bio::Pipeline::SQL::InputDBAAdaptor;
+use Bio::Pipeline::SQL::OutputDBAAdaptor;
 use Bio::Pipeline::SQL::RuleAdaptor;
 =head
 use Bio::Pipeline::SQL::AnalysisAdaptor;
@@ -118,6 +119,28 @@ sub get_input_dba_adaptor{
   return $self->{_InputDBAdaptor};
 }
 
+=head2 get_output_dba_adaptor
+
+ Title   : get_output_dba_adaptor
+ Usage   : $db->get_output_dba_adaptor
+ Function: The Adaptor for getting output adaptor objects in this db
+ Example :
+ Returns : Bio::Pipeline::SQL::OutputDBAAdaptor
+ Args    : nothing
+
+
+=cut
+
+sub get_output_dba_adaptor{
+  my ($self) = @_;
+
+  if( ! defined $self->{_OutputDBAdaptor} ) {
+    $self->{_OutputDBAdaptor} = Bio::Pipeline::SQL::OutputDBAAdaptor->new
+      ( $self );
+  }
+
+  return $self->{_OutputDBAdaptor};
+}
 
 =head2 get_AnalysisAdaptor
 
