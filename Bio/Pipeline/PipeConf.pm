@@ -51,17 +51,18 @@ use vars qw (%PipeConf);
     DBPASS     => '',
 
     # Batch Management system module
-    # Currently supports PBS and LSF
+    # Currently supports PBS and LSF,
     # ignored if run in local mode
     BATCH_MOD   =>  'LSF',
 
-    # farm queue
+    # farm queue, ignored if in local mode
     QUEUE      => 'normal3', 
     
-    # no of jobs to send to Batch Management system at one go
+    # no of jobs to send to Batch Management system at one go,
+    # ignored if in local mode
     BATCHSIZE  => 1 ,        
 
-    #bsub opt
+    # bsub opt, ignored if in local mode
     BATCH_PARAM => '-C0',
 
     # number of times to retry a failed job
@@ -73,15 +74,15 @@ use vars qw (%PipeConf);
 
     RUNNER     => '',   
 
-    #sleep time in seconds for  PipelineManager before waking up and looking for jobs to run 
+    # sleep time in seconds for PipelineManager before waking up and looking for jobs to run 
     SLEEP      => 3,
 
-    #number of jobs to be fetched by PipelineManager at a time
+    # number of jobs to be fetched by PipelineManager at a time
     FETCH_JOB_SIZE => 100,
 
-    #tell IOHandler.pm to release dbconnections once fetch is done so that 
-    #number of connections is hopefully minimized
-    RELEASE_DBCONNECTION =>0,
+    # tell IOHandler.pm to release dbconnections once fetch is done so that 
+    # number of connections is hopefully minimized
+    RELEASE_DBCONNECTION => 0,
 
     ##############################################
     # PARAMS FROM HERE ON NOT SUPPORTED CURRENTLY FOR FUTURE DEV
