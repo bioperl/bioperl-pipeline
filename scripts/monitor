@@ -1,0 +1,51 @@
+#!/usr/bin/perl
+use strict;
+use Bio::Pipeline::SQL::DBAdaptor;
+use Getopt::Long;
+use Data::ShowTable;
+use Bio::Pipeline::PipeConf qw(DBI_DRIVER DBHOST DBNAME DBUSER DBPASS);
+
+&GetOptions(
+    'dbhost=s'    => \$DBHOST,
+    'dbname=s'    => \$DBNAME,
+    'dbuser=s'    => \$DBUSER,
+    'dbpass=s'    => \$DBPASS,
+    'dbdriver=s'  => \$DBI_DRIVER,
+);
+
+sub help {
+    print "dbname\n";
+    exit;
+}
+
+&help() unless $DBNAME;
+
+my $db = Bio::Pipeline::SQL::DBAdaptor->new(
+    -dbname=>$DBNAME,
+    -user=>$DBUSER,
+    -host=>$DBHOST,
+    -pass=>$DBPASS
+);
+
+my $monitor = Bio::Pipeline::Monitor->new(
+    -dbobj => $db
+);
+
+# fetch all analysis
+my @analysis = $monitor->all_analysis;
+my @analysis_id_logicname = map{[$_->dbID, $_->logic_name]} @analysis;
+
+ANALYSIS:
+while(1){
+    ShowData('Simple', ['id', 'logicname'], ['char', 'char'], [[100, 100]],
+        @analysis_id_logicname);
+
+    my $analysis_id = promopt("Select an analysis to get vie job status [1-".
+        @analysis_id_logicname."]", "1");
+    my $analysis_logic = $analysis_id_logicname[$analysis_id-1]->[1];
+
+#    my %status = %{$monitor->analysisstatus($analysis_id)};
+    
+#    ShowData('Simple', 
+#        [
+}
