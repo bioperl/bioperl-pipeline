@@ -219,10 +219,20 @@ CREATE TABLE converter (
   converter_id		int(10) unsigned DEFAULT'0' NOT NULL auto_increment,
   module		varchar(255) NOT NULL,
   method                varchar(255) NOT NULL,
-	arugment	varchar(255) NOT NULL,
 
   PRIMARY KEY (converter_id)
 );
+
+
+CREATE TABLE converter_argument(
+	converter_argument_id int(10) unsigned DEFAULT '0' NOT NULL AUTO_INCREMENT,
+	converter_id INT(10) UNSIGNED NOT NULL,
+	tag VARCHAR(40) NOT NULL,
+	value VARCHAR(40),
+
+	PRIMARY KEY(converter_argument_id)
+);
+
 
 CREATE TABLE completed_jobs (
   completed_job_id      int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
