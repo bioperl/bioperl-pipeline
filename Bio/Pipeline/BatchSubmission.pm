@@ -541,4 +541,17 @@ sub submit_batch{
 
 }
 
+sub get_host_name{
+    my ($queue_id) = @_;
+    my $module = "Bio/Pipeline/BatchSubmission/$BATCH_MOD.pm";
+    eval {
+      require $module;
+   };
+   if ($@) { 
+    print STDERR "Module $module can't be found.\nException $@";
+    return;
+  }
+  my $mod = "Bio::Pipeline::BatchSubmission::$BATCH_MOD";
+  return $mod->get_host_name($queue_id);
+}
 1;
