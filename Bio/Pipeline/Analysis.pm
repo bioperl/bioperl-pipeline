@@ -90,7 +90,7 @@ use vars qw(@ISA);
 use strict;
 use Bio::Root::RootI;
 use Bio::Root::IO;
-
+use Bio::Pipeline::PipeConf qw (VERBOSE);
 # Inherits from the base bioperl object
 @ISA = qw(Bio::Root::Root);
 
@@ -150,7 +150,7 @@ sub new {
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
       $gff_source,$gff_feature,$runnable,$analysis_parameters,$runnable_parameters,$data_monger_id,$created,
-      $logic_name,$iohandler, $node_group, $io_map) = 
+      $logic_name,$iohandler, $node_group, $io_map,$queue) = 
 
 	  $self->_rearrange([qw(ID
 	  			ADAPTOR
@@ -171,6 +171,7 @@ sub new {
   			  IOHANDLER
          	NODE_GROUP
           IO_MAP
+          QUEUE
   				)],@args);
 
   $self->dbID           ($id);
@@ -192,6 +193,8 @@ sub new {
   $self->iohandler      ($iohandler);
   $self->io_map         ($io_map);
   $self->node_group     ($node_group);
+  $self->queue($queue);
+  $self->verbose($VERBOSE);
 
   return $self; # success - we hope!
 }
@@ -214,7 +217,7 @@ sub new {
 sub test_and_setup {
   my ($self,$verbose) = @_;
   if($self->runnable eq 'Bio::Pipeline::Runnable::DataMonger'){
-      $self->warn ("Skipping test for DataMonger");
+      $self->debug("Skipping test for DataMonger");
       return;
   }
   my $program = $self->program;
@@ -368,7 +371,7 @@ sub set_logic_name_if_needed {
   }
   else {
       if($verbose){
-          $self->warn("Logic name ".$self->logic_name."  already set.\n");
+          $self->debug("Logic name ".$self->logic_name."  already set.\n");
       }
   }
 
@@ -401,14 +404,14 @@ sub set_program_version_if_needed {
     }
     else {
         if($verbose){
-          $self->warn("unable to determine program version");
+          $self->debug("unable to determine program version");
         }
       return 0;
     }
    }
    else {
         if($verbose){
-          $self->warn("Program version already set");
+          $self->debug("Program version already set");
         }
         return 0;
    }
@@ -432,7 +435,7 @@ sub match_program_to_runnable {
     if ($self->runnable){
       $self->exists_runnable || $self->throw("Runnable doesn't seem to exist inside $path");
       if($verbose){
-          $self->warn("runnable already set to ".$self->runnable);
+          $self->debug("runnable already set to ".$self->runnable);
       }
       
     }
@@ -546,7 +549,7 @@ sub dbID {
 
 sub id {
     my ($self,$arg) = @_;
-    $self->warn( "Analysis->id is deprecated. Use dbID!" );
+    $self->debug( "Analysis->id is deprecated. Use dbID!" );
     print STDERR caller;
     
     if (defined($arg)) {
@@ -842,6 +845,24 @@ sub iohandler {
         $self->{'_iohandler'} = $ioh;
     }
     return $self->{'_iohandler'};
+}
+
+=head2 queue
+
+  Title   : queue
+  Usage   : $self->queue
+  Function: Get/set method for the queue on which jobs for this analysis are to be executed
+  Returns : string
+  Args    : string
+
+=cut
+
+sub queue {
+  my ($self,$queue) = @_;
+  if($queue) {
+    $self->{'_queue'} = $queue;
+  }
+  return $self->{'_queue'};
 }
 
 =head2 io_map
