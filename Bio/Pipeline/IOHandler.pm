@@ -288,6 +288,15 @@ These methods calls adaptors to fetch and write inputs and outputs to database
 =cut
 
 sub fetch_input {
+    my ($self,$input,$not_transformed) = @_;
+    my $fetched_input =  $self->_fetch($input);
+    if($self->transformers && !$not_transformed){
+      $fetched_input = $self->run_transformers('-object'=>$fetched_input,'-format'=>"_format_input_arguments");
+    }
+    return $fetched_input;
+}
+
+sub _fetch {
     my ($self,$input) = @_;
     $input || $self->throw("Need a input object");
     my $input_name = $input->name;
@@ -304,40 +313,9 @@ sub fetch_input {
 
     my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
 
-    # the datahandlers work this way:
-    # each datahandler has an argument. 
-    # If this variable is eq 'INPUT', the argument for the datahandlers
-    # will be the input name found in the Input table.
-    # If this variable is some other string, the argument will be this string
-    # If the variable argument is empty, it means that this datahandler call requires
-    # no argument.
-    #
-    # eg. to fetch a sequence from biosql,
-    # the datahandlers required will look like that:
-    # $datahandler_1( -method=> 'get_BioDatabaseAdaptor'
-    #                  -argument=> ''
-    #                  -rank => 1 )
-    # $datahandler_2 ( -method=> 'fetch_BioSeqDatabase_by_name'
-    #                   -argument=> 'swissprot'
-    #                   -rank => 2 )
-    # 
-    # $datahandler_3 ( -method=> 'get_Seq_by_acc'
-    #                   -argument=> 'INPUT'
-    #                   -rank => 3 )
-    #   where the arguement will be the input_name attached to the input object.
-    # 
-    # if say, what is desired are the genes annotated on this sequence,
-    # then an additional datahandler is required,
-    #
-    # $datahandler_4 ( -method=> 'get_all_genes'
-    #                   -argument=> ''
-    #                   -rank => 4)
-    #                   
-    #   
-
     my $obj; 
-    #create the handler fetcher differently depending on whether its a DB or a Stream
 
+    #create the handler fetcher differently depending on whether its a DB or a Stream
     #add the file paths and extension if present
     $input_name = Bio::Root::IO->catfile($self->file_path,$input_name) if $self->file_path;
     $input_name = $input_name.$self->file_suffix if $self->file_suffix;
@@ -385,22 +363,49 @@ sub fetch_input {
         }
     }
 
-    #run transformers after fetching
-    if(defined $self->transformers){
+    #destroy handle only if its a dbhandle
+    if($self->adaptor_type eq "DB" && $RELEASE_DBCONNECTION) {
+      $tmp->DESTROY;
+    };
+    
+  return $obj;
+}
+
+sub run_transformers {
+  my ($self,@args) = @_;
+  my ($input,$obj,$format) = $self->_rearrange([qw(INPUT OBJECT FORMAT)],@args);
+  $obj || $self->throw("Need an object to transform");
+  $format || $self->throw("Need an method to format arguments");
+  
+  if(defined $self->transformers){
       my @trans = sort {$a->rank <=> $b->rank} @{$self->transformers};
       my @new_trans;
       #set the arguments for transformers
       foreach my $t(@trans){
+        my $tmp_transformer = Bio::Pipeline::Transformer->new(-module=>$t->module,
+                                                              -dbID=>$t->dbID,
+                                                              -rank=>$t->rank);
+
         my @methods = @{$t->method};
         my @new_method;
         foreach my $method(@methods){
             my @arguments = @{$method->arguments};
-            my @args = $self->_format_input_arguments($obj,@arguments); 
-            $method->arguments(\@args);
-            push @new_method, $method;
+            my @args;
+            if($input){
+              @args = $self->$format($input,$obj,@arguments); 
+            }
+            else {
+              @args = $self->$format($obj,@arguments); 
+            } 
+            my $new_meth = Bio::Pipeline::Method->new(-dbID=>$method->dbID,
+                                                     -name=>$method->name,
+                                                      -argument=>\@args,
+                                                      -rank=>$method->rank);
+            push @new_method, $new_meth;
+
         }
-        $t->method(\@new_method);
-        push @new_trans, $t;
+        $tmp_transformer->method(\@new_method);
+        push @new_trans, $tmp_transformer;
       }
       
       my $tran = shift @new_trans;
@@ -417,12 +422,7 @@ sub fetch_input {
         }
       }
     }
-    
-    #destroy handle only if its a dbhandle
-    if($self->adaptor_type eq "DB" && $RELEASE_DBCONNECTION) {
-      $tmp->DESTROY;
-    };
-  return $obj;
+    return $obj;
 }
 
 =head2 _merge_args
@@ -454,6 +454,8 @@ sub _merge_args {
     if($#copy > 0){
       push @final, @copy;
     }
+    #skip first element
+    shift @final;
 
   return @final;
 }
@@ -512,40 +514,39 @@ sub file_suffix{
 sub _format_input_arguments {
   my ($self,$input_name,@arguments) = @_;
   my @args;
+  #check whether its a keyword that is demarcated by !xxx!
   for (my $i = 0; $i <=$#arguments; $i++){
-    if ($arguments[$i]->value eq 'INPUT') {
-      if ($arguments[$i]->tag){
-        push @args, ($arguments[$i]->tag => $input_name);
-      }
-      else {
+   push @args, $arguments[$i]->tag if $arguments[$i]->tag;
+   if($arguments[$i]->value =~/!(\S+)!/){
+    my $keyword = $1; 
+     $self->throw("Not an Bio::Pipeline::Argument object") unless $arguments[$i]->isa("Bio::Pipeline::Argument");
+      if ($keyword eq 'INPUT') {
         push @args, $input_name;
       }
-    }
-    elsif($arguments[$i]->value eq 'ANALYSIS') {
-      if ($arguments[$i]->tag){
-        push @args, ($arguments[$i]->tag => $self->analysis);
+      elsif($keyword=~/IOHANDLER(\d+)/){
+        my $ioh = $self->adaptor->fetch_by_dbID($1);
+        $ioh || $self->throw("No IOHandler found for tag ".$arguments[$i]->value);
+        push @args,$ioh->fetch_input('DUMMY');
       }
-      else {
+      elsif($keyword=~/ANALYSIS(\d+)/){
+        my $analysis = $self->adaptor->get_AnalysisAdaptor->fetch_by_dbID($1);
+        $analysis || $self->throw("No analysis found for tag".$arguments[$i]->value);
+        push @args, $analysis;
+      }
+      elsif($keyword eq 'ANALYSIS') {
         push @args, $self->analysis;
       }
-    }
 		
-    elsif($arguments[$i]->value eq 'ANALYSIS_NAME'){
-      if ($arguments[$i]->tag){
-        push @args, ($arguments[$i]->tag => $self->analysis->logic_name);
-      }
-      else {
+      elsif($keyword eq 'ANALYSIS_NAME'){
         push @args, $self->analysis->logic_name;
       }
-    }
-    else {
-      if($arguments[$i]->tag){
-        push @args, ($arguments[$i]->tag => $arguments[$i]->value);
-      }
       else {
-        push @args, $arguments[$i]->value;
+        $self->throw("Key word $keyword not allowed");
       }
-    }
+  }
+   else {
+        push @args, $arguments[$i]->value;
+   }
   }
   return @args;
 }
@@ -569,9 +570,13 @@ sub write_output {
     $object || $self->throw("Need an object to write to database");
 
 
+    #run transformers before storing 
+    if(defined $self->transformers){
+      $object = $self->run_transformers('-input'=>$input,'-object'=>$object,'-format'=>"_format_output_args");
+    }
+
     # the datahandlers for an output handler works in the same principle as the
     # input datahandlers. please see above
-    
     my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
     my $obj;
     if($self->adaptor_type eq "DB"){
@@ -584,41 +589,6 @@ sub write_output {
         $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
     }
    
-    #run transformers before storing 
-    if(defined $self->transformers){
-      my $trans= $self->transformers;
-      my @new_trans;
-      #set the arguments for transformers
-      foreach my $t(@{$trans}){
-        my $tmp_transformer = Bio::Pipeline::Transformer->new(-module=>$t->module,
-                                                              -dbID=>$t->dbID,
-                                                              -rank=>$t->rank);
-
-        my @methods = @{$t->method};
-        my @new_method;
-        foreach my $method(@methods){
-            my @arguments = @{$method->arguments};
-            my @args = $self->_format_output_args($input,$object,@arguments);
-            my $new_meth = Bio::Pipeline::Method->new(-dbID=>$method->dbID,
-                                                      -name=>$method->name,
-                                                      -argument=>\@args,
-                                                      -rank=>$method->rank);
-            push @new_method, $new_meth;
-        }
-        $tmp_transformer->method(\@new_method);
-        push @new_trans, $tmp_transformer;
-      }
-      
-      my $tran = shift @new_trans;
-      my $obj = $tran->run($object);
-      foreach my $tran(@new_trans){
-        if(defined $tran){
-          $obj = $tran->run($obj);
-        }
-      }
-      $object = $obj;
-    }
-
     my @output_ids;
     my $output_flag = 0;
     
@@ -653,39 +623,72 @@ sub _format_output_args {
     my @args;
     my $value;
     for (my $i = 0; $i <=$#arguments; $i++){
-      #pass output object
-      if ($arguments[$i]->value eq 'OUTPUT'){
-        $value = $object
-      }
-      #pass input id
-      elsif($arguments[$i]->value eq 'INPUT'){
-        if(scalar(@{$input}) == 1 && $arguments[$i]->type eq 'SCALAR'){
-            $value = $input->[0]->name;
+      if($arguments[$i]->value =~/!(\S+)!/){
+        my $keyword = $1;
+         #pass output object
+        if ($keyword eq 'OUTPUT'){
+          $value = $object
         }
-        else {
+        #pass input id
+        elsif($keyword eq 'INPUT'){
+         if(scalar(@{$input}) == 1 && $arguments[$i]->type eq 'SCALAR'){
+            $value = $input->[0]->name;
+          }
+         else {
   	      my @names;
 	        foreach my $in (@{$input}){
 		        push @names, $in->name;
 	        }
           $value = \@names;
+         }
         }
-      }
-      #pass input obj
-      elsif($arguments[$i]->value eq 'INPUTOBJ'){
-	      my @values;
-	      foreach my $in (@{$input}){
-		      push @values, $in->fetch;
-	      }
-	      $value = \@values;
-      }
-      elsif($arguments[$i]->value eq 'ANALYSIS'){
-	$value=$self->analysis;
-      }	
+        elsif($keyword=~/ANALYSIS(\d+)/){
+          my $analysis = $self->adaptor->get_AnalysisAdaptor->fetch_by_dbID($1);
+          $analysis || $self->throw("No analysis found for tag".$arguments[$i]->value);
+          $value =  $analysis;
+        }
+        #pass input obj
+        elsif($keyword eq 'INPUTOBJ'){
+	       my @values;
+	       foreach my $in (@{$input}){
+		      push @values, $in->fetch($in);
+	       }
+	       $value = \@values;
+        }
+        #provide tag of the like INPUTOBJ1 INPUTOBJ2
+        #where 1 and 2 are ranked by the input dbID 
+        elsif($keyword =~/INPUTOBJ(\d+)/){
+          my @input = sort {$a->dbID<=>$b->dbID}@{$input};
+          my $index = $1;
+          $self->throw("Requested input obj out of range") unless ($index >= 0 && $index <= $#input);
+          my $in= $input[$index];
+          $value=[$in->fetch($in)];
+        } 
+       #pass the output of the IOHandler without passing any
+       #input
+        elsif($keyword=~/IOHANDLER(\d+)/){
+         my $ioh = $self->adaptor->fetch_by_dbID($1);
+         $value = $ioh->fetch_input(Bio::Pipeline::Input->new(-name=>"DUMMY"));
+        }
+        elsif($keyword eq 'UNTRANSFORMED_INPUTOBJ'){
+	        my @values;
+	        foreach my $in (@{$input}){
+	  	      push @values, $in->fetch($in,1);
+	        }
+	        $value = \@values;
+        }
+        elsif($keyword eq 'ANALYSIS'){
+        	$value=$self->analysis;
+        }	
+        else {
+            $self->throw("Keyword $keyword not allowed");
+        }
+     }
       #just pass the value
       else {
         $value = $arguments[$i]->value;
       }
-
+    
       #if there are tags
       if($arguments[$i]->tag){
         if($arguments[$i]->type eq "ARRAY"){
@@ -1006,6 +1009,26 @@ sub dbID {
         $self->{'_dbID'} = $arg;
     }
     return $self->{'_dbID'};
+
+}
+
+=head2 adaptor
+
+  Title   : adaptor
+  Usage   : $self->adaptor($id)
+  Function: get set the adaptor for this object, only used by Adaptor
+  Returns : int
+  Args    : int
+
+=cut
+
+sub adaptor {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+        $self->{'_adaptor'} = $arg;
+    }
+    return $self->{'_adaptor'};
 
 }
 
