@@ -47,8 +47,7 @@ use Bio::Root::Root;
 sub new {
     my ($class,$dbobj) = @_;
 
-    my $self = {};
-    bless $self,$class;
+    my $self = $class->SUPER::new();
 
     if( !defined $dbobj || !ref $dbobj ) {
 	$self->throw("Don't have a db [$dbobj] for new adaptor");
@@ -79,6 +78,22 @@ sub prepare{
    return $self->db->prepare($string);
 }
 
+=head2 prepare_execute
+
+ Title	 : prepare_execute
+ Usage	 : $sth = $adaptor->prepare("select yaya from bear where name='?'", 'not me');
+ Function: provides a DBI statement and execute it.
+
+=cut
+
+sub prepare_execute{
+	my ($self, $query, @args) = @_;
+	my $sth = $self->prepare($query);
+	$sth->execute(@args);
+	$self->throw("cannot execute because of $@) if($@);
+	return $sth;
+}
+	
 
 =head2 db
 

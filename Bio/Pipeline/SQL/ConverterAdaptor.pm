@@ -28,8 +28,9 @@ Bio::EnsEMBL::Pipeline::DBSQL::ConverterAdaptor
 
 =head1 CONTACT
 
-    Contact Arne Stabenau on implemetation/design detail: stabenau@ebi.ac.uk
-    Contact Ewan Birney on EnsEMBL in general: birney@sanger.ac.uk
+    Kiran: kiran@fugu-sg.org
+    Shawn: shawnh@fugu-sg.org
+    Juguang: juguang@fugu-sg.org
 
 =head1 APPENDIX
 
@@ -43,7 +44,6 @@ package Bio::Pipeline::SQL::ConverterAdaptor;
 
 use Bio::Pipeline::Converter;
 use Bio::Pipeline::SQL::BaseAdaptor;
-use Bio::Root::Root;
 
 use vars qw(@ISA);
 use strict;
@@ -78,5 +78,30 @@ sub store {
               $converter->module,
               $converter->method );
     }
+	$self->{_cache}->{$converter->dbID} = $converter;
 }
 
+sub fetch_by_dbID{
+	my ($self, $id) = @_;
+	if(defined $self->{_cache}->{$id}){
+		return $self->{_cache}->{$id};
+	}
+
+	my $query = "SELECT converter_id, module, method, argument FROM converter WHERE converter_id = $id";
+	
+	my $sth = $self->prepare_execute($query);
+	my ($converter_id, module, method, argument) = $sth->fetchrow_array;
+	
+	my $converter = new Bio::Pipeline::Converter(
+		-dbID => $converter_id,
+		-module => $module,
+		-method => $method,
+		-argument => $argument
+	);
+
+	$self->{_cache}->{$id} = $converter;
+
+	return $converter;
+}
+
+1;

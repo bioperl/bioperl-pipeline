@@ -171,6 +171,7 @@ sub fetch_by_dbID {
                                             -NODE_GROUP     => $node_group,
                                             -IO_MAP         => \%iomap);
 
+  $self->{'_cache'}->{$id} = $anal;
 
   return $anal;
 }
@@ -473,7 +474,7 @@ sub store {
              # $sth->execute
              #( $analysis->dbID, $new_input_handler->dbID);
              #}
-
+	$self->{'_cache'}->{$analysis->dbID} = $analysis;
       return $analysis->dbID;
 }
 
@@ -503,6 +504,13 @@ sub update_runnable {
     if($@){
       $self->throw("Attempt to update runnable failed.\n $@");
     }
+}
+
+# A generic method for the internal use to update the column of analysis table.
+sub _update_text{
+	my ($self, $dbID, $name, $value) =  @_;
+	my $query = "UPDATE analysis SET $name='$value' WHERE analysis_id=$dbID";
+	$self->prepare_execute(query);
 }
 
 1;

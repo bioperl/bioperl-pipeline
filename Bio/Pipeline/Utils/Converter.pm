@@ -137,4 +137,18 @@ sub rank{
     return $self->{_rank};
 }
 
+sub argument{
+	my($self, $value) = @_;
+	return $self->_general_member('_argument', $value);
+}
+
+sub _general_member{
+	my ($self, $key, $value) = @_;
+	$self->throw("the key of the member variable must be specified") unless(defined($key);
+	if(defined($value)){
+		$self->{$key} = $value;
+	}
+	return $self->{$key};
+}
+
 1;

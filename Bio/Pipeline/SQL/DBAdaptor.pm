@@ -174,6 +174,20 @@ sub prepare {
    return $self->_db_handle->prepare($string);
 }
 
+=head2 prepare_execute
+
+
+=cut
+
+sub prepare_execute{
+	my ($self, $query) = @_;
+	my $sth = $self->prepare($query);
+	$sth->execute;
+	if($@){
+		$self->throw("Attempt to '$query', but failed. \n$@");
+	}
+}
+
 =head2 get_ConverterAdaptor
 
  Title   : get_ConverterAdaptor
@@ -481,3 +495,20 @@ sub DESTROY {
        $obj->{'_db_handle'} = undef;
    }
 }
+
+=head2 _get_adaptor
+
+=cut
+
+sub _get_adaptor{
+	my ($self, $adaptor_name) = @_;
+	
+	unless( defined $self->{"_$adaptor_name"}){
+		$self->{"_$adaptor_name"} = "Bio::Pipeline::SQL::$adaptor_name"->new($self);
+	}
+
+	return $self->{"_$adaptor_name"};
+
+}
+
+1;
