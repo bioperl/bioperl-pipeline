@@ -1,0 +1,33 @@
+<!DOCTYPE data_handling_setup [
+   
+   <!ELEMENT data_handling_setup (dbadaptor*,streamadaptor*,iohandler+)>
+   <!ELEMENT dbadaptor (dbname, driver, host, user, password, module)>
+   <!ATTLIST dbadaptor id CDATA #REQUIRED>
+
+   <!ELEMENT streamadaptor (module)>
+   <!ATTLIST streamadaptor id CDATA #REQUIRED>
+
+   <!ELEMENT dbname (#PCDATA)>
+   <!ELEMENT driver (#PCDATA)>
+   <!ELEMENT host (#PCDATA)>
+   <!ELEMENT user (#PCDATA)>
+   <!ELEMENT password (#PCDATA)>
+   <!ELEMENT module (#PCDATA)>
+
+
+   <!ELEMENT iohandler (adaptor_id, adaptor_type, method+)>
+   <!ATTLIST iohandler id CDATA #REQUIRED>
+   <!ELEMENT dbadaptor_id (#PCDATA)>
+
+   <!ELEMENT method (name,argument+,rank)>
+
+   <!ELEMENT argument (tag?, value,rank,type)>
+   <!ELEMENT rank (#PCDATA)>
+   <!ELEMENT value (#PCDATA)>
+   <!ELEMENT tag (#PCDATA)>
+   <!ELEMENT name (#PCDATA)>
+   <!ELEMENT type (#PCDATA)>
+
+]>
+
+
