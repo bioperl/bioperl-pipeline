@@ -173,7 +173,7 @@ sub analysis{
 sub parse_params {
     my ($self,$string) = @_;
 
-    my @param_str = split('-',$self->analysis->parameters);
+    my @param_str = split('-',$string);
     shift @param_str;
     #parse the parameters
     my @params;
