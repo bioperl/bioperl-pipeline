@@ -23,7 +23,7 @@
   my $runnable = Bio::Pipeline::Runnable::MSA->new();
   my $analysis = new Bio::Pipeline::Analysis
       (-ID             => 1,
-       -PROGRAM        => "align",
+       -PROGRAM        => "clustalw",
        -PROGRAM_FILE   => "/usr/local/bin/clustalw",
        -RUNNABLE       => "Bio::Pipeline::Runnable::MSA",
        -RUNNABLE_PARAMETERS=>"-program Clustalw"
@@ -67,10 +67,10 @@
   $runnable->seq($seq3);
   my $analysis = new Bio::Pipeline::Analysis
           (-ID             => 2,
-           -PROGRAM        => "profile_align",
+           -PROGRAM        => "clustalw",
 	   -PROGRAM_FILE   => "/usr/local/bin/clustalw",
 	   -RUNNABLE       => "Bio::Pipeline::Runnable::MSA",
-	   -RUNNABLE_PARAMETERS       => "-program Clustalw",
+	   -RUNNABLE_PARAMETERS       => "-program Clustalw -align_type profile_align",
 	   -LOGIC_NAME     => "Clustalw"
 	   -OUTPUT_HANDLER => $output_handler );
 
@@ -106,6 +106,45 @@ use Bio::Pipeline::DataType;
 use Bio::Pipeline::RunnableI;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
+
+=head2 new
+
+ Title   :   new
+ Usage   :   $self->new()
+ Function:
+ Returns :
+ Args    :
+
+=cut
+
+sub new {
+  my ($class, @args) = @_;
+  my $self = $class->SUPER::new(@args);
+  my ($align_type) = $self->_rearrange([qw(ALIGN_TYPE)],@args);
+  $align_type ||='align';
+  $self->align_type($align_type);
+
+  return $self;
+
+}
+
+=head2 align_type
+
+ Title   :   align_type
+ Usage   :   $self->align_type()
+ Function:   get/set for alignment type either align or profile_align
+ Returns :   string
+ Args    :   string
+
+=cut
+
+sub align_type {
+  my ($self,$val) = @_;
+  if($val){
+    $self->{'_align_type'} = $val;
+  }
+  return $self->{'_align_type'};
+}
 
 =head2 datatypes
 
@@ -239,9 +278,9 @@ END
   $factory->executable($analysis->program_file) if $analysis->program_file;
   $factory->quiet(1);
 
-  $program = $self->analysis->program || $self->throw("No program specified |align|profile_align");
+  my $align_type = $self->align_type;
   my $aln;
-  ($program =~ /align|profile_align/i) || $self->throw("MSA needs either program to be set as align or profile_align in the analysis table");
+  ($align_type =~ /align|profile_align/i) || $self->throw("MSA needs either program to be set as align or profile_align as runnable parameters");
 
   #get input 
   my $seq;
@@ -255,7 +294,7 @@ END
       $self->throw("No input supplied");
   }
   
-  if ($program eq "align"){
+  if ($align_type eq "align"){
       $aln    = $factory->align($seq);
   }
   else {
