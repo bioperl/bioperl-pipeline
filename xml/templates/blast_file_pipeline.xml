@@ -309,7 +309,7 @@ is to allow inputs from different database sources.
             </argument>
             <argument>
                 <tag>tag</tag>
-                <value>file</value>
+                <value>infile</value>
                 <type>SCALAR</type>
             </argument>
          </input_create>
@@ -321,7 +321,7 @@ is to allow inputs from different database sources.
       <logic_name>Blast</logic_name>
       <runnable>Bio::Pipeline::Runnable::Blast</runnable>
       <db>family</db>
-      <db_file>/data0/shawn_tmp/blast.fa</db_file>
+      <db_file>t/data/blast.fa</db_file>
       <program>blastall</program>
       <program_file>/usr/local/bin/blastall</program_file>
       <analysis_parameters>-p blastp -e 1-e05 </analysis_parameters>

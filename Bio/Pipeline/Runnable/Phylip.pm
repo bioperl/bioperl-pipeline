@@ -74,13 +74,6 @@ sub input_dir {
     }
     return $self->{'_input_dir'};
 }
-sub program {
-    my ($self,$val) = @_;
-    if($val){
-        $self->{'_program'} = $val;
-    }
-    return $self->{'_program'};
-}
 
 sub input {
     my ($self,$val) = @_;
@@ -174,8 +167,8 @@ END
   if($self->input){
       $input  = $self->input;
   }
-  elsif($self->file){
-      $input = $self->file;
+  elsif($self->infile){
+      $input = $self->infile;
   }
   else {
        $self->throw("No input supplied");
@@ -185,7 +178,7 @@ END
       $output = $phylip->$runner($input);
   };
   if($program=~/DrawTree/i){
-       system("cp ". $output ." ". $self->file.".ps");
+       system("cp ". $output ." ". $self->infile.".ps");
        return;
   }
 

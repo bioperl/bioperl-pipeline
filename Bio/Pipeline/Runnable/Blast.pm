@@ -134,7 +134,7 @@ sub datatypes {
     push @{$dts{seq1}}, $dtb;
     push @{$dts{seq2}}, $dta;
     push @{$dts{seq2}}, $dtb;
-    $dts{file} = $dtf;
+    $dts{infile} = $dtf;
     return %dts;
 }
 
@@ -220,9 +220,9 @@ sub run {
       my $filename = (split /\//, $self->seq1)[-1];
       $file = $filename.".bls";
     }
-    elsif($self->file) {
+    elsif($self->infile) {
       #is a file name
-      my $filename = (split /\//, $self->file)[-1];
+      my $filename = (split /\//, $self->infile)[-1];
       $file = $filename.".bls";
     }
     else {
@@ -249,7 +249,7 @@ sub run {
   my $seq2 = $self->seq2;
   my $blast_report;
   if(!$seq1){
-      $seq1 = $self->file if $self->file;
+      $seq1 = $self->infile if $self->infile;
   }
 
   #need to create a temp file for which to copy the blast output file. This

@@ -151,25 +151,62 @@ Return a list of objects created by the analysis
 sub new {
   my ($class, @args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($result_dir,$infile_suffix,$infile_dir) = $self->_rearrange([qw(RESULT_DIR INFILE_SUFFIX INFILE_DIR)],@args);
+  my ($result_dir,$infile_suffix,$infile_dir,$program) = $self->_rearrange([qw(RESULT_DIR INFILE_SUFFIX INFILE_DIR PROGRAM)],@args);
   $self->result_dir($result_dir) if $result_dir;
   $self->infile_suffix($infile_suffix) if $infile_suffix;
   $self->infile_dir($infile_dir) if $infile_dir;
+  $self->program($program) if $program;
 
   return $self;
 
 }
+
+=head2 datatypes
+
+ Title   :   datatypes
+ Usage   :   $self->datatypes()
+ Function:   abstract method
+             returns the datatypes that 
+             the runnable expects
+ Returns :   a hash of L<Bio::Pipeline::DataType>
+ Args    :
+
+=cut
 
 sub datatypes {
   my ($self) = @_;
   $self->throw_not_implemented();
   return;
 }
+
+=head2 run
+
+ Title   :   run
+ Usage   :   $self->run()
+ Function:   abstract method
+             runs the runnable 
+ Returns :   
+ Args    :
+
+=cut
+
 sub run {
   my ($self) = @_;
   $self->throw_not_implemented();
   return;
 }
+
+=head2 params
+
+ Title   :   params
+ Usage   :   $self->params()
+ Function:   get/set 
+             holds the runnable parameters
+ Returns :   a hash
+ Args    :
+
+=cut
+
 sub params {
   my ($self,$params) = @_;
   if ($params) {
@@ -177,11 +214,18 @@ sub params {
   }
   return $self->{'_params'};
 }
-sub parse_results {
-  my ($self) = @_;
-  $self->throw_not_implemented();
-  return;
-}
+
+=head2 output
+
+ Title   :   output
+ Usage   :   $self->output()
+ Function:   get/set
+             holds the runnable output 
+ Returns :   an array ref 
+ Args    :
+
+=cut
+
 sub output {
   my ($self,$output) = @_;
   if(defined $output){
@@ -190,6 +234,40 @@ sub output {
   return $self->{'_output'} ;
 }
 
+=head2 program
+
+ Title   :   program
+ Usage   :   $self->program()
+ Function:   get/set
+             holds the program type if runnable is a factory
+             which encapsulates more than one wrapper.
+             For example, Bio::Pipeline::Runnable::MSA can be use to run either:
+             Bio::Pipeline::Runnable::MSA->new(-program=>"TCoffee");
+             Bio::Pipeline::Runnable::MSA->new(-program=>"ClustalW");
+ Returns :   a hash
+ Args    :
+
+=cut
+
+sub program {
+  my ($self,$program) = @_;
+  if(defined $program){
+      $self->{'_program'} = $program;
+  }
+  return $self->{'_program'} ;
+}
+
+=head2 analysis
+
+ Title   :   analysis
+ Usage   :   $self->analysis()
+ Function:   get/set
+             holds the analysis object 
+ Returns :   a L<Bio::Pipeline::Analysis> 
+ Args    :   a L<Bio::Pipeline::Analysis> optional
+
+=cut
+
 sub analysis{
   my ($self, $analysis) = @_;
   if($analysis) {
@@ -197,6 +275,19 @@ sub analysis{
   }
   return $self->{'_analysis'};
 }
+
+=head2 result_dir
+
+ Title   :   result_dir
+ Usage   :   $self->result_dir()
+ Function:   get/set
+             holds the result directory in which to write output
+             to file
+ Returns :   a string 
+ Args    :   a string (optional)
+
+=cut
+
 sub result_dir{
   my ($self, $result_dir) = @_;
   if($result_dir) {
@@ -204,6 +295,19 @@ sub result_dir{
   }
   return $self->{'_result_dir'};
 }
+
+=head2 infile_dir
+
+ Title   :   infile_dir
+ Usage   :   $self->infile_dir()
+ Function:   get/set
+             holds the directory in which input files are 
+             found 
+ Returns :   a string 
+ Args    :   a string (optional)
+
+=cut
+
 sub infile_dir {
   my ($self, $infile_dir) = @_;
   if($infile_dir) {
@@ -211,16 +315,40 @@ sub infile_dir {
   }
   return $self->{'_infile_dir'};
 }
-sub file{
-  my ($self, $file) = @_;
-  if($file) {
-      $file = Bio::Root::IO->catfile($self->infile_dir,$file) if $self->infile_dir;
-      $file = $file.$self->infile_suffix if $self->infile_suffix;
-      $self->{'_file'} = $file;
+
+=head2 infile
+
+ Title   :   infile
+ Usage   :   $self->infile()
+ Function:   get/set
+             holds the directory in which input files are
+             found
+ Returns :   a string
+ Args    :   a string (optional)
+
+=cut
+
+sub infile{
+  my ($self, $infile) = @_;
+  if($infile) {
+      $infile = Bio::Root::IO->catfile($self->infile_dir,$infile) if $self->infile_dir;
+      $infile = $infile.$self->infile_suffix if $self->infile_suffix;
+      $self->{'_infile'} = $infile;
   }
   
-  return $self->{'_file'};
+  return $self->{'_infile'};
 }
+
+=head2 infile_suffix
+
+ Title   :   infile_suffix
+ Usage   :   $self->infile_suffix()
+ Function:   get/set
+             holds the file extension of the input file 
+ Returns :   a string
+ Args    :   a string (optional)
+
+=cut
 
 sub infile_suffix {
     my ($self,$val) = @_;
@@ -230,6 +358,18 @@ sub infile_suffix {
     }
     return $self->{'_infile_suffix'};
 }
+
+
+=head2 parse_params
+
+ Title   :   parse_params
+ Usage   :   $self->parse_params()
+ Function:   utility method for converting a param string into an array 
+ Returns :   a array 
+ Args    :   a string, 1|0 to indicate where to include a dash in param
+             eg. -file=>$file
+             or   file=>$file
+=cut
 
 sub parse_params {
     my ($self,$string,$dash) = @_;
