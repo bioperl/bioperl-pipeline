@@ -1,41 +1,104 @@
-Installation of bioperl-pipeline requires XML::SimpleObject.pm which can be obtained from
-CPAN. bioperl-pipeline also requires the Bioperl bioperl-run package and the main Bioperl
-package, eiher bioperl-live or the latest stable release, available at www.bioperl.org.
-Complete installation instructions for all packages can be found at 
-www.biopipe.org/bioperl-pipeline-install.html.
+Biopipe Install Directions
 
-Install the bioperl-pipeline package in the standard way:
+o System Requirements and Inatallation
 
-   >cd bioperl-pipeline
-   >perl Makefile.PL
-   >make
-   >make test
-   >make install
+  -Tested only Linux, Mac OS X and Alpha OSF
 
-To create a Mysql pipeline database:
+  -perl 5.6 or latter
 
-   >mysqladmin -u root create biopipe
+  -mySQL database http://www.mysql.com
 
-To create the pipeline database tables:
+    The bioperl-pipeline relies on a MySQL database for its job management and tracking.
+    This allows persistence of most operations inherent to the pipeline, which
+    in turn allows the pipeline to restart seemlessly even after an abrupt halt due
+    to some system failure (e.g. network problems, power cut, and so on). Obtain MySQL 
+    from wwww.mysql.com and refer to the MySQL documentation for installation
+    instructions. Once MySQL is installed and running you can create the bioperl-pipeline
+    database.
 
-   >cd bioperl-pipeline
-   >mysql -u <user> biopipe < sql/schema.sql
+  -Load Sharing Software
+   The bioperl-pipeline can be run locally on your own machine without load-sharing 
+   software and will still manage the logic and workflow of your analysis runs. However 
+   to truly harness the bioperl-pipeline's power you will need either:
+ 
+    1) LSF (Load Sharing Facility) a commercial package, but very cheap or free for small academic                setups. http://www.platform.com/
+            
+    2) PBS (Portable Batch System) Freely Available for the Open PBS version. http://pbs.mrj.com/
 
-Biopipe databases are automatically created when pipelines are run, so this
-is a useful test but not necessary for installation.
+    * We are currently looking for parties interested in provding a port to Sun Grid Engine.
+    Do contact us bioperl-pipeline@bioperl.org to let us know!
 
-For detailed instructions on installing Bioperl please refer to the INSTALL document
-in bioperl-live or in the latest Bioperl release. This document discusses issues like
-installation into non-standard locations or how to install a Perl package if you don't
-have root access (Unix).
+    Without load-sharing you will be running your jobs in 'local' mode. 
+    Each job is then run  sequentially but this is not recommended for high throughput analysis.
 
-Installation of Bioperl on Windows is discussed in the INSTALL.WIN document in bioperl-live
-or in the latest Bioperl release.
+  -Bioperl Packages
+   bioperl-live release 1.2.1 or later
+   bioperl-run  release xxx
+   bioperl-pipeline release xxx
 
-The bioperl-pipeline relies on a MySQL database for its job management and tracking.
-This allows persistence of most operations inherent to the pipeline, which
-in turn allows the pipeline to restart seemlessly even after an abrupt halt due
-to some system failure (e.g. network problems, power cut, and so on). Obtain MySQL 
-from wwww.mysql.org and refer to the MySQL documentation for installation
-instructions. Once MySQL is installed and running you can create the bioperl-pipeline
-database.
+   recommended: bioperl-db
+                biosql-schema
+
+    The packages are available from CVS using the following commands:
+
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout -r bioperl-release-1-2-1 bioperl-live
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-run
+    cvs -d :pserver:cvs@cvs.open-bio.org:/home/repository/bioperl checkout bioperl-pipeline      
+  
+    password is 'cvs'
+
+    More Info: http:://cvs.bioperl.org
+
+    Install the bioperl-pipeline package in the standard way:
+
+     >cd bioperl-pipeline
+     >perl Makefile.PL
+     >make
+     >make test
+     >make install
+
+    To create a Mysql pipeline database:
+
+     >mysqladmin -u root create biopipe
+
+    To create the pipeline database tables:
+
+       >cd bioperl-pipeline
+       >mysql -u <user> biopipe < sql/schema.sql
+
+    Biopipe databases are automatically created when pipelines are run, so this
+    is a useful test but not necessary for installation.
+
+    Although recommened, you do not need to install the packages. You may simply put them into
+    a directory and point to them in your PERL5LIB environment variable like so:
+
+    setenv $CVSPATH "/Users/shawn/cvs_src"
+    setenv PERL5LIB "$CVSPATH/bioperl-pipeline:$CVSPATH/bioperl-run:$CVSPATH/bioperl-1-2-1:$CVSPATH/bioperl-db-1-1-0:
+
+    For detailed instructions on installing Bioperl please refer to the INSTALL document
+    in bioperl-live or in the latest Bioperl release. This document discusses issues like
+    installation into non-standard locations or how to install a Perl package if you don't
+    have root access (Unix).
+
+    Installation of Bioperl on Windows is discussed in the INSTALL.WIN document in bioperl-live
+    or in the latest Bioperl release.
+
+  - Perl Packages  
+    available at http://www.cpan.org
+
+    XML::SimpleObject - required 
+
+    XML::Parser or XML::SAX::PurePerl - either one is required.
+
+    Note XML:Parser requires Expat installed and some parties have had problems
+    getting this installed. As an alternative solution, XML::SAX::PurePerl doesn't
+    require Expat and this is a viable alternative. The latter is of course slower
+    but XML parsing only takes up a minute portion of biopipe and thus 
+    speed here is not a consideration. Biopipe will default to XML::Parser. If not 
+    installed, it will check for XML::SAX::PurePerl. 
+
+    Data::ShowTable - optional
+  
+    This package is used by the job_viewer script in bioperl-pipeline/scripts that
+    provides a nice interface for querying the various job status in the pipeline.
+
