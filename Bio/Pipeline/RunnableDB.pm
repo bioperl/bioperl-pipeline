@@ -404,6 +404,7 @@ sub write_output {
     my @output = $self->output();
     my @inputs = $self->inputs;
     return () unless scalar(@output);    
+    defined $self->analysis->output_handler || return;
     my @output_ids = $self->analysis->output_handler->write_output(-input=>\@inputs,-output=>\@output);
 
     return wantarray ? @output_ids : \@output_ids;
