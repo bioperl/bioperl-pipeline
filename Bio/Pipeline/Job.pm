@@ -620,11 +620,9 @@ sub filenames{
 sub remove {
   my $self = shift;
 
-=head
   if( -e $self->stdout_file ) { unlink( $self->stdout_file )  || $self->throw("Unable to remove stdout_file ".$self->stdout_file)};
   if( -e $self->stderr_file ) { unlink( $self->stderr_file ) || $self->throw("Unable to remove stderr file".$self->stderr_file)};
   if( -e $self->input_object_file ) { unlink( $self->input_object_file )|| $self->throw("Unable to remove object file ".$self->input_object_file)};
-=cut
 
    if( defined $self->adaptor ) {
    $self->adaptor->remove( $self );
