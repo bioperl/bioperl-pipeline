@@ -209,6 +209,8 @@ my $submitted;
 my $total_jobs;
 while ($run) {
 
+    my $new_queue = %Bio::Pipeline::PipeConf::PipeConf->{'QUEUE'};
+    $QUEUE = $new_queue || $QUEUE;
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db,-queue=>$QUEUE);
 
     #Give priority of fetching to new jobs, only fetch FAILED ones once NEW ones are exhausted.
