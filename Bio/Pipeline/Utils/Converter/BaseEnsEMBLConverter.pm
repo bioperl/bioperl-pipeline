@@ -19,9 +19,18 @@ sub new {
         unless(defined($analysis));
 
     my $ensembl_analysis = Bio::EnsEMBL::Analysis->new(
+        -created => now(),
         -logic_name => $analysis->logic_name,
+        -db_file => $analysis->db_file,
+        -db_version => $analysis->db_version,
+        -program => $analysis->program,
+        -program_version => $analysis->program_version,
+        -program_file => $analysis->program_file,
+        -module => $analysis->module,
+        -module_version => $analysis->module_version,
+        -parameter => $analysis->analysis_parameter,        
         -gff_source => $analysis->gff_source,
-        -gff_feature => $analysis->gff_feature,
+        -gff_feature => $analysis->gff_feature
     );
     
     my $iohandler = $self->iohandler;

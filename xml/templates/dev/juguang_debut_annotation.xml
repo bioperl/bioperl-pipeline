@@ -141,6 +141,7 @@ and will store the feature information the pipeline generates.
 		<logic_name>RepeatMasker</logic_name>
 		<runnable>Bio::Pipeline::Runnable::RepeatMasker</runnable>
 		<program>RepeatMasker</program>
+        <gff_feature>repeat feature</gff_feature>
 		<analysis_parameters>-lib all.lib</analysis_parameters>
 		<input_iohandler_mapping current="" next=""/>
 		<output_iohandler id="3" converter_id="1" />
@@ -151,6 +152,7 @@ and will store the feature information the pipeline generates.
 		<runnable>Bio::Pipeline::Runnable::Blast</runnable>
 		<db>swissprot</db>
 		<db_file>/data0/swissprot</db_file>
+        <gff_feature>similarity</gff_feature>
 		<program>blastall</program>
 		<analysis_parameters>-p blastx -e 0.001 -F SEG+XNU</analysis_parameters>
 		<output_iohandler id="5" converter_id="2"/>
