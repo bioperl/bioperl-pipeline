@@ -79,18 +79,22 @@ Ans:- There could be many reasons for this. The most probable reason could be th
       
 
 8.  The pipeline is not running.All the tables are populated correctly.What went wrong?
-Ans
-    Tests Completed. Starting Pipeline
-    Fetched 2 jobs
-    opening bsub command line:
-    bsub -o /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.out -e /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.err -q  /usr/users/savikalpa/src/bioperl-pipeline//Bio/Pipeline/runner.pl 1 2
-    couldn't submit jobs 1 2 to LSF.
-    Waking up and run again!
-    Fetched 2 jobs
-    opening bsub command line:
+Ans:-Again as in (7) there could be more than 1 reason for this.One possibility is tha you might be getting messages like this.
+
+     Tests Completed. Starting Pipeline
+     Fetched 2 jobs
+     opening bsub command line:
+     bsub -o /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.out -e /data0/tmp//2/genscan_pipe.job_1.Genscan.1025852231.749.err -q  /usr/users/savikalpa/src/bioperl-pipeline//Bio/Pipeline/runner.pl 1 2
+     couldn't submit jobs 1 2 to LSF.
+     Waking up and run again!
+     Fetched 2 jobs
+     opening bsub command line:
+
+     This could be due to some problem in sending the job to LSF. Try running it locally(ie perl -l PipelineManager.pl) if it runs then it 
+     confirms this.
 
 9.  There are many tables that i left empty.Dont we need to put anything in them?
-
+     
 10. What about the output of the pipeline?
 
 11. 
