@@ -252,16 +252,6 @@ is to allow inputs from different database sources.
     <streamadaptor id="1">
       <module>Bio::Pipeline::Dumper</module>
     </streamadaptor>
-
-    <dbadaptor id="2">
-      <dbname>ensembl_family</dbname>
-      <driver>mysql</driver>
-      <host>mysql</host>
-      <user>root</user>
-      <password></password>
-      <module>Bio::EnsEMBL::ExternalData::Family::DBSQL::DBAdaptor</module>
-    </dbadaptor>
-
   </database_setup>
 
   <!-- fetch the sequence -->
