@@ -317,17 +317,30 @@ sub exists_db_file {
 sub exists_runnable {
   my ($self) = @_;
   $self->runnable || $self->throw("Runnable not set yet");
-  my $path= __FILE__;
-  $path=~m!(.*)/.*\.pm!;
-  my $dir = $1;
-  my @runnables = `ls $dir/Runnable/*.pm`;
-  foreach my $run(@runnables){
-    $run =~  m!.*/(.*).pm!;
-    if ($self->runnable =~ /Bio::Pipeline::Runnable::$1/){
-      return 1;
-    }
+  eval {
+	my $runnable = $self->runnable;
+        $runnable =~ s/\::/\//g;
+        require "${runnable}.pm";
+  };
+  my $error;
+  if ($error = $@) {
+	$self->throw($error);
+	return 0;
+  } else {
+	return 1;
   }
-  return 0;
+
+  #my $path= __FILE__;
+  #$path=~m!(.*)/.*\.pm!;
+  #my $dir = $1;
+  #my @runnables = `ls $dir/Runnable/*.pm`;
+  #foreach my $run(@runnables){
+  #  $run =~  m!.*/(.*).pm!;
+  #  if ($self->runnable =~ /Bio::Pipeline::Runnable::$1/){
+  #    return 1;
+  #  }
+  #}
+  #return 0;
 }
 
 =head2 set_logic_name_if_needed
