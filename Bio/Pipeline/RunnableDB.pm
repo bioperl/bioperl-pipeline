@@ -223,9 +223,7 @@ sub setup_runnable_inputs {
         foreach my $in(@input){
             $tag = $in->[1];
             my $in_obj = $in->[2];
-            if($tag ne "no_tag"){
                $hash{$in->[0]} = $in_obj;
-            }
         }
         #default to input method call for DataMonger is no tag specified.
         if($tag eq "no_tag"){
