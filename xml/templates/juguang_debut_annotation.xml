@@ -109,7 +109,7 @@ and will store the feature information the pipeline generates.
          <argument value="INPUT" type="SCALAR" rank="1"/>
       </method>
       <method name="convert" rank="3"/>
-      
+  </converter>    
   <converter id="2" module="blastall_2ens">
       <method name="new" rank="1">
          <argument tag = "-program" value = "blastx"/>
