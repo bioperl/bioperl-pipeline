@@ -79,7 +79,6 @@ use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Transformer;
 use ExtUtils::MakeMaker;
 use Bio::Pipeline::AbstractXMLImporter;
-
 use vars qw(%global);
 our @ISA = qw(Bio::Pipeline::AbstractXMLImporter);
 
@@ -417,10 +416,14 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
     	my $analysis_parameters = $analysis->child('analysis_parameters');
     	my $runnable_parameters = $analysis->child('runnable_parameters');
     	my $logic_name = $analysis->child('logic_name');
+      my $queue = $analysis->child('queue');
 
    	if(defined($logic_name)){
        		$analysis_obj->logic_name(&set_global($logic_name->value));
    	}
+    if(defined($queue)){
+          $analysis_obj->queue(&set_global($queue->value));
+    }
    	if (defined($program)){
       		$analysis_obj->program(&set_global($program->value));
    	}
@@ -553,7 +556,7 @@ $dba->get_TransformerAdaptor->store(\@pipeline_transformer_objs);
 map{$dba->get_AnalysisAdaptor->store($_)}@analysis_objs;
 map{$dba->get_JobAdaptor->store($_)}@job_objs;
 map{$dba->get_RuleAdaptor->store($_)}@rule_objs;
-print STDERR "Loading of pipeline completed\n";
+$self->debug("Loading of pipeline completed\n");
 return 1;
 } # End of run
 sub _parse_rules {

@@ -77,14 +77,14 @@ sub fetch_by_dbID {
             db,db_version,db_file,
             runnable,
             gff_source,gff_feature,
-            created, analysis_parameters,runnable_parameters,node_group_id
+            created, analysis_parameters,runnable_parameters,node_group_id,queue
     FROM    analysis 
     WHERE   analysis_id = ?});
 
   $sth->execute( $id );
   my ($analysis_id,$logic_name,$program,$program_version,$program_file,$data_monger_id,
       $db,$db_version,$db_file,$runnable,$gff_source,$gff_feature,$created,
-      $analysis_parameters,$runnable_parameters,$node_group_id) = $sth->fetchrow_array;
+      $analysis_parameters,$runnable_parameters,$node_group_id,$queue) = $sth->fetchrow_array;
 
   if( ! defined $analysis_id) {
     return undef;
@@ -137,6 +137,7 @@ sub fetch_by_dbID {
                                             -LOGIC_NAME     => $logic_name,
                                             -IOHANDLER      =>\@iohs,
                                             -NODE_GROUP     => $node_group,
+                                            -QUEUE          => $queue,
                                             -IO_MAP         => \%iomap);
 
   $self->{'_cache'}->{$id} = $anal;
@@ -311,6 +312,7 @@ sub store {
     runnable_parameters=?,
 		runnable = ?,
 		gff_source = ?,
+    queue =?,
 		gff_feature = ? } );
 
 	$sth->execute
@@ -325,6 +327,7 @@ sub store {
 	      $analysis->runnable_parameters,
 	      $analysis->runnable,
 	      $analysis->gff_source,
+        $analysis->queue,
 	      $analysis->gff_feature
 	      );
 	my $dbid = $sth->{mysql_insertid};
@@ -347,6 +350,7 @@ sub store {
                 runnable_parameters = ?,
                 runnable = ?,
                 gff_source = ?,
+                queue      = ?,
                 gff_feature = ? } );
 
         $sth->execute
@@ -362,6 +366,7 @@ sub store {
               $analysis->runnable_parameters,
               $analysis->runnable,
               $analysis->gff_source,
+              $analysis->queue,
               $analysis->gff_feature
               );
       }
