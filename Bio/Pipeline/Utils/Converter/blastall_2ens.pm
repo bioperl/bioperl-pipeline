@@ -8,7 +8,6 @@ use Bio::SeqFeatureIO;
 use Bio::Pipeline::Converter::_2ens;
 use Bio::EnsEMBL::DnaPepAlignFeature;
 use Bio::EnsEMBL::DnaDnaAlignFeature;
-use Bio::Pipeline::Converter::blastall_utils;
 use Bio::EnsEMBL::Analysis;
 use Bio::EnsEMBL::RawContig;
 use Bio::EnsEMBL::SeqFeature;
@@ -86,9 +85,8 @@ sub _hsp_2ens{
     # create cigar string. Ensembl BaseAlignFeature needs it.
     # Since the HSP object does not have cigar string. 
     # So we need to parse it from query and hit string.
-    my $blastall_utils = new Bio::Pipeline::Converter::blastall_utils;
-    my ($align_coordinates_ref, $cigar_string) = $blastall_utils->split_HSP($hsp);
     
+    my $cigar_string = "";
     my $ens_feature1 = $self->_similarity_2_ens_seqFeature($hsp->feature1, $analysis);
     my $ens_feature2 = $self->_similarity_2_ens_seqFeature($hsp->feature2, $analysis);
     
