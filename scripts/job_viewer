@@ -1,0 +1,171 @@
+#!/usr/bin/perl
+#######################################################
+#Job Viewer 0.1
+#Simple interactive script for viewing job status and err
+#logs
+#AUTHOR: Shawn Hoon
+#EMAIL: shawnh@fugu-sg.org
+#Requires Data::ShowTable
+#######################################################
+
+use Data::ShowTable;
+use strict;
+use Bio::Pipeline::SQL::DBAdaptor;
+use ExtUtils::MakeMaker;
+use Getopt::Long;
+use vars qw($theRow %ANAL_ALLOWED %STAGE_ALLOWED $HELP);
+use Bio::Pipeline::PipeConf qw (DBI_DRIVER
+                                DBHOST 
+                                DBNAME
+                                DBUSER
+                                DBPASS);
+
+my @STATUS=('NEW',"SUBMITTED","FAILED","COMPLETED");
+my @STAGE = ('READING','WRITING','BATCHED','RUNNING');
+GetOptions(
+    'dbhost=s'    => \$DBHOST,
+    'dbname=s'    => \$DBNAME,
+    'dbuser=s'    => \$DBUSER,
+    'dbpass=s'    => \$DBPASS,
+    'dbdriver=s'  => \$DBI_DRIVER,
+    'help'=>\$HELP
+);
+
+my $USAGE=<<END;
+****************************************
+Biopipe JobView 0.1
+****************************************
+Usage: jobviewer -dbname biopipe -dbuser root -dbhost localhost -dbpass xxx -dbdriver mysql
+
+  -dbname
+  -dbhost
+  -dbpass
+  -dbdriver
+  -help
+
+Default values are taken from PipeConf.pm
+
+END
+
+die($USAGE) unless $DBNAME;
+die($USAGE) if $HELP;
+
+#connect to the database
+my $db = Bio::Pipeline::SQL::DBAdaptor->new(-dbname=>$DBNAME,
+                                            -user=>$DBUSER,
+                                            -host=>$DBHOST,
+                                            -pass=>$DBPASS);
+
+#fetch all analysis
+my @anal = $db->get_AnalysisAdaptor->fetch_all;
+my @anal_logicname = map{$_->logic_name}@anal;
+my $title = ['id',"Analysis"];
+my (@types,@width,@Data);
+foreach my $i(0..$#anal_logicname){
+    push @Data,[$i+1,$anal_logicname[$i]];
+    push @types,'char';
+    $ANAL_ALLOWED{$i+1}++;
+}
+
+
+@width = ([100,100]);
+ANALYSIS:
+while(1){
+
+  #show available analysis
+  my @data=();
+  my @failed = ();
+  my @stagedata=();
+  print "\nBIOPIPE JOBVIEWER 0.1\n\n|Analysis Available from $DBNAME|\n";
+  ShowData('Simple',$title,\@types,\@width,@Data);
+
+  #select analysis
+  my $anal_id= prompt("Select an analysis to get view job status [1-".@anal_logicname."]","1");
+  next ANALYSIS unless $ANAL_ALLOWED{$anal_id};
+  my $analysis_name = $anal_logicname[$anal_id-1];
+
+#get job status information
+  foreach my $status(@STATUS){
+   if($status ne 'COMPLETED'){
+    my $count1 = $db->get_JobAdaptor->get_job_count(-status=>[$status],-stage=>['READING'],-analysis_id=>$anal_id);
+    my $count2 = $db->get_JobAdaptor->get_job_count(-status=>[$status],-stage=>['WRITING'],-analysis_id=>$anal_id);
+    my $count3 = $db->get_JobAdaptor->get_job_count(-status=>[$status],-stage=>['BATCHED'],-analysis_id=>$anal_id);
+    my $count4 = $db->get_JobAdaptor->get_job_count(-status=>[$status],-stage=>['RUNNING'],-analysis_id=>$anal_id);
+    if($status eq 'FAILED'){
+      @failed = ($count1,$count2,$count3,$count4);
+    }
+    my $total = $count1+$count2+$count3+$count4;
+    push @data, [$status,$count1,$count2,$count3,,$count4,$total];
+   }
+    else {
+      push @data,[$status,0,0,0,0,$db->get_JobAdaptor->get_completed_job_count(-analysis_id=>$anal_id)];
+   }
+  }
+
+  #print job status
+  print "\n|Analysis $analysis_name|\n";
+  ShowData('Simple',['Status','READING','WRITING','BATCHED','RUNNING','TOTAL'],
+           ['char','char','char','char','char','char'],
+           [100,100,100,100,100,100],@data);
+  my $i = 0;
+  @types=();
+  @width=();
+  @stagedata=();
+
+  #print Failed job stages
+  my $total = 0;
+  foreach my $count(@failed){
+    if($count > 0){
+        push @stagedata,([$i+1,$STAGE[$i]]);
+        push @types,'char';
+        push @width,100;
+        $STAGE_ALLOWED{$i+1}++;
+        $total+=$count;
+    }
+        $i++;
+  }
+
+  next ANALYSIS unless $total > 0;
+
+  print "\nJobs that failed belong to the following stages:\n";
+  ShowData('Simple',['id','STAGE'],\@types,\@width,@stagedata) ;
+
+  STAGE: while(1){
+    my $failed_stage = prompt("Select a stage to view a sample err file for failed jobs of analysis ".$anal_logicname[$anal_id-1]."[1-$i]","1"); 
+     next STAGE unless $STAGE_ALLOWED{$failed_stage};
+    my ($job) = $db->get_JobAdaptor->fetch_jobs(-number=>1,analysis_id=>$anal_id,-status=>['FAILED'],-stage=>[$STAGE[$failed_stage-1]]);
+    next ANALYSIS unless $job;
+
+  #read stderr file
+  open(FILE,$job->stderr_file);
+  my @err_out = <FILE>;
+  my $cont = 'y';
+  ShowData('Simple',['job_id','analysis','stderr_file','description'],['char','char','char'],[100,100,100], ([$job->dbID,$anal_logicname[$anal_id-1],$job->stderr_file]));
+  my $start = 0;
+  while ($cont=='y'){
+    print join('',@err_out[$start..$start+20]);
+    $cont = prompt ("Continue ? [y/n]","y");
+    last STAGE if $cont eq 'n';
+    $start+=50;
+    if($start > $#err_out){
+        last STAGE;
+    }
+  }
+  }
+
+}
+
+sub ShowData {
+   my ($mode,$title,$types,$width,@Data) = @_;
+
+   local $theRow;
+    my $theRowSub = sub { &ShowRow( $_[0], \$theRow, \@Data ); };
+    ShowTable
+        { show_mode     => $mode,
+          max_width     => '' ,
+          titles        => $title,
+          types         => $types,
+          widths        => $width,
+          row_sub       => $theRowSub,
+        };
+}
