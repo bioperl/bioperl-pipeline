@@ -16,7 +16,7 @@ use Bio::Pipeline::Rule;
 use Bio::Pipeline::NodeGroup;
 use Bio::Pipeline::Node;
 use Bio::Pipeline::SQL::DBAdaptor;
-
+use Bio::Pipeline::Initializer;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 
@@ -301,6 +301,43 @@ print "Reading Job_flow xml     : $JOBFLOW\n";
 my $xso3 = XML::SimpleObject->new( $parser->parsefile($JOBFLOW) );
 
 my @job_objs;
+my $job_method = $xso3->child('job_setup')->child('job_method');##added by bala
+if (defined ($job_method)){#added by bala-------------
+    my $method = $job_method->child('input_method')->value;
+    print "the method is $method\n";
+    my $initializer =  Bio::Pipeline::Initializer->new(-DBNAME=>'EnsemblTest2',-HOST=>$DBHOST,-DRIVER=>$DBHOST,-USER=>$DBUSER);
+    my $input_count = $initializer->$method;
+    print "the count is $input_count\n";
+    #my @input_objs;
+   for( my $count = 1; $count <= $input_count; $count++ ) {
+       my @input_objs;
+       my $process_id = defined($job_method->child('process_id')) ?$job_method->child('process_id')->value : '';
+       my $queue_id = defined($job_method->child('queue_id')) ? $job_method->child('queue_id')->value : '';
+       my $retry_count = defined($job_method->child('retry_count')) ? $job_method->child('retry_count')->value : '';
+       my $analysis = defined($job_method->child('analysis_id')) ? _get_analysis($job_method->child('analysis_id')->value) : '';
+      # my $input_iohandler_id = $job_method->child('input_iohandler_id')->value; 
+       my $input_iohandler = _get_iohandler($job_method->child('input_iohandler_id')->value);  
+       if (!defined($input_iohandler)) {
+             #$self->throw("Iohandler for input not found\n");
+             print "Iohandler for input not found\n";
+       }
+     my $input_obj = Bio::Pipeline::Input->new(-name => $count,
+                                                  -input_handler => $input_iohandler);
+     
+     $input_obj->job_id($count);
+     push @input_objs, $input_obj;
+      my $job_obj = Bio::Pipeline::Job->new(-id => $count,
+                                            -process_id => $process_id,
+                                            -queue_id => $queue_id,
+                                            -retry_count => $retry_count,
+                                            -analysis => $analysis,
+                                            -adaptor => $dba->get_JobAdaptor,
+                                            -inputs => \@input_objs);
+        
+     push @job_objs, $job_obj;    
+    }     
+    
+}else{#added by bala--------------
 foreach my $job ($xso3->child('job_setup')->children('job')) {
 
    my $id = $job->attribute("id");
@@ -334,7 +371,7 @@ foreach my $job ($xso3->child('job_setup')->children('job')) {
                                          -inputs => \@input_objs);
    push @job_objs, $job_obj;
 }
-
+}##added by bala--------------------
 
 
 # now the nicest part .. the actual storing.. need to store only 4 objects, 
