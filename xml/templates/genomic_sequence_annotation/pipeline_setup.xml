@@ -1,0 +1,389 @@
+<!--
+Genomic_Sequence_Annotation Pipeline
+This is a generic genomic sequence annotation pipeline works with the Ensembl Database.
+It is proof of concept that the bioperl-pipeline is able to handle carry out analysis of 
+such scale. It also shows the flexibility of the pipeline allowing us to read and write
+from different database schemas. The annotation pipeline protocol is similar to the one
+use to annotate the Fugu Genome. We are currently working on using the bioperl-pipeline for
+the Ciona Annotation Project
+
+The pipeline takes an EnsEMBL contig through a series of analysis runnables. The current 
+status of this pipeline is as follows:
+
+1) RepeatMask     (implemented)
+2) Blast          (implemented)
+  a) BLASTX_SPROT
+  b) BLASTX_TREMBL
+  c) BLASTX_ENS_HUM
+  d) BLASTX_ENS_MUS
+  e) BLASTX_HUM_GENSCAN
+3) Genscan       (in progress) 
+4) Genewise      (in progress)
+5) Genebuilder   (in progress)
+6) Seg           (in progress)
+7) Coils         (in progress)
+8) SIGNALP       (in progress)
+9) TMHMM         (in progress)
+10) FingerPrintScan (in progress)
+11) PFAM            (in progress)
+12) PFScan          (in progress)
+
+
+Organization of this file
+
+<pipeline_setup>
+  <database_setup>
+  <iohandler_setup>
+  <pipeline_flow_setup>
+  <job_setup>(optional)
+</pipeline_setup>
+
+<database_setup>
+This specifies the databases that the pipeline connects to and the
+adaptor modules that intefaces with them.
+
+<iohandler_setup>
+This specifies the method calls that will be used by the pipeline
+to access the databases. These methods are contained in the modules
+specified by the database setup section above.
+
+<pipeline_flow_setup>
+This specifies the analysis and rules of the pipeline. Analysis
+refer to the runnables that will be used in this pipeline while the 
+rules specify the order in which these analysis are to be run, including
+any specific pre-processing actions that are to be carried out.
+
+<job_setup>
+This is an optional part that allows specific inputs to be inserted.
+A much easier method would be to use the input_create option which 
+takes in an iohandler that returns an array of ids and setup up the input and job
+tables.
+
+Using this file
+This file is fed into the Xml2Db.pl script
+
+Usage: Xml2DB.pl -dbhost host -dbname pipeline_name -dbuser user -dbpass password -schema /path/to/biopipeline-schema/ -p pipeline_setup.xml
+
+Default values in ()
+-dbhost host (mysql)
+-dbname name of pipeline database (test_XML)
+-dbuser user name (root)
+-dbpass db password()
+-schema The path to the bioperl-pipeline schema.
+        Needed if you want to create a new db.
+        (/usr/users/kiran/src/bioperl-pipeline/t/data/schema.sql)
+-p      the pipeline setup xml file (required)
+
+-->
+
+
+<pipeline_setup>
+  <database_setup>
+    <!--access ensembl database using ensembl dbadaptor module -->
+    <dbadaptor id="1">
+      <dbname>EnsemblTest2 </dbname>
+      <driver>mysql</driver>
+      <host>mysql</host>
+      <user>root</user>
+      <password></password>
+      <module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
+    </dbadaptor>
+
+    <!--access ensembl database using BioToEns converter -->
+    <dbadaptor id="2">
+      <dbname>EnsemblTest2</dbname>
+      <driver>mysql</driver>
+      <host>mysql</host>
+      <user>root</user>
+      <password></password>
+      <module>Bio::BioToEns::Beacon</module>
+    </dbadaptor>
+  </database_setup>
+
+  <iohandler_setup>
+    <!-- Create Input method used to return the Contig Ids  for initializing the pipeline with inputs -->
+    <iohandler id="1">
+      <adaptor_id>1</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>CREATE_INPUT</iohandler_type>
+      <method>
+        <name>get_all_Contig_id</name>
+        <rank>1</rank>
+      </method>
+    </iohandler>
+
+
+    <!-- Fetch the Contig Object -->
+    <iohandler id="2">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>fetch_contigSequence_by_contigId</name>
+        <rank>1</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+       </method>
+    </iohandler>
+
+    <!-- Store Repeat Features through BioToEns -->
+    <iohandler id="3">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>store_repeat_feature_by_contig_id</name>
+        <rank>1</rank>
+        <argument>
+          <value>INPUT</value>
+          <rank>1</rank>
+          <type>SCALAR</type>
+        </argument>
+        <argument>
+          <value>OUTPUT</value>
+          <type>ARRAY</type>
+          <rank>2</rank>
+        </argument>
+      </method>
+    </iohandler>
+
+    <!-- Fetch Masked Seqs through BioToEns --> 
+    <iohandler id="4">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>INPUT</iohandler_type>
+      <method>
+        <name>fetch_repeatMaskedSeq_by_contig_id</name>
+        <rank>1</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+      </method>
+    </iohandler>
+
+    <!-- Store blast features through BioToEns -->
+    <iohandler id="5">
+      <adaptor_id>2</adaptor_id>
+      <adaptor_type>DB</adaptor_type>
+      <iohandler_type>OUTPUT</iohandler_type>
+      <method>
+        <name>store_BlastFeature_by_contigId</name>
+        <rank>1</rank>
+        <argument>
+          <value>INPUT</value>
+          <type>SCALAR</type>
+          <rank>1</rank>
+        </argument>
+        <argument>
+          <value>OUTPUT</value>
+          <type>ARRAY</type>
+          <rank>2</rank>
+        </argument>
+      </method>
+    </iohandler>
+
+  </iohandler_setup>
+
+  <pipeline_flow_setup>
+
+    <!--Analysis 1 Repeat Masker -->
+    <analysis id="1">
+      <logic_name>RepeatMasker</logic_name>
+      <runnable>Bio::Pipeline::Runnable::RepeatMasker</runnable>
+      <program>RepeatMasker</program>
+      <nodegroup_id>1</nodegroup_id>
+      <parameters></parameters>
+
+       <!--Set up iohandler for Create_Input -->
+      <create_input_setup>
+	      <fetch_input_ids_iohandler_id>1</fetch_input_ids_iohandler_id>
+	      <fetch_input_iohandler_id>2</fetch_input_iohandler_id>
+      </create_input_setup>
+
+      <!-- Specify which iohandler to use to store mask features -->
+      <output_iohandler_id>3</output_iohandler_id>
+    </analysis>
+
+    <!--Analysis 2 Blast SwissProt-->
+    <analysis id="2">
+      <logic_name>blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>swissprot</db>
+      <db_file>/data0/swissprot</db_file>
+      <program>blastall</program>
+      <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+      <nodegroup_id>1</nodegroup_id>
+    
+      <!-- Specify which iohandler to use to store blast features -->
+      <output_iohandler_id>5</output_iohandler_id>
+
+      <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
+           in analysis 1, now use iohandler that fetches masked seq -->
+      <input_iohandler_mapping>
+	      <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+      </input_iohandler_mapping>
+    </analysis>
+
+    <!--Analysis 3 Blast Trembl-->
+    <analysis id="3">
+      <logic_name>blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>trembl</db>
+      <db_file>/data0/trembl</db_file>
+      <program>blastall</program>
+      <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+      <nodegroup_id>1</nodegroup_id>
+
+      <!-- Specify which iohandler to use to store blast features -->
+      <output_iohandler_id>5</output_iohandler_id>
+
+      <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
+           in analysis 1, now use iohandler that fetches masked seq -->
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+      </input_iohandler_mapping>
+    </analysis>
+
+    <!--Analysis 4 Blast Ensembl Human Pep-->
+    <analysis id="4">
+      <logic_name>blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>ensembl_hum_pep</db>
+      <db_file>/data0/ensembl_hum_pep</db_file>
+      <program>blastall</program>
+      <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+      <nodegroup_id>1</nodegroup_id>
+
+      <!-- Specify which iohandler to use to store blast features -->
+      <output_iohandler_id>5</output_iohandler_id>
+
+      <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
+           in analysis 1, now use iohandler that fetches masked seq -->
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+      </input_iohandler_mapping>
+    </analysis>
+
+    <!--Analysis 5 Blast Ensembl Mouse Pep-->
+    <analysis id="5">
+      <logic_name>blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>ensembl_mus_pep</db>
+      <db_file>/data0/ensembl_mus_pep</db_file>
+      <program>blastall</program>
+      <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+      <nodegroup_id>1</nodegroup_id>
+
+      <!-- Specify which iohandler to use to store blast features -->
+      <output_iohandler_id>5</output_iohandler_id>
+
+      <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
+           in analysis 1, now use iohandler that fetches masked seq -->
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+      </input_iohandler_mapping>
+    </analysis>
+
+    <!--Analysis 6 Blast Ensembl Human Genscan Pep-->
+    <analysis id="6">
+      <logic_name>blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>ensembl_hum_genscan</db>
+      <db_file>/data0/ensembl_hum_genscan</db_file>
+      <program>blastall</program>
+      <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+      <nodegroup_id>1</nodegroup_id>
+
+      <!-- Specify which iohandler to use to store blast features -->
+      <output_iohandler_id>5</output_iohandler_id>
+
+      <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
+           in analysis 1, now use iohandler that fetches masked seq -->
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+      </input_iohandler_mapping>
+    </analysis>
+
+    <!--Analysis 7 Blast Fugu Pep-->
+    <analysis id="7">
+      <logic_name>blast</logic_name>
+      <runnable>Bio::Pipeline::Runnable::Blast</runnable>
+      <db>Fugu_Pep</db>
+      <db_file>/data0/Fugu_rubripes.pep.fa</db_file>
+      <program>blastall</program>
+      <parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
+      <nodegroup_id>1</nodegroup_id>
+
+      <!-- Specify which iohandler to use to store blast features -->
+      <output_iohandler_id>5</output_iohandler_id>
+
+      <!-- Specify the iohandler to map to for Copy ID. Originally contigs were fetch unmasked
+           in analysis 1, now use iohandler that fetches masked seq -->
+      <input_iohandler_mapping>
+        <prev_analysis_iohandler_id>2</prev_analysis_iohandler_id>
+        <current_analysis_iohandler_id>4</current_analysis_iohandler_id>
+      </input_iohandler_mapping>
+    </analysis>
+
+
+
+    <!-- Rules that specify the order of analysis to be executed -->
+
+    <!-- The first order of business is to setup the input ids and jobs for analysis 1-->
+    <rule>
+     <next_analysis_id>1</next_analysis_id>
+      <action>CREATE_INPUT</action>
+    </rule>
+
+    <!-- Once analysis 1 is finished, copy input id from previous analysis, do the appropriate 
+         iohandler mapping and create job for analysis 2 -->
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>2</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>3</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>4</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>5</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>6</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+    <rule>
+      <current_analysis_id>1</current_analysis_id>
+      <next_analysis_id>7</next_analysis_id>
+      <action>COPY_ID</action>
+    </rule>
+
+    <!-- Under Dev, node group not used yet -->
+    <node_group id="1">
+      <name>gr1</name>
+      <description>desc1</description>
+      <node name="59"></node>
+    </node_group>
+  </pipeline_flow_setup>
+
+</pipeline_setup>
