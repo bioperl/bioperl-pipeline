@@ -285,9 +285,7 @@ sub fetch_new_failed_jobs {
 
 
 sub store_outputs {
- my $self = shift;
- my $job = shift;
- my @output_ids = shift;
+ my ($self,$job,@output_ids) = @_;
 
  my $sth;
  my $query;
