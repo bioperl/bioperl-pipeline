@@ -219,7 +219,6 @@ sub setup_runnable_inputs {
     my ($self,@input) = @_;
     my $runnable = $self->runnable;
     $runnable->can("datatypes") || $self->throw("Runnable $runnable has no sub datatypes implemeted.");
-    my %r_datatypes = $runnable->datatypes;
     my @to_match;
     my %match_datatype={};
 
@@ -252,6 +251,7 @@ DT: foreach my $in(@input){
         $match_datatype{$in_obj} = 1;
       }
       else {
+        my %r_datatypes = $runnable->datatypes;
         foreach my $r_key(keys %r_datatypes){
           if (ref($r_datatypes{$r_key}) eq "ARRAY"){
             foreach my $dt (@{$r_datatypes{$r_key}}){
@@ -275,7 +275,7 @@ DT: foreach my $in(@input){
               next DT;
             }
           }
-          $self->throw("Job's inputs datatypes do not match runnable ".$self->runnable." datatypes.");
+          $self->warn("No input was passed to runnable ".$self->runnable." as match could not be found or no input needed");
         }
       }
     }
@@ -299,7 +299,7 @@ sub match_data_type {
     $run_dt->isa("Bio::Pipeline::DataType") || $self->throw("Need a Bio::Pipeline::DataType to check");
 
     #have to do this check cuz the isa call will barf it its not an valid object
-    if ((ref($input) ne "SCALAR") && (ref($input) ne "ARRAY") && (ref($input) ne "HASH")){
+    if (ref($input) && (ref($input) ne "ARRAY") && (ref($input) ne "HASH")){
       if ($input->isa($run_dt->object_type)){ 
         return 1;
       }
@@ -435,7 +435,8 @@ sub fetch_input {
         if(ref($input) eq "ARRAY"){
             my @input_objs;
             foreach my $sub (@{$input}){
-              push @input_objs, $sub->fetch;
+              my $obj = defined $sub->input_handler ? $sub->fetch : $sub->name;
+              push @input_objs, $obj;
             }
             $self->add_input_obj(\@input_objs);
             if($input->tag){
@@ -447,7 +448,7 @@ sub fetch_input {
 
         }
         else {
-          my $input_obj = $input->fetch;
+          my $input_obj = defined $input->input_handler ? $input->fetch : $input->name;
           my $datatype =  Bio::Pipeline::DataType->create_from_input($input_obj);
           $self->add_input_obj($input_obj);
           if($input->tag){
