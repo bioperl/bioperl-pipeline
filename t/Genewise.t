@@ -56,7 +56,6 @@ ok(1);
   my @transcripts = $genes[0]->transcripts;
   ok($transcripts[0]->isa("Bio::SeqFeature::Gene::TranscriptI"));#ok3
   my $no = scalar(@genes);
-  print"the number of genes are $no\n";
   my @feat = $transcripts[0]->exons;
   ok($feat[0]->isa("Bio::SeqFeature::Gene::ExonI"));#ok4
   my $seqname = $feat[0]->seqname;
@@ -67,34 +66,14 @@ ok(1);
   my $strand = $feat[0]->strand;
   ok($strand, 1);#ok7
 
-  my @tags = $feat[0]->all_tags;
 
-  my @seqfeature1 = $feat[0]->each_tag_value($tags[0]);
-  my $pseqname = $seqfeature1[0]->seqname;
-  my $pstart = $seqfeature1[0]->start;
-  ok($pstart, 120);#ok8
-  my $pend = $seqfeature1[0]->end;
-  ok($pend, 130);#ok9
-  my $pstrand = $seqfeature1[0]->strand;
-  ok($pstrand, 1);#ok10
-  my $pscore = $seqfeature1[0]->score;
-  ok($pscore, 17.01);#ok11
-  my $ps_tag = $seqfeature1[0]->source_tag;
-  my $pp_tag = $seqfeature1[0]->primary_tag;
- 
-  my @seqfeature2 = $feat[0]->each_tag_value($tags[1]);
-  my $gseqname = $seqfeature2[0]->seqname;
-  my $gstart = $seqfeature2[0]->start;
-  ok($gstart, 865);#ok12
-  my $gend = $seqfeature2[0]->end;
-  ok($gend, 897);#ok13
-  my $gstrand = $seqfeature2[0]->strand;
-  ok($gstrand, 1);#ok14
-  my $gscore = $seqfeature2[0]->score;
-  ok($gscore, 17.01);#ok15
-  my $gs_tag = $seqfeature2[0]->source_tag;
-  my $gp_tag = $seqfeature2[0]->primary_tag;
- 
-  my @seqfeature3 = $feat[0]->each_tag_value($tags[2]);
-  my $phaseno = $seqfeature3[0]; #phase number
-  
+  my ($featpair) = $feat[0]->each_tag_value("supporting_feature");
+  ok($featpair->feature1->start,865);
+  ok($featpair->feature1->end,897);
+  ok($featpair->feature1->strand,1);
+  ok($featpair->feature1->score,17.01);
+  ok($featpair->feature2->start,120);
+  ok($featpair->feature2->end,130);
+  ok($featpair->feature2->strand,1);
+  ok($featpair->feature2->score,17.01);
+
