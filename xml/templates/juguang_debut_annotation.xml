@@ -1,5 +1,5 @@
 <!--
-juguang_debut_annotation.xml
+jug:uang_debut_annotation.xml
 
 There are 2 new features of this xml different from Shawn, Kiran used before.
 1. Introducting converter tag, which is usually located within analysis.output_iohandler.
@@ -25,7 +25,7 @@ and will store the feature information the pipeline generates.
 
 
 	<dbadaptor id="1">
-		<dbname>juguang_homo_core_8_30a</dbname>
+		<dbname>juguang_homo_core9_30</dbname>
 		<driver>mysql</driver>
 		<host>mysql</host>
 		<user>root</user>
@@ -33,7 +33,7 @@ and will store the feature information the pipeline generates.
 		<module>Bio::EnsEMBL::SQLDB::DBAdaptor</module>
 	</dbadaptor>
 	<dbadaptor id="2">
-		<dbname>juguang_homo_core_8_30a</dbname>
+		<dbname>juguang_homo_core_9_30</dbname>
 		<driver>mysql</driver>
 		<host>mysql</host>
 		<user>root</user>
@@ -89,23 +89,24 @@ and will store the feature information the pipeline generates.
 		</method>
 	</iohandler>
 
-   <converter id="1" module="seq_feature_bio2ens">
-      <method id="1" name="dbadaptor">
+   <converter id="1" module="repeatmasker_feature_2ens">
+      <method id="1" name="new" >
          <argument id = "11" tag = "-host" value = "mysql"/>
          <argument id = "12" tag = "-driver" value = "mysql"/>
          <argument id = "13" tag = "-dbname" value = "juguang_homo_core_9_30"/>
          <argument id = "14" tag = "-user" value = "root"/>
          <!-- argument id = "15" tag = "-passwd" value = ""/ -->
-      </method>
+      </method >
   </converter>    
-  <converter id="2" module="seq_pair_bio2ens">
-      <method id="2" name="dbadaptor">
+  <converter id="2" module="blastall_2ens">
+      <method id="2" name="new" >
+         <argument id="29" tag = "-program" value = "blastx"/>
          <argument id="21" tag = "-host" value ="mysql"/>
          <argument id="22" tag = "-driver" value = "mysql"/>
          <argument id="23" tag = "-dbname" value = "juguang_homo_core_9_30"/>
          <argument id="24" tag = "-user" value = "root"/>
          <!--argument id="25" tag = "-passwd" value = ""/ -->
-      </method>
+      </method >
    </converter>
                                                                                                             
 </iohandler_setup>
@@ -140,7 +141,7 @@ and will store the feature information the pipeline generates.
 		<output_iohandler id="3" converter_id="1" />
 			
 	</analysis>
-	
+<!--	
 	<analysis id="3">
 		<logic_name>Blast</logic_name>
 		<runnable>Bio::Pipeline::Runnable::Blast</runnable>
@@ -158,17 +159,19 @@ and will store the feature information the pipeline generates.
 		<db_file>/usr/users/shawnh/download/genome_annotate/db.fa</db_file>
 		<program>blastall</program>
 		<parameters>-p blastx -e 0.001 -F SEG+XNU</parameters>
-		<output_iohandler id="5" converter_id="3"/>
+		<output_iohandler id="5" converter_id="2"/>
 	</analysis>
+-->   
 	<!-- Simplified the rule tag.
 		current - current_analysis_id
 		next - next_analysis_id
 		action - action
 	-->
 	<rule current="1" next="2" action="NOTHING"/>
-	<rule current="2" next="3" action="COPY_ID"/>
+<!--
+   <rule current="2" next="3" action="COPY_ID"/>
 	<rule current="2" next="4" action="COPY_ID"/>
-	
+-->	
 </pipeline_flow_setup>
 
 </pipeline_setup>

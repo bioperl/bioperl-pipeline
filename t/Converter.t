@@ -4,7 +4,7 @@ use strict;
 BEGIN{
 	use lib 't';
 	use Test;
-	plan tests => 5;
+	plan tests => 28 
 }
 
 use BiopipeTestDB;
@@ -30,16 +30,16 @@ $converter = new Bio::Pipeline::Converter(
 	-module => "foomodule"
 );
 
-#my @converter_methods;
-#for(my $i=0; $i<3; $i++){
-#	my $converter_method = new Bio::Pipeline::DataHandler(
-#		-dbID => 100+$i,
-#		-method => "method$i",
+my @converter_methods;
+for(my $i=0; $i<3; $i++){
+	my $converter_method = new Bio::Pipeline::Method(
+		-dbID => 100+$i,
+		-name => "method$i",
 #		-rank => 1+$i
-#	);
-#	push @converter_methods, $converter_method;
-#}
-#$converter->method(\@converter_methods);
+	);
+	push @converter_methods, $converter_method;
+}
+$converter->method(\@converter_methods);
 
 $ca->store($converter);
 
@@ -68,28 +68,28 @@ sub _check_converter{
 	$module = $converter->module;
 	ok $module, $module;
 
-#	my @methods = @{$converter->method};
+	my @methods = @{$converter->method};
 
-#	foreach my $method (@methods){
+	foreach my $method (@methods){
 
-#		if($method->dbID == 1){
-#			&_check_converter_method($method, 1, 'new', 1);
-#		}elsif($method->dbID == 2){
-#			&_check_converter_method($method, 2, 'convert', 2);
-#		}	
+		if($method->dbID == 1){
+			&_check_converter_method($method, 1, 'new', 1);
+		}elsif($method->dbID == 2){
+			&_check_converter_method($method, 2, 'convert', 2);
+		}	
 	
-#	}
+	}
 }
 
 
 sub _check_converter_method{
 	my ($method, $dbID, $method_name, $rank) =@_;
-	ok ref($method), 'Bio::Pipeline::DataHandler';
+	ok ref($method), 'Bio::Pipeline::Method';
 	ok $method->dbID, $dbID;
-	ok $method->method, $method_name;
+	ok $method->name, $method_name;
 	ok $method->rank, $rank;
 	
-	my @arguments = @{$method->argument};
+	my @arguments = @{$method->arguments};
 
 	return unless $#arguments >= 0;
 		 

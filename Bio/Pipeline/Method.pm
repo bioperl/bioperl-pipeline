@@ -38,9 +38,10 @@ sub new {
 #  $rank || $self->throw("datahandle constructor needs a rank");
   $name || $self->throw("datahandler needs a method arg.");
 
-  unless(ref($argument) eq 'ARRAY'){
-        $self->throw("DataHandler expects argument as a reference of an array");
- }
+# arguments may not be assigned when the method is constructed. 
+#  unless(ref($argument) eq 'ARRAY'){
+#        $self->throw("DataHandler expects argument as a reference of an array");
+# }
   $dbID && $self->dbID($dbID);
   $self->{'_name'} = $name;
   $self->{'_argument'} = $argument;

@@ -229,7 +229,7 @@ CREATE TABLE converter_methods(
 	converter_method_id	INT(10) UNSIGNED DEFAULT '0' NOT NULL AUTO_INCREMENT,
 	converter_id 		INT(10) UNSIGNED NOT NULL,
 	name			VARCHAR(40) NOT NULL,
-	rank			INT(2) NOT NULL,
+	rank			INT(2) ,
 
 	PRIMARY KEY(converter_method_id)
 );
@@ -241,7 +241,7 @@ CREATE TABLE converter_arguments(
 	converter_method_id 	INT(10) UNSIGNED NOT NULL,
 	tag 			VARCHAR(40),
 	value 			VARCHAR(40) NOT NULL,
-	rank			INT(2) UNSIGNED NOT NULL,
+	rank			INT(2) UNSIGNED ,
 
 	PRIMARY KEY(converter_argument_id)
 );

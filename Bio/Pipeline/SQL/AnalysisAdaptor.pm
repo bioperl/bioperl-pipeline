@@ -437,19 +437,23 @@ sub store {
      my @ioh = @{$analysis->iohandler};
 
      foreach my $ioh (@ioh){
-        my $sth = $self->prepare("INSERT INTO analysis_iohandler 
+        my $converters = $ioh->converters;
+        unless(defined $converters && scalar( @{$converters}) > 0  ){
+            
+            my $sth = $self->prepare("INSERT INTO analysis_iohandler 
                                  SET analysis_id = ?,
                                      iohandler_id = ?");
-        $sth->execute($analysis->dbID,$ioh->dbID);
-        my $converters = $ioh->converters;
+            $sth->execute($analysis->dbID,$ioh->dbID);
+        }else{
             foreach my $converter(@{$converters}) {
-              
+               next unless defined $converter;            
               my $sth = $self->prepare("INSERT INTO analysis_iohandler 
                                         SET analysis_id = ?,
                                             iohandler_id = ?,
                                             converter_id = ?,
                                             converter_rank = ?");
               $sth->execute($analysis->dbID,$ioh->dbID, $converter->dbID, $converter->rank);
+            }  
         }
      }
      if (defined ($analysis->io_map)) {
