@@ -170,18 +170,18 @@ sub copy_fixed_inputs {
     my ($self, $job_id, $new_job_id) = @_;
     my @inputs = ();
     
-    my $sth = $self->prepare("SELECT name, iohandler_id
+    my $query = "SELECT name, iohandler_id
                               FROM input
-                              WHERE job_id = '$job_id'"
-                              );
+                              WHERE job_id = '$job_id'";
+
+    my $sth = $self->prepare($query);
     $sth->execute();
-    my ($name,$iohandler_id) = $sth->fetchrow_array;
     while (my ($name, $iohandler_id) = $sth->fetchrow_array){
       my $sql = " INSERT INTO input (name, iohandler_id, job_id) 
                 VALUES (?,?,?)";
       my $sth = $self->prepare($sql);
       eval{
-          $sth->execute($name, $iohandler_id);
+          $sth->execute($name, $iohandler_id,$new_job_id);
       };if ($@){$self->throw("Error copying fixed input.\n$@");}
 
       my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
@@ -191,6 +191,7 @@ sub copy_fixed_inputs {
                                     -job_id => $new_job_id);
       push (@inputs,$input);
     }
+    return @inputs;
 }
 
 
