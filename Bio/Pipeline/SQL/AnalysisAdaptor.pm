@@ -102,6 +102,20 @@ sub fetch_by_dbID {
   while (my ($ioid) = $sth->fetchrow_array){
       push @ioh, $self->db->get_IOHandlerAdaptor->fetch_by_dbID($ioid);
   }
+
+  $query = " SELECT  prev_iohandler_id, map_iohandler_id
+                FROM    iohandler_map  
+                WHERE   analysis_id = $id";
+
+  $sth = $self->prepare($query);
+  $sth->execute ();
+  my %iomap;
+  while (my ($prev_ioid, $map_ioid) = $sth->fetchrow_array){
+      my $map_ioh = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($map_ioid);
+      $iomap{$prev_ioid} = $map_ioh;
+  }
+
+  
     
   my $anal = new Bio::Pipeline::Analysis (  -ID             => $analysis_id,
                                             -ADAPTOR        => $self,
@@ -118,7 +132,8 @@ sub fetch_by_dbID {
                                             -CREATED        => $created,
                                             -LOGIC_NAME     => $logic_name,
                                             -IOHANDLER      =>\@ioh,
-                                            -NODE_GROUP     => $node_group);
+                                            -NODE_GROUP     => $node_group,
+                                            -IO_MAP         => \%iomap);
 
 
   return $anal;
@@ -276,7 +291,18 @@ sub store {
                                        iohandler_id = ?");
          $sth->execute($analysis->dbID,$ioh->dbID);
      }
+     if (defined ($analysis->io_map)) {
+	     my %iomap = %{$analysis->io_map};
 
+ 	    foreach my $pre_ioh_id (keys %iomap){
+        	 my $map_ioh_id = $iomap{$pre_ioh_id}->dbID;
+     	    	 my $sth = $self->prepare("INSERT INTO iohandler_map
+                                   SET analysis_id = ?,
+                                       prev_iohandler_id = ?
+                                       map_iohandler_id = ?");
+     		    $sth->execute($analysis->dbID,$pre_ioh_id, $map_ioh_id);
+    	     }
+     }
 
 =head
      if (defined ($new_input_handler)) {
