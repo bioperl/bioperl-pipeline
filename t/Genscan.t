@@ -40,7 +40,7 @@ use Bio::Root::IO;
    }
    my $paramfile = Bio::Root::IO->catfile($ENV{'GENSCAN_DIR'},"HumanIso.smat");
    my $parameters = "-MATRIX " . $paramfile;
-   my $analysis = Bio::Pipeline::Analysis->new(-parameters => $parameters);
+   my $analysis = Bio::Pipeline::Analysis->new(-analysis_parameters => $parameters);
    
    # create Bio:Pipeline::Runnable::Genscan object
    my $genscan = Bio::Pipeline::Runnable::Genscan->new();
