@@ -5,7 +5,9 @@ use Bio::Pipeline::Utils::SaxHandler;
 use Bio::Pipeline::SQL::DBAdaptor;
 use ExtUtils::MakeMaker;
 use Bio::Root::Root;
+use Bio::Pipeline::PipeConf qw(VERBOSE);
 our @ISA=qw(Bio::Root::Root);
+
 
 sub new{
     my ($class, @args) = @_;
@@ -19,6 +21,7 @@ sub new{
     $self->dbpass($dbpass);
     $self->schema($schema);
     $self->xml($xml);
+    $self->verbose($VERBOSE);
     $self;
 }
 
@@ -56,7 +59,7 @@ sub _prepare_dba {
         if($create =~/^[yY]/){
             system("mysqladmin $str -f drop $DBNAME > /dev/null ");
         }else{
-            print STDERR "Please select another database before running this script. Good bye.\n";
+            $self->debug("Please select another database before running this script. Good bye.\n");
             return 0;
         }
     }
@@ -65,9 +68,9 @@ sub _prepare_dba {
         warn("$SCHEMA doesn't seem to exist. Please use the -schema option to specify where the biopipeline schema is");
         return 0;
     }else{
-        print STDERR "Creating $DBNAME\n";
+        $self->debug("Creating $DBNAME\n");
         system("mysqladmin $str -f create $DBNAME");
-        print STDERR "Loading Schema...\n";
+        $self->debug("Loading Schema...\n");
         system("mysql $str $DBNAME < $SCHEMA");
         $dba = Bio::Pipeline::SQL::DBAdaptor->new(
             -host   => $DBHOST,
