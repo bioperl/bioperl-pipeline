@@ -340,6 +340,8 @@ sub store {
   $job->dbID( $dbId );
   $job->adaptor( $self );
 
+  return $job->dbID;
+
 }
 =head2 remove
 
