@@ -121,7 +121,7 @@ sub submit_batch{
 
     my $bsub = $self->construct_command_line;
 
-    my $runner = $RUNNER || undef;
+    my $runner = $self->runner_path || $RUNNER || undef;
 
     unless ($runner && -x $runner) {
         $runner = __FILE__;

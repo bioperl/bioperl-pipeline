@@ -1,17 +1,18 @@
 #!/usr/local/bin/perl
 
-
 #add test dir to lib search path
-    BEGIN {
+BEGIN {
     use lib 't';
     use Test;
     $NTESTS = 4;
     plan tests => $NTESTS;
-    }
-    use BiopipeTestDB;
-    use Bio::Pipeline::SQL::DBAdaptor;
-    use Bio::Pipeline::BatchSubmission;
-    use Bio::Root::IO;
+}
+use strict;
+use vars qw($NTESTS);
+use BiopipeTestDB;
+use Bio::Pipeline::SQL::DBAdaptor;
+use Bio::Pipeline::BatchSubmission;
+use Bio::Root::IO;
 
     unless (Bio::Root::IO->exists_exe('bsub') || Bio::Root::IO->exists_exe('qsub')){
 	warn "LSF or PBS not installed. Skipping test $Test::ntest to $NTESTS\n";
@@ -31,6 +32,7 @@
 
     my $dba = $biopipe_test->get_DBAdaptor();
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$dba);
+    $batchsubmitter->runner_path("scripts/runner.pl");
 
     ok $batchsubmitter;
 
@@ -45,11 +47,11 @@
        open (STDERR ,">/dev/null");
        $batchsubmitter->submit_batch;
     };
-    my $err = $@;
-    if ($err){
-        print "Error : $err\n";
+    if ($@){
+       warn($@);
+
     }
-    
+    $job->update;    
     my $jobstatus = $job->status;
     ok $jobstatus, 'SUBMITTED';
 

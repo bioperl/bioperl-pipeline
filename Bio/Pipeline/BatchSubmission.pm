@@ -368,6 +368,26 @@ sub command{
    return $self->{'_command'};
 }
 
+=head2 runner_path
+
+  Title    : runner_path
+  Function : get/set for runner_path 
+  Example  : $bs->runner_path('/pathto/runner.pl');
+  Returns  : string
+  Args     : string
+
+=cut
+
+sub runner_path{
+   my ($self, $arg) = @_;
+
+   if(defined($arg)){
+     $self->{'_runner_path'} = $arg;
+   }
+
+   return $self->{'_runner_path'};
+}
+
 =head2 queue
 
   Title    : queue
