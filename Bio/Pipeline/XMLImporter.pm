@@ -67,8 +67,6 @@ package Bio::Pipeline::XMLImporter;
 
 use strict;
 
-use XML::Parser;
-use XML::SimpleObject;
 use Bio::Pipeline::Analysis;
 use Bio::Pipeline::Job;
 use Bio::Pipeline::Input;
@@ -85,10 +83,10 @@ use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Transformer;
 use Bio::Pipeline::Utils::SaxHandler;
-use XML::SAX::PurePerl;
+use XML::SimpleObject;
 use ExtUtils::MakeMaker;
 
-use vars qw(@ISA);
+use vars qw(@ISA %global);
 use Bio::Root::Root;
 @ISA = qw(Bio::Root::Root);
 
@@ -236,6 +234,15 @@ my $method_id = 1;
 print "Doing DBAdaptor and IOHandler setup\n";
 
 my $pipeline_setup  = $xso1->child('pipeline_setup') || die("Pipeline template missing <pipeline_setup>\n Please provide a valid one");
+
+#setting global hash
+if($pipeline_setup->child('global')){
+  %global = $pipeline_setup->child('global')->attributes;
+  #a global var may have variables itself
+  foreach my $key (keys %global){
+   $global{$key} = &set_global($global{$key});
+  }
+}
 my $iohandler_setup = $pipeline_setup->child('iohandler_setup') || goto PIPELINE_FLOW_SETUP;
 
 #die("Pipeline template missing <iohandler_setup>\n Please provide a valid one");
@@ -259,7 +266,7 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
 
    my $adaptor_type;
    if(defined($iohandler->child('adaptor_type') )){
-       $adaptor_type = $iohandler->child('adaptor_type')->value ;
+       $adaptor_type = &verify($iohandler,'adaptor_type','','','');
    }elsif(exists $adaptor_attrs{'type'}){
        $adaptor_type = $adaptor_attrs{'type'};
    }else{
@@ -268,7 +275,7 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
 
    my $adaptor_id;
    if(defined $iohandler->child('adaptor_id') ){
-       $adaptor_id = $iohandler->child('adaptor_id')->value;
+       $adaptor_id = &verify($iohandler,'adaptor_id','','','');
    }elsif(exists $adaptor_attrs{'id'}){
        $adaptor_id = $adaptor_attrs{'id'};
    }
@@ -518,25 +525,25 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
     	my $logic_name = $analysis->child('logic_name');
 
    	if(defined($logic_name)){
-       		$analysis_obj->logic_name($logic_name->value);
+       		$analysis_obj->logic_name(&set_global($logic_name->value));
    	}
    	if (defined($program)){
-      		$analysis_obj->program($program->value)
+      		$analysis_obj->program(&set_global($program->value));
    	}
    	if (defined($program_file)){
-      		$analysis_obj->program_file($program_file->value)
+      		$analysis_obj->program_file(&set_global($program_file->value));
    	}
    	if (defined($db)){
-      		$analysis_obj->db($db->value)
+      		$analysis_obj->db(&set_global($db->value));
    	}
    	if (defined($db_file)){
-      		$analysis_obj->db_file($db_file->value)
+      		$analysis_obj->db_file(&set_global($db_file->value));
    	}
    	if (defined($analysis_parameters)){
-      		$analysis_obj->analysis_parameters($analysis_parameters->value)
+      		$analysis_obj->analysis_parameters(&set_global($analysis_parameters->value));
    	}
    	if (defined($runnable_parameters)){
-      		$analysis_obj->runnable_parameters($runnable_parameters->value)
+      		$analysis_obj->runnable_parameters(&set_global($runnable_parameters->value));
    	}
     }
    my $nodegroup_id = $analysis->child('nodegroup_id');
@@ -604,14 +611,14 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
           my $prev_iohandler_id = $map->child('prev_analysis_iohandler_id');
           my $current_iohandler_id = $map->child('current_analysis_iohandler_id');
           if ($current_iohandler_id){
-                  my $current_iohandler = $self->_get_iohandler(\@iohandler_objs, $current_iohandler_id->value);
+                  my $current_iohandler = $self->_get_iohandler(\@iohandler_objs, &set_global($current_iohandler_id->value));
                   if (!defined($current_iohandler)) {
                      print "current input iohandler for analysis not found\n";
                   }
 #                  push @ioh, $current_iohandler;
                   #store to iohandler_map table
-                  my $prev = $prev_iohandler_id->value if $prev_iohandler_id;
-                  $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$prev,$current_iohandler_id->value);
+                  my $prev = &set_global($prev_iohandler_id->value) if $prev_iohandler_id;
+                  $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$prev,&set_global($current_iohandler_id->value));
           }
         }
    }
@@ -705,7 +712,7 @@ foreach my $job ($job_setup->children('job')) {
    my @input_objs;
    foreach my $input ($job->children('fixed_input')) {
 
-     my $input_iohandler = $self->_get_iohandler(\@iohandler_objs, $input->child('input_iohandler_id')->value);
+     my $input_iohandler = $self->_get_iohandler(\@iohandler_objs, &set_global($input->child('input_iohandler_id')->value));
      if (!defined($input_iohandler)) {
        #$self->throw("Iohandler for input not found\n");
        print "Iohandler for input not found\n";
@@ -769,7 +776,7 @@ sub verify {
     
     if(defined $obj->child($child)){
         if(defined $obj->child($child)->value){
-            return $obj->child($child)->value;
+            return set_global($obj->child($child)->value);
         }
 #        else {
 #            if($required =~/REQUIRED/){
@@ -778,15 +785,24 @@ sub verify {
 #            }
 #        }
     }elsif(defined $attr_name && exists $obj_attrs{$attr_name}){
-        return $obj_attrs{$attr_name};
+        return set_global($obj_attrs{$attr_name});
     }else {
         if($required =~/REQUIRED/){
           defined $default && return $default;
           die($obj->name. " ".$obj->attribute('id'). " is missing a $child");
         }
     }
-    return $default;
+    return set_global($default);
 } 
+
+sub set_global {
+  my ($string) = @_;
+  if($string=~/\$(\w+)/){
+    my $var = $global{$1};
+    $string=~s/\$$1/$var/g;
+  }
+  return $string;
+}
 
 sub verify_attr{
     my $obj=shift;
