@@ -68,12 +68,21 @@ sub store {
   my ( $self, $rule ) = @_;
 
   if (!defined ($rule->dbID)) {
+    my $current_anal_id;
+    if (defined $rule->current) {
+      $current_anal_id = $rule->current->dbID;
+    }
+    my $next_anal_id;
+    if (defined $rule->next) {
+      $next_anal_id = $rule->next->dbID;
+    }
+
     my $sth = $self->prepare( qq{
       INSERT INTO rule
          SET current = ?,
              next= ?,
              action= ? } );
-    $sth->execute($rule->current->dbID, $rule->next->dbID, $rule->action);
+    $sth->execute($current_anal_id, $next_anal_id, $rule->action);
   
    $sth = $self->prepare( q{
       SELECT last_insert_id()
@@ -84,13 +93,21 @@ sub store {
    $rule->dbID( $dbID );
   }
   else {
+    my $current_anal_id;
+    if (defined $rule->current) {
+      $current_anal_id = $rule->current->dbID;
+    }
+    my $next_anal_id;
+    if (defined $rule->next) {
+      $next_anal_id = $rule->next->dbID;
+    }
     my $sth = $self->prepare( qq{
       INSERT INTO rule
          SET rule_id= ?,
              current= ?,
              next= ?,
              action= ?} );
-    $sth->execute($rule->dbID, $rule->current->dbID, $rule->next->dbID, $rule->action);
+    $sth->execute($rule->dbID, $current_anal_id, $next_anal_id, $rule->action);
   }
   #$rule->adaptor( $self );
   return $rule->dbID;
@@ -150,7 +167,7 @@ sub fetch_all {
 sub check_dependency_by_job{
     my ($self,$job,@rules ) = @_;
     foreach my $rule(@rules){
-       if ($rule->current->dbID == $job->analysis->dbID){
+       if (defined($rule->current) && $rule->current->dbID == $job->analysis->dbID){
            my $action=$rule->action;
            if(($action eq 'UPDATE') ||($action eq 'WAITFORALL_AND_UPDATE')){
                 return 1;
@@ -192,8 +209,14 @@ my ( $rule );
     return undef;
   }
 
-  my $current = $self->db->get_AnalysisAdaptor->fetch_by_dbID($queryResult->{current});
-  my $next = $self->db->get_AnalysisAdaptor->fetch_by_dbID($queryResult->{next});
+  my $current;
+  my $next; 
+  if (defined ($queryResult->{current})) {
+     $current = $self->db->get_AnalysisAdaptor->fetch_by_dbID($queryResult->{current});
+  }
+  if (defined ($queryResult->{next})) {
+     $next = $self->db->get_AnalysisAdaptor->fetch_by_dbID($queryResult->{next});
+  }
 
   $rule = Bio::Pipeline::Rule->new
     ( '-dbid'    => $queryResult->{rule_id} ,
