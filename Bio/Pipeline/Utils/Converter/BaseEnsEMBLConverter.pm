@@ -54,6 +54,9 @@ sub _parse_instance {
     my ($self, $in, $out) = @_;
     if($in eq 'Bio::Search::HSP::GenericHSP' and $out eq 'Bio::EnsEMBL::BaseAlignFeature'){
         return 'Bio::Pipeline::Utils::Converter::HSPToEnsEMBLConverter';
+    }elsif($in eq 'Bio::SeqFeature::Generic'){
+        return 'Bio::Pipeline::Utils::Converter::SeqFeatureToEnsEMBLConverter';
+        
     }else{
         $self->throw("[$in] to [$out], not supported");
     }

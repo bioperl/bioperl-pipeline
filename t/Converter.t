@@ -4,7 +4,7 @@ use strict;
 BEGIN {
     use lib 't';
     use Test;
-    plan tests => 9;
+    plan tests => 14;
 }
 
 END {
@@ -16,6 +16,8 @@ use Bio::EnsEMBL::Analysis;
 use Bio::EnsEMBL::RawContig;
 
 use Bio::Pipeline::Utils::Converter;
+
+use Bio::SeqFeature::Generic;
 
 my $searchio = new Bio::SearchIO(
     -format => 'blast',
@@ -62,4 +64,31 @@ ok $_->percent_id, 54;
 
 
 #    print($_->cigar_string . "\n") foreach(@ens_alignFeatures);
+
+
+
+
+# Test for SeqFeatureToEnsEMBLConverter
+
+my $seqFeature = new Bio::SeqFeature::Generic(
+    -start => 100,
+    -end => 200,
+    -strand => 1,
+    -score => 10
+);
+
+$converter = new Bio::Pipeline::Utils::Converter(
+    -in => 'Bio::SeqFeature::Generic',
+    -out => 'Bio::EnsEMBL::SeqFeature',
+    -analysis => $ens_analysis,
+    -contig => $ens_contig
+);
+
+my ($ens_seqFeature) = @{$converter->convert([$seqFeature])};
+
+ok $ens_seqFeature->isa('Bio::EnsEMBL::SeqFeature');
+ok $ens_seqFeature->start, 100;
+ok $ens_seqFeature->end, 200;
+ok $ens_seqFeature->strand, ;
+ok $ens_seqFeature->score, 10;
 
