@@ -378,7 +378,7 @@ pipeline.
     </programlisting>
     </para>
     <para>
-    line 276: This species the particular DataMonger to use that will prepare your file for
+    line 276: This specifies the particular DataMonger to use that will prepare your file for
     paralization. For this case, we will use setup_file_blast which will chop up your
     input file specified below into smaller chunks. 
     </para>
@@ -621,10 +621,13 @@ Default values are read from PipeConf.pm
     </para>
     <para>
     Once you are ready to run on the node, you may reset your jobs by rerunning the Xml2DB script as described in the last section.
-    Submit the jobs to the compute nodes now by running the PipelineManger without the -l option:
+    Submit the jobs to the compute nodes now by running the PipelineManger without the -l option. It is recommended
+    for those who is running this on a desktop setup to use the nice command to set a lower priority like 15 so that
+    your computer doesn't hang up on a large process. C-Shell has a built in nice command so we specify the full path
+    below:
     </para>
     <programlisting>
-shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline> perl PipelineManager.pl -dbname test_xml -f
+shawnh@pulse1 ~/src/bioperl-pipeline/Bio/Pipeline> /usr/bin/nice -n 15 perl PipelineManager.pl -dbname test_xml -f
 ///////////////Starting Pipeline//////////////////////
 Fetching Analysis From Pipeline test_xml
 2 analysis found.
