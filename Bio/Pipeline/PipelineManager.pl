@@ -237,7 +237,7 @@ sub create_new_job {
     my @new_jobs;
     my $action;
     foreach my $rule (@rules){
-        if ($rule->current->dbID == $job->analysis->dbID){
+        if (defined ($rule->current) && $rule->current->dbID == $job->analysis->dbID){
             my $next_analysis = $analysisAdaptor->fetch_by_dbID($rule->next->dbID);
             $action = $rule->action;
             if ($action eq 'COPY_ID') {
