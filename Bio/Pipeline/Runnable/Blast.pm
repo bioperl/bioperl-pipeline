@@ -209,11 +209,14 @@ sub run {
       while (my $result = $searchio->next_result){
         while( my $hit = $result->next_hit ) {
           while( my $hsp= $hit->next_hsp ){
+              $hsp->add_tag_value('analysis_parameters',$self->analysis->parameters);
+              $hsp->add_tag_value('analysis_program',$self->analysis->program);
+              $hsp->add_tag_value('analysis_db',$self->analysis->db);
               push @hsps,$hsp;
           }
         }
       }
-
+      
       $self->output(\@hsps);
   }
   elsif($seq1 && ($program =~/blastpgp/i)){
@@ -229,6 +232,9 @@ sub run {
       while (my $result = $searchio->next_result){
         while( my $hit = $result->next_hit ) {
           while( my $hsp = $hit->next_hsp ) {
+              $hsp->add_tag_value('analysis_parameters',$self->analysis->parameters);
+              $hsp->add_tag_value('analysis_program',$self->analysis->program);
+              $hsp->add_tag_value('analysis_db',$self->analysis->db);
               push @hsps,$hsp;
           }
         }
