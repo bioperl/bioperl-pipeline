@@ -168,6 +168,18 @@ sub dump {
                 $self->_print($hsp->query->gff_string."\n");
                 $self->_print($hsp->subject->gff_string."\n");
             }
+            elsif($format=~/tribe/){
+                my $sig = $hit->significance;
+                $sig =~s/^e-/1e-/g;
+                my $expect = sprintf("%e",$sig);
+                if ($expect==0){
+                  my $wt = 200; #hardcode 
+                  $expect=sprintf("%e","1e-$wt");
+                }
+                my $first=(split("e-",$expect))[0];
+                my $second=(split("e-",$expect))[1];
+                $self->_print(join("\t",$hsp->feature1->seq_id,$hsp->feature2->seq_id,int($first),int($second)),"\n");
+            }
             else {
               $self->_print($hsp->feature1->seq_id."\t".$hsp->feature2->seq_id."\t".$hit->significance."\n");
             }
