@@ -112,15 +112,12 @@ sub run {
 
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
-  if($self->analysis->parameters){
-    my $db_file = $self->analysis->db_file;
-    my $program_file = $self->analysis->program_file;
-    my @params = $self->parse_params("-DB $db_file");
-    $factory = Bio::Tools::Run::Hmmpfam->new(@params);
-  }
-  else {
-    $factory = Bio::Tools::Run::Hmmpfam->new();
-  }
+  my $db_file = $self->analysis->db_file;
+  my @params = $self->parse_params($self->analysis->analysis_parameters);
+  push @params("DB"=> $db_file);
+  $factory = Bio::Tools::Run::Hmmpfam->new(@params);
+  my $program_file = $self->analysis->program_file;
+  $factory->execuable($program_file) if $program_file;
 
   my @genes;
   eval {
