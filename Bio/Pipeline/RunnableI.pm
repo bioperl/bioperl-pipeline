@@ -98,6 +98,7 @@ implemeted to work properly.
   required by the runnable and calling the set methods accordingly. 
 
 =head2 params
+
   $self->params("-C 10 -W 3")
   
   This is a get/set method to allow any string of parameters to be
@@ -172,8 +173,8 @@ sub analysis{
 }
 sub parse_params {
     my ($self,$string) = @_;
-
-    my @param_str = split('-',$string);
+    $string = " $string"; #add one space for first param
+    my @param_str = split(/\s-/,$string);
     shift @param_str;
     #parse the parameters
     my @params;
