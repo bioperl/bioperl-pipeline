@@ -12,7 +12,7 @@ sub _initialize {
     my ($self,@args) = @_;
     $self->SUPER::_initialize(@args);
 
-    my ($contig_ioh,$protein_ioh,$dh_ioh) = $self->_rearrange([qw(CONTIG_IOH PROTEIN_IOH DATA_HANDLER_ID)],@args);
+    my ($contig_ioh,$protein_ioh,$dh_ioh,$padding) = $self->_rearrange([qw(CONTIG_IOH PROTEIN_IOH DATA_HANDLER_ID PADDING)],@args);
 
     $contig_ioh || $self->throw("Need an iohandler for the contig");
     $self->contig_ioh($contig_ioh);
@@ -23,8 +23,18 @@ sub _initialize {
     $dh_ioh || $self->throw("Need an datahandler id for fetch_contig_start_end method");
     $self->dhid($dh_ioh);
 
+    $padding = $padding || 1000;
+    $self->padding($padding);
+
 }
 
+sub padding{
+    my ($self,$arg) = @_;
+    if($arg){
+        $self->{'_padding'} = $arg;
+    }
+    return $self->{'_padding'};
+}
 sub contig_ioh {
     my ($self,$arg) = @_;
     if($arg){
@@ -77,13 +87,23 @@ sub run {
     my ($first_sub)= $sub[0];
     my $chr = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->chromosome;
     my $contig_id = $first_sub->entire_seq->db_handle->get_Contig($first_sub->entire_seq->display_id)->internal_id;
+    my $contig_length = $first_sub->entire_seq->length;
     
     #shawn to fix--creating input for contig_start_end
     foreach my $output(@output){
         my @sub = $output->sub_SeqFeature;
         my $contig_name  = $sub[0]->seqname;
         my $contig_start = $output->start;
+        if ($contig_start > $padding){
+            $contig_start -= $padding;
+        }
+        else {
+            $contig_start = 1;
+        }
         my $contig_end   = $output->end;
+        if ($contig_end < ($contig_length - $padding)){
+            $contig_end += $padding;
+        }
         my $protein_id   = $sub[0]->hseqname;
         my $strand       = $output->strand;
         

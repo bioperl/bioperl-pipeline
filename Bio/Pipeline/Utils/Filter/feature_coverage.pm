@@ -38,6 +38,18 @@ sub run {
     return $self->_select_hits(@output);
 }
 
+sub _set_coverage {
+    my ($self,@hits) = @_;
+    my @modified;
+    foreach my $hit(@hits){
+        foreach my $feat($hit->sub_SeqFeature){
+          $hit->{'_sub_seqfeature_coverage'} += $feat->length;
+        }
+        push @modified, $hit;
+    }
+    return @modified;
+}
+
 =head2 _select_features
 
   Title   : _select_features
@@ -51,6 +63,8 @@ sub run {
 sub _select_hits{
 
   my ($self,@hits) = @_;
+  
+  @hits = $self->_set_coverage(@hits);
 
   @hits= sort { $a->strand <=> $b->strand
                     ||
@@ -73,14 +87,12 @@ sub _select_hits{
   foreach my $hit(@hits){
       if ($hit->overlaps($hit_cluster,'strong')){
           $hit_cluster->add_sub_SeqFeature($hit,'EXPAND');
-          $hit_cluster->{'_sub_seqfeature_coverage'} += $hit->length;
-          $hit->{'_sub_seqfeature_coverage'} = $hit_cluster->{'_sub_seqfeature_coverage'};
+          $hit_cluster->{'_sub_seqfeature_coverage'} += $hit->{'_sub_seqfeature_coverage'};
 
       }
       else{
           $hit_cluster = Bio::SeqFeature::Generic->new();
-          $hit_cluster->{'_sub_seqfeature_coverage'} += $hit->length;
-          $hit->{'_sub_seqfeature_coverage'} = $hit_cluster->{'_sub_seqfeature_coverage'};
+          $hit_cluster->{'_sub_seqfeature_coverage'} += $hit->{'_sub_seqfeature_coverage'};
           $hit_cluster->add_sub_SeqFeature($hit,'EXPAND');
           $hit_cluster->strand($hit->strand);
 
