@@ -155,7 +155,11 @@ while ($run) {
     $submitted = 0;
 
     foreach my $job(@jobs){
-   
+        
+	#check whether output of job needed for downstream analysis
+        my $job_depend = $ruleAdaptor->check_dependency_by_job($job,@rules);
+        $job->dependency($job_depend);
+        
         if (($job->status eq 'NEW')   || ( ($job->status eq 'FAILED') && ($job->retry_count < $RETRY) )){ 
             $submitted = 1;
 
@@ -223,7 +227,8 @@ sub create_new_job {
     my @rules       = $ruleAdaptor->fetch_all;
     my @new_jobs;
     my $action;
-    foreach my $rule (@rules){
+ print STDERR "The rule ".scalar(@rules)." rules\n";  #added by bala on 2/8/2002   
+ foreach my $rule (@rules){
         if ($rule->current->dbID == $job->analysis->dbID){
             my $next_analysis = $analysisAdaptor->fetch_by_dbID($rule->next->dbID);
             $action = $rule->action;
@@ -280,6 +285,7 @@ sub create_new_job {
                   push (@new_jobs,$new_job);
                }
             }
+
 
         }
     }
@@ -393,8 +399,6 @@ sub _pipeline_state_changed {
     }
     return 0 
 }
-
-
 
 sub submit_batch{
 	my ($batchsubmitter,$action) = @_;

@@ -42,7 +42,7 @@ package Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::Job;
 use Bio::Pipeline::SQL::InputAdaptor;
 use Bio::Root::Root;
-
+use Bio::Pipeline::IOHandler;
 use vars qw(@ISA);
 use strict;
 
@@ -664,7 +664,7 @@ sub get_status {
   Title   : get_stage
   Usage   : my $stage = $job->get_stage
   Function: gets the job stage
-  Returns : stage str.
+  Returns  : stage str.
   Args    : 
 
 =cut
@@ -691,7 +691,63 @@ sub get_stage {
     $job->stage($stage);
     return $stage;
 }
+###This sub routine was added by bala on 8/8/2002
+sub create_and_store_jobs_by_IOhandler{
+    
+    my($self,$iohandler)= @_;
+    my $dbID = $iohandler->dbID;
 
+    my @input_names = $iohandler->fetch_input();
+    my $dbadaptor = $iohandler->dbadaptor;
+    my $iohandler_adaptor = $dbadaptor->get_IOHandlerAdaptor;
+    my $analysis_adaptor=$dbadaptor->get_AnalysisAdaptor;
+    my $job_adaptor=$dbadaptor->get_JobAdaptor;
+    my $sth1;
+    eval{
+      $sth1 = $self->prepare( " select input_iohandler_id from iohandler_child  where inpu_create_iohandler_id = $dbID ");
+      $sth1->execute();
+    };
+
+    if($@){
+      $self->throw("Error getting  input_iohandler_id for job $dbID");
+    }
+
+    my ($input_iohandler_id) = $sth1->fetchrow_array();
+    my $input_iohandler = $iohandler_adaptor->fetch_by_dbID($input_iohandler_id);
+    
+    my @job_objs;
+     my $sth2;
+    eval{
+      $sth2 = $self->prepare( " select analysis_id from analysis_io_handler  where iohandler_id = $input_iohandler_id ");
+      $sth2->execute();
+    };
+
+    if($@){
+      $self->throw("Error getting  analysis_id for job $dbID");
+    }
+
+    my ($analysis_id) = $sth2->fetchrow_array();
+    my $analysis = $analysis_adaptor->fetch_by_dbID($analysis_id);
+    
+    foreach my $input_name(@input_names){
+      my @input_objs;
+      my $input_obj = Bio::Pipeline::Input->new(-name => $input_name,
+                                               -input_handler => $input_iohandler);
+      push @input_objs, $input_obj;
+      my $job_obj = Bio::Pipeline::Job->new(
+                                          -analysis => $analysis,
+                                          -adaptor => $dbadaptor->get_JobAdaptor,
+                                          -inputs => \@input_objs);         
+                                                   
+      push @job_objs, $job_obj;
+    }
+    
+    foreach my $job (@job_objs) {
+      $job_adaptor->store($job);
+    }
+    
+}
+###############
 
 sub db {
   my ( $self, $arg )  = @_;

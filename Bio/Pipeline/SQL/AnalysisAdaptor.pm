@@ -92,7 +92,7 @@ sub fetch_by_dbID {
   
 
   my $query = " SELECT  io.iohandler_id 
-                FROM    iohandler io, analysis_output_handler ai
+                FROM    iohandler io, analysis_io_handler ai
                 WHERE   ai.iohandler_id = io.iohandler_id 
                         and ai.analysis_id = $id
                         and io.type = 'OUTPUT'";
@@ -245,8 +245,9 @@ sub store {
      my $new_input_handler = $analysis->new_input_handler;
 
      if (defined ($output_handler)) {
+         ##the name of the table is changed.....
          my $sth = $self->prepare( q{
-            INSERT INTO analysis_output_handler
+            INSERT INTO analysis_io_handler
                 SET
                 analysis_id = ?,
                 iohandler_id = ? } ); 

@@ -45,6 +45,7 @@ package Bio::Pipeline::SQL::RuleAdaptor;
 
 use Bio::Pipeline::Rule;
 use Bio::Root::Root;
+use Bio::Pipeline::Job;
 use vars qw(@ISA);
 use strict;
 
@@ -146,6 +147,22 @@ sub fetch_all {
   return @rules;
 }
 
+sub check_dependency_by_job{
+    my ($self,$job,@rules ) = @_;
+    foreach my $rule(@rules){
+       if ($rule->current->dbID == $job->analysis->dbID){
+           my $action=$rule->action;
+           if(($action eq 'UPDATE') ||($action eq 'WAITFORALL_AND_UPDATE')){
+                return 1;
+           }
+       }
+    }
+    return 0;
+}
+
+
+
+
 =head2 fetch_by_dbID
 
   Title   : fetch_by_dbID
@@ -157,10 +174,11 @@ sub fetch_all {
 =cut
 
 sub fetch_by_dbID {
-  my $self = shift;
+
+my $self = shift;
   my $dbID = shift;
-  
-  my ( $rule );
+
+my ( $rule );
   my $queryResult;
 
   my $sth = $self->prepare( q {

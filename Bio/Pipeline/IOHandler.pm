@@ -310,8 +310,19 @@ sub _format_output_args {
       if ($arguments[$i]->value eq 'OUTPUT'){
         $value = $object
       }
-      elsif($arguments[$i]->value eq 'INPUT_ID'){
-        $value = $input->[0]->name;
+      elsif($arguments[$i]->value eq 'INPUT'){
+	my @names;
+	foreach my $in (@{$input}){
+		push @names, $in->name;
+	}
+        $value = \@names;
+      }
+      elsif($arguments[$i]->value eq 'INPUTOBJ'){
+	my @values;
+	foreach my $in (@{$input}){
+		push @values, $in->fetch;
+	}
+	$value = \@values;
       }
       else {
         $value = $arguments[$i]->value;

@@ -206,11 +206,15 @@ sub output {
    
     $self->{'_output'} = [];
     
-    if(ref($self->runnable->output) eq "ARRAY"){
-  	    push @{$self->{'_output'}}, @{$self->runnable->output};
-    }
-    else {
-        push @{$self->{'_output'}}, $self->runnable->output;
+    
+    if (defined $self->runnable->output){
+	if(ref($self->runnable->output) eq "ARRAY"){
+  		push @{$self->{'_output'}}, @{$self->runnable->output};
+	}
+	else {
+  		push @{$self->{'_output'}}, $self->runnable->output;
+	}
+		
     }
     return @{$self->{'_output'}};
 }

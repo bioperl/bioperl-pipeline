@@ -61,7 +61,7 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids ) 
+    my ($adaptor,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids,$dependency ) 
 	= $self->_rearrange([qw(ADAPTOR
             				ID
                                         PROCESS_ID
@@ -75,7 +75,8 @@ sub new {
             				STATUS
             				STAGE
                                         OUTPUT_IDS
-		        		)],@args);
+		        	      DEPENDENCY
+              )],@args);
 
 				
     $dbID    = -1 unless defined($dbID);
@@ -97,10 +98,11 @@ sub new {
     $self->status           ($status);
     $self->stage            ($stage);
     #$self->output_ids       ($output_ids);
-
+    $self->dependency($dependency);
     @{$self->{'_inputs'}}= ();
     @{$self->{'_output_ids'}}= ();
-
+    
+    
     foreach my $input (@{$inputs}){
         $self->add_input($input);
     }
@@ -311,8 +313,16 @@ sub analysis {
 
 }
 
+sub dependency {
+    my ($self,$arg) = @_;
+    if (defined($arg)) {
 
+    $self->{'_dependency'} = $arg;
+    }
+    return $self->{'_dependency'};
 
+}
+##########
 =head2 run
 
   Title   : run
@@ -393,9 +403,15 @@ sub run {
       print (STDERR "WRITING: Lost the will to live Error\nProblems for runnableDB writing output for \n[$err]") ;
       $self->throw( "Problems for runnableDB writing output for \n[$err]") ;
   }
-  $self->adaptor->store_outputs($self, @output_ids) unless (scalar(@output_ids) == 0);
-  $self->output_ids(@output_ids) unless (scalar(@output_ids) == 0);
-  $self->stage('UPDATING');
+ 
+ if($self->dependency){
+     $self->adaptor->store_outputs($self, @output_ids) unless (scalar(@output_ids) == 0);
+     $self->output_ids(@output_ids) unless (scalar(@output_ids) == 0);
+ }
+ ##############
+ 
+ 
+ $self->stage('UPDATING');
   $self->status( "COMPLETED" );
   $self->update;
 
