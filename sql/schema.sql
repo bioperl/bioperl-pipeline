@@ -36,7 +36,7 @@ CREATE TABLE input_create_argument (
   input_create_argument_id    int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   input_create_id    int(10) unsigned DEFAULT '0' NOT NULL ,
   tag             varchar(40) DEFAULT '',
-  value           varchar(40) DEFAULT '',
+  value           varchar(255) DEFAULT '',
 
   PRIMARY KEY (input_create_argument_id)
 );
@@ -45,7 +45,7 @@ CREATE TABLE filter_argument (
   filter_argument_id    int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
   filter_id    int(10) unsigned DEFAULT '0' NOT NULL ,
   tag             varchar(40) DEFAULT '',
-  value           varchar(40) DEFAULT '',
+  value           varchar(255) DEFAULT '',
 
   PRIMARY KEY (filter_argument_id)
 );
@@ -129,7 +129,7 @@ CREATE TABLE streamadaptor (
 #caters for multiple inputs across diffferent analysis using different iohandlers
 CREATE TABLE input (
    input_id         int(10) unsigned DEFAULT '0' NOT NULL auto_increment,
-   name             varchar(40) DEFAULT '' NOT NULL,
+   name             varchar(255) DEFAULT '' NOT NULL,
    tag              varchar(40) DEFAULT '',
    job_id           int(10) unsigned NOT NULL,
    iohandler_id     int(10) unsigned ,
@@ -191,7 +191,7 @@ CREATE TABLE analysis (
   program_version  varchar(40),
   program_file     varchar(80),
   data_monger_id   int(10) unsigned DEFAULT '',
-  parameters       varchar(80),
+  parameters       varchar(255),
   gff_source       varchar(40),
   gff_feature      varchar(40),
   node_group_id    int(10) unsigned DEFAULT '0' NOT NULL,
