@@ -10,7 +10,7 @@
 #
 =head1 NAME
 
-Bio::Pipeline::Input::setup_family
+Bio::Pipeline::Input::setup_file
 
 =head1 SYNOPSIS
 
@@ -82,19 +82,25 @@ sub _initialize {
     $self->SUPER::_initialize(@args);
 
     my ($runnable, 
-        $format,
+        $informat,
+        $outformat,
+        $tag,
         $input_file,
         $chop_size,
         $workdir,
         $result_dir,
+        $full_path,
         $format_db,
         $format_db_exe,
         $format_db_arg) = $self->_rearrange([qw(RUNNABLE 
-                                                FORMAT 
+                                                INFORMAT 
+                                                OUTFORMAT
+                                                TAG
                                                 INPUT_FILE 
                                                 CHOP_NBR 
                                                 WORKDIR 
                                                 RESULT_DIR 
+                                                FULL_PATH
                                                 FORMAT_DB  
                                                 FORMAT_DB_EXE 
                                                 FORMAT_DB_ARG)],@args);
@@ -105,8 +111,12 @@ sub _initialize {
     $input_file|| $self->throw("Need a input file");
     $self->input_file($input_file);
 
-    $format ||='fasta';
-    $self->format($format);
+    $informat ||='fasta';
+    $self->informat($informat);
+
+    $outformat ||='fasta';
+    $self->outformat($outformat);
+    
     
     $chop_size ||= 400;
     $self->chop_size($chop_size);
@@ -114,8 +124,11 @@ sub _initialize {
     $workdir ||= '/tmp';
     $self->workdir($workdir);
 
-    $result_dir ||= Bio::Root::IO->catfile($workdir,"blast_results");
+    $result_dir ||= Bio::Root::IO->catfile($workdir,"results");
     $self->result_dir($result_dir);
+    $self->tag($tag) if $tag;
+    
+    $self->full_path if($full_path);
 
     #standalone blast works with ncbi blast only anyway 
     $format_db_exe ||='formatdb';
@@ -146,24 +159,57 @@ sub input_file{
     return $self->{'_input_file'};
 }
 
-=head2 format
+sub full_path{
+    my ($self,$arg) = @_;
+    if($arg){
+        $self->{'_full_path'} = $arg;
+    }
+    return $self->{'_full_path'};
+}
 
-  Title   : format
-  Usage   : $self->format()
-  Function: get/sets of the format
+sub tag {
+    my ($self,$val) = @_;
+    if($val){
+        $self->{'_tag'} = $val;
+    }
+    return $self->{'_tag'};
+}
+
+=head2 informat
+
+  Title   : informat
+  Usage   : $self->informat()
+  Function: get/sets of the informat
   Returns :  
   Args    :
 
 =cut
 
-sub format{
+sub informat{
     my ($self,$arg) = @_;
     if($arg){
-        $self->{'_format'} = $arg;
+        $self->{'_informat'} = $arg;
     }
-    return $self->{'_format'};
+    return $self->{'_informat'};
 }
 
+=head2 outformat
+
+  Title   : outformat
+  Usage   : $self->outformat()
+  Function: get/sets of the outformat
+  Returns :  
+  Args    :
+
+=cut
+
+sub outformat{
+    my ($self,$arg) = @_;
+    if($arg){
+        $self->{'_outformat'} = $arg;
+    }
+    return $self->{'_outformat'};
+}
 =head2 runnable
 
   Title   : runnable
@@ -317,9 +363,20 @@ sub run {
     my %dt = $runn->datatypes;
     foreach my $file(@file_names){
       my @input;
-      foreach my $method(keys %dt){
-        push @input ,$self->create_input($file,'',$method);
-      }
+METHOD:      foreach my $method(keys %dt){
+              if($self->tag){
+                if($method eq $self->tag){
+                  push @input ,$self->create_input($file,'',$self->tag);
+                 }
+                else {
+                  next METHOD;
+                }
+              }
+              else {
+                push @input ,$self->create_input($file,'',$self->tag);
+              }
+
+             }
       my $job   = $self->create_job($next_anal,\@input);
       $self->dbadaptor->get_JobAdaptor->store($job);
     }
@@ -350,7 +407,8 @@ sub _chop_files {
     my $workdir = $self->workdir;
     my $resultdir = $self->result_dir;
     my $n_chunks = $self->chop_size;
-    my $format = $self->format;
+    my $informat = $self->informat;
+    my $outformat = $self->outformat;
     my @filenames;
 
     if($workdir){
@@ -360,7 +418,7 @@ sub _chop_files {
         mkdir($resultdir,0755) || $self->warn("$resultdir: $!");
     }
     #chop peptide files into digestible parts
-    my $sio = Bio::SeqIO->new(-file=>$filename,-format=>$format);
+    my $sio = Bio::SeqIO->new(-file=>$filename,-format=>$informat);
 
     my @seq;
     while(my $seq = $sio->next_seq){
@@ -374,8 +432,13 @@ NEW_FILE:
     my $index = 1;
     $filename = (split /\//, $filename)[-1]; #get the filename only
     my $file = Bio::Root::IO->catfile($workdir,"$filename.$index");
-    push @filenames, $file;
-    my $sio = Bio::SeqIO->new(-file=>">$file",-format=>$self->format);
+    if($self->full_path){
+      push @filenames, $file;
+    }
+    else {
+      push @filenames, "$filename.$index";
+    }
+    my $sio = Bio::SeqIO->new(-file=>">$file",-format=>$outformat);
     my $count = 0;
     while ($index <= $n_chunks){
         if($count == $split) {
@@ -384,8 +447,13 @@ NEW_FILE:
             $index++;
             $file = "$workdir/$filename.$index";
             $sio->close;
-            $sio = Bio::SeqIO->new(-file=>">$file",-format=>$self->format);
-            push @filenames, $file;
+            $sio = Bio::SeqIO->new(-file=>">$file",-format=>$outformat);
+            if($self->full_path){
+              push @filenames, $file;
+            }
+            else {
+              push @filenames, "$filename.$index";
+            }
         }
         my $seq = shift @seq;
         $sio->write_seq($seq);
@@ -397,6 +465,22 @@ NEW_FILE:
     }
     $sio->close();
     return @filenames;
+}
+
+
+sub _setup_blastdb {
+    my ($self) = @_;
+    my $input_file = $self->input_file;
+    
+    -e $input_file.".phr" && return;
+
+    Bio::Root::IO->exists_exe($self->format_db_exe) || return;
+    my $cmd = $self->format_db_exe." ". $self->format_db_arg." -i ".$input_file;
+    my $status = system($cmd);
+    $self->throw("Problems formatting db $input_file $!") if $status > 0;
+
+
+    return;
 }
 
 1;
