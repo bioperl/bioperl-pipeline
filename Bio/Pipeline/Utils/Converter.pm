@@ -120,6 +120,13 @@ sub convert {
     my ($self, $input) = @_;
     $input || $self->throw("Need an input object to convert");
     my $obj = $self->_create_obj($self->module);
+
+
+	@methods = sort {$a->rank <=> $b->rank} @{$self->method};
+	foreach my $method (@methods){
+				
+
+	}
     my $method = $self->method;
     my $output = $obj->$method($input);
     return $output;

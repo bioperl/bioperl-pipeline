@@ -44,6 +44,8 @@ package Bio::Pipeline::SQL::ConverterAdaptor;
 
 use Bio::Pipeline::Converter;
 use Bio::Pipeline::SQL::BaseAdaptor;
+use Bio::Pipeline::DataHandler;
+use Bio::Pipeline::Argument;
 
 use vars qw(@ISA);
 use strict;
@@ -58,25 +60,23 @@ sub store {
     if (!defined ($converter->dbID)) {
 	my $sth = $self->prepare( q{
 	    INSERT INTO converters 
-		SET module = ?,
-		    method = ? } );
+		SET module =?} );
 
 	$sth->execute
-	    ( $converter->module,
-	      $converter->method );
+	    ( $converter->module);
         my $dbid = $sth->{mysql_insertid};
         $converter->dbID($dbid);
     } else {
         my $sth = $self->prepare( q{
             INSERT INTO converters
                 SET converter_id = ?, 
-                    module = ?,
-                    method = ? } );
+                    module = ?
+            } );
 
         $sth->execute
             ( $converter->dbID,
-              $converter->module,
-              $converter->method );
+              $converter->module
+            );
     }
 
 	foreach my $converter_method (@{$converter->method}) {
@@ -89,10 +89,26 @@ sub store {
 sub _store_converter_method{
 	my ($self, $converter_method, $converter_id) = @_;
 
-	my $sql = "INSERT INTO converter_methods SET converter_method_id=?, converter_id=?, method=?, rank=?";
-	$self->prepare_execute($sql, $converter_method->dbID, $converter_id, $converter_method->method, $converter_method->rank);
+	if(defined ($converter_method->dbID)){
+		my $sql = "INSERT INTO converter_methods SET converter_method_id=?, converter_id=?, method=?, rank=?";
+		$self->prepare_execute($sql, 
+			$converter_method->dbID, 
+			$converter_id, 
+			$converter_method->method, 
+			$converter_method->rank);
+	}else{
+		my $sql = "INSERT INTO converter_methods SET converter_id=?, method=?, rank=?";
+		my $sth = $self->prepare($sql);
+		$sth->execute($converter_id, 
+			$converter_method->method, 
+			$converter_method->rank);
+		$converter_method->dbID($sth->{mysql_inserted});
+	}
 
-	foreach my $converter_argument (@{$converter_method->argument}) {
+	my $converter_arguments_ref = $converter_method->argument;
+	return if(!defined($converter_arguments_ref));
+
+	foreach my $converter_argument (@{$converter_arguments_ref}) {
 		$self->_store_converter_argument($converter_argument, $converter_method->dbID);
 	}
 
@@ -101,9 +117,23 @@ sub _store_converter_method{
 sub _store_converter_argument{
 	my ($self, $converter_argument, $converter_method_id) = @_;
 
-	my $sql = "INSERT INTO converter_arguments SET converter_argument_id=?, converter_method_id=?, tag=?, value=?";
-	$self->prepare_execute($sql, $converter_argument->dbID, $converter_method_id, $converter_argument->tag, $converter_argument->value);
-
+	if(defined ($converter_argument->dbID)){
+		my $sql = "INSERT INTO converter_arguments SET converter_argument_id=?, converter_method_id=?, tag=?, value=?, rank=?";
+		$self->prepare_execute($sql, 
+			$converter_argument->dbID, 
+			$converter_method_id, 
+			$converter_argument->tag, 
+			$converter_argument->value, 
+			$converter_argument->rank);
+	}else{
+		my $sql = "INSERT INTO converter_arguments SET converter_method_id=?, tag=?, value=?";
+		my $sth = $self->prepare($sql);
+		$sth->execute($converter_method_id, 
+			$converter_argument->tag, 
+			$converter_argument->value, 
+			$converter_argument->rank);
+		$converter_argument->dbID($sth->{mysql_inserted});
+	}
 }
 
 sub fetch_by_dbID{
@@ -158,17 +188,18 @@ sub _fetch_converter_method_by_converter_dbID{
 sub _fetch_converter_argument_by_converter_method_dbID{
 	my ($self, $id) = @_;
 	
-	my $query = "SELECT converter_argument_id, tag, value FROM converter_arguments WHERE converter_method_id = $id";
+	my $query = "SELECT converter_argument_id, tag, value, rank FROM converter_arguments WHERE converter_method_id = $id";
 
 	my $sth = $self->prepare_execute($query);
 	
 	my @arguments;
 
-	while(my ($converter_argument_id, $tag, $value) = $sth->fetchrow_array){
-		my $converter_argument = new Bio::Pipeline::Argument(
+	while(my ($converter_argument_id, $tag, $value, $rank) = $sth->fetchrow_array){
+		my $converter_argument = Bio::Pipeline::Argument->new (
 			-dbID => $converter_argument_id,
 			-tag => $tag,
-			-value => $value
+			-value => $value,
+			-rank => $rank
 		);
 
 		push @arguments, $converter_argument;

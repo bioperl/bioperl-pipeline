@@ -239,8 +239,9 @@ CREATE TABLE converter_methods(
 CREATE TABLE converter_arguments(
 	converter_argument_id 	int(10) unsigned DEFAULT '0' NOT NULL AUTO_INCREMENT,
 	converter_method_id 	INT(10) UNSIGNED NOT NULL,
-	tag 			VARCHAR(40) NOT NULL,
-	value 			VARCHAR(40),
+	tag 			VARCHAR(40),
+	value 			VARCHAR(40) NOT NULL,
+	rank			INT(2) UNSIGNED NOT NULL,
 
 	PRIMARY KEY(converter_argument_id)
 );
