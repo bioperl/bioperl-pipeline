@@ -50,7 +50,7 @@ both to database or files depending on one's specification.
     <global 
           rootdir="t/"
           datadir="$rootdir/data"
-          workdir="$datadir/phylipdir"
+          workdir="$datadir/phylip_dir"
           resultdir="$datadir/phylip_result"
           inputfile="$datadir/cysprot.fa"
           msa_logicname="Clustalw"
@@ -182,7 +182,7 @@ both to database or files depending on one's specification.
           rootdir="t/"
           datadir="$rootdir/data"
           resultdir="$datadir/phylip_result"
-          workdir="$datadir/phylipdir"
+          workdir="$datadir/phylip_dir"
           inputfile="$datadir/cysprot.fa"
           msa_logicname="Clustalw"
           msa_program= "clustalw"
