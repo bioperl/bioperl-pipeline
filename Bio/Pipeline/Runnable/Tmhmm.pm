@@ -15,21 +15,26 @@ Bio::Pipeline::Runnable::Tmhmm
 
 =head1 SYNOPSIS
 
-my $runnable = Bio::Pipeline::Runnable::Tmhmm->new();
-$runnable->analysis($analysis);
-$runnable->run;
-my $output = $runnable->output;
+ my $runnable = Bio::Pipeline::Runnable::Tmhmm->new();
+ $runnable->analysis($analysis);
+ $runnable->run;
+ my $output = $runnable->output;
 
 =head1 DESCRIPTION
+
 Runnable for Tmhmm
 
 =head1 AUTHOR
-Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Tmhmm
-originally written by Marc Sohrmann (ms2@sanger.ac.uk)
-Written in BioPipe by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
-Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
+
+ Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Protein::Tmhmm
+ originally written by Marc Sohrmann (ms2@sanger.ac.uk)
+ Written in BioPipe by Balamurugan Kumarasamy <savikalpa@fugu-sg.org>
+ Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
 =head1 APPENDIX
+
+The rest of the documentation details each of the object methods.
+Internal methods are usually preceded with a _.
 
 =cut
 
