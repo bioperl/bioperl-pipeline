@@ -66,12 +66,11 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$lsfid,$input_id,$cls,$analysis,$stdout,$stderr,$input, $retry_count ) 
+    my ($adaptor,$dbID,$queueid,$input_id,$analysis,$stdout,$stderr,$input, $retry_count ) 
 	= $self->_rearrange([qw(ADAPTOR
 				ID
-				LSF_ID
+				QUEUE_ID
 				INPUT_ID
-				CLASS
 				ANALYSIS
 				STDOUT
 				STDERR
@@ -80,7 +79,7 @@ sub new {
 				)],@args);
 
     $dbID    = -1 unless defined($dbID);
-    $lsfid = -1 unless defined($lsfid);
+    $queueid = -1 unless defined($queueid);
     $cls = 'contig' unless defined($cls);
 
     $input_id   || $self->throw("Can't create a job object without an input_id");
@@ -92,13 +91,12 @@ sub new {
     $self->dbID         ($dbID);
     $self->adaptor  ($adaptor);
     $self->input_id   ($input_id);
-    $self->class   ($cls);
     $self->analysis   ($analysis);
     $self->stdout_file($stdout);
     $self->stderr_file($stderr);
     $self->input_object_file($input);
     $self->retry_count( $retry_count );
-    $self->LSF_id( $lsfid );
+    $self->QUEUE_id( $queueid );
 
     return $self;
 }
@@ -119,13 +117,11 @@ sub create_by_analysis_inputId {
   my $dummy = shift;
   my $analysis = shift;
   my $inputId = shift;
-  my $class = shift;
 
   my $job = Bio::EnsEMBL::Pipeline::Job->new
     ( -input_id    => $inputId,
       -analysis    => $analysis,
       -retry_count => 0,
-      -class       => $class
     );
   $job->make_filenames;
   return $job;
@@ -197,27 +193,6 @@ sub input_id {
     return $self->{'_input_id'};
 }
 
-=head2 class
-
-  Title   : class
-  Usage   : $self->class($class)
-  Function: Get/set method for the class of the input to the job
-            typically contig/clone
-  Returns : string
-  Args    : string
-
-=cut
-
-
-sub class {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-	$self->{'_class'} = $arg;
-    }
-    return $self->{'_class'};
-}
-
 =head2 analysis
 
   Title   : analysis
@@ -246,7 +221,7 @@ sub analysis {
   Title   : flush_runs
   Usage   : $job->flush_runs( jobadaptor, [queue] );
   Function: Issue all jobs in the queue and empty the queue.
-    Set LSF id in all jobs. Uses the given adaptor for connecting to
+    Set QUEUE id in all jobs. Uses the given adaptor for connecting to
     db. Uses last job in queue for stdout/stderr. 
   Returns : 
   Args    : 
@@ -257,12 +232,12 @@ sub flush_runs {
   my $self = shift;
 
   my $adaptor = shift;
-  my $LSF_params = shift;
+  my $QUEUE_params = shift;
   my @queues;
   
-  my $nodes   = $LSF_params->{'nodes'}   || undef;
-  my $queue   = $LSF_params->{'queue'}   || undef;
-  my $jobname = $LSF_params->{'jobname'} || undef;
+  my $nodes   = $QUEUE_params->{'nodes'}   || undef;
+  my $queue   = $QUEUE_params->{'queue'}   || undef;
+  my $jobname = $QUEUE_params->{'jobname'} || undef;
 
   if( !defined $adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
@@ -282,7 +257,7 @@ sub flush_runs {
   my $username = $db->username;
   my $dbname   = $db->dbname;
   my $pass     = $db->password;
-  my $lsfid;
+  my $queueid;
 
   # runner.pl: first look in pipeConf.pl,
   # then in same directory as Job.pm,
@@ -338,13 +313,13 @@ sub flush_runs {
   
     while (<SUB>) {
       if (/Job <(\d+)>/) {
-        $lsfid = $1;
+        $queueid = $1;
       }
     }
     close(SUB);
 
-    if( ! defined $lsfid ) {
-      print STDERR ( "Couldnt submit ".join( " ",@{$batched_jobs{$queue}} )." to LSF" );
+    if( ! defined $queueid ) {
+      print STDERR ( "Couldnt submit ".join( " ",@{$batched_jobs{$queue}} )." to QUEUE" );
       foreach my $jobid ( @{$batched_jobs{$queue}} ) {
         my $job = $adaptor->fetch_by_dbID( $jobid );
         $job->set_status( "FAILED" );
@@ -358,8 +333,8 @@ sub flush_runs {
             open( FILE, ">".$_ ); close( FILE );
           }
         }
-	$job->LSF_id( $lsfid );
-        # $job->create_lsflogfile;
+	$job->QUEUE_id( $queueid );
+        # $job->create_queuelogfile;
         $job->retry_count( $job->retry_count + 1 );
         $job->set_status( "SUBMITTED" );
         $adaptor->update( $job );
@@ -375,7 +350,7 @@ sub flush_runs {
 
   Title   : batch_runRemote
   Usage   : $job->batch_runRemote
-  Function: Issue more than one small job in one LSF job because 
+  Function: Issue more than one small job in one QUEUE job because 
     job submission is very slow
   Returns : 
   Args    : Is static, private function, dont call with arrow notation.
@@ -384,17 +359,17 @@ sub flush_runs {
 
 sub batch_runRemote {
   my $self = shift;
-  my $LSF_params = shift;
+  my $QUEUE_params = shift;
 
-  my $batchsize = $LSF_params->{'flushsize'} || 1;
-  my $queue     = $LSF_params->{'queue'};
+  my $batchsize = $QUEUE_params->{'flushsize'} || 1;
+  my $queue     = $QUEUE_params->{'queue'};
   
   # should check job->analysis->runtime
   # and add it to batched_jobs_runtime
   # but for now just
   push( @{$batched_jobs{$queue}}, $self->dbID );
   if ( scalar( @{$batched_jobs{$queue}} ) >= $batchsize ) {
-    $self->flush_runs( $self->adaptor, $LSF_params );
+    $self->flush_runs( $self->adaptor, $QUEUE_params );
   }
 }
 
@@ -404,14 +379,14 @@ sub batch_runRemote {
 
 =head2 runLocally
 =head2 runRemote( boolean withDB, queue )
-=head2 runInLSF
+=head2 runInQUEUE
 
   Title   : running
   Usage   : $self->run...;
-  Function: runLocally doesnt submit to LSF
-            runInLSF is like runLocally, but doesnt redirect STDOUT and 
+  Function: runLocally doesnt submit to QUEUE
+            runInQUEUE is like runLocally, but doesnt redirect STDOUT and 
             STDERR. 
-            runRemote submits to LSF via the runner.pl script.
+            runRemote submits to QUEUE via the runner.pl script.
   Returns : 
   Args    : 
 
@@ -435,8 +410,8 @@ sub runLocally {
     $self->set_status( "FAILED" );
     return;
   }
-       print STDERR "Running inLSF\n"; 
-  $self->runInLSF();
+       print STDERR "Running inQUEUE\n"; 
+  $self->runInQUEUE();
 }
 
 sub runRemote {
@@ -487,7 +462,7 @@ sub runRemote {
 
   if( $useDB ) {
     # find out db details from adaptor
-    # generate the lsf call
+    # generate the queue call
     $cmd .= $runner." -host $host -dbuser $username -dbname $dbname ".$self->dbID;
     
   } else {
@@ -501,14 +476,14 @@ sub runRemote {
   
   while (<SUB>) {
     if (/Job <(\d+)>/) {
-      $self->LSF_id($1);
+      $self->QUEUE_id($1);
       # print (STDERR $_);
     }
   }
   close(SUB);
 
-  if( $self->LSF_id == -1 ) {
-    print STDERR ( "Couldnt submit ".$self->dbID." to LSF" );
+  if( $self->QUEUE_id == -1 ) {
+    print STDERR ( "Couldnt submit ".$self->dbID." to QUEUE" );
   } else {
     $self->retry_count( $self->retry_count + 1 );
     $self->set_status( "SUBMITTED" );
@@ -518,8 +493,8 @@ sub runRemote {
 }
 
 # question, when to submit the success report to the db?
-# we have to parse the output of LSF anyway....
-sub runInLSF {
+# we have to parse the output of QUEUE anyway....
+sub runInQUEUE {
   my $self = shift;
   my $module = $self->analysis->module;
   my $rdb;
@@ -584,9 +559,8 @@ sub runInLSF {
   if ($autoupdate) {
     eval {
       my $sic = $self->adaptor->db->get_StateInfoContainer;
-      $sic->store_inputId_class_analysis(
+      $sic->store_inputId_analysis(
         $self->input_id,
-        $self->class,
         $self->analysis
       );
     };
@@ -741,7 +715,7 @@ sub make_filenames {
 
 # scp - one set of out files per job (even if batching together)
 # this is a bit messy! added '.0' to $stub. This will be the master
-# file containing LSF output. In runner.pl before each job is run
+# file containing QUEUE output. In runner.pl before each job is run
 # replace 0 with the job ID to get one output file per $job.
 # Change also Job::remove to do a glob on all these files. Yep it's
 # nasty but it seems to work...
@@ -763,7 +737,7 @@ sub make_filenames {
 }
 
 
-sub create_lsflogfile {
+sub create_queuelogfile {
   my ($self) = @_;
   
   my $num = int(rand(10));
@@ -772,11 +746,11 @@ sub create_lsflogfile {
     system( "mkdir $dir" );
   }
 
-  my $stub = $self->LSF_id.".";
+  my $stub = $self->QUEUE_id.".";
   $stub .= time().".".int(rand(1000));
 
-  $self->LSF_out($dir.$stub.".out");
-  $self->LSF_err($dir.$stub.".err");
+  $self->QUEUE_out($dir.$stub.".out");
+  $self->QUEUE_err($dir.$stub.".err");
 }
 
 
@@ -887,35 +861,35 @@ sub input_object_file {
     return $self->{'_input_object_file'};
 }
 
-=head2 LSF_id
+=head2 QUEUE_id
 
-  Title   : LSF_id
+  Title   : QUEUE_id
   Usage   : 
-  Function: Get/set method for the LSF_id
+  Function: Get/set method for the QUEUE_id
   Returns : 
   Args    : 
 
 =cut
 
-sub LSF_id {
+sub QUEUE_id {
   my ($self, $arg) = @_;
   (defined $arg) &&
-    ( $self->{'_lsfid'} = $arg );
-  $self->{'_lsfid'};
+    ( $self->{'_queueid'} = $arg );
+  $self->{'_queueid'};
 }
 
-sub LSF_out {
+sub QUEUE_out {
   my ($self, $arg) = @_;
   (defined $arg) &&
-    ( $self->{'_lsfout'} = $arg );
-  $self->{'_lsfout'};
+    ( $self->{'_queueout'} = $arg );
+  $self->{'_queueout'};
 }
 
-sub LSF_err {
+sub QUEUE_err {
   my ($self, $arg) = @_;
   (defined $arg) &&
-    ( $self->{'_lsferr'} = $arg );
-  $self->{'_lsferr'};
+    ( $self->{'_queueerr'} = $arg );
+  $self->{'_queueerr'};
 }
 
 =head2 retry_count
