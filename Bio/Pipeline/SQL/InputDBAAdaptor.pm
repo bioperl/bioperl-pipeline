@@ -21,7 +21,7 @@ sub fetch_by_dbID {
                               data_adaptor
                               data_adaptor_method
                               FROM input_dba 
-                              WHERE inpuut_dba_id = '$id'"
+                              WHERE input_dba_id = '$id'"
                               );
     $sth->execute();
     
