@@ -251,7 +251,7 @@ sub run{
                     $job->status('SUBMITTED');
                     $job->stage ('BATCHED');
                     $job->update;
-                    &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
+                    $self->_submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
                 }
             }
             else {
@@ -283,7 +283,7 @@ sub run{
                     $new_job->status('SUBMITTED');
                     $new_job->stage('BATCHED');
                     $new_job->update;
-                    &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
+                    $self->_submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs >= $BATCHSIZE);
                 }
             }
             eval{
@@ -296,7 +296,7 @@ sub run{
         }
 
         #submit remaining jobs in batch.
-        &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs);
+        $self->_submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs);
 
         my $count = $self->jobAdaptor->get_job_count(-retry_count=>$RETRY);
 
@@ -621,7 +621,17 @@ sub _pipeline_state_changed {
 sub _submit_batch{
     my ($self, $batchsubmitter, $action) = @_;
 
-    eval{ $batchsubmitter->submit_batch($action); };
+   # eval{ $batchsubmitter->submit_batch($action); };
+    eval{
+       if ($action){
+         $batchsubmitter->submit_batch($action);
+        }     
+      else {
+        $batchsubmitter->submit_batch();
+       }
+
+     };
+                                                                        
     if ($@){
         my $job_ids;
         foreach my $failed_job($batchsubmitter->get_jobs){
