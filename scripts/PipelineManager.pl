@@ -389,6 +389,23 @@ sub create_new_job {
                }
                push (@new_jobs,$new_job);
             }
+            elsif($action eq 'COPY_OUTPUT_ID'){
+                my $new_job = $job->create_next_job($next_analysis);
+                foreach my $out_id($job->output_ids){
+                    my $input = Bio::Pipeline::Input->new(-name=>$out_id);
+                    $new_job->add_input($input);
+                }
+                push (@new_jobs,$new_job);
+            }
+            elsif($action eq 'COPY_ID_FILE'){
+               my $new_job = $job->create_next_job($next_analysis);
+               my @inputs = $inputAdaptor->copy_inputs_map_ioh($job,$new_job,'file');
+
+               foreach my $input (@inputs) {
+                 $new_job->add_input($input);
+               }
+               push (@new_jobs,$new_job);
+            }                                                          
             elsif ($action eq 'COPY_INPUT') {
                 my $new_job = $job->create_next_job($next_analysis);
                 my @inputs = $inputAdaptor->copy_fixed_inputs($job->dbID,$new_job->dbID);
