@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+use strict;
+
+my $text =<<END;
+<html>
+<head>
+<title>Pipeline Monitor Query form</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+</head>
+
+<body>
+
+<p>&nbsp;</p>
+<form action="pipespy" method="post" name="" id="">
+    <table width="85%" border="1">
+        <tr> 
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr> 
+            <td>DBHOST </td>
+            <td><input name="dbhost" type="text" value="mysql"></td>
+            <td>mysql or mysql-dev, for our system</td>
+        </tr>
+        <tr> 
+            <td>DBNAME</td>
+            <td><input name="dbname" type="text" value="ciona_big_blast_pipe"></td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr> 
+            <td>DBUSER</td>
+            <td><input name="dbuser" type="text" value="cluster"></td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>DBPASS</td>
+            <td><input name="dbpass" type="password"> <td>
+            <td>&nbsp;</td>
+        </tr>
+    </table>
+<input name="spy it" type="submit">
+</form>
+<p>&nbsp;</p>
+</body>
+</html>
+
+END
+
+use CGI;
+my $q = CGI->new;
+
+print $q->header(-type => 'text/html');
+print $text;

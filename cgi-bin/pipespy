@@ -1,0 +1,93 @@
+#!/usr/bin/perl
+use strict;
+
+BEGIN{
+    my $arrayref = do('./modules.perlarray');
+    unshift @INC, @$arrayref;
+}
+
+use Bio::Pipeline::SQL::DBAdaptor;
+use Bio::Pipeline::Monitor;
+use Bio::Pipeline::PipeConf qw(DBI_DRIVER DBHOST DBNAME DBUSER DBPASS);
+
+use CGI;
+my $q = CGI->new;
+my $dbhost = $q->param('dbhost');
+my $dbname = $q->param('dbname');
+my $dbuser = $q->param('dbuser');
+my $dbpass = $q->param('dbpass');
+
+my $db = Bio::Pipeline::SQL::DBAdaptor->new(
+    -host => $dbhost,
+    -dbname => $dbname,
+    -user => $dbuser,
+    -pass => $dbpass
+);
+
+my $monitor = Bio::Pipeline::Monitor->new(
+    -dbobj => $db
+);
+
+print $q->header(-type => 'text/html');
+print $q->start_html(-title => 'pipe spy');
+
+# fetch all analysis
+my @analysis = @{$monitor->all_analysis};
+my @analysis_id_logicname = map{[$_->dbID, $_->logic_name]} @analysis;
+my %analysis_allowed = map {$_->[0] => 1} @analysis_id_logicname;
+
+# print analysis table
+
+my $analysis_table =<<END;
+<table border='1'>
+    <tr><th>id</th><th>logic name</th></tr>
+END
+
+foreach(@analysis_id_logicname){
+    my ($id, $logicname) = @$_;
+
+    $analysis_table .= "    <tr><td>$id</td>";
+    $analysis_table .= "<td><a href='#$id'>$logicname</a></td></tr>\n";
+}
+$analysis_table .= "</table>\n";
+
+print $analysis_table;
+print $q->hr;
+
+foreach(@analysis_id_logicname){
+    my $id = $_->[0];
+    print $q->p($_->[1]);
+    print "<a name='$id'>\n";
+    my %status = %{$monitor->analysis_status($_->[0])};
+   
+    my $status_table =<<END;
+<table border='1'>
+    <tr><th>Status</th><th>BATCHED</th><th>READING</th>
+    <th>RUNNING</th><th>WRITING</th><th>TOTAL</th></tr>
+END
+
+    foreach my $status(keys %status){
+        if(($status =~ /NEW/) or ($status =~ /COMPLETED/)){
+            $status_table .= "<tr><td>$status</td>";
+            $status_table .= '<td colspan="4">&nbsp;</td>';
+            $status_table .= '<td>'. $status{$status} .'</td></tr>';
+        }elsif(($status =~ /SUBMITTED/) or ($status =~ /FAILED/)){
+            my %stage = %{$status{$status}};
+            my $total = 0;
+            foreach(values %stage){ $total += $_; }
+            $status_table .= "<tr><td>$status</td>"; 
+            $status_table .= "<td>". $stage{BATCHED} ."</td>";
+            $status_table .= "<td>". $stage{READING} ."</td>";
+            $status_table .= "<td>". $stage{RUNNING} ."</td>";
+            $status_table .= "<td>". $stage{WRITING} ."</td>";
+            $status_table .= "<td>". $total ."</td>";
+
+        }
+    } 
+    $status_table .= "</table>\n";
+
+    print $status_table; 
+}
+
+print $q->end_html;
+

@@ -1,0 +1,4 @@
+[
+    '/Library/WebServer/Modules/bioperl-pipeline',
+    '/Library/WebServer/Modules/ensembl/modules'
+]
