@@ -172,6 +172,154 @@ sub fetch_by_dbID {
 }
 
 
+sub _get_dbadaptor {
+  my ($self, $module, $dbname) = @_;
+      my $sql = "SELECT
+                dbadaptor_id
+                FROM dbadaptor
+                WHERE module = '$module' and
+                      dbname = 'dbname' ";
+      my $sth = $self->prepare($sql);
+      $sth->execute;
+      # note -- no checking done here if there are more than one records
+      my ($dbadaptor_id)  = ($sth->fetchrow_array)[0];
+  return $dbadaptor_id;
+}
+
+sub _get_streamadaptor {
+  my ($self, $module) = @_;
+  my $sql = "SELECT
+             streamadaptor_id 
+             FROM streamadaptor 
+             WHERE module='$module'";
+  my $sth = $self->prepare($sql);
+  $sth->execute;
+  # note -- no checking done here if there are more than one records
+  my ($streamadaptor_id) = ($sth->fetchrow_array)[0];
+  return $streamadaptor_id;
+}
+
+
+sub store {
+  my ($self, $iohandler) = @_;
+
+  my $adap_id;
+  my $sth;
+
+  if ($iohandler->type eq "DB") {
+
+    # check if the dbadaptor already exists 
+    $adap_id = $self->_get_dbadaptor($iohandler->dbadaptor_module, $iohandler->dbadaptor_dbname);
+
+     if (!defined ($adap_id)) {
+       $sth = $self->prepare( qq{
+         INSERT INTO dbadaptor
+         SET dbname = ? ,
+             driver = ?,
+             host = ?,
+             user = ?,
+             pass = ?,
+             module = ? } );
+      $sth->execute(
+         $iohandler->dbadaptor_dbname,
+         $iohandler->dbadaptor_driver,
+         $iohandler->dbadaptor_host,
+         $iohandler->dbadaptor_user,
+         $iohandler->dbadaptor_pass,
+         $iohandler->dbadaptor_module );
+
+      $sth = $self->prepare( q{
+        SELECT last_insert_id()
+      } );
+      $sth->execute;
+      $adap_id = ($sth->fetchrow_array)[0];
+    }
+  }
+  elsif ($iohandler->type eq "STREAM") {
+ 
+    # check if the streamadaptor already exists 
+    $adap_id = $self->_get_streamadaptor($iohandler->stream_module);
+
+     if (!defined ($adap_id)) {
+       $sth = $self->prepare( qq{
+         INSERT INTO streamadaptor
+         SET module = ? } );
+      $sth->execute($iohandler->stream_module);
+
+      $sth = $self->prepare( q{
+        SELECT last_insert_id()
+      } );
+      $sth->execute;
+      $adap_id = ($sth->fetchrow_array)[0];
+    }
+  }
+
+  if (!defined ($iohandler->dbID)) {
+    $sth = $self->prepare( qq{
+      INSERT INTO iohandler
+         SET adaptor_id = ?,
+             adaptor_type = ? } );
+    $sth->execute($adap_id, $iohandler->type);
+
+   $sth = $self->prepare( q{
+      SELECT last_insert_id()
+     } );
+   $sth->execute;
+
+   my $dbID = ($sth->fetchrow_array)[0];
+   $iohandler->dbID( $dbID );
+  }
+  else {
+    $sth = $self->prepare( qq{
+      INSERT INTO iohandler
+         SET iohandler_id = ?,
+             adaptor_id = ?,
+             adaptor_type = ? } );
+    $sth->execute($iohandler->dbID, $adap_id, $iohandler->type);
+  }
+
+  #now fill up the data handler and argument tables
+  
+  foreach my $datahandler($iohandler->datahandlers) {
+       $sth = $self->prepare( qq{
+         INSERT INTO datahandler 
+         SET iohandler_id = ?,
+             method = ?,
+             rank = ? } );
+      $sth->execute($iohandler->dbID,$datahandler->method,$datahandler->rank);
+
+      $sth = $self->prepare( q{
+        SELECT last_insert_id()
+      } );
+      $sth->execute;
+      my $datahandler_id = ($sth->fetchrow_array)[0];
+      $datahandler->dbID($datahandler_id);
+     
+      foreach my $argument (@{$datahandler->argument}) {
+         $sth = $self->prepare( qq{
+           INSERT INTO argument 
+           SET datahandler_id = ?,
+               tag = ?,
+               value = ?,
+               type = ?,
+               rank = ? } );
+        $sth->execute($datahandler->dbID,$argument->tag,$argument->value,$argument->type,$argument->rank);
+
+        $sth = $self->prepare( q{
+          SELECT last_insert_id()
+        } );
+        $sth->execute;
+        my $argument_id = ($sth->fetchrow_array)[0];
+        $argument->dbID($argument_id);
+      }
+  }
+
+
+    
+
+}
+
+
 sub fetch_inputhandler_dbID_by_analysis{
     my ($self,$analysis_id) = @_;
 
