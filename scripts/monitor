@@ -36,6 +36,9 @@ my $monitor = Bio::Pipeline::Monitor->new(
 # fetch all analysis
 my @analysis = @{$monitor->all_analysis};
 my @analysis_id_logicname = map{[$_->dbID, $_->logic_name]} @analysis;
+my %analysis_allowed;
+
+
 
 ANALYSIS:
 while(1){
@@ -46,10 +49,28 @@ while(1){
         @analysis_id_logicname."]", "1");
     my $analysis_logic = $analysis_id_logicname[$analysis_id-1]->[1];
 
-#    my %status = %{$monitor->analysisstatus($analysis_id)};
+    my %status = %{$monitor->analysis_status($analysis_id)};
+    my @status;
+    foreach(keys %status){
+        if($_ =~ /NEW/ or $_ =~ /COMPLETED/){
+            push @status, ["$_", 0, 0, 0, 0, $status{$_}];
+        }elsif(/SUBMITTED/ or /FAILED/){
+            my %stage = %{$status{$_}};
+            my $total = 0;
+            foreach(values %stage){ $total += $_; }
+            push @status, ["$_", $stage{BATCHED}, $stage{READING}, 
+                $stage{RUNNING}, $stage{WRITING}, $total];
+        }else{
+            die ("Invalid stage, $_\n");
+        }
+    }
     
-#    ShowData('Simple', 
-#        [
+    ShowData('Simple', 
+        ['Status','READING','WRITING','BATCHED','RUNNING','TOTAL'],
+        ['char','char','char','char','char','char'],
+        [100,100,100,100,100,100], @status);
+
+    
 }
 
 use vars qw($row);
