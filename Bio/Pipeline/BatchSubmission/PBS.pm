@@ -93,13 +93,14 @@ sub submit_batch{
    
     my $jobID_file = "/tmp/$num.jobid";   
     open (JOBID, ">$jobID_file");
-
+=head
    print "******hello\n";
     print JOBID @job_ids; 
    print "******bye\n";
+=cut
 
 # Create Script
-    my $pbs_script = "/tmp/$num.pbs";
+    my $pbs_script = "/tmp/$num.pbs"; #bad to hard code..will change it..
     open (PBS_SCRIPT, ">$pbs_script");
     print PBS_SCRIPT $runner . " " . @job_ids;
     close (PBS_SCRIPT);
