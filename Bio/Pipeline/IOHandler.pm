@@ -344,6 +344,7 @@ sub write_output {
   return @output_ids;
 }
 
+#needs some cleaning up --shawn
 sub _format_output_args {
     my ($self,$input,$object,@arguments) = @_;
     my @args;
@@ -376,22 +377,44 @@ sub _format_output_args {
 
       #if there are tags
       if($arguments[$i]->tag){
-        #if you have an array ref of outputs and your method expects an array (as opposed to array ref)
-        if(ref($value) eq "ARRAY" && ($arguments[$i]->type eq "ARRAY")){
-            push @args, $arguments[$i]->tag;
-            push @args, @{$value}
+        if($arguments[$i]->type eq "ARRAY"){
+            #if your method expects an array
+            if(ref($value) eq "ARRAY"){
+                push @args, ($arguments[$i]->tag => @{$value});
+            }
+            else {
+                my @array;
+                push @array, $value;
+                push @args, ($arguments[$i]->tag => @array);
+            }
         }
-        #if your method expects a single variable (array ref)
         else {
-          push @args, ($arguments[$i]->tag => $value);
+          #if your method expects a single variable (array ref)
+          if(ref($value) eq "ARRAY"){
+            push @args, ($arguments[$i]->tag => @{$value});
+          } 
+          else {
+            push @args, ($arguments[$i]->tag => $value);
+          }
         }
       } 
+      #no tags needed
       else {
-        if(ref($value) eq "ARRAY" && ($arguments[$i]->type eq "ARRAY")){
-          push @args, @{$value};
+        if($arguments[$i]->type eq "ARRAY"){
+          if(ref($value) eq "ARRAY"){
+            push @args, @{$value};
+          }
+          else {
+              push @args, $value;
+          }
         }
         else {
-          push @args, $value;
+          if(ref($value) eq "ARRAY"){
+            push @args, @{$value};
+          }
+          else {
+              push @args, $value;
+          }
         }
       }
     }
