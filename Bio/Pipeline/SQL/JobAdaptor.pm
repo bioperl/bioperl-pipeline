@@ -144,6 +144,41 @@ sub fetch_all {
     return @jobs;
 }
 
+=head2 fetch_new_failed_jobs
+
+  Title   : fetch_new_failed_jobs
+  Usage   : my @jobs = $adaptor->fetch_new_failed_jobs
+  Function: Retrieves all the jobs from the database 
+            that have the status 'NEW' or 'FAILED'
+  Returns : ARRAY of Bio::Pipeline::Jobs
+  Args    : 
+
+=cut
+
+sub fetch_new_failed_jobs {
+    my ($self,$retry) = @_;
+
+    $self->throw ("Need to supply retry count argument") unless $retry;
+
+    my @jobs;
+    
+    my $query = "   SELECT job_id 
+                    FROM job 
+                    WHERE (status = 'NEW ') or
+                          (status = 'FAILED' and retry_count < $retry)";
+
+    my $sth = $self->prepare($query);
+    $sth->execute;
+
+    while (my ($job_id) = $sth->fetchrow_array){
+        my $job = $self->fetch_by_dbID($job_id);
+        push (@jobs,$job);
+    }
+
+    return @jobs;
+
+}
+
 =head2 store
 
   Title   : store
@@ -290,7 +325,7 @@ sub update {
 		 $job->stderr_file,
 		 $job->input_object_file,
 		 $job->retry_count,
-		 $job->queue_id,
+		 $job->QUEUE_ID,
 		 $job->dbID );
 }
 
@@ -348,7 +383,6 @@ sub exists {
   $self->throw( "Not implemented yet" );
 }
 
-# Code directly from Michele
 
 =head2 set_status
 
@@ -367,172 +401,111 @@ sub set_status {
       $self->throw( "Job has to be in database" );
     }
 
-    my $status;
+    eval {	
+	    my $sth = $self->prepare(   "update job set status='$arg',time=now()
+                                    where job_id = ".$job->dbID);
+	    $sth->execute();
+    };
+	
+    if ($@) {
+	    $self->throw("Error setting status for job ".$job->dbID);
+    } 
+}
+
+=head2 set_stage
+
+  Title   : set_stage
+  Usage   : my $stage = $job->set_stage
+  Function: Sets the job stage
+  Returns : nothing
+  Args    : 
+
+=cut
+
+sub set_stage {
+    my ($self,$job,$arg) = @_;
+
+    if( ! defined $job->dbID ) {
+      $self->throw( "Job has to be in database" );
+    }
+
 
     eval {	
-	my $sth = $self->prepare("insert delayed into jobstatus(job_id,status,time) values (" .
-					 $job->dbID . ",\"" .
-					 $arg      . "\"," .
-					 "now())");
-	my $res = $sth->execute();
-
-	$sth = $self->prepare("replace into current_status(job_id,status) values (" .
-				      $job->dbID . ",\"" .
-				      $arg      . "\")");
-
-	$res = $sth->execute();
-	
-	$sth = $self->prepare("select now()" );
-	
-	$res = $sth->execute();
-	
-	my $rowhash = $sth->fetchrow_arrayref();
-	my $time    = $rowhash->[0];
-
-	$status = Bio::Pipeline::Status->new
-	  (  '-jobid'   => $job->dbID,
-	     '-status'  => $arg,
-	     '-created' => $time,
-	  );
-	
-	$self->current_status($job, $status);
-	
-#	print("Status for job [" . $job->dbID . "] set to " . $status->status . "\n");
+	    my $sth = $self->prepare(   "update job set stage='$arg'
+                                    where job_id = ". $job->dbID);
+	    $sth->execute();
     };
-
+	
     if ($@) {
-#      print( " $@ " );
-
-	$self->throw("Error setting status to $arg");
-    } else {
-	return $status;
-    }
+	    $self->throw("Error setting stage for job ".$job->dbID);
+    } 
 }
 
+=head2 get_status
 
-=head2 current_status
-
-  Title   : current_status
-  Usage   : my $status = $job->current_status
-  Function: Get/set method for the current status
-  Returns : Bio::Pipeline::Status
-  Args    : Bio::Pipeline::Status
+  Title   : get_status
+  Usage   : my $status = $job->get_status
+  Function: gets the job status
+  Returns : status str.
+  Args    : 
 
 =cut
 
-sub current_status {
-    my ($self, $job, $arg) = @_;
+sub get_status {
+    my ($self,$job) = @_;
 
-    if (defined($arg)) 
-    {
-	$self->throw("[$arg] is not a Bio::Pipeline::Status object") 
-	    unless $arg->isa("Bio::Pipeline::Status");
-	$job->{'_status'} = $arg;
+    if( ! defined $job->dbID ) {
+      $self->throw( "Job has to be in database" );
     }
-    else 
-    {
-	$self->throw("Can't get status if id not defined") 
-	    unless defined($job->dbID);
-	my $id =$job->dbID;
-	my $sth = $self->prepare
-	    ("select status from current_status where job_id=$id");
-	my $res = $sth->execute();
-	my $status;
-	while (my  $rowhash = $sth->fetchrow_hashref() ) {
-	    $status = $rowhash->{'status'};
-	}
 
-	$sth = $self->prepare("select now()");
-	$res = $sth->execute();
-	my $time;
-	while (my  $rowhash = $sth->fetchrow_hashref() ) {
-	    $time    = $rowhash->{'now()'};
-	}
-	my $statusobj = new Bio::Pipeline::Status
-	    ('-jobid'   => $id,
-	     '-status'  => $status,
-	     '-created' => $time,
-	     );
-	$job->{'_status'} = $statusobj;
-    }
-    return $job->{'_status'};
-}
+    my $sth;
+    eval {	
+	    $sth = $self->prepare(   "select status from job 
+                                    where job_id = ".$job->dbID);
+	    $sth->execute();
+    };
+	
+    if ($@) {
+	    $self->throw("Error getting status for job ".$job->dbID);
+    } 
 
-=head2 get_all_status
-
-  Title   : get_all_status
-  Usage   : my @status = $job->get_all_status
- Function: Get all status objects associated with this job
-  Returns : @Bio::Pipeline::Status
-  Args    : Bio::Pipeline::Job
-
-=cut
-
-sub get_all_status {
-  my ($self, $job) = @_;
-  
-  $self->throw("Can't get status if id not defined") 
-    unless defined($job->dbID);
-
-  my $sth = $self->prepare
-    ("select job_id,status, UNIX_TIMESTAMP(time) from  jobstatus " . 
-     "where id = \"" . $job->dbID . "\" order by time desc");
-  
-  my $res = $sth->execute();
-  
-  my @status;
-  while (my $rowhash = $sth->fetchrow_hashref() ) {
-    my $time      = $rowhash->{'UNIX_TIMESTAMP(time)'};#$rowhash->{'time'};
-    my $status    = $rowhash->{'status'};
-    my $statusobj = new Bio::Pipeline::Status(-jobid   => $job->dbID,
-						       -status  => $status,
-						       -created => $time,
-						      );
-                               
-    push(@status,$statusobj);
+    my ($status) = $sth->fetchrow_array();
     
-  }
-  
-  return @status;
+    return $status;
 }
 
-=head2 get_last_status
+=head2 get_stage
 
-  Title   : get_last_status
-  Usage   : my @status = $job->get_all_status
-  Function: Get most recent status object associated with this job
-  Returns : Bio::Pipeline::Status
-  Args    : Bio::Pipeline::Job, status string
+  Title   : get_stage
+  Usage   : my $stage = $job->get_stage
+  Function: gets the job stage
+  Returns : stage str.
+  Args    : 
 
 =cut
 
-sub get_last_status {
-  my ($self, $job) = @_;
+sub get_stage {
+    my ($self,$job,$arg) = @_;
 
-  $self->throw("Can't get status if id not defined")
-    unless defined($job->dbID);
+    if( ! defined $job->dbID ) {
+      $self->throw( "Job has to be in database" );
+    }
 
-  my $sth = $self->prepare (qq{
-    SELECT js.job_id, cs.status, UNIX_TIMESTAMP(time)
-      FROM jobstatus js, current_status cs
-     WHERE js.job_id = cs.job_id
-       AND js.status = cs.status
-       AND js.job_id = ?} );
-
-  my $res = $sth->execute($job->dbID);
-  my $rowHashRef = $sth->fetchrow_hashref();
-  if( ! defined $rowHashRef ) {
-    return undef;
-  }
-
-  my $time      = $rowHashRef->{'UNIX_TIMESTAMP(time)'};#$rowhash->{'time'};
-  my $status    = $rowHashRef->{'status'};
-  my $statusobj = new Bio::Pipeline::Status(-jobid   => $job->dbID,
-						     -status  => $status,
-						     -created => $time,
-						     );
-  return $statusobj;
+    my $sth;
+    eval {	
+	    $sth = $self->prepare(   "select stage from job 
+                                    where job_id = ".$job->dbID);
+	    $sth->execute();
+    };
+	
+    if ($@) {
+	    $self->throw("Error getting stage for job ".$job->dbID);
+    } 
+    my ($stage) = $sth->fetchrow_array();
+    
+    return $stage;
 }
+
 
 sub list_job_id_by_status {
   my ($self,$status) = @_;
@@ -602,64 +575,6 @@ sub deleteObj {
       $obj->deleteObj;
     }
   }
-}
-
-# creates all tables for this adaptor - job, jobstatus and current_status
-# if they exist they are emptied and newly created
-sub create_tables {
-  my $self = shift;
-  my $sth;
-
-  $sth = $self->prepare("drop table if exists job");
-  $sth->execute();
-
-  $sth = $self->prepare(qq{
-    CREATE TABLE job (
-    job_id        int(10) unsigned  default 0  not null auto_increment,
-    input_id      varchar(40)       default '' not null,
-    analysis_id   int(10) unsigned  default 0  not null,
-    queue_id        int(10) unsigned  default 0,
-    stdout_file   varchar(100)      default '' not null,
-    stderr_file   varchar(100)      default '' not null,
-    object_file   varchar(100)      default '' not null,
-    retry_count   int               default 0,
-
-    PRIMARY KEY   (job_id),
-    KEY input     (input_id),
-    KEY analysis  (analysis_id)
-    );
-  });
-  $sth->execute();
-
-  $sth = $self->prepare("drop table if exists jobstatus");
-  $sth->execute();
-
-  $sth = $self->prepare(qq{
-    CREATE TABLE jobstatus (
-    job_id     int(10) unsigned  default 0 not null,
-    status     varchar(40)       default 'CREATED' not null,
-    time       datetime          default '0000-00-00 00:00:00' not null,
-
-    KEY job    (job_id),
-    KEY status (status)
-    );
-  });
-  $sth->execute();
-
-  $sth = $self->prepare("drop table if exists current_status");
-  $sth->execute();
-
-  $sth = $self->prepare(qq{
-    CREATE TABLE current_status (
-    job_id  int(10) unsigned  default 0 not null,
-    status  varchar(40)       default '' not null,
-
-    PRIMARY KEY (job_id),
-    KEY status  (status)
-    );
-  });
-  $sth->execute();
-  $sth->finish;
 }
 
 1;
