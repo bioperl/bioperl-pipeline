@@ -71,17 +71,16 @@ use Bio::Root::Root;
 sub new {
   my($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
-  my ($name,$inputDBA,$job_id) = $self->_rearrange([qw(  NAME
-                                                         INPUT_DBA
-                                                         JOB_ID
-                                                       )],@args);
+  my ($name,$input_handler,$job_id) = $self->_rearrange([qw(    NAME
+                                                                INPUT_HANDLER
+                                                                JOB_ID)],@args);
 
   $name || $self->throw("Need an input name");
-  $inputDBA|| $self->throw("Need an input_dba");
+  $input_handler || $self->throw("Need an input_handler attached to this input.");
 
   $self->job_id($job_id) if defined $job_id;
   $self->name($name);
-  $self->input_dba($inputDBA);
+  $self->input_handler($input_handler);
   
   return $self;
 }    
@@ -100,7 +99,7 @@ sub new {
 sub fetch{
   my ($self) = @_;
 
-  return $self->input_dba->fetch_input($self->name);
+  return $self->input_handler->fetch_input($self->name);
 }
 
 
@@ -126,9 +125,9 @@ sub name{
     return $self->{'_name'};
 }
 
-=head2 input_dba
+=head2 input_handler
 
-  Title    : input_dba
+  Title    : input_handler
   Function : 
   Example  : 
   Returns  : 
@@ -136,12 +135,12 @@ sub name{
 
 =cut
 
-sub input_dba{
-    my ($self,$inputDBA) = @_;
-    if (defined $inputDBA) {
-        $self->{'_input_dba'} = $inputDBA;
+sub input_handler{
+    my ($self,$input_handler) = @_;
+    if (defined $input_handler) {
+        $self->{'_input_handler'} = $input_handler;
     }
-    return $self->{'_input_dba'};
+    return $self->{'_input_handler'};
 }
 
 =head2 job_id

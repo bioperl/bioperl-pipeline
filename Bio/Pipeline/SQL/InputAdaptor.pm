@@ -15,7 +15,7 @@ use vars qw(@ISA);
 use strict;
 
 use Bio::Pipeline::SQL::BaseAdaptor;
-use Bio::Pipeline::IO;
+use Bio::Pipeline::IOHandler;
 use Bio::Pipeline::Input;
 @ISA = qw(Bio::Pipeline::SQL::BaseAdaptor);
 
@@ -37,23 +37,23 @@ sub fetch_by_dbID {
     my ($self,$id) = @_;
     $id || $self->throw("Need a db ID");
     
-    my $sth = $self->prepare("SELECT name, input_dba_id,job_id
+    my $sth = $self->prepare("SELECT name, iohandler_id,job_id
                               FROM input 
                               WHERE input_id = '$id'"
                               );
     $sth->execute();
     
-    my ($name,$input_dba_id,$job_id) = $sth->fetchrow_array;
+    my ($name,$iohandler_id,$job_id) = $sth->fetchrow_array;
 
-    $input_dba_id || $self->throw("No input adaptor for input with id $id");
+    $iohandler_id || $self->throw("No input handler for input with id $id");
 
 
-    my $input_dba = $self->db->get_InputDBAAdaptor->fetch_by_dbID($input_dba_id);
+    my $input_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($iohandler_id);
 
     my $input = Bio::Pipeline::Input->new (
                                     -name => $name,
                                     -job_id => $job_id,
-                                    -input_dba => $input_dba);
+                                    -input_handler => $input_handler);
                                                     
     return $input;
     
@@ -63,11 +63,11 @@ sub store {
     my ($self,$input) =@_;
     $input || $self->throw("Need input obj to store");
 
-    my $sql = " INSERT INTO input (input_dba_id, job_id, name) 
+    my $sql = " INSERT INTO input (iohandler_id, job_id, name) 
                 VALUES (?,?,?)";
     my $sth = $self->prepare($sql);
     eval{
-        $sth->execute($input->input_dba->dbID,$input->job_id,$input->name);
+        $sth->execute($input->input_handler->dbID,$input->job_id,$input->name);
     };if ($@){$self->throw("Error storing new input.\n$@");}
 
 

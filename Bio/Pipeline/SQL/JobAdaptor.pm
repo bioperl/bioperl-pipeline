@@ -97,9 +97,6 @@ sub fetch_by_dbID {
   }
 
 
-  #getting the output adaptor
-  my $output_adp = $self->db->get_OutputDBAAdaptor->fetch_by_analysisID($hashref->{analysis_id});
-
   $job = Bio::Pipeline::Job->new
   (
    '-dbobj'    => $self->db,
@@ -107,7 +104,6 @@ sub fetch_by_dbID {
    '-id'       => $hashref->{'job_id'},
    '-queue_id' => $hashref->{'queue_id'},
    '-inputs'   => \@inputs,
-   '-output'   =>$output_adp,
    '-stdout'   => $hashref->{'stdout_file'},
    '-stderr'   => $hashref->{'stderr_file'},
    '-input_object_file' => $hashref->{'object_file'},
@@ -116,9 +112,6 @@ sub fetch_by_dbID {
    '-stage'     => $hashref->{'stage'},
    '-status'    => $hashref->{'status'}
   );
-
-
-  
 
   return $job;
 }
@@ -387,51 +380,6 @@ sub update_completed_job {
   return 1;
 }
 
-=head2 _objFromHashref
-
-  Title   : _objFromHashref
-  Usage   : my $job = $self->objFromHashref( $queryResult )
-  Function: Creates a Job object from given hash reference.
-            The hash contains column names and content of the column. 
-  Returns : the object or undef if that wasnt possible
-  Args    : a hash reference
-
-=cut
-
-sub _objFromHashref {
-  # create the appropriate job object
-
-  my $self = shift;
-  my $hashref = shift;
-  my $job;
-  my $analysis;
-
-  $analysis = 
-    $self->db->get_AnalysisAdaptor->
-      fetch_by_dbID( $hashref->{analysis_id} );
-
-  $job = Bio::Pipeline::Job->new
-  (
-   '-dbobj'    => $self->db,
-   '-adaptor'  => $self,
-   '-id'       => $hashref->{'job_id'},
-   '-lsf_id'   => $hashref->{'queue_id'},
-   '-input_id' => $hashref->{'input_id'},
-   '-stdout'   => $hashref->{'stdout_file'},
-   '-stderr'   => $hashref->{'stderr_file'},
-   '-input_object_file' => $hashref->{'object_file'},
-   '-analysis' => $analysis,
-   '-retry_count' => $hashref->{'retry_count'}
-  );
-
-  return $job;
-}
-
-
-# provide a hashref
-# each value in it used for a combined query, if the described object is in
-# returns a job object, if it is in, else undef
-
 sub exists {
   my $self = shift;
   my $hashref = shift;
@@ -563,50 +511,6 @@ sub get_stage {
     
     $job->stage($stage);
     return $stage;
-}
-
-
-sub list_job_id_by_status {
-  my ($self,$status) = @_;
-  my @result;
-  my @row;
-
-  my $sth = $self->prepare( qq{
-    SELECT j.job_id
-      FROM job j, current_status c
-     WHERE j.job_id = c.job_id
-       AND c.status = '$status'
-     ORDER BY job_id } );
-  $sth->execute;
-  
-  while( @row = $sth->fetchrow_array ) {
-    push( @result, $row[0] );
-  }
-  
-  return @result;
-}
-
-
-sub list_job_id_by_status_age {
-  my ($self,$status,$age) = @_;
-  
-  my @result;
-  my @row;
-  my $sth = $self->prepare( qq{
-    SELECT js.job_id
-      FROM current_status c, jobstatus js
-     WHERE js.job_id = c.job_id
-       AND c.status = '$status'
-       AND js.status = '$status'
-       AND js.time < DATE_SUB( NOW(), INTERVAL $age MINUTE )
-     ORDER BY job_id } );
-  $sth->execute;
-  
-  while( @row = $sth->fetchrow_array ) {
-    push( @result, $row[0] );
-  }
-  
-  return @result;
 }
 
 

@@ -64,7 +64,7 @@ sub new {
    
   my ($id,$adaptor,$db,$db_version,$db_file,$program,$program_version,$program_file,
       $gff_source,$gff_feature,$runnable,$parameters,$created,
-      $logic_name ) = 
+      $logic_name,$output_handler ) = 
 
 	  $self->_rearrange([qw(ID
 	  			ADAPTOR
@@ -80,9 +80,10 @@ sub new {
 				PARAMETERS
 				CREATED
 				LOGIC_NAME
+                OUTPUT_HANDLER
 				)],@args);
 
-  $self->dbID             ($id);
+  $self->dbID           ($id);
   $self->adaptor        ($adaptor);
   $self->db             ($db);
   $self->db_version     ($db_version);
@@ -95,7 +96,8 @@ sub new {
   $self->gff_feature    ($gff_feature);
   $self->parameters     ($parameters);
   $self->created        ($created);
-  $self->logic_name ( $logic_name );
+  $self->logic_name     ($logic_name);
+  $self->output_handler ($output_handler);
 
   return $self; # success - we hope!
 }
@@ -403,10 +405,33 @@ sub created {
 
 
 sub logic_name {
-  my ($self, $arg ) = @_;
-  ( defined $arg ) &&
-    ($self->{_logic_name} = $arg);
-  $self->{_logic_name};
+    my ($self, $arg ) = @_;
+    if (defined $arg ) {
+        $self->{_logic_name} = $arg;
+    }
+    return $self->{_logic_name};
+}
+
+=head2 output_handler
+
+  Title   : output_handler
+  Usage   : $self->output_handler
+  Function: Get/set method for the output_handler, the IOhandler used
+            to store the results of this analysis
+  Returns : String
+  Args    : String
+
+=cut
+
+
+sub output_handler{
+    my ($self, $arg ) = @_;
+
+    if (defined $arg ) {
+        $self->{_output_handler} = $arg;
+    }
+
+    return $self->{_output_handler};
 }
 
 =head2 has_database

@@ -25,7 +25,7 @@ sub seq {
 sub datatypes {
     my ($self) = @_;
 
-    my $dt = Bio::Pipeline::DataType->new(-object_type=>"Bio::EnsEMBL::DBSQL::RawContig",
+    my $dt = Bio::Pipeline::DataType->new(-object_type=>"Bio::PrimarySeqI",
                                           -name=>"sequence",
                                           -reftype=>"SCALAR");
     my %dt;
@@ -33,9 +33,9 @@ sub datatypes {
     return %dt;
 }
 sub set_seq {
-    my ($self,$contig) = @_;
-    $contig->isa("Bio::EnsEMBL::DBSQL::RawContig") || $self->throw("Need a Bio::EnsEMBL::DBSQL::RawContig");
-    $self->seq($contig->primary_seq);
+    my ($self,$seq) = @_;
+    $seq->isa("Bio::PrimarySeqI") || $self->throw("Bio::PrimarySeqI");
+    $self->seq($seq);
 }
 sub run {
     my ($self) = @_;
@@ -88,7 +88,7 @@ sub parse_results {
     while (<RESULTS>){
         my $line = $_;
         my ($start,$end,$strand) = split("\t",$line);
-        my $feat = new Bio::EnsEMBL::SeqFeature(-seqname=>'DR-AOV_SU09-F10',
+        my $feat = new Bio::EnsEMBL::SeqFeature(-seqname=>'Scaffold_267_153',
                                                 -start =>$start,
                                                 -analysis=>$self->analysis,
                                                 -end   =>$end,

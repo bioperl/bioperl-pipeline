@@ -34,7 +34,6 @@ The rest of the documentation details each of the object methods. Internal metho
 package Bio::Pipeline::Job;
 
 use Bio::Pipeline::Analysis;
-use Bio::Pipeline::Status;
 use Bio::Pipeline::SQL::JobAdaptor;
 use Bio::Pipeline::RunnableDB;
 
@@ -62,12 +61,11 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$queueid,$inputs,$output_adp,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage ) 
+    my ($adaptor,$dbID,$queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage ) 
 	= $self->_rearrange([qw(ADAPTOR
             				ID
 			            	QUEUE_ID
 			            	INPUTS
-                            OUTPUT
 			            	ANALYSIS
 			            	STDOUT
 		            		STDERR
@@ -93,9 +91,8 @@ sub new {
     $self->input_object_file($obj_file);
     $self->retry_count      ($retry_count);
     $self->QUEUE_ID         ($queueid);
-    $self->output_adaptor($output_adp);
-    $self->status($status);
-    $self->stage($stage);
+    $self->status           ($status);
+    $self->stage            ($stage);
 
     @{$self->{'_inputs'}}= ();
 
@@ -179,10 +176,6 @@ sub create_next_job{
     $self->throw("Input jump not implemented yet.");
   }
 
-  my $output_adp = $self->adaptor->db->get_OutputDBAAdaptor->fetch_by_analysisID($next_analysis->dbID);
-
-  $new_job->output_adaptor($output_adp);
-  
   return $new_job;
 } 
 
@@ -207,24 +200,6 @@ sub dbID {
 
 }
 
-=head2 output_adaptor 
-
-  Title   : output_adaptor 
-  Usage   : $self->output_adaptor($output_adaptor)
-  Function: get set the output adaptor for this object 
-  Returns : int
-  Args    : int
-
-=cut
-
-sub output_adaptor {
-    my ($self,$adp) = @_;
-
-    if (defined($adp)){
-        $self->{'_output_adaptor'} = $adp;
-    }
-    return $self->{'_output_adaptor'};
-}
 =head2 adaptor
 
   Title   : adaptor
@@ -326,6 +301,8 @@ sub run {
 
   print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
 
+=jerm
+
   local *STDOUT;
   local *STDERR;
 
@@ -339,7 +316,7 @@ sub run {
     $self->set_status( "FAILED" );
     return;
   }
-
+=cut
   
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
@@ -350,7 +327,6 @@ sub run {
                         -dbobj      => $self->adaptor->db,
                         -analysis   => $self->analysis,
                         -inputs     => \@inputs,
-                        -output     => $self->output_adaptor
                         );
   };                      
   if ($err = $@) {

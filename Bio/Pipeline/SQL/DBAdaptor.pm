@@ -48,14 +48,11 @@ use vars qw(@ISA);
 use strict;
 use DBI;
 
-use Bio::Pipeline::SQL::InputAdaptor;
-use Bio::Pipeline::SQL::InputDBAAdaptor;
-use Bio::Pipeline::SQL::OutputDBAAdaptor;
+use Bio::Pipeline::SQL::IOHandlerAdaptor;
 use Bio::Pipeline::SQL::RuleAdaptor;
 use Bio::Pipeline::SQL::BaseAdaptor;
 use Bio::Pipeline::SQL::AnalysisAdaptor;
 use Bio::Pipeline::SQL::JobAdaptor;
-use Bio::Pipeline::SQL::StateInfoContainer;
 use Bio::Root::Root;
 
 # Inherits from the base bioperl object
@@ -177,51 +174,29 @@ sub get_JobAdaptor {
   return $self->{_JobAdaptor};
 }
 
-=head2 get_input_dba_adaptor
+=head2 get_IOHandlerAdaptor
 
- Title   : get_input_dba_adaptor
- Usage   : $db->get_input_dba_adaptor
- Function: The Adaptor for getting input adaptor objects in this db
+ Title   : get_IOHandlerAdaptor
+ Usage   : $db->get_IOHandlerAdaptor
+ Function: The Adaptor for getting input/output handler objects in this db
  Example :
- Returns : Bio::Pipeline::SQL::InputDBAAdaptor
+ Returns : Bio::Pipeline::SQL::IOHandlerAdaptor
  Args    : nothing
 
 
 =cut
 
-sub get_InputDBAAdaptor{
+sub get_IOHandlerAdaptor{
   my ($self) = @_;
 
-  if( ! defined $self->{_InputDBAdaptor} ) {
-    $self->{_InputDBAdaptor} = Bio::Pipeline::SQL::InputDBAAdaptor->new
+  if( ! defined $self->{_IOHandlerAdaptor} ) {
+    $self->{_IOHandlerAdaptor} = Bio::Pipeline::SQL::IOHandlerAdaptor->new
       ( $self );
   }
 
-  return $self->{_InputDBAdaptor};
+  return $self->{_IOHandlerAdaptor};
 }
 
-=head2 get_output_dba_adaptor
-
- Title   : get_output_dba_adaptor
- Usage   : $db->get_output_dba_adaptor
- Function: The Adaptor for getting output adaptor objects in this db
- Example :
- Returns : Bio::Pipeline::SQL::OutputDBAAdaptor
- Args    : nothing
-
-
-=cut
-
-sub get_OutputDBAAdaptor{
-  my ($self) = @_;
-
-  if( ! defined $self->{_OutputDBAdaptor} ) {
-    $self->{_OutputDBAdaptor} = Bio::Pipeline::SQL::OutputDBAAdaptor->new
-      ( $self );
-  }
-
-  return $self->{_OutputDBAdaptor};
-}
 
 =head2 get_InputAdaptor
 
@@ -290,30 +265,6 @@ sub get_RuleAdaptor {
 
   return $self->{_RuleAdaptor};
 }
-
-
-=head2 get_StateInfoContainer
-
- Title   : get_StateInfoContainer
- Usage   : $db->get_StateInfoContainer
- Function:
- Example :
- Returns : Bio::Pipeline::SQL::StateInfoContainer
- Args    : nothing
-
-
-sub get_StateInfoContainer {
-  my ($self) = @_;
-
-  if( ! defined $self->{_StateInfoContainer} ) {
-    $self->{_StateInfoContainer} = Bio::Pipeline::SQL::StateInfoContainer->new
-      ( $self );
-  }
-
-  return $self->{_StateInfoContainer};
-}
-
-=cut
 
 sub delete_Job {
     my ($self,$id) = @_;

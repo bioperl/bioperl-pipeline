@@ -67,22 +67,19 @@ use vars qw(@ISA);
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($dbobj,$analysis,$inputs,$output) = $self->_rearrange ([qw  (   
+    my ($dbobj,$analysis,$inputs) = $self->_rearrange ([qw  (   
                                                                  DBOBJ
                                                                  ANALYSIS
                                                                  INPUTS
-                                                                 OUTPUT
                                                                 )],@args);
     
     $self->throw("No DB_obj provided to RunnableDB") unless defined($dbobj);
     $self->throw("No analysis provided to RunnableDB") unless defined($analysis);
     $self->throw("No inputs provided to RunnableDB") unless defined($inputs);
-    $self->throw("No output adaptor provided to RunnableDB") unless defined($output);
 
     $self->dbobj($dbobj);
     $self->analysis($analysis);
     $self->runnable($analysis->runnable);
-    $self->output_adaptor($output);
 
     $self->{'_input_objs'}=[];
     $self->{'_data_types'}=[];
@@ -121,23 +118,6 @@ sub analysis {
     return $self->{'_analysis'};
 }
 
-=head2 output_adaptor
-
-    Title   :   output_adaptor
-    Usage   :   $self->output_adaptor($analysis);
-    Function:   Gets or sets the stored output_adaptor object
-    Returns :   a output adaptor 
-    Args    :   a output adaptor 
-
-=cut
-
-sub output_adaptor {
-    my ($self,$value) = @_;
-    if ($value){
-        $self->{'_output_adaptor'} = $value;
-    }
-    return $self->{'_output_adaptor'};
-}
 
 sub setup_runnable_params {
     my ($self,$parameters) = @_;
@@ -455,7 +435,7 @@ sub write_output {
     my $db=$self->dbobj();
     my @output = $self->output();
  
-    $self->output_adaptor->write_output(\@output);
+    $self->analysis->output_handler->write_output(\@output);
 =head 
     foreach my $f (@features) {
 	$f->analysis($self->analysis);

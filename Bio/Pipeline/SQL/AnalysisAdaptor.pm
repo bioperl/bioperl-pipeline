@@ -51,40 +51,6 @@ use strict;
 @ISA = qw( Bio::Pipeline::SQL::BaseAdaptor);
 
 
-=head2 fetch_all
-
-  Title   : fetch_all
-  Usage   : @analyses = $self->fetch_all;
-  Function: retrieves all analyses from db;
-  Returns : List of Bio::EnsEMBL::Pipeline::Analysis
-  Args    : -
-
-=cut
-
-sub fetch_all {
-  my ($self) = @_;
-  my %analyses;
-  my ( $analysis, $dbID );
-  my $rowHashRef;
-
-  my $sth = $self->prepare( q {
-    SELECT analysisId, logic_name,
-           program,program_version,program_file,
-           db,db_version,db_file,
-           module,module_version,
-           gff_source,gff_feature,
-           created, parameters
-    FROM analysisprocess } );
-  $sth->execute;
-
-  while( $rowHashRef = $sth->fetchrow_hashref ) {
-    my $analysis = $self->_objFromHashref( $rowHashRef  );
-    $analyses{$analysis->dbID} = $analysis;
-  }
-
-  return values %analyses;
-}
-
 =head2 fetch_by_dbID
 
   Title   : fetch_by_dbID
@@ -104,295 +70,63 @@ sub fetch_by_dbID {
   }
 
   my $sth = $self->prepare( q{
-    SELECT analysis_id, logic_name,
-           program,program_version,program_file,
-           db,db_version,db_file,
-           runnable,
-           gff_source,gff_feature,
-           created, parameters
-    FROM analysis
-    WHERE analysis_id = ? } );
+    SELECT  analysis_id, logic_name,
+            program,program_version,program_file,
+            db,db_version,db_file,
+            runnable,
+            gff_source,gff_feature,
+            created, parameters
+    FROM    analysis 
+    WHERE   analysis_id = ?});
 
   $sth->execute( $id );
-  my $rowHashRef = $sth->fetchrow_hashref;
-  if( ! defined $rowHashRef ) {
+  my ($analysis_id,$logic_name,$program,$program_version,$program_file,
+      $db,$db_version,$db_file,$runnable,$gff_source,$gff_feature,$created,
+      $parameters) = $sth->fetchrow_array;
+
+  if( ! defined $analysis_id) {
     return undef;
   }
 
-  my $anal = $self->_objFromHashref( $rowHashRef );
-  $self->{'_cache'}->{$anal->dbID} = $anal;
+  my $query = " SELECT  io.iohandler_id 
+                FROM    iohandler io, analysis_iohandler ai
+                WHERE   ai.iohandler_id = io.iohandler_id 
+                        and ai.analysis_id = $id
+                        and io.type = 'OUTPUT'";
+  $sth = $self->prepare($query);                  
+  $sth->execute ();
+
+  print STDERR $query."\n";
+
+  my @results = @{$sth->fetchall_arrayref};
+
+  print STDERR scalar(@results)."\n";
+
+  $self->throw ("Analyses must have one and only one output handler. This analysis has ".scalar(@results)." output handlers")
+  unless (scalar(@results)== 1);
+
+  my $output_handler = $self->db->get_IOHandlerAdaptor->fetch_by_dbID($results[0][0]);
+
+  my $anal = new Bio::Pipeline::Analysis (  -ID             => $analysis_id,
+                                            -ADAPTOR        => $self,
+                                            -DB             => $db,
+                                            -DB_VERSION     => $db_version,
+                                            -DB_FILE        => $db_file,
+                                            -PROGRAM        => $program,
+                                            -PROGRAM_FILE   => $program_file,
+                                            -PROGRAM_VERSION=> $program_version, 
+                                            -GFF_SOURCE     => $gff_source,
+                                            -GFF_FEATURE    => $gff_feature,
+                                            -RUNNABLE       => $runnable,
+                                            -PARAMETERS     => $parameters,
+                                            -CREATED        => $created,
+                                            -LOGIC_NAME     => $logic_name,
+                                            -OUTPUT_HANDLER => $output_handler );
+
+
   return $anal;
 }
 
-sub fetch_by_newest_logic_name {
-  my ($self,$logic_name) = @_;
-
-  my $sth = $self->prepare( q{
-    SELECT analysisId, logic_name,
-           program,program_version,program_file,
-           db,db_version,db_file,
-           module,module_version,
-           gff_source,gff_feature,
-           created, parameters
-    FROM analysisprocess
-    WHERE logic_name = ?
-    ORDER BY created DESC } );
-
-  $sth->execute( $logic_name );
-  my $rowHashRef = $sth->fetchrow_hashref;
-  if( ! defined $rowHashRef ) {
-    return undef;
-  }
-
-  return $self->_objFromHashref( $rowHashRef );
-}
-
-
-sub fetch_by_logic_name {
-  my ($self,$logic_name) = @_;
-  my @result;
-  my $analysis;
-  my $rowHash;
-
-  my $sth = $self->prepare( q{
-    SELECT analysisId, logic_name,
-           program,program_version,program_file,
-           db,db_version,db_file,
-           module,module_version,
-           gff_source,gff_feature,
-           created, parameters
-    FROM analysisprocess
-    WHERE logic_name = ?
-    ORDER BY created DESC } );
-
-  $sth->execute( $logic_name );
-  my $rowHashRef;
-  while( $rowHashRef = $sth->fetchrow_hashref ) {
-       $analysis = $self->_objFromHashref( $rowHashRef );
-    if( defined $analysis ) {
-      push( @result, $analysis );
-    }
-  }
-  return @result;
-}
-
-# store makes dbID for analysis object
-# sets the creation time in created if it wasnt set before
-sub store {
-  my ($self,$analysis) = @_;
-
-  if( defined $analysis->created ) {
-    my $sth = $self->prepare( q{
-      INSERT INTO analysisprocess
-      SET created = ?,
-          logic_name = ?,
-	  db = ?,
-	  db_version = ?,
-          db_file = ?,
-          program = ?,
-          program_version = ?,
-          program_file = ?,
-	  parameters = ?,
-          module = ?,
-          module_version = ?,
-          gff_source = ?,
-          gff_feature = ? } );
-    $sth->execute
-      ( $analysis->created,
-	$analysis->logic_name,
-	$analysis->db,
-	$analysis->db_version,
-	$analysis->db_file,
-	$analysis->program,
-	$analysis->program_version,
-	$analysis->program_file,
-	$analysis->parameters,
-	$analysis->module,
-	$analysis->module_version,
-	$analysis->gff_source,
-	$analysis->gff_feature
-      );
-    $sth = $self->prepare( q{
-      SELECT last_insert_id() ;
-    } );
-    $sth->execute;
-    my $dbID = ($sth->fetchrow_array)[0];
-    $analysis->dbID( $dbID );
-  } else {
-    my $sth = $self->prepare( q{
-
-      INSERT INTO analysisprocess
-      SET created = now(),
-          logic_name = ?,
-	  db = ?,
-	  db_version = ?,
-          db_file = ?,
-          program = ?,
-          program_version = ?,
-          program_file = ?,
-	  parameters = ?,
-          module = ?,
-          module_version = ?,
-          gff_source = ?,
-          gff_feature = ? } );
-
-    $sth->execute
-      ( $analysis->logic_name,
-	$analysis->db,
-	$analysis->db_version,
-	$analysis->db_file,
-	$analysis->program,
-	$analysis->program_version,
-	$analysis->program_file,
-	$analysis->parameters,
-	$analysis->module,
-	$analysis->module_version,
-	$analysis->gff_source,
-	$analysis->gff_feature
-      );
-
-    $sth = $self->prepare( q{
-      SELECT last_insert_id()
-    } );
-    $sth->execute;
-
-    my $dbID = ($sth->fetchrow_array)[0];
-    $analysis->dbID( $dbID );
-    if( defined $dbID ) {
-      $sth = $self->prepare( q{
-	SELECT created
-	FROM analysisprocess
-	WHERE analysisId = ? } );
-      $sth->execute( $dbID );
-      $analysis->created( ($sth->fetchrow_array)[0] );
-    }
-  }
-}
-
-=head2 exists
-
- Title   : exists
- Usage   : $adaptor->exists($anal)
- Function: Tests whether this Analysis already exists in the database
- Example :
- Returns : newest Analysis object which has all what given analysis have.
- Args    : Bio::EnsEMBL::Analysis
-
-=cut
-
-sub exists {
-    my ($self,$anal) = @_;
-    my $resultAnalysis;
-
-    $self->throw("Object is not a Bio::EnsEMBL::Analysis") unless $anal->isa("Bio::EnsEMBL::Analysis");
-
-    my $query;
-    my @conditions;
-    push( @conditions, "program=\"".$anal->program."\"" ), if( defined  $anal->program );
-    push( @conditions, "program_version=\"".$anal->program_version."\""), if( defined  $anal->program_version );
-    push( @conditions, "program_file=\"".$anal->program_file."\""), if( defined  $anal->program_file );
-    push( @conditions, "db=\"".$anal->db."\""), if( defined  $anal->db );
-    push( @conditions, "db_version=\"".$anal->db_version."\""), if( defined  $anal->db_version );
-    push( @conditions, "db_file=\"".$anal->db_file."\""), if( defined  $anal->db_file );
-    push( @conditions, "gff_source=\"".$anal->gff_source."\""), if( defined  $anal->gff_source );
-    push( @conditions, "gff_feature=\"".$anal->gff_feature."\""), if( defined  $anal->gff_feature );
-    push( @conditions, "module=\"".$anal->module."\""), if( defined  $anal->module );
-    push( @conditions, "module_version=\"".$anal->module_version."\""), if( defined  $anal->module_version );
-    push( @conditions, "parameters=\"".$anal->parameters."\""), if( defined  $anal->parameters );
-    push( @conditions, "logic_name=\"".$anal->logic_name."\""), if( defined  $anal->logic_name );
-
-    $query = qq { SELECT analysisId, logic_name,
-		     program,program_version,program_file,
-		     db,db_version,db_file,
-		     module,module_version,
-		     gff_source,gff_feature,
-		     created, parameters
-		     FROM analysisprocess
-		     WHERE }.
-		       join( " and ", @conditions )." order by created DESC";
-    my $sth = $self->prepare($query);
-    my $rv  = $sth->execute();
-
-    if ($rv && $sth->rows > 0) {
-      my $rowHash = $sth->fetchrow_hashref;
-      $resultAnalysis = _objFromHashref( $rowHash );
-      return $resultAnalysis;
-    } else {
-      return undef;
-    }
-}
-
-
-sub _objFromHashref {
-  my ($self,$rowHash) = @_;
-
-  my $analysis = Bio::Pipeline::Analysis->new
-    ( -id => $rowHash->{analysis_id},
-      -db => $rowHash->{db},
-      -db_file => $rowHash->{db_file},
-      -program => $rowHash->{program},
-      -program_version => $rowHash->{program_version},
-      -program_file => $rowHash->{program_file},
-      -gff_source => $rowHash->{gff_source},
-      -gff_feature => $rowHash->{gff_feature},
-      -runnable=> $rowHash->{runnable},
-      -parameters => $rowHash->{parameters},
-      -created => $rowHash->{created},
-      -logic_name => $rowHash->{logic_name}
-    );
-
-  return $analysis;
-}
-
-# fixme: needs renaming to removeInputId_class_analysis?
-sub removeInputId_analysis {
-  my ($self,$inputid,$class,$analysis) = @_;
-
-  if (!defined($inputid)) {
-    $self->throw("No input id defined");
-  }
-  if (!defined($analysis)) {
-    $self->throw("Analysis not defined");
-  }
-
-  my $query = "delete from InputIdAnalysis where inputId = '$inputid' and analysisId = " . $analysis->dbID . " and class = '" . $class . "'";
-
-  my $sth = $self->prepare($query);
-  my $rv  = $sth->execute();
-}
-
-# fixme: needs renaming to removeInputId_class?
-sub removeInputId {
-  my ($self,$inputid,$class) = @_;
-
-  if (!defined($inputid)) {
-    $self->throw("No input id defined");
-  }
-
-  my $query = "delete from InputIdAnalysis where inputId = '$inputid' and class = '" . $class . "'";
-
-  my $sth = $self->prepare($query);
-  my $rv  = $sth->execute();
-}
-
-sub submitInputId {
-  my ($self,$inputid,$class,$analysis) = @_;
-
-  if (!defined($inputid)) {
-    $self->throw("No input id defined");
-  }
-  if (!defined($class)) {
-    $self->throw("No class defined");
-  }
-  if (!defined($analysis)) {
-    $self->throw("Analysis not defined");
-  }
-
-  my $query = "insert into InputIdAnalysis (inputId,class,analysisId,created) values(\'$inputid\',\'$class\', ". $analysis->dbID . ",now())";
-
-  my $sth = $self->prepare($query);
-  my $rv  = $sth->execute();
-}
 
 sub db {
   my ( $self, $arg )  = @_;
@@ -416,4 +150,93 @@ sub deleteObj {
   }
 }
 
+sub store {
+  my ($self,$analysis) = @_;
+
+  return $analysis->dbID
+  if defined ($analysis->dbID);
+
+  if( defined $analysis->created ) {
+    my $sth = $self->prepare( q{
+      INSERT INTO analysis
+      SET created = ?,
+          logic_name = ?,
+          db = ?,
+          db_version = ?,
+          db_file = ?,
+          program = ?,
+          program_version = ?,
+          program_file = ?,
+          parameters = ?,
+          runnable = ?,
+          gff_source = ?,
+          gff_feature = ? } );
+    $sth->execute
+      ( $analysis->created,
+        $analysis->logic_name,
+        $analysis->db,
+        $analysis->db_version,
+        $analysis->db_file,
+        $analysis->program,
+        $analysis->program_version,
+        $analysis->program_file,
+        $analysis->parameters,
+        $analysis->runnable,
+        $analysis->gff_source,
+        $analysis->gff_feature
+      );
+    $sth = $self->prepare( q{
+      SELECT last_insert_id() ;
+    } );
+    $sth->execute;
+    my $dbID = ($sth->fetchrow_array)[0];
+    $analysis->dbID( $dbID );
+  } else {
+    my $sth = $self->prepare( q{
+
+      INSERT INTO analysis
+      SET created = now(),
+          logic_name = ?,
+          db = ?,
+          db_version = ?,
+          db_file = ?,
+          program = ?,
+          program_version = ?,
+          program_file = ?,
+          parameters = ?,
+          runnable = ?,
+          gff_source = ?,
+          gff_feature = ? } );
+
+    $sth->execute
+      ( $analysis->logic_name,
+        $analysis->db,
+        $analysis->db_version,
+        $analysis->db_file,
+        $analysis->program,
+        $analysis->program_version,
+        $analysis->program_file,
+        $analysis->parameters,
+        $analysis->runnable,
+        $analysis->gff_source,
+        $analysis->gff_feature
+      );
+
+    $sth = $self->prepare( q{
+      SELECT last_insert_id()
+    } );
+    $sth->execute;
+
+    my $dbID = ($sth->fetchrow_array)[0];
+    $analysis->dbID( $dbID );
+    if( defined $dbID ) {
+      $sth = $self->prepare( q{
+        SELECT created
+        FROM analysis
+        WHERE analysis_id = ? } );
+      $sth->execute( $dbID );
+      $analysis->created( ($sth->fetchrow_array)[0] );
+    }
+  }
+}
 1;

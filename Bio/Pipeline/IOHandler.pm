@@ -1,5 +1,5 @@
 #
-# BioPerl module for Bio::Pipeline::IO
+# BioPerl module for Bio::Pipeline::IOHandler
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
@@ -10,18 +10,14 @@
 #
 
 =head1 NAME
-Bio::Pipeline::IO input/output object for pipeline
+Bio::Pipeline::IOHandler input/output object for pipeline
 
 
 =head1 SYNOPSIS
-my $io = Bio::Pipeline::IO->new(-dbadaptor=>$dbadaptor,
-                                -dataadaptor=>$data_adaptor,
-                                -dataadaptormethod=>$data_adaptor_method);
-my $input = $io->fetch_input("Scaffold_1.1");
 
 =head1 DESCRIPTION
 
-The input/output object for reading input and writing output.
+The input/output handler for reading input and writing output.
 
 =head1 FEEDBACK
 
@@ -54,7 +50,7 @@ ds are usually preceded with a _
 
 =cut
 
-package Bio::Pipeline::IO;
+package Bio::Pipeline::IOHandler;
 use vars qw(@ISA);
 use strict;
 
@@ -66,12 +62,12 @@ use Bio::Root::Root;
 =head2 new
 
   Title   : new
-  Usage   : my $io = Bio::Pipeline::IO->new(-dbadaptor=>$dbadaptor,
-                                            -dataadaptor=>$data_adaptor,
-                                            -dataadaptormethod=>$data_adaptor_method);
+  Usage   : my $io = Bio::Pipeline::IOHandler->new(-dbadaptor=>$dbadaptor,
+                                            -dataadaptor=>$datahandler,
+                                            -dataadaptormethod=>$datahandler_method);
  
-  Function: generates a new Bio::Pipeline::IO
-  Returns : a new IO object 
+  Function: generates a new Bio::Pipeline::IOHandler
+  Returns : a new IOHandler object 
   Args    : dbadaptor to database #note dbadaptor and biodbadaptor are mutally exclusive
             biodbadaptor external biodb adaptor
             biodbname name of biodb
@@ -84,26 +80,22 @@ sub new {
   my $self = $class->SUPER::new(@args);
   my ($dbID,$dbadaptor_dbname,$dbadaptor_driver,$dbadaptor_host,
       $dbadaptor_user,$dbadaptor_pass,$dbadaptor_module,
-      $biodbadaptor,$biodbname,$data_adaptor,
-      $data_adaptor_method) = $self->_rearrange([qw(DBID
-                                                    DBADAPTOR_DBNAME
-                                                    DBADAPTOR_DRIVER
-                                                    DBADAPTOR_HOST
-                                                    DBADAPTOR_USER
-                                                    DBADAPTOR_PASS
-                                                    DBADAPTOR_MODULE
-                                                    BIODBADAPTOR
-                                                    BIODBNAME
-                                                    DATA_ADAPTOR
-                                                    DATA_ADAPTOR_METHOD)],@args);
+      $datahandlers) = $self->_rearrange([ qw( DBID
+                                                DBADAPTOR_DBNAME
+                                                DBADAPTOR_DRIVER
+                                                DBADAPTOR_HOST
+                                                DBADAPTOR_USER
+                                                DBADAPTOR_PASS
+                                                DBADAPTOR_MODULE
+                                                DATAHANDLERS)],@args);
 
   $dbadaptor_dbname || $self->throw("Need a dbadaptor name");
   $dbadaptor_driver || "mysql";
+  $dbadaptor_user   || "root";
   $dbadaptor_host   || "localhost";
   $dbadaptor_pass   || "";
   $dbadaptor_module || $self->throw("Need a module for db adaptor");
-  $data_adaptor || $self->throw("Need a data adaptor");
-  $data_adaptor_method || $self->throw("Need a data adaptor method");
+  $datahandlers     || $self->throw("Need datahandlers in IOHandler constructor");
 
   $self->dbID($dbID);
   $self->dbadaptor_dbname($dbadaptor_dbname);
@@ -112,10 +104,8 @@ sub new {
   $self->dbadaptor_user($dbadaptor_user);
   $self->dbadaptor_pass($dbadaptor_pass);
   $self->dbadaptor_module($dbadaptor_module);
-  $biodbadaptor && $self->biodbadaptor($biodbadaptor);
-  $biodbname && $self->biodbname($biodbname);
-  $self->data_adaptor($data_adaptor);
-  $self->data_adaptor_method($data_adaptor_method);
+
+  @{$self->{'_datahandlers'}} = @{$datahandlers}; 
   
   return $self;
 }    
@@ -134,71 +124,101 @@ These methods calls adaptors to fetch and write inputs and outputs to database
 =cut
 
 sub fetch_input {
-  my ($self,$name) = @_;
-  $name || $self->throw("Need a name to fetch the input");
-  my $adaptor = $self->_fetch_dbadaptor();
-  $adaptor || $self->throw("Need a db adaptor");
+    my ($self,$input_name) = @_;
+    $input_name || $self->throw("Need a name to fetch the input");
 
-  if ($self->biodbadaptor() && $self->biodbname()){
-      my $biodbadaptor = $self->biodbadaptor();
-      my $biodbname = $self->biodbname();
-      $adaptor = $adaptor->${biodbadaptor}($biodbname);
-  }
-  my $data_adaptor = $self->data_adaptor;
-  my $data_method = $self->data_adaptor_method;
-  my @methods = split("->",$data_method);
-  my $meth = $adaptor->$data_adaptor;
-  
-  #loop through each method call
-  for (my $i = 0; $i < $#methods; $i++) {
-      $meth = $self->_get_method_ref($meth,$methods[$i]);
-  }
-  my $last = $methods[-1];
-  my $input = $meth->${last}($name);
+    my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
 
-  #my $input =  $adaptor->$data_adaptor->${data_method}($name); 
+    # the datahandlers work this way:
+    # each datahandler has an argument. 
+    # If this variable is eq 'INPUT', the argument for the datahandlers
+    # will be the input name found in the Input table.
+    # If this variable is some other string, the argument will be this string
+    # If the variable argument is empty, it means that this datahandler call requires
+    # no argument.
+    #
+    # eg. to fetch a sequence from biosql,
+    # the datahandlers required will look like that:
+    # $datahandler_1( -method=> 'get_BioDatabaseAdaptor'
+    #                  -argument=> ''
+    #                  -rank => 1 )
+    # $datahandler_2 ( -method=> 'fetch_BioSeqDatabase_by_name'
+    #                   -argument=> 'swissprot'
+    #                   -rank => 2 )
+    # 
+    # $datahandler_3 ( -method=> 'get_Seq_by_acc'
+    #                   -argument=> 'INPUT'
+    #                   -rank => 3 )
+    #   where the arguement will be the input_name attached to the input object.
+    # 
+    # if say, what is desired are the genes annotated on this sequence,
+    # then an additional datahandler is required,
+    #
+    # $datahandler_4 ( -method=> 'get_all_genes'
+    #                   -argument=> ''
+    #                   -rank => 4)
+    #                   
+    #   
   
-  return $input;
-}
-sub _get_method_ref {
-    my ($self,$object,$methodname) = @_;
-    if ($object->can($methodname)){
-      return $object->$methodname;
+  
+    my $obj = $self->_fetch_dbadaptor();
+
+    foreach my $datahandler (@datahandlers) {
+
+        my $tmp1 = $datahandler->method;
+
+        if ($datahandler->argument eq 'INPUT'){
+            $obj= $obj->$tmp1($input_name);
+        }else{
+            $obj = $obj->$tmp1($datahandler->argument);
+        }
     }
-    else {
-      $self->throw("Cannot call $methodname using ".(ref($object)||$object));
-  }
+
+  return $obj;
 }
+
 =head2 write_output
 
   Title    : write_output 
   Function : writes the output to database using the adaptors supplied 
   Example  : $io ->write_output($gene);
   Returns  : 
-  Args     : an object/array ref to objects  specified in the output_dba table 
+  Args     : an object/array ref to objects to be stored 
 
 =cut
 
 sub write_output {
-  my ($self, $object) = @_;
-  $object || $self->throw("Need an object to write to database");
-  my $adaptor = $self->_fetch_dbadaptor();
-  $adaptor || $self->throw("Need a db adaptor");
+    my ($self, $object) = @_;
+    $object || $self->throw("Need an object to write to database");
 
-  if ($self->biodbadaptor() && $self->biodbname()){
-      my $biodbadaptor = $self->biodbadaptor();
-      my $biodbname = $self->biodbname();
-      $adaptor = $adaptor->${biodbadaptor}($biodbname);
-  }
-  my $data_adaptor = $self->data_adaptor;
-  my $data_method = $self->data_adaptor_method;
 
-  if (ref($object) eq "ARRAY"){
-      $adaptor->$data_adaptor->${data_method}(@{$object});
-  }
-  else {
-      $adaptor->$data_adaptor->${data_method}($object);
-  }
+    # the datahandlers for an output handler works in the same principle as the
+    # input datahandlers. please see above
+    
+    my @datahandlers= sort {$a->rank <=> $b->rank}$self->datahandlers;
+    my $obj = $self->_fetch_dbadaptor();
+
+
+    # safety check ? Maybe this check should be made before the runnable is even ran
+    $self->warn ("Last output datahandler does not seem to be a STORE function. Strange.")
+        unless ($datahandlers[$#datahandlers]->argument eq 'OUTPUT');
+
+    foreach my $datahandler (@datahandlers) {
+
+        my $tmp1 = $datahandler->method;
+
+        if ($datahandler->argument eq 'OUTPUT'){
+            if (ref($object) eq "ARRAY"){
+                $obj->$tmp1(@{$object});
+            }
+            else {
+                $obj->$tmp1($object);
+            }
+        }else{
+            $obj = $obj->$tmp1($datahandler->argument);
+        }
+    }
+
   return;
 }
 
@@ -224,40 +244,21 @@ sub dbadaptor {
     return $self->{'_dbadaptor'};
 }
 
-=head2 data_adaptor 
+=head2 datahandlers 
 
-  Title    : data_adaptor 
-  Function : returns/sets the get data_adaptor string 
-  Example  : $io->data_adaptor($string); 
-  Returns  : the data_adaptor string eg (get_ProteinAdaptor) 
-  Args     : optionally, the new data_adaptor string 
-
-=cut
-
-sub data_adaptor {
-    my ($self,$adaptor) = @_;
-    if (defined $adaptor) {
-        $self->{'_data_adaptor'} = $adaptor;
-    }
-    return $self->{'_data_adaptor'};
-}
-
-=head2 data_adaptor_method 
-
-  Title    : data_adaptor_method 
-  Function : returns/sets the get data_adaptor_method string 
-  Example  : $io->data_adaptor_method($string); 
-  Returns  : the data_adaptor_method string eg (fetch_by_dbID) 
-  Args     : optionally, the new data_adaptor_method string 
+  Title    : datahandler 
+  Function : returns the datahandlers associated with this IOHandler onbject
+  Example  : $io->datahandlers(); 
+  Returns  : the datahandlers 
+  Args     : 
 
 =cut
-sub data_adaptor_method {
-    my ($self,$method) = @_;
-    if (defined $method) {
-        $self->{'_data_adaptor_method'} = $method;
-    }
-    return $self->{'_data_adaptor_method'};
+
+sub datahandlers {
+    my ($self) = @_;
+    return @{$self->{'_datahandlers'}};
 }
+
 sub dbadaptor_dbname {
   my ($self,$value) = @_;
   if ($value){
@@ -305,20 +306,6 @@ sub dbadaptor_host {
   return $self->{'_dbadaptor_host'};
 }
 
-sub biodbadaptor{
-  my ($self,$value) = @_;
-  if ($value){
-    $self->{'_biodbadaptor'} = $value;
-  }
-  return $self->{'_biodadaptor'};
-}
-sub biodbname{
-  my ($self,$value) = @_;
-  if ($value){
-    $self->{'_biodbname'} = $value;
-  }
-  return $self->{'_biodbname'};
-}
 sub _fetch_dbadaptor {
     my ($self,) = @_;
     my $dbname = $self->dbadaptor_dbname();
