@@ -139,7 +139,7 @@ sub run {
     keys %{$input} > 1 ? $self->throw("Expecting only one entry for setup_genewise"):{};
 
     my ($key) = keys %{$input};
-    my @output = $input->{$key};
+    my @output = @{$input->{$key}};
  
     #check the first is enuff?
     $#output >= 0 || return;
