@@ -23,6 +23,9 @@ use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::BatchSubmission;
 
 #use Bio::Pipeline::InputCreate::setup_genewise;
+use Bio::Pipeline::Runnable::TribeMCL;
+use Bio::GFD::SQL::Aggregator::Family;
+
 
 
 ############################################
@@ -209,10 +212,11 @@ my $run = 1;
 my $submitted;
 my $total_jobs;
 while ($run) {
-    
+
     my $batchsubmitter = Bio::Pipeline::BatchSubmission->new( -dbobj=>$db,-queue=>$QUEUE);
 
     #Give priority of fetching to new jobs, only fetch FAILED ones once NEW ones are exhausted.
+    print STDERR "Fetching Jobs...\n";
     my @incomplete_jobs = $jobAdaptor->fetch_jobs(-number =>$FETCH_JOB_SIZE,-status=>['NEW']);
     if ($#incomplete_jobs < ($FETCH_JOB_SIZE-1)){
         my $nbr_left = $FETCH_JOB_SIZE - (scalar(@incomplete_jobs));
@@ -254,9 +258,11 @@ while ($run) {
     #fetch completed jobs for creating new jobs
     my @completed_jobs = $jobAdaptor->fetch_jobs(-number =>$FETCH_JOB_SIZE,-status=>['COMPLETED']);
     print STDERR "Fetched ".scalar(@completed_jobs)." completed jobs\n";
-
-    foreach my $job(@completed_jobs) {
-
+    if($#completed_jobs > 0) {
+        print STDERR "Updating Completed Jobs and creating new ones\n";
+    }
+    
+    foreach my $job (@completed_jobs) {
       my ($new_jobs) = &create_new_job($job);
       if(scalar(@{$new_jobs})){
         print STDERR "Creating ".scalar(@{$new_jobs})." jobs\n";
@@ -292,7 +298,7 @@ while ($run) {
     #submit remaining jobs in batch.
     &submit_batch($batchsubmitter) if ($batchsubmitter->batched_jobs);
 
-    my $count = $jobAdaptor->job_count($RETRY);
+    my $count = $jobAdaptor->get_job_count(-retry_count=>$RETRY);
 
     # exit if there are any more jobs left.
     $run =  0 if (!$count);
@@ -384,7 +390,10 @@ sub create_new_job {
             }
 
            elsif($action eq "WAITFORALL"){
+              print STDERR "Checking whether all jobs are completed\n";
               if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
+                  print STDERR "Analysis " .$job->analysis->logic_name ." finished.\n
+                               Creating next job\n";
                my $new_job = $job->create_next_job($next_analysis);
                my @inputs = $inputAdaptor->copy_inputs_map_ioh($job,$new_job);
 
@@ -392,6 +401,9 @@ sub create_new_job {
                  $new_job->add_input($input);
                }
                push (@new_jobs,$new_job);
+              }
+              else {
+                  print STDERR "Jobs for analysis " .$job->analysis->logic_name ." still running\n";
               }
             }
             elsif ($action eq 'WAITFORALL_AND_UPDATE') {
@@ -495,24 +507,26 @@ sub _get_action_by_next_anal {
     
 #get completed jobs, return new inputs from new_input_table if present
 #use for WAITFORALL_AND_UPDATE
+
 sub _update_inputs {
    my ($old_job, $new_job) = @_;
    my @inputs = ();
-   my @job_ids = $jobAdaptor->fetch_completed_jobids_by_analysisId_and_processId($old_job->analysis->dbID, $old_job->process_id);   
-   my @output_ids = $jobAdaptor->fetch_output_ids(@job_ids);
+   my @job_ids = $jobAdaptor->list_completed_jobids(-analysis_id=>$old_job->analysis->dbID, 
+                                                    -process_id=>$old_job->process_id);   
+   my @output_ids = $jobAdaptor->list_output_ids(@job_ids);
    foreach my $output_id (@output_ids){
       my $input = $inputAdaptor->create_new_input($output_id, $new_job->dbID);
       push (@inputs, $input);
    }
    return @inputs;
 }
- 
       
 #check whether the next job has been created for the the same process
+
 sub _next_job_created {
     my ($job, $rule) = @_;
     my $status = 1;
-    my @jobs = $jobAdaptor->fetch_by_analysisId_and_processId($rule->next->dbID, $job->process_id);
+    my @jobs = $jobAdaptor->fetch_jobs(-analysis_id=>$rule->next->dbID, -process_id=>$job->process_id);
     my $no = scalar(@jobs);
     if ($no == 0) {
        return 0;
@@ -522,32 +536,37 @@ sub _next_job_created {
     }
 }
 
-
 #check whether all jobs for an analysis is completed given a job
+
 sub _check_all_jobs_complete {
   my ($job) = @_;
   my $status = 1;
-  my @jobs = $jobAdaptor->fetch_by_analysisId_and_processId($job->analysis->dbID, $job->process_id);
-  my $nbr = 0;
-  foreach my $old_job (@jobs) {
-    if ($old_job->status ne 'COMPLETED') {
-      $nbr++;
-    }
-  }
-  return $status unless $nbr != 0;
-  if(_timeout(\@jobs)){
-    if((int($nbr/$total_jobs) * 100) < (100-$WAIT_FOR_ALL_PERCENT)){
-      $status = 1;
-    }
-    else {
-      $status = 0;
-    }
+  if($jobAdaptor->fetch_jobs(-number=>1,-analysis_id=>$job->analysis->dbID,-process_id=>$job->process_id,-status=>["SUBMITTED",'NEW','FAILED'])){
+    return 0;
   }
   else {
-      $status = 0;
+      return 1;
   }
+#  my $nbr = 0;
+#  foreach my $old_job (@jobs) {
+#    if ($old_job->status ne 'COMPLETED') {
+#      $nbr++;
+#    }
+#  }
+#  return $status unless $nbr != 0;
+#  if(_timeout(\@jobs)){
+#    if((int($nbr/$total_jobs) * 100) < (100-$WAIT_FOR_ALL_PERCENT)){
+#      $status = 1;
+#    }
+#    else {
+#      $status = 0;
+#    }
+#  }
+#  else {
+#      $status = 0;
+#  }
   
-  return $status;
+#  return $status;
 }
 
 #under dev

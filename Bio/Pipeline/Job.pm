@@ -15,13 +15,21 @@ Bio::Pipeline::Job
 
 =head1 SYNOPSIS
 
+my $job = $jobAdaptor->fetch_jobs(-number=>1,analysis_id=>1);
+
+$job->set_status("SUBMITTED");
+$job->set_stage("RUNNING");
+$job->run;
+
+ 
 =head1 DESCRIPTION
 
 Stores run and status details of an analysis job
 
 =head1 CONTACT
 
-Describe contact details here
+shawn hoon
+email: shawnh@fugu-sg.org
 
 =head1 APPENDIX
 
@@ -49,12 +57,28 @@ use strict;
 # Object preamble - inherits from Bio::Root::Object;
 @ISA = qw(Bio::Root::Root);
 
-# following vars are static and not meaningful on remote side
-# recreation of Job object. Not stored in db of course.
-# hash with queue keys
+=head2 new
 
-my %batched_jobs;
-my %batched_jobs_runtime;
+  Title   : new
+  Usage   : my $job = $adaptor->new
+  Function: Constructor for Job object 
+  Returns : L<Bio::Pipeline::Job> 
+  Args    : -adaptor      the job adaptor object
+            -id           the job dbID
+            -process_id   the job process list
+            -queue_id     the job queue id
+            -inputs       an array ref of inputs for the job
+            -stdout       the path to the stdout output file
+            -stderr       the path to the stderr output file
+            -input_object_file  the path the the .obj file
+            -retry_count  the retry count of the job
+            -status       the job status(FAILED,NEW,SUBMITTED);
+            -stage        the job running stage(RUNNING,WRITING,READING)
+            -output_ids   the list of outputids associated with the job
+            -dependency   flag indicating where output of job is needed 
+                          by downstream analysis
+
+=cut
 
 sub new {
     my ($class, @args) = @_;
@@ -114,37 +138,6 @@ sub new {
     return $self;
 }
 
-sub output_ids {
-
-    my ($self) = @_;
-    return @{$self->{'_output_ids'}};
-}
-
-
-=head2 create_by_analysis_inputId
-
-  Title   : create_by_analysis_inputId
-  Usage   : $class->create_by.....
-  Function: Creates a job given an analysis object and an inputId
-            Recommended way of creating job objects!
-  Returns : a job object, not connected to db
-  Args    : 
-
-=cut
-
-sub create_by_analysis_inputId {
-  my $dummy = shift;
-  my $analysis = shift;
-
-  my $job = Bio::Pipeline::Job->new
-    ( -analysis    => $analysis,
-      -retry_count => 0,
-    );
-  $job->make_filenames;
-  return $job;
-}
-
-
 =head2 create_next_job
 
   Title   : create_next_job
@@ -175,76 +168,13 @@ sub create_next_job{
   return $new_job;
 } 
 
-=head2 dbID
-
-  Title   : dbID
-  Usage   : $self->dbID($id)
-  Function: get set the dbID for this object, only used by Adaptor
-  Returns : int
-  Args    : int
-
-=cut
-
-
-sub dbID {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-	    $self->{'_dbID'} = $arg;
-    }
-    return $self->{'_dbID'};
-
-}
-
-=head2 process_id
-
-  Title   : process_id
-  Usage   : $self->process_id($id)
-  Function: get set the process_id for this object, only used by Adaptor
-  Returns : int
-  Args    : int
-
-=cut
-
-
-sub process_id {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-            $self->{'_process_id'} = $arg;
-    }
-    return $self->{'_process_id'};
-
-}
-
-=head2 adaptor
-
-  Title   : adaptor
-  Usage   : $self->adaptor
-  Function: get database adaptor, set only for constructor and adaptor usage. 
-  Returns : 
-  Args    : 
-
-=cut
-
-
-sub adaptor {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-	$self->{'_adaptor'} = $arg;
-    }
-    return $self->{'_adaptor'};
-
-}
-
 =head2 add_input
 
   Title   : add_input
-  Usage   : 
-  Function: 
+  Usage   : $job->add_input($input)
+  Function: Adds an input to the job
   Returns : 
-  Args    : 
+  Args    : L<Bio::Pipeline::Input>
 
 =cut
 
@@ -260,10 +190,10 @@ sub add_input {
 =head2 inputs
 
   Title   : inputs
-  Usage   : 
-  Function: 
-  Returns : 
-  Args    : 
+  Usage   : my @inputs = $job->inputs
+  Function: Holder for input objects
+  Returns : An array of L<Bio::Pipeline::Input>
+  Args    : NA
 
 =cut
 
@@ -289,44 +219,13 @@ sub flush_inputs {
     $self->{'_inputs'} = ();
 }
 
-=head2 analysis
 
-  Title   : analysis
-  Usage   : $self->analysis($anal);
-  Function: Get/set method for the analysis object of the job
-  Returns : Bio::Pipeline::Analysis
-  Args    : Bio::Pipeline::Analysis
-
-=cut
-
-sub analysis {
-    my ($self,$arg) = @_;
-    if (defined($arg)) {
-	$self->throw("[$arg] is not a Bio::Pipeline::Analysis object" ) 
-            unless $arg->isa("Bio::Pipeline::Analysis");
-
-	$self->{'_analysis'} = $arg;
-    }
-    return $self->{'_analysis'};
-
-}
-
-sub dependency {
-    my ($self,$arg) = @_;
-    if (defined($arg)) {
-
-    $self->{'_dependency'} = $arg;
-    }
-    return $self->{'_dependency'};
-
-}
-##########
 =head2 run
 
   Title   : run
-  Usage   : $self->run...;
-  Function: 
-  Returns : 
+  Usage   : $self->run
+  Function: Runs  the job
+  Returns : 1 if successful, throws in fails
   Args    : 
 
 =cut
@@ -409,60 +308,16 @@ sub run {
   return 1;
 }
 
+=head2 set_status 
 
-=head2 resultToDb
-
-  Title   : resultToDB
-  Usage   : $self->resultToDb;
-  Function: Find if job finished by looking at STDOUT and STDERR
-            try set current_status according to what you find.
-            write_output on the runnablDB is recommended way of 
-            putting results into the DB.
-            DONT use when job started with db connection.
-  Returns : false, if job seems not to be finished on the remote side..
-  Args    : 
+  Title   : set_status 
+  Usage   : $job->set_status("FAILED");
+  Function: sets the job status to either(FAILED,SUBMITTED,NEW,COMPLETED) in
+            the job table 
+  Returns : 
+  Args    : Status string
 
 =cut
-
-sub resultToDb {
-  my $self = shift;
-  $self->throw( "Not implemented yet." );
-}
-
-
-sub write_object_file {
-    my ($self,$arg) = @_;
-
-    $self->throw("No input object file defined") unless defined($self->input_object_file);
-
-    if (defined($arg)) {
-	my $str = FreezeThaw::freeze($arg);
-	open(OUT,">" . $self->input_object_file) || $self->throw("Couldn't open object file " . $self->input_object_file);
-	print(OUT $str);
-	close(OUT);
-    }
-}
-
-
-=head2 status
-
-  Title   : status
-  Usage   : my $status = $job->status
-  Function: Gets/Sets the job status
-  Returns : status str.
-  Args    : status str (opt)
-
-=cut
-
-sub status {
-  my ($self,$arg) = @_;
-  
-  if (defined $arg){
-    $self->{'_status'} = $arg;
-  }
-
-  return $self->{'_status'}; 
-}
 
 sub set_status{
   my ($self,$arg) = @_;
@@ -478,6 +333,16 @@ sub set_status{
   $self->adaptor->set_status( $self );
 }
 
+=head2 get_status
+
+  Title   : get_status
+  Usage   : $job->get_status()
+  Function: get the job status 
+  Returns : Status String
+  Args    : 
+
+=cut
+
 sub get_status{
   my ($self) = @_;
   
@@ -487,27 +352,6 @@ sub get_status{
  
   return $self->adaptor->get_status( $self );
 }
-
-=head2 stage
-
-  Title   : stage
-  Usage   : my $stage = $job->stage
-  Function: Gets/Sets the stage the job is currently in
-  Returns : stage str.
-  Args    : stage str (opt).
-
-=cut
-
-sub stage {
-  my ($self,$arg) = @_;
-  
-  if (defined $arg){
-    $self->{'_stage'} = $arg;
-  }
-  
-  return $self->{'_stage'};
-}
-
 
 =head2 get_stage
 
@@ -529,6 +373,16 @@ sub get_stage{
   return $self->adaptor->get_stage( $self );
 }
 
+=head2 set_stage
+
+  Title   : set_stage
+  Usage   : $job->set_stage("WRITING");
+  Function: sets the job status to either(WRITING,READING,RUNNING) in
+            the job table
+  Returns :
+  Args    : Status string
+
+=cut
 
 sub set_stage{
   my ($self,$arg) = @_;
@@ -543,21 +397,24 @@ sub set_stage{
   $self->adaptor->set_stage( $self );
 }
 
+=head2 make_filenames
+
+  Title   : make_filenames
+  Usage   : $job->make_filenames();
+  Function: creates the stout,stderr,obj file names for the job 
+  Returns :
+  Args    : 
+
+=cut
+
 sub make_filenames {
   my ($self) = @_;
   
   my $num = int(rand(10));
   my $dir = $NFSTMP_DIR;
-
-# scp - one set of out files per job (even if batching together)
-# this is a bit messy! added '.0' to $stub. This will be the master
-# file containing QUEUE output. In runner.pl before each job is run
-# replace 0 with the job ID to get one output file per $job.
-# Change also Job::remove to do a glob on all these files. Yep it's
-# nasty but it seems to work...
-
-
-  my $stub = $self->adaptor->db->dbname.".job_".$self->dbID.".";
+  my $stub='';
+  $stub .= $self->adaptor->db->dbname if $self->adaptor;
+  $stub .= ".job_".$self->dbID."." if $self->dbID;
   $stub .= $self->analysis->logic_name.".";
   $stub .= time().".".int(rand(1000));
 
@@ -566,6 +423,16 @@ sub make_filenames {
   $self->stderr_file($dir.$stub.".err");
 
 }
+
+=head2 update
+
+  Title   : update
+  Usage   : $job->update();
+  Function: updates the job status 
+  Returns :
+  Args    : 
+
+=cut
 
 sub update {
     my ($self)= @_;
@@ -577,32 +444,22 @@ sub update {
 
 }
 
+=head2 update_completed
+
+  Title   : update_completed
+  Usage   : $job->update_completed();
+  Function: copy the job to the job_completed table 
+  Returns :
+  Args    : 
+
+=cut
+
 sub update_completed{
   my ($self)=@_;
   eval{
     $self->adaptor->update_completed_job($self);
   };if($@){$self->throw ("Error updating completed job\n$@");}
 }
-
-    
-
-
-sub create_queuelogfile {
-  my ($self) = @_;
-  
-  my $num = int(rand(10));
-  my $dir = $NFSTMP_DIR . "/$num/";
-  if( ! -e $dir ) {
-    system( "mkdir $dir" );
-  }
-
-  my $stub = $self->queue_id.".";
-  $stub .= time().".".int(rand(1000));
-
-  $self->queue_out($dir.$stub.".out");
-  $self->queue_err($dir.$stub.".err");
-}
-
 
 =head2 filenames
 
@@ -628,6 +485,114 @@ sub filenames{
     }
 }
 
+=head2 remove 
+
+  Title   : remove 
+  Usage   : $job->remove
+  Function: remove job from job table,
+            unlink stdout/stderr/obj fiels 
+  Returns : 
+  Args    :
+
+=cut
+
+sub remove {
+  my $self = shift;
+  
+  if( -e $self->stdout_file ) { unlink( $self->stdout_file ) };
+  if( -e $self->stderr_file ) { unlink( $self->stderr_file ) };
+  if( -e $self->input_object_file ) { unlink( $self->input_object_file ) };
+
+   if( defined $self->adaptor ) {
+   $self->adaptor->remove( $self );
+   }
+}
+
+#######################################
+#GET/SETS from hereon
+#######################################
+
+
+=head2 output_file
+
+  Title   : output_file
+  Usage   : my $file = $self->output_file
+  Function: Get/set method for output
+  Returns : string
+  Args    : string
+
+=cut
+
+sub output_file {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+	$self->{_output_file} = $arg;
+    }
+    return $self->{_output_file};
+}
+
+=head2 output_ids
+
+  Title   : output_ids
+  Usage   : my $ids = $self->output_file
+  Function: Get/set method for output ids
+  Returns : string
+  Args    : string
+
+=cut
+
+sub output_ids {
+
+    my ($self) = @_;
+    return @{$self->{'_output_ids'}};
+}
+
+=head2 status_file
+
+  Title   : status_file
+  Usage   : my $file = $self->status_file
+  Function: Get/set method for the status file
+  Returns : string
+  Args    : string
+
+=cut
+
+sub status_file {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+        $self->{_status_file} = $arg;
+    }
+    return $self->{_status_file};
+}
+
+
+sub queue_id {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+        $self->{_queue_id} = $arg;
+    }
+    return $self->{_queue_id};
+}
+
+=head2 retry_count
+
+  Title   : retry_count
+  Usage   : 
+  Function: Get/set method for the retry_count
+  Returns : 
+  Args    : 
+
+=cut
+
+sub retry_count {
+  my ($self, $arg) = @_;
+  (defined $arg) &&
+    ( $self->{'_retry_count'} = $arg );
+  $self->{'_retry_count'};
+}
 
 =head2 stdout_file
 
@@ -686,103 +651,148 @@ sub input_object_file {
     return $self->{_input_object_file};
 }
 
-=head2 QUEUE_id
+=head2 status
 
-  Title   : QUEUE_id
-  Usage   : 
-  Function: Get/set method for the QUEUE_id
-  Returns : 
-  Args    : 
-
-=cut
-
-sub queue_id{
-  my ($self, $arg) = @_;
-  (defined $arg) &&
-    ( $self->{'_queueid'} = $arg );
-  $self->{'_queueid'};
-}
-
-sub queue_out{
-  my ($self, $arg) = @_;
-  (defined $arg) &&
-    ( $self->{'_queueout'} = $arg );
-  $self->{'_queueout'};
-}
-
-sub queue_err{
-  my ($self, $arg) = @_;
-  (defined $arg) &&
-    ( $self->{'_queueerr'} = $arg );
-  $self->{'_queueerr'};
-}
-
-=head2 retry_count
-
-  Title   : retry_count
-  Usage   : 
-  Function: Get/set method for the retry_count
-  Returns : 
-  Args    : 
+  Title   : status
+  Usage   : my $status = $job->status
+  Function: Gets/Sets the job status
+  Returns : status str.
+  Args    : status str (opt)
 
 =cut
 
-sub retry_count {
-  my ($self, $arg) = @_;
-  (defined $arg) &&
-    ( $self->{'_retry_count'} = $arg );
-  $self->{'_retry_count'};
-}
-
-sub remove {
-  my $self = shift;
+sub status {
+  my ($self,$arg) = @_;
   
-  if( -e $self->stdout_file ) { unlink( $self->stdout_file ) };
-  if( -e $self->stderr_file ) { unlink( $self->stderr_file ) };
-  if( -e $self->input_object_file ) { unlink( $self->input_object_file ) };
+  if (defined $arg){
+    $self->{'_status'} = $arg;
+  }
 
-   if( defined $self->adaptor ) {
-   $self->adaptor->remove( $self );
-   }
+  return $self->{'_status'}; 
 }
 
+=head2 stage
 
-=head2 output_file
-
-  Title   : output_file
-  Usage   : my $file = $self->output_file
-  Function: Get/set method for output
-  Returns : string
-  Args    : string
+  Title   : stage
+  Usage   : my $stage = $job->stage
+  Function: Gets/Sets the stage the job is currently in
+  Returns : stage str.
+  Args    : stage str (opt).
 
 =cut
 
-sub output_file {
-    my ($self,$arg) = @_;
-
-    if (defined($arg)) {
-	$self->{_output_file} = $arg;
-    }
-    return $self->{_output_file};
+sub stage {
+  my ($self,$arg) = @_;
+  
+  if (defined $arg){
+    $self->{'_stage'} = $arg;
+  }
+  
+  return $self->{'_stage'};
 }
 
-=head2 status_file
+=head2 dbID
 
-  Title   : status_file
-  Usage   : my $file = $self->status_file
-  Function: Get/set method for the status file
-  Returns : string
-  Args    : string
+  Title   : dbID
+  Usage   : $self->dbID($id)
+  Function: get set the dbID for this object, only used by Adaptor
+  Returns : int
+  Args    : int
 
 =cut
 
-sub status_file {
+
+sub dbID {
     my ($self,$arg) = @_;
 
     if (defined($arg)) {
-        $self->{_status_file} = $arg;
+	    $self->{'_dbID'} = $arg;
     }
-    return $self->{_status_file};
+    return $self->{'_dbID'};
+
 }
 
+=head2 process_id
+
+  Title   : process_id
+  Usage   : $self->process_id($id)
+  Function: get set the process_id for this object, only used by Adaptor
+  Returns : int
+  Args    : int
+
+=cut
+
+
+sub process_id {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+            $self->{'_process_id'} = $arg;
+    }
+    return $self->{'_process_id'};
+
+}
+
+=head2 adaptor
+
+  Title   : adaptor
+  Usage   : $self->adaptor
+  Function: get database adaptor, set only for constructor and adaptor usage. 
+  Returns : 
+  Args    : 
+
+=cut
+
+
+sub adaptor {
+    my ($self,$arg) = @_;
+
+    if (defined($arg)) {
+	$self->{'_adaptor'} = $arg;
+    }
+    return $self->{'_adaptor'};
+
+}
+
+=head2 analysis
+
+  Title   : analysis
+  Usage   : $self->analysis($anal);
+  Function: Get/set method for the analysis object of the job
+  Returns : Bio::Pipeline::Analysis
+  Args    : Bio::Pipeline::Analysis
+
+=cut
+
+sub analysis {
+    my ($self,$arg) = @_;
+    if (defined($arg)) {
+	$self->throw("[$arg] is not a Bio::Pipeline::Analysis object" ) 
+            unless $arg->isa("Bio::Pipeline::Analysis");
+
+	$self->{'_analysis'} = $arg;
+    }
+    return $self->{'_analysis'};
+
+}
+
+=head2 dependency
+
+  Title   : dependency
+  Usage   : $self->dependency(1);
+  Function: Get/set method for the dependency flag of job 
+  Returns : 1/0 
+  Args    : 1/0
+
+=cut
+
+sub dependency {
+    my ($self,$arg) = @_;
+    if (defined($arg)) {
+
+    $self->{'_dependency'} = $arg;
+    }
+    return $self->{'_dependency'};
+
+}
 1;

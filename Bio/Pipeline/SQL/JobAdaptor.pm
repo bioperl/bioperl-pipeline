@@ -1,6 +1,8 @@
 # BioPerl module for Bio::Pipeline::SQL::JobAdaptor
 #
-# Adaptred from Arne Stabenau EnsEMBL JobAdaptor
+# Adapted from Arne Stabenau EnsEMBL JobAdaptor
+#
+# 20/10/2002 Refactored by Shawn Hoon
 #
 # You may distribute this module under the same terms as perl itself
 #
@@ -14,6 +16,15 @@ Bio::Pipeline::SQL::JobAdaptor
 
   $jobAdaptor = $dbobj->get_JobAdaptor;
   $jobAdaptor = $jobobj->adaptor;
+  my @jobs = $jobAdaptor->fetch_jobs(-number=>1000,
+                                     -analysis_id=>1,
+                                     -status=>['FAILED','NEW'],
+                                     -stage =>['WRITING'],
+                                     -retry_count=> 10,
+                                     -process_id=>'NEW');
+  my $job_count = $jobAdptor->get_job_count(-analysis_id=>1,
+                                            -status=>['FAILED']);
+
 
 
 =head1 DESCRIPTION
@@ -53,6 +64,19 @@ BEGIN {
     %VALID_STAGE  = ('READING'=>1,'WRITING'=>1,'RUNNING'=>1);
 }
 
+################################################################################
+#This Adaptor is getting big.
+#Sectionalizing the different method calls into the following:
+# -methods that return jobs (object methods)
+# -methods that return ids  (id methods)
+# -methods that return boolean about some state of the job table (state methods)
+################################################################################
+
+
+##############################
+#Object Methods
+##############################
+
 =head2 fetch_by_dbID
 
   Title   : fetch_by_dbID
@@ -60,7 +84,7 @@ BEGIN {
   Function: Retrieves a job from database by internal id
   Returns : throws exception when something goes wrong.
             undef if the id is not in the db.
-  Args    : 
+  Args    : the dbid
 
 =cut
 
@@ -134,63 +158,25 @@ sub fetch_by_dbID {
             each tag of status will be treated as an OR property. Likewise for stage.
             Each set of tag between stage and status will be treated with the AND property.
             So for this example, it will be WHERE ((status="NEW" OR status="FAILED") AND (stage="WRITING")) 
-  Returns : Arary of L<Bio::Pipeline::Job> 
+  Returns : Array of L<Bio::Pipeline::Job> 
   Args    : -number: Number of jobs to limit for the fetch
             -status: The list of status types (allowed: NEW,FAILED,BATCHED,COMPLETED)
             -stage : The list of stage types (allowed: READING, WRITING,RUNNING)
+            -analysis_id: The analysis id of the jobs
+            -process_id: The process ids of the jobs
+
 =cut
 
 sub fetch_jobs{
     my ($self,@args) = @_;
-    my ($number,$status,$stage) = $self->_rearrange([qw(NUMBER
-                                                        STATUS
-                                                        STAGE
-                                                        )],@args);
+
     my @jobs;
     #prepare the query
 
     my $query =" SELECT job_id, process_id, analysis_id, queue_id, object_file,
                         stdout_file, stderr_file, retry_count,status,stage
                 FROM job";
-
-    if(defined $status){
-        if(ref($status) eq "ARRAY"){
-            #do for first
-            my $st= shift @{$status};
-            $VALID_STATUS{$st} || $self->throw("Invalid state $st requested");
-            $query .= " WHERE ((status='$st')";
-
-            foreach my $st(@{$status}){
-                $VALID_STATUS{$st} || $self->throw("Invalid state $st requested");
-                $query .= " OR (status='$st')";
-            }
-            $query .= " )";
-        }
-        else {
-            $VALID_STATUS{$status} || $self->throw("Invalid state $status requested");
-            $query .= " WHERE (status='$status)'";
-        }
-    }
-    if(defined $stage){
-
-        if(ref ($stage) eq "ARRAY"){
-          my $st = shift @{$stage};
-          $VALID_STAGE{$st} || $self->throw("Invalid stage $st requested");
-          $query .= ($query =~/where/i) ? " AND ((stage='$st')" : " ((stage='$st')";
-
-          foreach my $st(@{$stage}){
-              $VALID_STAGE{$st} || $self->throw("Invalid stage $st requested");
-              $query .= " OR ($status='$st')";
-          }
-          $query .= " )";
-        }
-        else {
-            $VALID_STAGE{$stage} || $self->throw("Invalid stage $stage requested");
-            $query .= ($query =~/where/i) ? " AND ((stage='$stage')" : " ((stage='$stage')";
-        }
-    }
-            
-    $query .= defined $number ? " LIMIT $number": "";
+    $query .= $self->_make_query_conditional(-table=>"job",@args);
 
     #Get the jobs
     my $sth = $self->prepare($query);
@@ -238,6 +224,128 @@ sub fetch_jobs{
 }
 
 
+#########################################################
+#list id methods
+#########################################################
+
+=head2 list_output_ids
+
+  Title   : list_output_ids
+  Usage   : my @jobs = $adaptor->list_output_ids(@jobs_ids)
+  Function: returns the list of output ids given an array of job ids
+  Returns : Array of scalar ids
+  Args    : Array of job ids
+
+=cut
+
+sub list_output_ids {
+  my ($self, @job_ids) = @_;
+
+  my @output_ids = ();
+
+  foreach my $job_id (@job_ids) {
+    my $query = "SELECT output_name
+                 FROM output
+                 WHERE job_id = $job_id";
+    my $sth = $self->prepare($query);
+    $sth->execute;
+    while (my ($output_id) = $sth->fetchrow_array){
+        push (@output_ids, $output_id);
+    }
+  }
+  return @output_ids;
+}
+
+=head2 list_job_ids
+
+  Title   : list_all_job_ids
+  Usage   : my @jobs = $adaptor->list_all_job_ids()
+  Function: Flexible method used for fetching job ids based on status or stage. Behavior is as such
+            each tag of status will be treated as an OR property. Likewise for stage.
+            Each set of tag between stage and status will be treated with the AND property.
+            So for this example, it will be WHERE ((status="NEW" OR status="FAILED") AND (stage="WRITING")) 
+            Works on the job table
+  Returns : Array of job ids 
+  Args    : -number: Number of jobs to limit for the fetch
+            -status: The list of status types (allowed: NEW,FAILED,BATCHED,COMPLETED)
+            -stage : The list of stage types (allowed: READING, WRITING,RUNNING)
+            -analysis_id: The analysis id of the jobs
+            -process_id: The process ids of the jobs
+
+=cut
+
+sub list_job_ids {
+    my ($self,@args)  = @_;
+
+    my @jobs;
+    #prepare the query
+
+    my $query =" SELECT job_id
+                 FROM job";
+    $query.= $self->_make_query_conditional(-table=>'job',@args);
+
+    #Get the jobs
+    my $sth = $self->prepare($query);
+    $sth->execute;
+
+    my @job_id;
+ 
+    while (my ($job_id) = $sth->fetchrow_array){
+
+      push @job_id,$job_id;
+    }
+    return @job_id;
+}
+
+
+=head2 list_completed_job_ids
+
+  Title   : list_completed_job_ids
+  Usage   : my $query = $adaptor->list_completed_job_ids()
+  Function: Utility method for creating the WHERE clause for job table query.
+            Works on the completed_jobs table
+  Returns : String
+  Args    : -dbid  : The job dbid
+            -number: Number of jobs to limit for the fetch
+            -analysis_id: The analysis id of the jobs
+            -process_id: The process ids of the jobs
+
+=cut
+
+sub list_completed_job_ids {
+  my ($self,@args) = @_;
+
+
+  my $query = " SELECT completed_job_id
+                FROM completed_jobs ";
+
+  $query .= $self->_make_query_conditional(-table=>"completed_jobs",@args);
+
+
+  my $sth = $self->prepare($query);
+  $sth->execute();
+  my @job_ids;
+
+  while (my ($job_id) = $sth->fetchrow_array) {
+     push (@job_ids, $job_id);
+  }
+  return @job_ids;
+}
+
+###########################################################
+#Info Methods
+###########################################################
+
+=head2 job_exists
+
+  Title   : job_exists
+  Usage   : my @jobs = $adaptor->job_exists()
+  Function: Check where a job exists in the job or completed_jobs table given an analysis object
+  Returns : True/False
+  Arg     : L<Bio::Pipeline::Analysis>
+
+=cut
+
 sub job_exists {
   my $self = shift;
   my $analysis = shift;
@@ -266,144 +374,27 @@ sub job_exists {
   }
 }
 
+=head2 get_job_count
 
-
-=head2 fetch_by_analysisId_and_processId_
-
-  Title   : fetch_by_analysisId_and_processId
-  Usage   : my $job = $adaptor->fetch_by_analysisId_and_processId
-  Function: Retrieves all jobs from database by their analysis_id and processId 
-  Returns : throws exception when something goes wrong.
-  Args    : analysis_id, process_id 
-
-=cut
-
-sub fetch_by_analysisId_and_processId {
-  my $self = shift;
-  my $analysis_id = shift;
-  my $process_id = shift;
-  my @jobs;
-
- 
-  my $query = " SELECT job_id
-                FROM job
-                WHERE analysis_id = $analysis_id and process_id = '$process_id'" ;
-
-  my $sth = $self->prepare($query);
-  $sth->execute();
-
-  while (my ($job_id) = $sth->fetchrow_array) {
-     my $job = $self->fetch_by_dbID($job_id);
-     push (@jobs, $job);
-  }
-  return @jobs;
-}
-
-
-sub fetch_completed_jobids_by_analysisId_and_processId {
-  my $self = shift;
-  my $analysis_id = shift;
-  my $process_id = shift;
-  my @job_ids;
-
-
-  my $query = " SELECT completed_job_id
-                FROM completed_jobs
-                WHERE analysis_id = $analysis_id and process_id = '$process_id'" ;
-
-  my $sth = $self->prepare($query);
-  $sth->execute();
-  
-  while (my ($job_id) = $sth->fetchrow_array) {
-     push (@job_ids, $job_id);
-  }
-  return @job_ids;
-}
-
-sub fetch_output_ids {
-  my ($self, @job_ids) = @_;
-
-  my @output_ids = ();
-
-  foreach my $job_id (@job_ids) {
-    my $query = "SELECT output_name
-                 FROM output
-                 WHERE job_id = $job_id";
-    my $sth = $self->prepare($query);
-    $sth->execute;
-    while (my ($output_id) = $sth->fetchrow_array){
-        push (@output_ids, $output_id);
-    }
-  }
-  return @output_ids;
-}
-
-    
-
-=head2 fetch_all
-
-  Title   : fetch_all
-  Usage   : my @jobs = $adaptor->fetch_all
-  Function: Retrieves all the jobs from the database 
-  Returns : ARRAY of Bio::Pipeline::Jobs
-  Args    : 
+  Title   : get_job_count
+  Usage   : my @jobs = $adaptor->get_job_count()
+  Function: Get count of job by various criteria 
+            Works on the job table
+  Returns : A job count number
+  Arg     : -status: The list of status types (allowed: NEW,FAILED,BATCHED,COMPLETED)
+            -stage : The list of stage types (allowed: READING, WRITING,RUNNING)
+            -analysis_id: The analysis id of the jobs
+            -process_id: The process ids of the jobs
+            -retry_count: The retry count of the jobs
 
 =cut
 
-sub fetch_all {
-    my ($self,$retry) = @_;
-
-    my @jobs;
+sub get_job_count{
+    my ($self,@args) = @_;
     
-    my $query = "SELECT job_id FROM job";
-
-    if ($retry) { $query .= " WHERE retry_count < $retry";}
-
-    my $sth = $self->prepare($query);
-    $sth->execute;
-
-    while (my ($job_id) = $sth->fetchrow_array){
-        my $job = $self->fetch_by_dbID($job_id);
-        push (@jobs,$job);
-    }
-
-    return @jobs;
-}
-
-sub fetch_all_job_ids {
-    my ($self)  = @_;
-
-    my $query = "SELECT job_id FROM job";
-
-    my $sth = $self->prepare("SELECT job_id FROM job");
-    $sth->execute();
-    
-    my @ids;
-
-    while(my ($job_id) = $sth->fetchrow_array){
-        push @ids, $job_id;
-    }
-
-    return @ids;
-}
-
-
-=head2 job_count
-
-  Title   : job_count
-  Usage   : my $count = $adaptor->job_count
-  Function: gives a count of the number of jobs that are still incomplete.
-  Returns : int 
-  Args    : 
-
-=cut
-
-sub job_count{
-    my ($self,$retry) = @_;
-
     my $query = "SELECT count(*) FROM job";
 
-    if ($retry) { $query .= " WHERE retry_count < $retry";}
+    $query.=$self->_make_query_conditional(@args);
 
     my $sth = $self->prepare($query);
     $sth->execute;
@@ -412,74 +403,10 @@ sub job_count{
     return $count;
 }
 
-=head2 fetch_new_failed_jobs
 
-  Title   : fetch_new_failed_jobs
-  Usage   : my @jobs = $adaptor->fetch_new_failed_jobs
-  Function: Retrieves all the jobs from the database 
-            that have the status 'NEW' or 'FAILED'
-  Returns : ARRAY of Bio::Pipeline::Jobs
-  Args    : 
-
-=cut
-
-sub fetch_new_failed_jobs {
-    my ($self,$retry) = @_;
-
-    $self->throw ("Need to supply retry count argument") unless $retry;
-
-    my @jobs;
-    
-    my $query = "   SELECT job_id 
-                    FROM job 
-                    WHERE (status = 'NEW ') or
-                          (status = 'FAILED' and retry_count < $retry)";
-
-    my $sth = $self->prepare($query);
-    $sth->execute;
-
-    while (my ($job_id) = $sth->fetchrow_array){
-        my $job = $self->fetch_by_dbID($job_id);
-        push (@jobs,$job);
-    }
-
-    return @jobs;
-
-}
-
-
-sub store_outputs {
- my ($self,$job,@output_ids) = @_;
-
- my $sth;
- my $query;
- my $job_id = $job->dbID;
-
- foreach my $output_id(@output_ids) {
-   $query = "   INSERT into output (job_id,output_name)
-                    VALUES ($job_id, $output_id)"; 
-   $sth = $self->prepare($query);
-   $sth->execute;
- }
-}
-
-sub remove_outputs_by_job {
-    my ($self,$job) = @_;
-    if(!$job) {
-      my $sth = $self->prepare("DELETE FROM output");
-      $sth->execute();
-    }
-    else {
-      $job->dbID || $self->throw("job doesn't have a dbID!");
-      my $sth = $self->prepare("DELETE FROM output where job_id=?");
-      $sth->execute($job->dbID);
-    }
-    return;
-}
-
-
- 
- 
+###############################
+#Store/Remove/Update methods
+###############################
 
 =head2 store
 
@@ -553,6 +480,30 @@ sub store {
 
 }
 
+=head2 store_outputs
+
+  Title   : store_outputs
+  Usage   : my @jobs = $adaptor->store_outputs($job,@output_ids)
+  Function: store a list of outputids keyed by a job into the output table 
+  Returns : 
+
+=cut
+
+sub store_outputs {
+ my ($self,$job,@output_ids) = @_;
+
+ my $sth;
+ my $query;
+ my $job_id = $job->dbID;
+
+ foreach my $output_id(@output_ids) {
+   $query = "   INSERT into output (job_id,output_name)
+                    VALUES ($job_id, $output_id)"; 
+   $sth = $self->prepare($query);
+   $sth->execute;
+ }
+}
+
 =head2 remove
 
   Title   : remove
@@ -563,7 +514,6 @@ sub store {
   Args    : 
 
 =cut
-
 
 sub remove {
   my $self = shift;
@@ -608,7 +558,6 @@ sub remove_by_dbID {
   };if($@){$self->throw("Error encountered trying to remove jobs $inExpr.\n$@");} 
 
 }
-
 
 =head2 update
 
@@ -703,14 +652,6 @@ sub remove_completed_jobs_by_job {
     }
     return;
 }
-
-sub exists {
-  my $self = shift;
-  my $hashref = shift;
-
-  $self->throw( "Not implemented yet" );
-}
-
 
 =head2 set_status
 
@@ -836,88 +777,88 @@ sub get_stage {
     $job->stage($stage);
     return $stage;
 }
-###This sub routine was added by bala on 8/8/2002
-sub create_and_store_jobs_by_IOhandler{
-    
-    my($self,$iohandler)= @_;
-    my $dbID = $iohandler->dbID;
 
-    my @input_names = $iohandler->fetch_input();
-    my $dbadaptor = $iohandler->dbadaptor;
-    my $iohandler_adaptor = $dbadaptor->get_IOHandlerAdaptor;
-    my $analysis_adaptor=$dbadaptor->get_AnalysisAdaptor;
-    my $job_adaptor=$dbadaptor->get_JobAdaptor;
-    my $sth1;
-    eval{
-      $sth1 = $self->prepare( " select input_iohandler_id from iohandler_child  where inpu_create_iohandler_id = $dbID ");
-      $sth1->execute();
-    };
 
-    if($@){
-      $self->throw("Error getting  input_iohandler_id for job $dbID");
+=head2 _make_query_conditional
+
+  Title   : _make_query_conditional 
+  Usage   : my $query = $adaptor->_make_query_conditional()
+  Function: Utility method for creating the WHERE clause for job table query.
+  Returns : String 
+  Args    : -dbid  : The job dbid
+            -number: Number of jobs to limit for the fetch
+            -status: The list of status types (allowed: NEW,FAILED,BATCHED,COMPLETED)
+            -stage : The list of stage types (allowed: READING, WRITING,RUNNING)
+            -analysis_id: The analysis id of the jobs
+            -process_id: The process ids of the jobs
+
+=cut
+
+sub _make_query_conditional {
+  my ($self,@args) = @_;
+  my ($table,$dbID,$number,$status,$stage,
+      $analysis_id,$process_id,$retry_count) = $self->_rearrange([qw(TABLE
+                                                      DBID
+                                                      NUMBER
+                                                      STATUS
+                                                      STAGE
+                                                      ANALYSIS_ID
+                                                      PROCESS_ID
+                                                      RETRY_COUNT
+                                                        )],@args);
+    my $query="";
+    if(defined $dbID) {
+        $query .= ($table =~/completed_jobs/i) ? "WHERE completed_job_id=$dbID " : " WHERE job_id=$dbID " ;
     }
+    if(defined $status){
+        if(ref($status) eq "ARRAY"){
+            #do for first
+            my $st= shift @{$status};
+            $VALID_STATUS{$st} || $self->throw("Invalid state $st requested");
+            $query .= ($query =~/where/i) ? " AND ((status='$st')" : " WHERE ((status='$st')";
 
-    my ($input_iohandler_id) = $sth1->fetchrow_array();
-    my $input_iohandler = $iohandler_adaptor->fetch_by_dbID($input_iohandler_id);
-    
-    my @job_objs;
-     my $sth2;
-    eval{
-      $sth2 = $self->prepare( " select analysis_id from analysis_iohandler  where iohandler_id = $input_iohandler_id ");
-      $sth2->execute();
-    };
+            foreach my $st(@{$status}){
+                $VALID_STATUS{$st} || $self->throw("Invalid state $st requested");
+                $query .= " OR (status='$st')";
+            }
+            $query .= " )";
+        }
+        else {
+            $VALID_STATUS{$status} || $self->throw("Invalid state $status requested");
+            $query .= ($query =~/where/i) ? " AND ((status='$status')" : " WHERE ((status='$status')";
+        }
+    }
+    if(defined $stage){
 
-    if($@){
-      $self->throw("Error getting  analysis_id for job $dbID");
-    }
+        if(ref ($stage) eq "ARRAY"){
+          my $st = shift @{$stage};
+          $VALID_STAGE{$st} || $self->throw("Invalid stage $st requested");
+          $query .= ($query =~/where/i) ? " AND ((stage='$st')" : " WHERE ((stage='$st')";
 
-    my ($analysis_id) = $sth2->fetchrow_array();
-    my $analysis = $analysis_adaptor->fetch_by_dbID($analysis_id);
-    
-    foreach my $input_name(@input_names){
-      my @input_objs;
-      my $input_obj = Bio::Pipeline::Input->new(-name => $input_name,
-                                               -input_handler => $input_iohandler);
-      push @input_objs, $input_obj;
-      my $job_obj = Bio::Pipeline::Job->new(
-                                          -analysis => $analysis,
-                                          -adaptor => $dbadaptor->get_JobAdaptor,
-                                          -inputs => \@input_objs);         
-                                                   
-      push @job_objs, $job_obj;
+          foreach my $st(@{$stage}){
+              $VALID_STAGE{$st} || $self->throw("Invalid stage $st requested");
+              $query .= " OR ($status='$st')";
+          }
+          $query .= " )";
+        }
+        else {
+            $VALID_STAGE{$stage} || $self->throw("Invalid stage $stage requested");
+            $query .= ($query =~/where/i) ? " AND ((stage='$stage')" : " WHERE ((stage='$stage')";
+        }
     }
-    
-    foreach my $job (@job_objs) {
-      $job_adaptor->store($job);
+    if(defined $analysis_id){
+        $query.= ($query=~/where/i) ? " AND (analysis_id='$analysis_id')":" WHERE (analysis_id='$analysis_id')";
     }
-    
+    if(defined $process_id){
+        $query.= ($query=~/where/i) ? " AND (process_id='$process_id')":" WHERE (process_id='$process_id')";
+    }
+    if(defined $retry_count){
+        $query.= ($query=~/where/i) ? " AND (retry_count='$retry_count')":" WHERE (retry_count='$retry_count')";
+    }
+            
+    $query .= defined $number ? " LIMIT $number": "";
+
+    return $query;
+
 }
-###############
-
-sub db {
-  my ( $self, $arg )  = @_;
-  if(  defined $arg ) {
-      $self->{'_db'} = $arg;
-  }
-  $self->{'_db'};
-}
-
-sub prepare {
-  my ( $self, $query ) = @_;
-  $self->db->prepare( $query );
-}
-
-sub deleteObj {
-  my ($self) = @_;
-  my @dummy = values %{$self};
-  foreach my $key ( keys %$self ) {
-    delete $self->{$key};
-  }
-  foreach my $obj ( @dummy ) {
-    eval {
-      $obj->deleteObj;
-    }
-  }
-}
-
 1;
