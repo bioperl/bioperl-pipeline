@@ -65,7 +65,7 @@ my $importer = Bio::Pipeline::XMLImporter->new(
     -dbuser => $DBUSER,
     -dbpass => $DBPASS,
     -schema => $SCHEMA,
-    -datasetup => $DATASETUP
+    -xml => $DATASETUP
 );
 
 $importer->run($FORCE);
