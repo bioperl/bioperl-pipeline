@@ -127,6 +127,18 @@ sub fetch_by_dbID {
   return $anal;
 }
 
+sub fetch_all {
+    my ($self) = @_;
+    my @analysis;
+    my $sth = $self->prepare("SELECT analysis_id FROM analysis");
+    $sth->execute();
+    while (my ($id) = $sth->fetchrow_array){
+        push @analysis, $self->fetch_by_dbID($id);
+    }
+    return @analysis;
+    
+}
+
 
 sub db {
   my ( $self, $arg )  = @_;
@@ -225,4 +237,33 @@ sub store {
 	return $dbid;
     }
 }
+
+sub update_logic_name {
+    my ($self,$dbID,$program) = @_;
+    ($dbID && $program) || $self->throw("Need both a dbID and a program");
+    my $sth = $self->prepare("UPDATE analysis SET logic_name='$program' WHERE analysis_id=$dbID");
+    $sth->execute();
+    if($@){
+        $self->throw("Attempt to update analysis logic name failed .\n$@");
+    }
+}
+
+sub update_prog_version {
+  my ($self,$dbID,$prog_version) = @_;
+  my $sth = $self->prepare("UPDATE analysis SET program_version='$prog_version' WHERE analysis_id=$dbID");
+  $sth->execute();
+  if($@){
+      $self->throw("Attempt to update program version failed. \n $@");
+  }
+}
+
+sub update_runnable {
+    my ($self,$dbID,$runnable) = @_;
+    my $sth = $self->prepare("UPDATE analysis SET runnable='$runnable' WHERE analysis_id=$dbID");
+    $sth->execute();
+    if($@){
+      $self->throw("Attempt to update runnable failed.\n $@");
+    }
+}
+
 1;
