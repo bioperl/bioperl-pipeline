@@ -9,7 +9,7 @@
   </element>
   <complexType name="pipeline_flow_def">
    <element name="analysis" type="analysis_def" minOccurs="1" maxOccurs="unbounded"/>
-   <element name="rule" type="rule_def" minOccurs="1"/>
+   <element name="rule_group" type="rule_group_def" minOccurs="1"/>
   </complexType>  
   <complexType name="analysis_def">
     <attribute name="id" type="string" use="required"/>
@@ -55,6 +55,10 @@
       <element name="module" type="string" minOccurs="1"/>
       <element name="rank" type="integer" minOccurs="0"/>
       <element name="argument" type="argument_def" minOccurs="0"/>
+  </complexType>
+  <complexType name="rule_group_def">
+      <attribute name="id" type="string" use="required"/>
+      <element name="rule" type="rule_def" minOccurs="1"/>
   </complexType>
   <complexType name="rule_def">
       <element name="current_analysis_id" type="integer" minOccurs="1"/>
