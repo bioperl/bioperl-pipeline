@@ -669,7 +669,6 @@ sub update_completed_job {
   my $self = shift;
   my $job = shift;
 
-  print "debug2\n";
   $self->throw("Can't update a completed job that has no dbID!") unless (defined $job->dbID);
   
   my $query = " INSERT INTO completed_jobs
