@@ -189,10 +189,8 @@ sub _map_genes {
         $t->location($pair->map($t->location)->each_location);
         foreach my $e($t->exons){
           $e->location($pair->map($e->location)->each_location);
-          my ($support_prot) = $e->each_tag_value('supporting_protein_feature');
-          $support_prot->location($pair->map($support_prot->location)->each_location);
-          my ($support_genomic) = $e->each_tag_value('supporting_genomic_feature');
-          $support_genomic->location($pair->map($support_genomic->location)->each_location);
+          my ($support_feature) = $e->each_tag_value('supporting_feature');
+          $support_feature->location($pair->map($support_feature->location)->each_location);
         }
       }
    }
