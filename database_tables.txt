@@ -1,0 +1,191 @@
+ANALYSIS
+Field	Type	Null	Key	Default	Extra
+analysis_id	int(10) unsigned		PRI	NULL	auto_increment
+created	datetime			0000-00-00 00:00:00	
+logic_name	varchar(40)				
+runnable	varchar(80)	YES		NULL	
+db	varchar(120)	YES		NULL	
+db_version	varchar(40)	YES		NULL	
+db_file	varchar(120)	YES		NULL	
+program	varchar(80)	YES		NULL	
+program_version	varchar(40)	YES		NULL	
+program_file	varchar(80)	YES		NULL	
+data_monger_id	int(10) unsigned	YES		0	
+runnable_parameters	varchar(255)	YES		NULL	
+analysis_parameters	varchar(255)	YES		NULL	
+gff_source	varchar(40)	YES		NULL	
+gff_feature	varchar(40)	YES		NULL	
+node_group_id	int(10) unsigned			0	
+
+ANALYSIS_IOHANDLER
+Field	Type	Null	Key	Default	Extra
+analysis_id	int(10)		MUL	0	
+iohandler_id	int(10)			0	
+converter_id	int(10)	YES		NULL	
+converter_rank	int(2)	YES		NULL	
+
+ARGUMENT
+Field	Type	Null	Key	Default	Extra
+argument_id	int(10) unsigned		PRI	NULL	auto_increment
+datahandler_id	int(10) unsigned			0	
+tag	varchar(40)	YES			
+value	varchar(255)	YES			
+rank	int(10)			1	
+type	enum('SCALAR','ARRAY')			SCALAR	
+
+COMPLETED_JOBS
+Field	Type	Null	Key	Default	Extra
+completed_job_id	int(10) unsigned		PRI	NULL	auto_increment
+process_id	varchar(100)			NEW	
+analysis_id	int(10) unsigned	YES	MUL	0	
+queue_id	int(10) unsigned	YES		0	
+stdout_file	varchar(100)				
+stderr_file	varchar(100)				
+object_file	varchar(100)				
+time	datetime			0000-00-00 00:00:00	
+retry_count	int(11)	YES		0	
+
+CONVERTER_ARGUMENTS
+Field	Type	Null	Key	Default	Extra
+converter_argument_id	int(10) unsigned		PRI	NULL	auto_increment
+converter_method_id	int(10) unsigned			0	
+tag	varchar(40)	YES		NULL	
+value	varchar(40)				
+rank	int(2) unsigned	YES		NULL	
+
+CONVERTER_METHODS
+Field	Type	Null	Key	Default	Extra
+converter_method_id	int(10) unsigned		PRI	NULL	auto_increment
+converter_id	int(10) unsigned			0	
+name	varchar(40)				
+rank	int(2)	YES		NULL	
+
+CONVERTERS
+Field	Type	Null	Key	Default	Extra
+converter_id	int(10) unsigned		PRI	NULL	auto_increment
+module	varchar(255)				
+
+DATAHANDLER
+Field	Type	Null	Key	Default	Extra
+datahandler_id	int(10) unsigned		PRI	NULL	auto_increment
+iohandler_id	int(10)		MUL	0	
+method	varchar(60)				
+rank	int(10)			1	
+
+DBADAPTOR
+Field	Type	Null	Key	Default	Extra
+dbadaptor_id	int(10) unsigned		PRI	NULL	auto_increment
+dbname	varchar(40)				
+driver	varchar(40)				
+host	varchar(40)	YES			
+port	int(10) unsigned	YES		0	
+user	varchar(40)	YES			
+pass	varchar(40)	YES			
+module	varchar(100)	YES			
+
+DYNAMIC_ARGUMENT
+Field	Type	Null	Key	Default	Extra
+input_id	int(10) unsigned		PRI	0	
+datahandler_id	int(10) unsigned		PRI	0	
+tag	varchar(40)	YES			
+value	varchar(40)	YES			
+rank	int(10)		PRI	1	
+type	enum('SCALAR','ARRAY')			SCALAR	
+
+FILTER
+Field	Type	Null	Key	Default	Extra
+filter_id	int(10) unsigned		PRI	NULL	auto_increment
+data_monger_id	int(10) unsigned			0	
+module	varchar(40)	YES			
+rank	int(10)			1	
+
+FILTER_ARGUMENT
+Field	Type	Null	Key	Default	Extra
+filter_argument_id	int(10) unsigned		PRI	NULL	auto_increment
+filter_id	int(10) unsigned			0	
+tag	varchar(40)	YES			
+value	varchar(255)	YES			
+
+INPUT
+Field	Type	Null	Key	Default	Extra
+input_id	int(10) unsigned		PRI	NULL	auto_increment
+name	varchar(255)				
+tag	varchar(40)	YES			
+job_id	int(10) unsigned		MUL	0	
+iohandler_id	int(10) unsigned	YES	MUL	NULL	
+
+INPUT_CREATE
+Field	Type	Null	Key	Default	Extra
+input_create_id	int(10) unsigned		PRI	NULL	auto_increment
+data_monger_id	int(10) unsigned			0	
+module	varchar(40)				
+rank	int(10)			1	
+
+INPUT_CREATE_ARGUMENT
+Field	Type	Null	Key	Default	Extra
+input_create_argument_id	int(10) unsigned		PRI	NULL	auto_increment
+input_create_id	int(10) unsigned			0	
+tag	varchar(40)	YES			
+value	varchar(255)	YES			
+
+IOHANDLER
+Field	Type	Null	Key	Default	Extra
+iohandler_id	int(10) unsigned		PRI	NULL	auto_increment
+adaptor_id	int(10)		MUL	0	
+type	enum('INPUT','CREATE_INPUT','OUTPUT','NEW_INPUT')			INPUT	
+adaptor_type	enum('DB','STREAM')			DB	
+
+IOHANDLER_MAP
+Field	Type	Null	Key	Default	Extra
+prev_iohandler_id	int(10)		PRI	0	
+analysis_id	int(10)		PRI	0	
+map_iohandler_id	int(10)			0	
+
+JOB
+Field	Type	Null	Key	Default	Extra
+job_id	int(10) unsigned		PRI	NULL	auto_increment
+process_id	varchar(100)		MUL	NEW	
+analysis_id	int(10) unsigned	YES	MUL	0	
+queue_id	int(10) unsigned	YES		0	
+stdout_file	varchar(100)	YES			
+stderr_file	varchar(100)	YES			
+object_file	varchar(100)	YES			
+status	varchar(20)			NEW	
+stage	varchar(20)	YES			
+time	datetime			0000-00-00 00:00:00	
+retry_count	int(11)	YES		0	
+
+NEW_INPUT
+Field	Type	Null	Key	Default	Extra
+input_id	int(10) unsigned		PRI	NULL	auto_increment
+job_id	int(10) unsigned			0	
+name	varchar(40)				
+
+NODE
+Field	Type	Null	Key	Default	Extra
+node_id	int(10) unsigned		PRI	NULL	auto_increment
+node_name	varchar(40)				
+group_id	int(10) unsigned		PRI	0	
+
+NODE_GROUP
+Field	Type	Null	Key	Default	Extra
+node_group_id	int(10) unsigned		PRI	NULL	auto_increment
+name	varchar(40)		MUL		
+description	varchar(255)				
+
+OUTPUT
+Field	Type	Null	Key	Default	Extra
+job_id	int(10) unsigned		PRI	0	
+output_name	varchar(40)		PRI		
+
+RULE
+Field	Type	Null	Key	Default	Extra
+rule_id	int(10) unsigned		PRI	NULL	auto_increment
+current	int(10) unsigned	YES		0	
+next	int(10) unsigned			0	
+action	enum('WAITFORALL','WAITFORALL_AND_UPDATE','UPDATE','NOTHING','COPY_INPUT','COPY_ID','CREATE_INPUT','COPY_ID_FILE')	YES		NULL	
+
+STREAMADAPTOR
+Field	Type	Null	Key	Default	Extra
+streamadaptor_id	int(10) unsigned		PRI	NULL	auto_increment
+module	varchar(40)				
