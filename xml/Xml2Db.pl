@@ -22,13 +22,13 @@ use Getopt::Long;
 use ExtUtils::MakeMaker;
 
 
-use vars qw($DBHOST $DBNAME $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA);
+use vars qw($DBHOST $DBNAME $DBUSER $DBPASS $DATASETUP $PIPELINEFLOW $JOBFLOW $SCHEMA $INPUT_LIMIT);
 
 $DBHOST ||= "mysql";
 $DBNAME ||= "test_XML";
 $DBUSER ||= "root";
 $DBPASS ||="";
-$SCHEMA = $SCHEMA || "/usr/users/savikalpa/src/biosql-schema/sql/biopipelinedb-mysql.sql";
+$SCHEMA = $SCHEMA || "/usr/users/shawnh/src/biosql-schema/sql/biopipelinedb-mysql.sql";
 
 my $USAGE =<<END;
 ******************************
@@ -49,6 +49,8 @@ Default values in ()
 -d      the datasetup xml file (required)
 -p      the pipelineflow xml file (required)
 -j      the job flow xml file (required)
+-t      the number of inputs to load for testing
+
 
 END
 
@@ -60,7 +62,8 @@ GetOptions(
     'schema=s'    => \$SCHEMA,
     'd=s'         => \$DATASETUP,
     'p=s'         => \$PIPELINEFLOW,
-    'j=s'         => \$JOBFLOW
+    'j=s'         => \$JOBFLOW,
+    't=s'         => \$INPUT_LIMIT
 )
 or die ($USAGE);
 
@@ -222,6 +225,8 @@ foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis'))
     my $program = $analysis->child('program');
     my $output_handler_id = $analysis->child('output_iohandler_id');
     my $new_input_handler_id = $analysis->child('new_input_handler_id');
+    my $input_handler_id  = $analysis->child('input_iohandler_id');
+
     my $program_file = $analysis->child('program_file');
     my $db = $analysis->child('db');
     my $db_file = $analysis->child('db_file');
@@ -255,21 +260,41 @@ foreach my $analysis ($xso2->child('pipeline_flow_setup')->children('analysis'))
       }
       $analysis_obj->node_group($node_group);
    }
+   my @ioh;
    if (defined($output_handler_id)){
       my $output_handler = _get_iohandler($output_handler_id->value);
       if (!defined($output_handler)) {
-        #$self->throw("output iohandler for analysis not found\n");
         print "output iohandler for analysis not found\n";
       }
-      $analysis_obj->output_handler($output_handler);
+      push @ioh, $output_handler;
+   }
+   if (defined($input_handler_id)){
+       my $input_handler = _get_iohandler($input_handler_id->value);
+       if(!defined($input_handler)){
+           print "input iohandler fro analysis not found\n";
+       }
+       push @ioh, $input_handler;
    }
    if (defined($new_input_handler_id)){
       my $new_input_handler = _get_iohandler($new_input_handler_id->value);
       if (!defined($new_input_handler)) {
-        #$self->throw("new input iohandler for analysis not found\n");
         print "new input iohandler for analysis not found\n";
       }
-      $analysis_obj->new_input_handler($new_input_handler);
+      push @ioh, $new_input_handler;
+      
+   #   $analysis_obj->new_input_handler($new_input_handler);
+   }
+   $analysis_obj->iohandler(\@ioh);
+
+    foreach my $map ($analysis->children('map_iohandler')){
+        if (ref($map)){
+          my $prev_iohandler_id = $map->child('prev_iohandler_id');
+          my $map_iohandler_id = $map->child('map_iohandler_id');
+          if ($prev_iohandler_id && $map_iohandler_id){
+      #store to iohandler_map table
+          $dba->get_IOHandlerAdaptor->store_map_ioh($analysis_obj->dbID,$prev_iohandler_id->value,$map_iohandler_id->value);
+          }
+        }
    }
    
    push @analysis_objs, $analysis_obj;
@@ -298,10 +323,54 @@ foreach my $rule ($xso2->child('pipeline_flow_setup')->children('rule')) {
 }
 
 
+#store first before fetching job ids as I need the iohandlers in the db
+
+foreach my $iohandler (@iohandler_objs) {
+  $dba->get_IOHandlerAdaptor->store($iohandler);
+}
+
 print "Reading Job_flow xml     : $JOBFLOW\n";
 my $xso3 = XML::SimpleObject->new( $parser->parsefile($JOBFLOW) );
 
 my @job_objs;
+
+################################################################
+#added this functionality for init loading of inputs
+#not the prettiest implementation but will re-factor
+#with kiran's validating parser --shawn
+###############################################################
+if ($xso3->child('job_setup')->child('input_create')){
+    print "Fetching Input ids \n";
+    my $in_c = $xso3->child('job_setup')->child('input_create');
+    my $ioh_id       = $in_c->child('iohandler')->attribute("id");
+    my $map_id       = $in_c->child('map_ioh')->attribute("id");
+    my $ioh = $dba->get_IOHandlerAdaptor->fetch_by_dbID($ioh_id);
+    my $map_ioh= $dba->get_IOHandlerAdaptor->fetch_by_dbID($map_id);
+    my $anal = _get_analysis(1);
+    my ($inputs) = $ioh->fetch_input_ids();
+    print scalar(@{$inputs}). " inputs fetched\nStoring...\n";
+
+    my $jobid = 1;
+    foreach my $in (@{$inputs}){
+        my $input_obj = Bio::Pipeline::Input->new(-name => $in,
+                                                  -input_handler => $map_ioh);
+        $input_obj->job_id($jobid);
+        my @input_objs;
+        push @input_objs, $input_obj;
+        my $job_obj = Bio::Pipeline::Job->new(-id => $jobid,
+                                              -analysis => $anal,
+                                              -adaptor => $dba->get_JobAdaptor,
+                                              -inputs => \@input_objs);
+        push @job_objs, $job_obj;
+        $jobid++;
+        if($INPUT_LIMIT && $jobid == $INPUT_LIMIT){
+            last;}
+    }
+
+        
+
+}
+else {
 foreach my $job ($xso3->child('job_setup')->children('job')) {
 
    my $id = $job->attribute("id");
@@ -335,15 +404,12 @@ foreach my $job ($xso3->child('job_setup')->children('job')) {
                                          -inputs => \@input_objs);
    push @job_objs, $job_obj;
 }
-
+}
 
 # now the nicest part .. the actual storing.. need to store only 4 objects, 
 # iohandler, analysis, job and rule .. these objects will inturn store all the objects that they contain..
 
 
-foreach my $iohandler (@iohandler_objs) {
-  $dba->get_IOHandlerAdaptor->store($iohandler);
-}
 foreach my $analysis (@analysis_objs) {
   $dba->get_AnalysisAdaptor->store($analysis);
 }
