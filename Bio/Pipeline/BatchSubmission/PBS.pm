@@ -219,7 +219,11 @@ sub construct_command_line{
     return $qsub_line;
 
 }
-    
-
+  
+#not implemented for PBS yet
+sub get_host_name {
+  my ($self,$log) = @_;
+  return;
+}
 
 1;

@@ -185,13 +185,22 @@ sub fetch_transformer_by_analysis_iohandler {
 =cut
 
 sub fetch_next_analysis {
-    my ($self,$anal) = @_;
-    my @rules = $self->db->get_RuleAdaptor->fetch_all;
+    my ($self,$anal,$rule_grp_id,) = @_;
+
+    #grab analysis based on current analsyis
+
+    my @rules = grep{($_->current) && ($_->current->dbID == $anal->dbID)} $self->db->get_RuleAdaptor->fetch_all;
+
+    #if rule_group_provided, select next analysis within the group
     my @analysis;
-    foreach my $rule(@rules){
-      if(defined ($rule->current) && $rule->current->dbID == $anal->dbID){
+      foreach my $rule(@rules){
+        if($rule_grp_id && ($rule->rule_group_id == $rule_grp_id)){
           push @analysis, $self->fetch_by_dbID($rule->next->dbID);
-      }
+        }
+        else {
+          push @analysis, $self->fetch_by_dbID($rule->next->dbID);
+        }
+
     }
     return @analysis;
 }

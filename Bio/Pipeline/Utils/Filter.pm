@@ -189,6 +189,37 @@ sub threshold {
   }
   return $self->{'_threshold'};
 }
+
+=head2 in_datatype
+
+  Title   : in_datatype
+  Usage   : $self->in_datatype();
+  Function: get set for filter input data type
+  Returns : Bio::Pipeline::DataType
+  Args    : some value
+
+=cut
+
+sub in_datatype {
+  my ($self) = @_;
+  $self->throw_not_implemented();
+}
+
+
+=head2 out_datatype
+
+  Title   : out_datatype
+  Usage   : $self->out_datatype();
+  Function: get set for filter output data type
+  Returns : Bio::Pipeline::DataType 
+  Args    : some value
+
+=cut
+
+sub out_datatype {
+  my ($self) = @_;
+  $self->throw_not_implemented();
+}
   
 
 1;

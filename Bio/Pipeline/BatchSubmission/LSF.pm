@@ -140,7 +140,7 @@ sub submit_batch{
 
     my $lsf;
     while(<SUB>){
-        if (/Job <(\d+)>/) {
+        if (/Job <(\d+)>\S+queue <(\w+)>/) {
             $lsf = $1;
         }
     }
@@ -203,5 +203,28 @@ sub construct_command_line{
     return $bsub_line;
 
 }
+
+=head2 get_host_name
+
+  Title    : get_host_name
+  Function : get the hostname from the lsf output taking in
+             as input the log file name.
+  Example  : $name= $bs->get_host_name($job->stderr_out);
+  Returns  : a string
+  Args     : a string
+
+=cut
+
+sub get_host_name {
+  my ($self,$log) = @_;
+  open(LOG,$log);
+  while(<LOG>){
+    if(/Job was executed on host(s) <(\S+)>/){
+      return $1;
+    }
+  }
+  return;
+}
+  
     
 1;

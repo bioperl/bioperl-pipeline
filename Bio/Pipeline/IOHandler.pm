@@ -218,7 +218,7 @@ sub new_ioh_db {
   $self->dbadaptor_module($dbadaptor_module);
   $self->adaptor_type("DB");
   $self->type($type);
-  @{$self->{'_datahandlers'}} = @{$datahandlers}; 
+  $self->{'_datahandlers'} = $datahandlers; 
   
   return $self;
 }    
@@ -271,10 +271,37 @@ sub new_ioh_stream{
 
     $self->adaptor_type("STREAM");
     $self->type($type);
-    @{$self->{'_datahandlers'}} = @{$datahandlers};
+    $self->{'_datahandlers'} = $datahandlers;
 
     return $self;
 } 
+
+=head2 new_ioh_chain
+
+  Title   : new_ioh_chain
+  Usage   : my $io_chain =  Bio::Pipeline::IOHandler->new_io_chain(-dbID=>1,
+                                                                    -type=>'INPUT');
+                                                                     
+  Function: generates a new Bio::Pipeline::IOHandler for chain output from one analysis to another in memory
+  Returns : a new IOHandler object 
+  Args    : dbID        - the database id of the module
+            type        -iohandler type (INPUT|OUTPUT)
+
+=cut
+
+sub new_ioh_chain {
+
+  my ($class,@args) = @_;
+  my $self = $class->SUPER::new(@args);
+  my ($dbID,$type) = $self->_rearrange([qw(DBID
+                                           TYPE
+                                          )],@args);
+  $self->dbID($dbID);
+  $self->adaptor_type("CHAIN");
+  $self->type($type);
+
+  return $self;
+}
                                                     
 =head1 Fetch/Write methods 
 These methods calls adaptors to fetch and write inputs and outputs to database
@@ -570,6 +597,7 @@ sub write_output {
     my ($input,$object) = $self->_rearrange([qw(INPUT
                                                 OUTPUT)],@args);
 
+
     $object || $self->throw("Need an object to write to database");
 
 
@@ -577,6 +605,8 @@ sub write_output {
     if(defined $self->transformers){
       $object = $self->run_transformers('-input'=>$input,'-object'=>$object,'-format'=>"_format_output_args");
     }
+    #simply return the outputs if of type Chain
+    return @{$object} if $self->adaptor_type =~/CHAIN/;
 
     # the datahandlers for an output handler works in the same principle as the
     # input datahandlers. please see above
@@ -585,11 +615,17 @@ sub write_output {
     if($self->adaptor_type eq "DB"){
         $obj = $self->_load_dbadaptor();
     }
-    else {
+    elsif($self->adaptor_type eq 'STREAM') {
         my $constructor = shift @datahandlers;
         my @arguments = sort{$a->rank <=> $b->rank} @{$constructor->argument};
         my @args = $self->_format_output_args($input,$object,@arguments);
         $obj = $self->_load_obj($self->stream_module,$constructor->method,@args);
+    }
+    elsif($self->adaptor_type eq 'CHAIN'){
+        return $object;
+    }
+    else {
+        $self->throw("Unrecognized adaptor_type ".$self->adaptor_type."in Bio::Pipeline::IOHandler::write_output");
     }
    
     my @output_ids;
@@ -760,7 +796,7 @@ sub dbadaptor {
 
 sub datahandlers {
     my ($self) = @_;
-    return @{$self->{'_datahandlers'}};
+    return ref $self->{'_datahandlers'} eq 'ARRAY' ? @{$self->{'_datahandlers'}} :();
 }
 
 =head2 dbadaptor_dbname

@@ -79,10 +79,11 @@ sub store {
 
     my $sth = $self->prepare( qq{
       INSERT INTO rule
-         SET current = ?,
+         SET rule_group_id=?,
+             current = ?,
              next= ?,
              action= ? } );
-    $sth->execute($current_anal_id, $next_anal_id, $rule->action);
+    $sth->execute($rule->rule_group_id,$current_anal_id, $next_anal_id, $rule->action);
   
    $sth = $self->prepare( q{
       SELECT last_insert_id()
@@ -199,7 +200,7 @@ my ( $rule );
   my $queryResult;
 
   my $sth = $self->prepare( q {
-    SELECT rule_id,current,next,action
+    SELECT rule_id,rule_group_id,current,next,action
       FROM rule 
       WHERE rule_id = ? } );
   $sth->execute( $dbID  );
@@ -221,6 +222,7 @@ my ( $rule );
   $rule = Bio::Pipeline::Rule->new
     ( '-dbid'    => $queryResult->{rule_id} ,
       '-current'    => $current,
+      '-rule_group_id'=>$queryResult->{rule_group_id},
       '-next'    => $next ,
       '-action'  => $queryResult->{action} ,
       '-adaptor' => $self );
@@ -229,5 +231,67 @@ my ( $rule );
 }
 
 
+=head2 fetch_rule_group_id
 
+  Title   : fetch_rule_group_id
+  Usage   : $self->fetch_rule_group_id($analysis_id,$rule_group_id)
+  Function: fetch the rule group id based on the current analysis column id. If rule_group_id is
+            provided, find the rule group of the analysis id NOT in the rule group. This
+            is to look for analysis that are in the next rule group.
+  Returns : Bio::Pipeline::Rule
+  Args    : -analysis id 
+            -rule_group_id
+
+=cut
+
+sub fetch_rule_group_id {
+  my ($self,$current_analysis_id,$rule_group_id) = @_;
+  if($rule_group_id){
+    my $sth = $self->prepare("SELECT rule_group_id FROM rule 
+                            WHERE current =? AND rule_group_id!=?");
+    $sth->execute($current_analysis_id,$rule_group_id);
+    my ($rule_grp_id) = $sth->fetchrow_array();
+    return $rule_grp_id;
+   }
+    else {
+      my $sth = $self->prepare("SELECT rule_group_id FROM rule 
+                            WHERE current =?"); 
+      $sth->execute($current_analysis_id);
+      my ($rule_grp_id) = $sth->fetchrow_array();
+      return $rule_grp_id;
+    }
+    
+}
+
+=head2 fetch_next_analysis_rule_group_id
+
+  Title   : fetch_next_analysis_rule_group_id
+  Usage   : $self->fetch_next_analysis_rule_group_id($analysis_id,$rule_group_id)
+  Function: fetch the rule group id based on the next analysis column id. If rule_group_id is
+            provided, find the rule group of the analysis id NOT in the rule group. This
+            is to look for analysis that are in the next rule group.
+  Returns : Bio::Pipeline::Rule
+  Args    : -analysis id 
+            -rule_group_id
+
+=cut
+
+sub fetch_next_analysis_rule_group_id {
+  my ($self,$next_analysis_id,$rule_group_id) = @_;
+  if($rule_group_id){
+    my $sth = $self->prepare("SELECT rule_group_id FROM rule 
+                            WHERE next =? AND rule_group_id!=?");
+    $sth->execute($next_analysis_id,$rule_group_id);
+    my ($rule_grp_id) = $sth->fetchrow_array();
+    return $rule_grp_id;
+   }
+    else {
+      my $sth = $self->prepare("SELECT rule_group_id FROM rule 
+                            WHERE next=?");
+      $sth->execute($next_analysis_id);
+      my ($rule_grp_id) = $sth->fetchrow_array();
+      return $rule_grp_id;
+    }
+
+}
 1;

@@ -93,13 +93,17 @@ use vars qw(@ISA);
 sub new {
     my ($class, @args) = @_;
     my $self = $class->SUPER::new(@args);
-    my ($analysis,$inputs) = $self->_rearrange ([qw(ANALYSIS
-                                                    INPUTS)],@args);
+    my ($analysis,$inputs,$rule_group_id) = $self->_rearrange ([qw(ANALYSIS
+                                                                   INPUTS
+                                                                   RULE_GROUP_ID)],@args);
     
     $self->throw("No analysis provided to RunnableDB") unless defined($analysis);
     $self->throw("No inputs provided to RunnableDB") unless defined($inputs);
     $self->inputs($inputs);
     $self->analysis($analysis);
+    #make sure we set rule_group_id before runnable as we need it to figure
+    #out the runnable's rule-group_id
+    $self->rule_group_id($rule_group_id);
     $self->runnable($analysis->runnable);
 
     $self->{'_input_objs'}=[];
@@ -148,6 +152,27 @@ sub inputs {
     return wantarray ? @{$self->{'_inputs'}} : $self->{'_inputs'};
 }
 
+sub output_ids { 
+  my ($self,$id) = @_;
+  if($id){
+    $self->{'_output_ids'} = $id;
+  }
+  return $self->{'_output_ids'};
+}
+sub rule_group_id { 
+  my ($self,$id) = @_;
+  if($id){
+    $self->{'_rule_group_id'} = $id;
+  }
+  return $self->{'_rule_group_id'};
+}
+sub rule_group_id { 
+  my ($self,$id) = @_;
+  if($id){
+    $self->{'_rule_group_id'} = $id;
+  }
+  return $self->{'_rule_group_id'};
+}
 =head2 add_input_obj
 
     Title   :   add_input_obj
@@ -372,7 +397,10 @@ sub runnable {
       if($self->analysis->runnable eq "Bio::Pipeline::Runnable::DataMonger"){
           my $dm_adaptor = $self->analysis->adaptor->db->get_DataMongerAdaptor;
           my $runnable = $dm_adaptor->fetch_by_analysis($self->analysis);
-          $runnable->next_analysis($self->analysis->adaptor->fetch_next_analysis($self->analysis));
+          my ($next_analysis) = $self->analysis->adaptor->fetch_next_analysis($self->analysis);
+          $runnable->next_analysis($next_analysis);
+          my $rule_group_id = $self->analysis->adaptor->db->get_RuleAdaptor->fetch_rule_group_id($next_analysis->dbID,$self->rule_group_id);
+          $runnable->rule_group_id($rule_group_id);
           $self->{'_runnable'} = $runnable;
       }
       else {
@@ -425,12 +453,19 @@ sub write_output {
     return () unless scalar(@output);    
     defined $self->analysis->output_handler || return;
     my @output_ids;
+    my @output_objs;
     foreach my $ioh(@{$self->analysis->output_handler}) {
-      push @output_ids, $ioh->write_output(-input=>\@inputs,-output=>\@output);
+      if($ioh->adaptor_type=~/CHAIN/i){
+        push @output_objs, $ioh->write_output(-input=>\@inputs,-output=>\@output);
+      }
+      else {
+        push @output_ids, $ioh->write_output(-input=>\@inputs,-output=>\@output);
+      }
     }
-
-    return wantarray ? @output_ids : \@output_ids;
+    $self->output_ids(\@output_ids);
+    return wantarray ? @output_objs: \@output_objs;
 }
+
 
 =head2 fetch_input
 

@@ -81,6 +81,7 @@ use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Transformer;
 use Bio::Pipeline::Utils::SaxHandler;
+use XML::SimpleObject;
 use ExtUtils::MakeMaker;
 
 use vars qw(@ISA %global);
@@ -282,6 +283,7 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
   my @method = $iohandler->children('method');
 
   foreach my $method (@method) {
+    next unless ref $method;
     my $name = &verify($method,'name','REQUIRED', '', 'name');
     my $rank = &verify($method,'rank','REQUIRED',1, 'rank');
 
@@ -358,6 +360,10 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
         }
      }
    }
+  elsif($adaptor_type eq 'CHAIN'){
+    my $iohandler_obj = Bio::Pipeline::IOHandler->new_ioh_chain(-dbid=>$ioid,-type=>$iotype);
+    push @iohandler_objs,$iohandler_obj;
+  }
 }
 
 print "Doing Transformers..\n";
@@ -667,7 +673,7 @@ foreach my $rule_group ($pipeline_flow_setup->children('rule_group')) {
      my $action = &verify($rule, 'action', 'OPTIONAL');
      my $rule_obj = Bio::Pipeline::Rule->new(-current=> $current,
                                              -next => $next,
-                                             -rule_group_id=>$rule_group->id,
+                                             -rule_group_id=>$rule_group->attribute('id'),
                                              -action => $action);
       push @rule_objs, $rule_obj;
     }
@@ -819,8 +825,9 @@ sub verify_attr{
 
 sub _create_initial_input_and_job {
   my ($self, $analysis_obj, @initial_input_objs)= @_;
+  #assume first job has rule_group_id 1
   my $job_obj = Bio::Pipeline::Job->new(-analysis => $analysis_obj,
-                                         -retry_count => 3,
+                                         -rule_group_id=>1,
                                          -adaptor => $self->dba->get_JobAdaptor,
                                          -inputs => \@initial_input_objs);
   $self->dba->get_JobAdaptor->store($job_obj);

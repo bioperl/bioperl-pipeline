@@ -71,12 +71,13 @@ use Bio::Pipeline::Runnable::DataMonger;
 =head2 new
 
   Title   : new
-  Usage   : my $inc = Bio::Pipeline::InputCreate->new('-module'=>$module,'-rank'=>$rank,'-dbadaptor'=>$self->db)
+  Usage   : my $inc = Bio::Pipeline::InputCreate->new('-module'=>$module,'-rank'=>$rank,'-dbadaptor'=>$self->db,'-rule_group_id'=>$rgd)
   Function: constructor for InputCreate object 
   Returns : a new InputCreate object
   Args    : module, the list of inputcreate modules found in Bio::Pipeline::Filter::*
             rank specifies the order in which to apply the inputcreate in relation to others
             dbadaptor provides the handle to the pipeline database
+            rule_group_id the rule group id of the jobs to be created by InputCreate
 
 =cut
 
@@ -96,13 +97,15 @@ sub new {
       @param{ map { lc $_ } keys %param } = values %param; # lowercase keys
       my $module= $param{'-module'};
       my $rank= $param{'-rank'};
-      $module || Bio::Root::Root->throw("Must you must provided a InputCreate module found in Bio::Pipeline::InputCreate::*");
+      my $rule_group_id = $param{'-rule_group_id'};
+      $module || Bio::Root::Root->throw("You must provid a InputCreate module found in Bio::Pipeline::InputCreate::*");
 
       $module = "\L$module";  # normalize capitalization to lower case
       return undef unless ($class->_load_inputcreate_module($module));
       my ($self) =  "Bio::Pipeline::InputCreate::$module"->new(@args);
       $self->module($module);
       $self->rank($rank);
+      $self->rule_group_id($rule_group_id);
       return $self;
     }
 }
@@ -249,6 +252,7 @@ sub create_job {
     
     my $job = Bio::Pipeline::Job->new(-analysis => $analysis,
                                       -adaptor =>  $self->dbadaptor->get_JobAdaptor,
+                                      -rule_group_id=>$self->rule_group_id,
                                       -inputs => $input_objs);
     return $job;
 }
@@ -266,6 +270,14 @@ sub create_job {
 sub datatypes {
   my ($self) = @_;
   $self->throw_not_implemented();
+}
+
+sub rule_group_id {
+  my ($self, $rule_group_id) = @_;
+  if($rule_group_id) {
+      $self->{'_rule_group_id'} = $rule_group_id;
+  }
+  return $self->{'_rule_group_id'};
 }
 
 =head2 dbID

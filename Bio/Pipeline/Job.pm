@@ -91,6 +91,8 @@ use strict;
   Args    : -adaptor      the job adaptor object
             -id           the job dbID
             -process_id   the job process list
+            -rule_group_id the rule group id
+            -hostname     the host on which job was executed
             -queue_id     the job queue id
             -inputs       an array ref of inputs for the job
             -stdout       the path to the stdout output file
@@ -109,8 +111,10 @@ sub new {
     my ($class, @args) = @_;
     my $self = bless {},$class;
 
-    my ($adaptor,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids,$dependency) 
+    my ($adaptor,$hostname,$rule_group_id,$dbID,$process_id, $queueid,$inputs,$analysis,$stdout,$stderr,$obj_file, $retry_count,$status,$stage,$output_ids,$dependency) 
 	= $self->_rearrange([qw(ADAPTOR
+                    HOSTNAME
+                    RULE_GROUP_ID
             				ID
                     PROCESS_ID
 			            	QUEUE_ID
@@ -135,6 +139,12 @@ sub new {
 	  $self->throw("Analysis object [$analysis] is not a Bio::Pipeline::Analysis");
 
     $self->dbID             ($dbID);
+    if($rule_group_id){
+      my @rules = grep{$_->rule_group_id == $rule_group_id}$adaptor->db->get_RuleAdaptor->fetch_all;
+      $self->rules(\@rules);
+      $self->rule_group_id    ($rule_group_id);
+    }
+
     $self->process_id       ($process_id);
     $self->adaptor          ($adaptor);
     $self->analysis         ($analysis);
@@ -145,6 +155,7 @@ sub new {
     $self->queue_id         ($queueid);
     $self->status           ($status);
     $self->stage            ($stage);
+    $self->hostname($hostname);
     #$self->output_ids       ($output_ids);
     $self->dependency($dependency);
     @{$self->{'_inputs'}}= ();
@@ -179,9 +190,11 @@ sub create_next_job{
   #my $process_id = shift;
 
   #my $next_analysis = $self->adaptor->get_AnalysisAdaptor->fetch_by_dbId($next_analysis_id);
+my $rg_id =  $self->analysis->adaptor->db->get_RuleAdaptor->fetch_rule_group_id($next_analysis->dbID);
   my $new_job = Bio::Pipeline::Job->new
     ( -analysis    => $next_analysis,
       -process_id  => $self->process_id,
+      -rule_group_id=>$rg_id,
       -retry_count => 0,
       -adaptor => $self->adaptor
     );
@@ -258,24 +271,47 @@ sub flush_inputs {
 sub run {
 
   my $self = shift;
-  my $err;
-  my $rdb;
   $self->make_filenames unless $self->filenames;
   my @inputs = $self->inputs;
 
-  print STDERR "Running job " . $self->stdout_file . " " . $self->stderr_file . "\n"; 
+  #here we have jobs with multiple runnable dbs which represent a job chain
+  my $first_analysis = $self->_get_next_analysis;
+  my @output = $self->_run_analysis($first_analysis,0,@inputs);
+  while(my $next_analysis = $self->_get_next_analysis){
+    $self->adaptor->set_analysis_id($self,$next_analysis->dbID);
+    @output = $self->_run_analysis($next_analysis,1,@output);
+  }
+  $self->stage('UPDATING');
+  $self->status( "COMPLETED" );
+  $self->update;
+  if($self->dependency){
+     $self->adaptor->store_outputs($self, @output) unless (scalar(@output) == 0);
+     $self->output(@output) unless (scalar(@output) == 0);
+  }
+  return 1;
+
+}
+
+sub _run_analysis {
+  my ($self,$analysis,$fetched_input,@inputs) = @_;
+
+  my $err;
+  my $rdb;
+    
+
+  print STDERR "Running job: ".$self->dbID." | analysis: ". $analysis->dbID."| ". $self->stdout_file . " " . $self->stderr_file . "\n";
 
   local *STDOUT;
   local *STDERR;
-  if( ! open ( STDOUT, ">".$self->stdout_file )) {
-  print STDERR $self->stdout_file;
+  if( ! open ( STDOUT, ">>".$self->stdout_file )) {
+    print STDERR $self->stdout_file;
     $self->set_status( "FAILED" );
-	$self->throw("Cannot pipe STDOUT to stdout_file. Please check that your NFSTMP_DIR is writeable");
+  	$self->throw("Cannot pipe STDOUT to stdout_file. Please check that your NFSTMP_DIR is writeable");
   }
         
-  if( ! open ( STDERR, ">".$self->stderr_file )) {
+  if( ! open ( STDERR, ">>".$self->stderr_file )) {
     $self->set_status( "FAILED" );
-	$self->throw("Cannot pipe STDERR to stderr_file. Please check that your NFSTMP_DIR is writeable.");
+  	$self->throw("Cannot pipe STDERR to stderr_file. Please check that your NFSTMP_DIR is writeable.");
   }
   if( !defined $self->adaptor ) {
     $self->throw( "Cannot run remote without db connection" );
@@ -283,8 +319,9 @@ sub run {
  
   eval {
     $rdb = Bio::Pipeline::RunnableDB->new ( 
-                        -analysis   => $self->analysis,
+                        -analysis   => $analysis,
                         -inputs     => \@inputs,
+                        -rule_group_id=>$self->rule_group_id
                         );
   };                      
   if ($err = $@) {
@@ -294,7 +331,7 @@ sub run {
   }
   eval {   
       $self->set_stage( "READING" );
-      $rdb->fetch_input;
+      $rdb->fetch_input if !$fetched_input;
   };
   if ($err = $@) {
       $self->set_status( "FAILED" );
@@ -310,10 +347,10 @@ sub run {
       print (STDERR "RUNNING: Lost the will to live Error. Problems running runnableDB\n[$err]\n");
       $self->throw ("Problems running runnableDB for\n[$err]\n")
   }
-  my @output_ids;
+  my @output;
   eval {
       $self->set_stage( "WRITING" );
-      @output_ids = $rdb->write_output;
+      @output= $rdb->write_output;
   }; 
   if ($err = $@) {
       $self->set_status( "FAILED" );
@@ -322,16 +359,55 @@ sub run {
   }
  
  if($self->dependency){
-     $self->adaptor->store_outputs($self, @output_ids) unless (scalar(@output_ids) == 0);
-     $self->output_ids(@output_ids) unless (scalar(@output_ids) == 0);
+     $self->adaptor->store_outputs($self, @{$rdb->output_ids}) unless (scalar(@{$rdb->output_ids}) == 0);
+     $self->output(@output) unless (scalar(@output) == 0);
  }
- 
-  $self->stage('UPDATING');
-  $self->status( "COMPLETED" );
-  $self->update;
 
-  return 1;
+  return @output;
 }
+
+sub _get_next_analysis{
+  my ($self) = @_;
+  if(!$self->_current_analysis){
+    my $first = $self->_get_first_analysis;
+    $self->_current_analysis($first->dbID);
+    return $first;
+  }
+  else {
+    unless ($self->rules) {
+      return ;
+    }
+    my ($rule) = grep{($_->rule_group_id == $self->rule_group_id) && ($_->current->dbID == $self->_current_analysis)}@{$self->rules};
+    return if (!$rule || $rule->action !~/CHAIN/i);
+    my $analysis = $self->adaptor->db->get_AnalysisAdaptor->fetch_by_dbID($rule->next->dbID);
+    $self->_current_analysis($analysis->dbID);
+    return $analysis;
+  }
+}
+    
+    
+    
+sub _get_first_analysis{
+  my ($self,@inputs) = @_;
+  unless ($self->rules) {
+    return $self->analysis;
+  }
+  my @rules = @{$self->rules};
+  my @rule_id = map{$_->current->dbID}@rules;
+  my $first_rule;
+  #search for rule which has no next id; that should be the first analysis
+RULE:  foreach my $id(@rule_id){
+        foreach my $rule(@rules){
+          if($id == $rule->next->dbID){
+            next RULE; 
+          }
+        }
+        $first_rule = $id;
+        last;
+       }
+   return $self->adaptor->db->get_AnalysisAdaptor->fetch_by_dbID($first_rule);
+}
+      
 
 =head2 set_status 
 
@@ -823,4 +899,58 @@ sub dependency {
     return $self->{'_dependency'};
 
 }
+
+sub rules {
+    my ($self,$arg) = @_;
+    if (defined($arg)) {
+
+    $self->{'_rules'} = $arg;
+    }
+    return $self->{'_rules'};
+}
+sub _current_analysis {
+    my ($self,$arg) = @_;
+    if (defined($arg)) {
+
+    $self->{'_current_analysis'} = $arg;
+    }
+    return $self->{'_current_analysis'};
+}
+
+=head2 hostname
+
+  Title   : hostname
+  Usage   : my @hostname = $job->hostname
+  Function: Holder for hostname
+  Returns : An id
+  Args    : NA
+
+=cut
+
+sub hostname {
+    my ($self,$id) = @_;
+    if($id){
+      $self->{'_hostname'} = $id;
+    }
+    return $self->{'_hostname'};
+}
+
+=head2 rule_group_id
+
+  Title   : rule_group_id
+  Usage   : my @rule_group_id = $job->rule_group_id
+  Function: Holder for rule group id
+  Returns : An id
+  Args    : NA
+
+=cut
+
+sub rule_group_id {
+    my ($self,$id) = @_;
+    if($id){
+      $self->{'_rule_group_id'} = $id;
+    }
+    return $self->{'_rule_group_id'};
+}
+
 1;

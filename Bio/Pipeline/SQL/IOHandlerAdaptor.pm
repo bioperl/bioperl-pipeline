@@ -171,6 +171,9 @@ sub fetch_by_dbID {
                                                             -dbID  => $dbID,
                                                             -datahandlers=>\@datahandlers);
     }
+    elsif($adp_type eq "CHAIN") {
+      $iohandler = Bio::Pipeline::IOHandler->new_ioh_chain(-type=>$type,-dbID=>$dbID);
+    }
     else {
         $self->throw("Unallowed iohandler type $adp_type");
     }
@@ -320,7 +323,7 @@ sub store {
          SET iohandler_id = ?,
              method = ?,
              rank = ? } );
-      $sth->execute($iohandler->dbID,$datahandler->method,$datahandler->rank);
+       $sth->execute($iohandler->dbID,$datahandler->method,$datahandler->rank);
 
       $sth = $self->prepare( q{
         SELECT last_insert_id()

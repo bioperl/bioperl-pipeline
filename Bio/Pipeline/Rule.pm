@@ -114,12 +114,14 @@ use strict;
 
   Title   : new
   Usage   :  my $rule = Bio::Pipeline::Rule->new ( '-dbid'    => 1,
+                                         '-rule_group_id'=>1
                                          '-current' => 1,
                                          '-next'    => 2,
                                          '-action'  => 'NOTHING');
   Function: Constructor for Rule object
   Returns : L<Bio::Pipeline::Rule>
   Args    : -dbid     its dbID
+            -rule_group_id the rule group that the rule belongs to
             -current  the current analysis dbID
             -next     the next analysis dbID
             -action   what to do for the next analysis
@@ -131,13 +133,15 @@ sub new {
   my ($class,@args) = @_;
   my $self = $class->SUPER::new(@args);
 
-  my ( $current, $next, $action, $adaptor, $dbID ) =
-    $self->_rearrange( [ qw (CURRENT
+  my ( $rule_group_id,$current, $next, $action, $adaptor, $dbID ) =
+    $self->_rearrange( [ qw (RULE_GROUP_ID
+                             CURRENT
                              NEXT 
                              ACTION
-                  	     ADAPTOR
+                      	     ADAPTOR
                              DBID
             	            ) ], @args );
+  $self->rule_group_id($rule_group_id);
   $self->dbID( $dbID );
   $self->current( $current );
   $self->next( $next );
@@ -209,6 +213,27 @@ sub action {
   }
 
   return $self->{'_action'};
+}
+
+=head2 rule_group_id
+
+  Title   : rule_group_id
+  Usage   : $self->rule_group_id(1)
+  Function: get/set the rule_group_id 
+  Returns : integer 
+  Args    : integer 
+
+=cut
+
+sub rule_group_id {
+  my $self = shift;
+  my $rule_group_id = shift;
+
+  if (defined $rule_group_id){
+    $self->{'_rule_group_id'}= $rule_group_id;
+  }
+
+  return $self->{'_rule_group_id'};
 }
 
 =head2 dbID

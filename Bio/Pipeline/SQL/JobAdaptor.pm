@@ -112,7 +112,7 @@ sub fetch_by_dbID {
   my $job;
 
   my $sth = $self->prepare( q{
-   SELECT job_id, process_id, analysis_id, queue_id, object_file,
+   SELECT job_id,hostname,rule_group_id, process_id, analysis_id, queue_id, object_file,
       stdout_file, stderr_file, retry_count,status,stage
     FROM job
     WHERE job_id = ? } );
@@ -150,7 +150,9 @@ sub fetch_by_dbID {
   (
    '-dbobj'    => $self->db,
    '-adaptor'  => $self,
+   '-hostname' =>$hashref->{'hostname'},
    '-id'       => $hashref->{'job_id'},
+   '-rule_group_id'=>$hashref->{'rule_group_id'},
    '-process_id' => $hashref->{'process_id'},
    '-queue_id' => $hashref->{'queue_id'},
    '-inputs'   => \@inputs,
@@ -191,7 +193,7 @@ sub fetch_jobs{
     my @jobs;
     #prepare the query
 
-    my $query =" SELECT job_id, process_id, analysis_id, queue_id, object_file,
+    my $query =" SELECT job_id, process_id, analysis_id,rule_group_id, queue_id, object_file,
                         stdout_file, stderr_file, retry_count,status,stage
                 FROM job";
     $query .= $self->_make_query_conditional(-table=>"job",@args);
@@ -200,7 +202,7 @@ sub fetch_jobs{
     my $sth = $self->prepare($query);
     $sth->execute;
     
-    while (my ($job_id, $process_id, $analysis_id, $queue_id, $object_file,
+    while (my ($job_id, $process_id, $analysis_id,$rule_group_id, $queue_id, $object_file,
                $stdout_file, $stderr_file, $retry_count, $status, $stage ) = $sth->fetchrow_array){
 
       my $analysis = $self->db->get_AnalysisAdaptor-> fetch_by_dbID( $analysis_id );
@@ -224,6 +226,7 @@ sub fetch_jobs{
        '-dbobj'       => $self->db,
        '-adaptor'     => $self,
        '-id'          => $job_id,
+       '-rule_group_id'=>$rule_group_id,
        '-process_id'  => $process_id,
        '-queue_id'    => $queue_id,
        '-inputs'      => \@inputs,
@@ -461,13 +464,14 @@ sub store {
    }
 
    my $sth = $self->prepare( q{
-     INSERT into job( analysis_id,
+     INSERT into job( analysis_id,rule_group_id,
        stdout_file, stderr_file, object_file,
        status,time) 
-       VALUES ( ?, ?, ?, ?, ?, now() ) } );
+       VALUES ( ?, ?, ?,?, ?, ?, now() ) } );
 
    my $status = $job->status || "NEW";
    $sth->execute( $job->analysis->dbID,
+                  $job->rule_group_id,
                   $job->stdout_file,
                   $job->stderr_file,
                   $job->input_object_file,
@@ -611,7 +615,8 @@ sub update {
 
   my $sth = $self->prepare( q{
     UPDATE job
-       SET stdout_file = ?,
+       SET hostname=?,
+           stdout_file = ?,
            stderr_file = ?,
            object_file = ?,
            retry_count = ?,
@@ -622,14 +627,15 @@ sub update {
      WHERE job_id = ? } );
 
   eval {
-  $sth->execute( $job->stdout_file,
+  $sth->execute($job->hostname,
+     $job->stdout_file,
 		 $job->stderr_file,
 		 $job->input_object_file,
 		 $job->retry_count,
 		 $job->queue_id,
 		 $job->stage,
 		 $job->status,
-                 $job->process_id,
+     $job->process_id,
 		 $job->dbID );
   };if ($@) { $self->throw("ATTEMPT TO UPDATE JOB FAILED.\n.$@");}
 }
@@ -655,14 +661,17 @@ sub update_completed_job {
   my $query = " INSERT INTO completed_jobs
                      VALUES (".$job->dbID.",'".
                             $job->process_id."',".
-                            $job->analysis->dbID.",".
-                            $job->queue_id.",".
+                            $job->analysis->dbID.",\"".
+                            $job->rule_group_id."\",".
+                            $job->queue_id.",'".
+                            $job->hostname."',".
                             "'".$job->stdout_file."',".
                             "'".$job->stderr_file."',".
                             "'".$job->input_object_file."',".
                             "now(),".
                             $job->retry_count.")";
   my $sth = $self->prepare($query);
+#  $self->warn($query);
 
   eval { 
       $sth->execute;
@@ -712,6 +721,24 @@ sub set_status {
 	    $self->throw("Error setting status for job ".$job->dbID);
     } 
 }
+sub set_analysis_id{
+    my ($self,$job,$id) = @_;
+
+    if( ! defined $job->dbID ) {
+      $self->throw( "Job has to be in database" );
+    }
+
+    eval {	
+	    my $sth = $self->prepare(   "update job set analysis_id='".$id."',time=now()
+                                    where job_id = ".$job->dbID);
+	    $sth->execute();
+    };
+	
+    if ($@) {
+	    $self->throw("Error setting analysis_id for job ".$job->dbID);
+    } 
+}
+
 
 =head2 set_stage
 

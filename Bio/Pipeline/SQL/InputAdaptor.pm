@@ -84,9 +84,6 @@ sub fetch_inputs_by_jobID {
 
   my ($self, $job_id) = @_;
 
-  if($job_id == 14) {
-    print "HERE\n";
-  }
   # getting the inputs
   my @inputs=() ;
 

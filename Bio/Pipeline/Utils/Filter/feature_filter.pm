@@ -8,22 +8,23 @@
 
 =head1 NAME
 
-Bio::Pipeline::Utils::Filter::feature_coverage - A simple filter that
-filters a list of objects, according to one of it's attributes.
+Bio::Pipeline::Utils::Filter::feature_coverage
 
 =head1 SYNOPSIS
 
-  # to filter a list of HSPs according to evalue,
-  my $fc = Bio::Pipeline::Utils::Filter::feature_filter->
-     new(-threshold=>0.001,
-         -condition => '<',
-         -tag => 'evalue');
+  A simple filter that filters a list of objects, according to one of it's attributes.
+
+  For example, to filter a list of HSPs according to evalue,
+  
+  my $fc = Bio::Pipeline::Utils::Filter::feature_filter->new(-threshold=>0.001,
+                                                       -condition => '<',
+                                                       -tag => 'evalue');
   my $filtered = $fc->run(\@hsps);
 
 =head1 DESCRIPTION
 
 A generic filter for filtering of objects according to one of it's
-attributest/tags.
+attributest/tags.  
 
 =head1 FEEDBACK
 
@@ -45,13 +46,13 @@ or the web:
   bioperl-bugs@bio.perl.org
   http://bugzilla.bioperl.org/
 
-=head1 AUTHOR - Jerm
+=head1 AUTHOR - Jerm 
 
 Email jerm@fugu-sg.org
 
 =head1 APPENDIX
 
-The rest of the documentation details each of the object methods.
+The rest of the documentation details each of the object methods. 
 Internal methods are usually preceded with a _
 
 =cut
@@ -117,6 +118,36 @@ sub tag{
     $self->{'_tag'} = $tag;
   }
   return $self->{'_tag'};
+}
+
+=head2 in_datatype 
+
+  Title   : in_datatype 
+  Usage   : $self->in_datatype()
+  Function: returns the input datatype expected, for this filter, it can be anything
+  Returns : L<Bio::Pipeline::Datatype>
+  Args    : None
+
+=cut
+
+sub in_datatype {
+  my($self) = @_;
+  return Bio::Pipeline::DataType->new(-object_type=>"general",-reftype=>"array");
+}
+
+=head2 out_datatype 
+
+  Title   : out_datatype 
+  Usage   : $self->out_datatype()
+  Function: returns the output datatype expected, for this filter, it can be anything
+  Returns : L<Bio::Pipeline::Datatype>
+  Args    : None
+
+=cut
+
+sub out_datatype {
+  my($self) = @_;
+  return Bio::Pipeline::DataType->new(-object_type=>"general",-reftype=>"array");
 }
 
 =head2 run 

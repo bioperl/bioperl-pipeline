@@ -147,6 +147,14 @@ sub input {
   return $self->{'_input'};
 }
 
+sub rule_group_id {
+  my ($self,$rule_group_id) = @_;
+  if($rule_group_id){
+    $self->{'_rule_group_id'} = $rule_group_id;
+  }
+  return $self->{'_rule_group_id'};
+}
+
 =head2 run
 
  Title   :   run
@@ -177,6 +185,7 @@ sub run {
   #Input creates should not return any outputs
   if($self->input_creates){
     foreach my $inc ($self->input_creates){
+      $inc->rule_group_id($self->rule_group_id);
       $inc->run($self->next_analysis,$input) if $input;
       $inc->infile($infile) if $infile;
       $inc->run($self->next_analysis) if $infile;
