@@ -94,16 +94,27 @@ sub new {
   my ($dbID, $module,$method, $rank)  =
       $self->_rearrange([qw(DBID
                             MODULE
-			    METHOD 
-                            RANK 
+#			    METHOD 
+#                            RANK 
                         )],@args);
 
   $self->dbID($dbID);
   $self->module($module);
-  $self->method($method);
-  $self->rank($rank);
+#  $self->method($method);
+#  $self->rank($rank);
 
   return $self;
+}
+
+=head2 _initialize
+
+Doing nothing here.
+
+=cut
+
+sub _initialize{
+	my ($self) = @_;
+	return;
 }
 
 =head2 convert
@@ -117,9 +128,10 @@ sub new {
 =cut
 
 sub convert {
-    my ($self, $input) = @_;
-    $input || $self->throw("Need an input object to convert");
-    my $obj = $self->_create_obj($self->module);
+	my ($self, $input) = @_;
+
+	$input || $self->throw("Need an input object to convert");
+	my $obj = $self->_create_obj($self->module);
 
 
 	my @methods = sort {$a->rank <=> $b->rank} @{$self->method};
@@ -127,11 +139,31 @@ sub convert {
 				
 
 	}
-    my $method = $self->method;
-    my $output = $obj->$method($input);
-    return $output;
+	my $method = $self->method;
+	my $output = $obj->$method($input);
+	return $output;
 }
 
+=head2 _load_converter_module
+
+=cut
+
+sub _load_converter_module{
+	my ($self, $module) = @_;
+	$module = "Bio::Pipeline::Converter::$module";
+	my $ok;
+	#eval{
+	#	$ok = $self->_load_module($module);
+	#};
+
+	if($@){
+		print STDERR <<END
+$self: $module cannot be found
+END
+;
+	}
+	return $ok;
+}
 
 =head2 _create_obj
 
@@ -233,10 +265,22 @@ sub rank{
     if (defined($arg)) {
 	    $self->{'_rank'} = $arg;
     }
+
     return $self->{'_rank'};
 }
 
+=head2 add_argument
 
+=cut
+
+sub add_argument{
+	my ($self, $arg) = @_;
+	if(!defined($self->{'_argument'})){
+		$self->{'_argument'} =();
+	}
+	push @{$self->{'_argument'}}, $arg;
+}
+ 
 =head2 argument
 
   Title   : argument
@@ -247,7 +291,7 @@ sub rank{
 
 =cut
 
-sub argument{
+sub arguments{
 	my($self, $arg) = @_;
   if (defined($arg)) {
       $self->{'_argument'}= $arg;

@@ -79,11 +79,11 @@ sub store {
             );
     }
 
-	foreach my $converter_method (@{$converter->method}) {
-		$self->_store_converter_method($converter_method, $converter->dbID);
-	}
+#	foreach my $converter_method (@{$converter->method}) {
+#		$self->_store_converter_method($converter_method, $converter->dbID);
+#	}
 
-	$self->{_cache}->{$converter->dbID} = $converter;
+#	$self->{_cache}->{$converter->dbID} = $converter;
 }
 
 sub _store_converter_method{
@@ -145,14 +145,14 @@ sub fetch_by_dbID{
 	my $query = "SELECT converter_id, module FROM converters WHERE converter_id = $id";
 	
 	my $sth = $self->prepare_execute($query);
-	my ($converter_id, $module, $method, $rank, $argument) = $sth->fetchrow_array;
-	
-	my $methods_ref = $self->_fetch_converter_method_by_converter_dbID( $converter_id);
+#	my ($converter_id, $module, $method, $rank, $argument) = $sth->fetchrow_array;
+	my ($converter_id, $module) = $sth->fetchrow_array;	
+#	my $methods_ref = $self->_fetch_converter_method_by_converter_dbID( $converter_id);
 
 	my $converter = new Bio::Pipeline::Converter(
 		-dbID => $converter_id,
 		-module => $module,
-		-method => $methods_ref,
+#		-method => $methods_ref,
 #		-rank => $rank,
 #		-argument => $argument
 	);
