@@ -1,4 +1,4 @@
-#
+
 # BioPerl module for Bio::Pipeline::Transformer
 #
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
@@ -130,13 +130,17 @@ sub run {
    my @methods = @{$self->method};
    my $constructor = shift @methods;
    my @args        = @{$constructor->arguments};
-   @args           = $self->_format_input_arguments($input_ref,@args);
+   if(($#args >=0) && ref($args[0]) && $args[0]->isa("Bio::Pipeline::Argument")){
+     @args           = $self->_format_input_arguments($input_ref,@args);
+   }
    my $obj         = $self->_load_obj($self->module,$constructor->name,@args);
    foreach my $method(@methods){
     my @arguments = sort {$a->rank <=> $b->rank}@{$method->arguments} if ref($method->arguments);
-    my @args = $self->_format_input_arguments($input_ref,@arguments);
+   if(($#arguments >=0) && ref($arguments[0]) && (ref($arguments[0]) ne 'ARRAY') &&  $arguments[0]->isa("Bio::Pipeline::Argument")){
+     @arguments           = $self->_format_input_arguments($input_ref,@arguments);
+   }
     my $tmp1 = $method->name;
-    $obj = $obj->$tmp1(@args);                                               
+    $obj = $obj->$tmp1(@arguments);                                               
     if(scalar(@$obj) == 1){                                                      
       $obj = $obj->[0];                                                           
     }                                                                           
@@ -166,7 +170,7 @@ sub _format_input_arguments {
     if($arguments[$i]->tag){
       push @args, $arguments[$i]->tag;
     }
-    if($arguments[$i]->value eq 'INPUT'){
+    if(($arguments[$i]->value eq 'INPUT') || ($arguments[$i]->value eq 'OUTPUT')){
       push @args, $input;
     }
     else {
@@ -274,7 +278,23 @@ sub rank{
     return $self->{'_rank'};
 }
 
-# supposed to be used only in this module and its adaptor.
+sub analysis {
+    my ($self,$analysis) = @_;
+    if(defined($analysis)){
+         $self->{'_analysis'} =$analysis;
+    }
+    return $self->{'_analysis'};
+}
+
+=head2 adaptor
+
+  Title   : adaptor
+  Usage   : $conv->adaptor($adaptor);
+  Function: get/set for the adaptor
+  Returns :
+  Args    :
+
+=cut
 
 sub adaptor {
     my ($self, $arg) = @_;
