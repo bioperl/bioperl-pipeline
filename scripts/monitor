@@ -36,17 +36,20 @@ my $monitor = Bio::Pipeline::Monitor->new(
 # fetch all analysis
 my @analysis = @{$monitor->all_analysis};
 my @analysis_id_logicname = map{[$_->dbID, $_->logic_name]} @analysis;
-my %analysis_allowed;
-
+my %analysis_allowed = map {$_->[0] => 1} @analysis_id_logicname;
 
 
 ANALYSIS:
 while(1){
-    ShowData('Simple', ['id', 'logicname'], ['char', 'char'], [[100, 100]],
+    
+    print "Analysis available from $DBNAME\@$DBHOST\n";
+    ShowData('Simple', ['id', 'logic name'], ['char', 'char'], [100, 100],
         @analysis_id_logicname);
 
-    my $analysis_id = prompt("Select an analysis to get vie job status [1-".
-        @analysis_id_logicname."]", "1");
+	
+    my $analysis_id = prompt("Select an analysis to get the job status [". 
+		join(', ', keys %analysis_allowed) .']', "");
+
     my $analysis_logic = $analysis_id_logicname[$analysis_id-1]->[1];
 
     my %status = %{$monitor->analysis_status($analysis_id)};
@@ -66,7 +69,7 @@ while(1){
     }
     
     ShowData('Simple', 
-        ['Status','READING','WRITING','BATCHED','RUNNING','TOTAL'],
+        ['Status','BATCHED', 'READING', 'RUNNING', 'WRITING','TOTAL'],
         ['char','char','char','char','char','char'],
         [100,100,100,100,100,100], @status);
 
