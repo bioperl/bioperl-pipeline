@@ -108,7 +108,13 @@ sub query_pep {
     }
     return $self->{'_query_pep'};
 }
-
+sub genewise_strand {
+  my ($self,$strand) = @_;
+  if($strand){
+    $self->{'_genewise_strand'} = $strand;
+  }
+  return $self->{'_genewise_strand'};
+}
 sub target_dna {
     my ($self, $seq) = @_;
     if ($seq)
@@ -139,19 +145,29 @@ sub run {
      #check seq
     my $seq1 = $self->query_pep() || $self->throw("Query protein sequence required for Genewise\n");
     my $seq2 = $self->target_dna() || $self->throw("Target dna sequence required for Genewise\n");
+    my $genewise_strand = $self->genewise_strand || 1;
     #run genewise       
     $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
     my $factory;
 
     my @params = $self->parse_params($self->analysis->analysis_parameters);
+    if(($genewise_strand < 0) && ($self->analysis->analysis_parameters !~ /trev/)){
+    push @params, ("trev"=>1);
+    }
+    #default to quieten progress bar
+    push @params, ("quiet"=>1);
     $factory = Bio::Tools::Run::Genewise->new(@params);
     $factory->executable($self->analysis->program_file) if $self->analysis->program_file;
-  
+ 
+    print "Running Genewise ...\n";
+    print "Peptide Length is ".$seq1->length."\n";
+    print "Dna Length is ".$seq2->length."\n";
+    print "Running with parameters ".join(" ",@params)."\n"; 
     my @genes;
     eval {
      @genes = $factory->predict_genes($seq1, $seq2);
     };
-
+    print scalar(@genes) ." predicted \n";
     $self->output(\@genes);
     return \@genes;
 }
