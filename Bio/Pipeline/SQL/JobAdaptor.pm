@@ -78,13 +78,27 @@ sub fetch_by_dbID {
     $self->db->get_AnalysisAdaptor->
       fetch_by_dbID( $hashref->{analysis_id} );
 
+  # getting the inputs for the particular job
+  my @inputs;
+  my $query = "SELECT input_id
+               FROM input
+               WHERE job_id = $id";
+  $sth = $self->prepare($query);
+  $sth->execute;
+  
+  while (my ($input_id) = $sth->fetchrow_array){
+      my $input = $self->db->get_InputAdaptor->
+                         fetch_by_dbID($input_id);
+      push (@inputs,$input);
+  }
+
   $job = Bio::Pipeline::Job->new
   (
    '-dbobj'    => $self->db,
    '-adaptor'  => $self,
    '-id'       => $hashref->{'job_id'},
-   '-lsf_id'   => $hashref->{'queue_id'},
-   '-input_id' => $hashref->{'input_id'},
+   '-queue_id'   => $hashref->{'queue_id'},
+   '-inputs'   => \@inputs,
    '-stdout'   => $hashref->{'stdout_file'},
    '-stderr'   => $hashref->{'stderr_file'},
    '-input_object_file' => $hashref->{'object_file'},
@@ -96,20 +110,38 @@ sub fetch_by_dbID {
     return undef;
   }
 
-  my $query = "SELECT input_id
-               FROM input
-               WHERE job_id = $id";
-  $sth = $self->prepare($query);
-  $sth->execute;
-  
-  while (my ($input_id) = $sth->fetchrow_array){
-      my $input = $self->db->get_InputAdaptor->
-                         fetch_by_dbID($input_id);
-      $job->add_input($input);                   
-  }
   
 
   return $job;
+}
+
+
+=head2 fetch_all
+
+  Title   : fetch_all
+  Usage   : my @jobs = $adaptor->fetch_all
+  Function: Retrieves all the jobs from the database 
+  Returns : ARRAY of Bio::Pipeline::Jobs
+  Args    : 
+
+=cut
+
+sub fetch_all {
+    my ($self) = @_;
+
+    my @jobs;
+    
+    my $query = "SELECT job_id FROM job";
+
+    my $sth = $self->prepare($query);
+    $sth->execute;
+
+    while (my ($job_id) = $sth->fetchrow_array){
+        my $job = $self->fetch_by_dbID($job_id);
+        push (@jobs,$job);
+    }
+
+    return @jobs;
 }
 
 =head2 store

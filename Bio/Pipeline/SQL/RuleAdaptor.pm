@@ -156,7 +156,7 @@ sub fetch_all {
 
   while( @queryResult = $sth->fetchrow_array ) {
       # print STDERR "@queryResult\n";
-      $rules{$queryResult[0]}->add_condition( $queryResult[1] );
+      $rules{$queryResult[0]}->condition( $queryResult[1] );
   }
   # print STDERR "Found @{[scalar keys %rules]} rules\n";
   return values %rules;
@@ -205,7 +205,7 @@ sub fetch_by_dbID {
   $sth->execute( $dbID );
   
   while( $queryResult = $sth->fetchrow_hashref ) {
-    $rule->add_condition( $queryResult->{condition} );
+    $rule->condition( $queryResult->{condition} );
   }
   return $rule;
 }
