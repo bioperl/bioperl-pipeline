@@ -84,7 +84,7 @@
 
      $job_count = $jobAdaptor->get_job_count(-retry_count=>3);
 
-     ok $job_count, 1;
+     ok $job_count, 3;
 
 
 
