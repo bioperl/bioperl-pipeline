@@ -98,8 +98,8 @@ is to allow inputs from different database sources.
         The datamonger will split the file specified below into a specified number of chunks.
         It will create a blast job in the pipeline for each chunk. It will also 
         create the specified working directory for storing these files and format the db file for 
-        blasting if you are blast against itself. If you are blasting against a different database file,
-        you will have to format the database yourself.
+        blasting if you are blasting against itself. If you are blasting against a different database file,
+        you can specify the formatting of the db as part of the analysis parameters. see below. 
 
         In this analysis , 3 parameters are set.
 
@@ -125,7 +125,7 @@ is to allow inputs from different database sources.
             </argument>
 
          input_file: This is the input file that consist of all the sequences that you want to
-                     parallize for blasting. Please modify this to a file or your choice. 
+                     parallize for blasting. Please modify this to a file of your choice. 
 
          chop_nbr : This is the number of chunks to split the peptide file into.
                        It corresponds to the number of blast jobs that are created for the farm.
@@ -155,7 +155,7 @@ is to allow inputs from different database sources.
           You may modify the parameters as u wish. Here, blast parameters are intercalated with blast runnable
           parameters so you may add any additional ones that you wish.
 
-          If formatdb is set as here, the db_file will be formatdb-ed for blasting. If not, make sure
+          If formatdb is set as above , the db_file will be formatdb-ed for blasting. If not, make sure
           you do it yourself.
 
           Note this is using blastp for proteins, so if your input or database are dna sequences, change
