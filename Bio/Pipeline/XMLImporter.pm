@@ -62,7 +62,6 @@ methods. Internal metho ds are usually preceded with a _
 
 
 package Bio::Pipeline::XMLImporter;
-
 use strict;
 
 use Bio::Pipeline::Analysis;
@@ -75,18 +74,14 @@ use Bio::Pipeline::Argument;
 use Bio::Pipeline::Rule;
 use Bio::Pipeline::NodeGroup;
 use Bio::Pipeline::Node;
-use Bio::Pipeline::SQL::JobAdaptor;
-use Bio::Pipeline::SQL::DBAdaptor;
 use Bio::Pipeline::Runnable::DataMonger;
 use Bio::Pipeline::InputCreate;
 use Bio::Pipeline::Transformer;
-use Bio::Pipeline::Utils::SaxHandler;
-use XML::SimpleObject;
 use ExtUtils::MakeMaker;
+use Bio::Pipeline::AbstractXMLImporter;
 
-use vars qw(@ISA %global);
-use Bio::Root::Root;
-@ISA = qw(Bio::Root::Root);
+use vars qw(%global);
+our @ISA = qw(Bio::Pipeline::AbstractXMLImporter);
 
 =head2 new
 
@@ -105,24 +100,6 @@ use Bio::Root::Root;
 
 =cut
 
-sub new{
-    my ($class, @args) = @_;
-    my $self = $class->SUPER::new(@args);
-    
-    $self->_autoload_methods([qw(dbhost dbname dbuser dbpass schema xml dba)]);
-    
-    my ($dbhost, $dbname, $dbuser, $dbpass, $schema, $xml) = 
-        $self->_rearrange([qw(DBHOST DBNAME DBUSER DBPASS SCHEMA XML)], @args);
-    $self->dbhost($dbhost);
-    $self->dbname($dbname);
-    $self->dbuser($dbuser);
-    $self->dbpass($dbpass);
-    $self->schema($schema);
-    $self->xml($xml);
-
-    return $self;
-}
-
 =head2 run
 
   Title   : run
@@ -135,92 +112,8 @@ sub new{
 
 sub run{
     my ($self, $FORCE) = @_;
-    my $DBHOST = $self->dbhost;
-    my $DBNAME = $self->dbname;
-    my $DBUSER = $self->dbuser;
-    my $DBPASS = $self->dbpass;
-    my $SCHEMA = $self->schema;
-    my $XML    = $self->xml;
-    my $dba;
-    eval{
-        $dba = Bio::Pipeline::SQL::DBAdaptor->new(
-            -host   => $DBHOST,
-            -dbname => $DBNAME,
-            -user   => $DBUSER,
-            -pass   => $DBPASS,
-        );
-    };
-    $self->dba($dba);
-    
-    my $db_exist;
-    if(ref $dba){ #able to connect 
-        $db_exist=1;
-    }else {
-        $db_exist=0;
-    }
-
-    #connect string
-    my $str;
-    $str .= defined $DBHOST ? "-h $DBHOST " : "";
-    $str .= defined $DBPASS ? "-p$DBPASS " : "";
-    $str .= defined $DBUSER ? "-u $DBUSER " : "-u root ";
-
-    if($db_exist){
-        my $create; 
-        if(!$FORCE){
-            $create = prompt("A database called $DBNAME already exists.\nContinuing would involve dropping this database and loading a fresh one using $XML.\nWould you like to continue? y/n","n");
-        }else {
-            $create="y";
-        }
-        if($create =~/^[yY]/){
-            system("mysqladmin $str -f drop $DBNAME > /dev/null ");
-        }else {
-            print STDERR "Please select another database before running this script. Good bye.\n";
-            return 0;
-        }
-    }
-
-    if (!-e $SCHEMA){
-        warn("$SCHEMA doesn't seem to exist. Please use the -schema option to specify where the biopipeline schema is");
-        return 0;
-    }else {
-        print STDERR "Creating $DBNAME\n   ";
-        system("mysqladmin $str -f create $DBNAME");
-        print STDERR "Loading Schema...\n";
-        system("mysql $str $DBNAME < $SCHEMA");
-        $dba = Bio::Pipeline::SQL::DBAdaptor->new(-host   => $DBHOST,
-                                              -dbname => $DBNAME,
-                                              -user   => $DBUSER,
-                                              -pass   => $DBPASS);
-        $self->dba($dba);
-    }
-
-##############################################
-#Start the Parsing and loading of the pipeline
-##############################################
-
-    print "Reading Data_setup xml   : $XML\n";
-    my $xso1;
-
-    eval {
-         require('XML/Parser.pm');
-    };
-   if ($@) {
-      eval {
-       require('XML/SAX/PurePerl.pm');
-      };
-      if ($@) {
-        $self->throw(" you require either XML::SAX::PurePerl.pm or XML::Parser to be installed, none of them seem to be there");
-      } else {
-      my $handler = Bio::Pipeline::Utils::SaxHandler->new();
-      my $parser = XML::SAX::PurePerl->new(Handler => $handler);
-      $xso1 = XML::SimpleObject->new( $parser->parse_uri($XML) );
-      }
-   } else {
-        my $parser = XML::Parser->new(ErrorContext => 2, Style => "Tree");
-        $xso1 = XML::SimpleObject->new( $parser->parsefile($XML) );
-   }
-
+    my $dba=$self->_prepare_dba($FORCE);
+    my $xso1 = $self->_prepare_xso;
 
 my @iohandler_objs;
 my $method_id = 1;
@@ -251,11 +144,8 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
    
   my $ioid = $iohandler->attribute("id");
   my @datahandler_objs;
-
 #  my $adaptor_type = &verify ($iohandler,'adaptor_type','REQUIRED','DB');
-
 #  my $adaptor_id = &verify($iohandler,'adaptor_id','REQUIRED');
-
    my %adaptor_attrs;
    if(defined($iohandler->child('adaptor'))){
        my $adaptor = $iohandler->child('adaptor');
@@ -305,10 +195,11 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
         push @arg_objs, $arg_obj;
       }
     }
-    my $datahandler_obj = Bio::Pipeline::DataHandler->new(-dbid => $method_id,
-                                                          -argument => \@arg_objs,
-                                                          -method => $name,
-                                                          -rank => $rank);
+    my $datahandler_obj = Bio::Pipeline::DataHandler->new(
+        -dbid => $method_id,
+        -argument => \@arg_objs,
+        -method => $name,
+        -rank => $rank);
     $method_id++;
     push @datahandler_objs, $datahandler_obj;
   }
@@ -329,14 +220,14 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
       #$dba->store($dbname,$driver,$host,$user,$password,$module);
 
       my $iohandler_obj = Bio::Pipeline::IOHandler->new_ioh_db(-dbid=>$ioid,
-                                                     -type=>$iotype,
-                                                     -dbadaptor_dbname=>$dbname,
-                                                     -dbadaptor_driver=>$driver,
-                                                     -dbadaptor_host=>$host,
-                                                     -dbadaptor_user=>$user,
-                                                     -dbadaptor_pass=>$password,
-                                                     -dbadaptor_module=>$module,
-                                                     -datahandlers => \@datahandler_objs);     
+             -type=>$iotype,
+             -dbadaptor_dbname=>$dbname,
+             -dbadaptor_driver=>$driver,
+             -dbadaptor_host=>$host,
+             -dbadaptor_user=>$user,
+             -dbadaptor_pass=>$password,
+             -dbadaptor_module=>$module,
+             -datahandlers => \@datahandler_objs);     
       push @iohandler_objs, $iohandler_obj;
      }
     }
@@ -349,12 +240,13 @@ foreach my $iohandler ($iohandler_setup->children('iohandler')) {
           my $module = &verify($streamadaptor,'module','REQUIRED');
           my $file_path = &verify($streamadaptor,'file_path');
           my $file_suffix = &verify($streamadaptor,'file_suffix');
-          my $iohandler_obj = Bio::Pipeline::IOHandler->new_ioh_stream (-dbid=>$ioid,
-                                                                        -type=>$iotype,
-                                                                        -module=>$module,
-                                                                        -file_path=>$file_path,
-                                                                        -file_suffix=>$file_suffix,
-                                                                        -datahandlers => \@datahandler_objs);
+          my $iohandler_obj = Bio::Pipeline::IOHandler->new_ioh_stream (
+            -dbid=>$ioid,
+            -type=>$iotype,
+            -module=>$module,
+            -file_path=>$file_path,
+            -file_suffix=>$file_suffix,
+            -datahandlers => \@datahandler_objs);
 
           push @iohandler_objs, $iohandler_obj;
         }
@@ -460,10 +352,11 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
     my $datamonger = $analysis->child('data_monger');
     if (defined $datamonger) {
         my @datamonger_iohs;
-        $analysis_obj = Bio::Pipeline::Analysis->new(-id => $analysis->attribute('id'),
-                                                   -runnable => 'Bio::Pipeline::Runnable::DataMonger',
-                                                   -logic_name => 'DataMonger',
-                                                   -program => 'DataMonger');
+        $analysis_obj = Bio::Pipeline::Analysis->new(
+            -id => $analysis->attribute('id'),
+            -runnable => 'Bio::Pipeline::Runnable::DataMonger',
+            -logic_name => 'DataMonger',
+            program => 'DataMonger');
         my @initial_input_objs; 
         my $input_present_flag = 0;
     	foreach my $input ($datamonger->children('input')){
@@ -477,10 +370,11 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
 
            push @datamonger_iohs, $input_iohandler_obj if $input_iohandler_obj;
 
-           my $initial_input_obj = Bio::Pipeline::Input->new(-name => $name,
-                                                             -tag => $tag,
-                                                             -job_id => 1,
-                                                             -input_handler => $input_iohandler_obj);
+           my $initial_input_obj = Bio::Pipeline::Input->new(
+            -name => $name,
+            -tag => $tag,
+            -job_id => 1,
+            -input_handler => $input_iohandler_obj);
            push @initial_input_objs, $initial_input_obj;
          }
         }
@@ -648,118 +542,97 @@ foreach my $analysis ($xso1->child('pipeline_setup')->child('pipeline_flow_setup
          }
      }
    }
-
-
    $analysis_obj->iohandler(\@ioh);
-
-   
-
    push @analysis_objs, $analysis_obj;
  }
 
-my @rule_objs = ();
 print "Doing Rules\n";
-foreach my $rule_group ($pipeline_flow_setup->children('rule_group')) {
- foreach my $rule($rule_group->children('rule')){
-   if(ref($rule)) {
-     my $current;
-     my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL', '', 'current');
-     $current = $self->_get_analysis(\@analysis_objs, $anal_id);
-     my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL', '', 'next');
-     my $next = $self->_get_analysis(\@analysis_objs, $next_anal_id);
-     if (!defined($next)) {
-       print "next analysis not found for rule\n";
-     }
-     my $action = &verify($rule, 'action', 'OPTIONAL');
-     my $rule_obj = Bio::Pipeline::Rule->new(-current=> $current,
-                                             -next => $next,
-                                             -rule_group_id=>$rule_group->attribute('id'),
-                                             -action => $action);
-      push @rule_objs, $rule_obj;
-    }
-  }
-}
-
-
+my @rule_objs =$self->_parse_rules($pipeline_flow_setup, \@analysis_objs); 
 #store first before fetching job ids as I need the iohandlers in the db
 
 foreach my $iohandler (@iohandler_objs) {
   $dba->get_IOHandlerAdaptor->store_if_needed($iohandler);
 }
-my @job_objs;
 
-
-############################################
-#Load Jobs if provided 
-############################################
 print "Doing Job Setup...\n";
-my $job_setup = $pipeline_setup->child('job_setup');
-if($job_setup){
-foreach my $job ($job_setup->children('job')) {
-  if (ref($job)) {
-   my $id = $job->attribute("id");
-   my $process_id = &verify($job,'process_id','OPTIONAL','');
-   my $queue_id = &verify($job,'queue_id','OPTIONAL','');
-   my $retry_count = &verify($job,'retry_count','OPTIONAL','');
-   my $analysis = &verify($job,'analysis_id','REQUIRED','');
-   my $status = &verify($job,'status','OPTIONAL','NEW');
-
-   my @input_objs;
-   foreach my $input ($job->children('fixed_input')) {
-
-     my $input_iohandler = $self->_get_iohandler(&set_global($input->child('input_iohandler_id')->value),@iohandler_objs );
-     if (!defined($input_iohandler)) {
-       #$self->throw("Iohandler for input not found\n");
-       print "Iohandler for input not found\n";
-     }
-     my $tag = &verify($input,'tag','OPTIONAL','input');
-     my $name = &verify($input,'name','REQUIRED');
-
-     my $input_obj = Bio::Pipeline::Input->new(-name => $name,
-                                               -tag=>$tag,
-                                             -input_handler => $input_iohandler);
-     $input_obj->job_id($id);
-     push @input_objs, $input_obj;
-   }
-
-   my $job_obj = Bio::Pipeline::Job->new(-id => $id,
-                                         -process_id => $process_id,
-                                         -queue_id => $queue_id,
-                                         -retry_count => $retry_count,
-                                         -analysis => $analysis,
-                                         -status =>$status,
-                                         -adaptor => $dba->get_JobAdaptor,
-                                         -inputs => \@input_objs);
-   push @job_objs, $job_obj;
-  }
-}
-}
-
-###############################################################################################
+my @job_objs=$self->_parse_jobs($pipeline_setup, \@iohandler_objs);
+##########################################################################
 # now the nicest part .. the actual storing.. need to store only 4 objects, 
 # iohandler, analysis, job and rule .. these objects will inturn store all the objects that they contain..
-###############################################################################################
-
-
-#foreach my $transformer (@pipeline_transformer_objs) {
-  #$dba->get_TransformerAdaptor->store($transformer);
-#}
-  $dba->get_TransformerAdaptor->store(\@pipeline_transformer_objs);
-foreach my $analysis (@analysis_objs) {
-  $dba->get_AnalysisAdaptor->store($analysis);
-}
-foreach my $job (@job_objs) {
-  $dba->get_JobAdaptor->store($job);
-}
-foreach my $rule (@rule_objs) {
-  $dba->get_RuleAdaptor->store($rule);
-}
-
-print STDERR "Loading of pipeline $DBNAME completed\n";
-
+#########################################################################
+# map{$dba->get_TransformerAdaptor->store($_)}@pipeline_transformer_objs;
+$dba->get_TransformerAdaptor->store(\@pipeline_transformer_objs);
+map{$dba->get_AnalysisAdaptor->store($_)}@analysis_objs;
+map{$dba->get_JobAdaptor->store($_)}@job_objs;
+map{$dba->get_RuleAdaptor->store($_)}@rule_objs;
+print STDERR "Loading of pipeline completed\n";
 return 1;
-
 } # End of run
+sub _parse_rules {
+    my ($self, $pipeline_flow_setup, $analysis_objs)=@_;
+    my @rule_objs;
+    for my $rule_group($pipeline_flow_setup->children('rule_group')) {
+        next unless $rule_group;
+        foreach my $rule($rule_group->children('rule')){
+            next unless ref($rule);
+            my $anal_id = &verify($rule,'current_analysis_id','OPTIONAL', '', 'current');
+            my $current = $self->_get_analysis($analysis_objs, $anal_id);
+            my $next_anal_id = &verify($rule,'next_analysis_id','OPTIONAL', '', 'next');
+            my $next = $self->_get_analysis($analysis_objs, $next_anal_id);
+            print "next analysis not found for rule\n" unless defined $next;
+            my $action = &verify($rule, 'action', 'OPTIONAL');
+            my $rule_obj = Bio::Pipeline::Rule->new(
+                -current=> $current,
+                -next => $next,
+                -rule_group_id=>$rule_group->attribute('id'),
+                -action => $action);
+            push @rule_objs, $rule_obj;
+        }
+    }
+    return @rule_objs;
+}
+
+sub _parse_jobs {
+    my ($self, $pipeline_setup, $iohandler_objs)=@_;
+    my $job_setup = $pipeline_setup->child('job_setup');
+    $job_setup or return ();
+    my @job_objs;
+    for my $job($job_setup->children('job')){
+        next unless (ref $job);
+        my $id=$job->attribute('id');
+        my $process_id=&verify($job,'process_id','OPTIONAL','');
+        my $queue_id = &verify($job,'queue_id','OPTIONAL','');
+        my $retry_count = &verify($job,'retry_count','OPTIONAL','');
+        my $analysis = &verify($job,'analysis_id','REQUIRED','');
+        my $status = &verify($job,'status','OPTIONAL','NEW');
+        my @input_objs;
+        for my $input ($job->children('fixed_input')) {
+            my $input_iohandler = $self->_get_iohandler(&set_global($input->child('input_iohandler_id')->value),@$iohandler_objs );
+            if (!defined($input_iohandler)) {
+                print "Iohandler for input not found\n";
+            }
+            my $tag = &verify($input,'tag','OPTIONAL','input');
+            my $name = &verify($input,'name','REQUIRED');
+            my $input_obj = Bio::Pipeline::Input->new(
+                -name => $name,
+                -tag=>$tag,
+                -input_handler => $input_iohandler);
+            $input_obj->job_id($id);
+            push @input_objs, $input_obj;
+        }
+        my $job_obj = Bio::Pipeline::Job->new(-id => $id,
+            -process_id => $process_id,
+            -queue_id => $queue_id,
+            -retry_count => $retry_count,
+            -analysis => $analysis,
+            -status =>$status,
+            -adaptor => $self->dba->get_JobAdaptor,
+            -inputs => \@input_objs);
+        push @job_objs, $job_obj;
+    }
+    return @job_objs;
+}
+
 ####################################################################
 #Utility Methods
 ####################################################################
@@ -794,7 +667,7 @@ sub set_global {
   my ($string) = @_;
   while($string=~/\$(\w+)/){
     my $var = $global{$1};
-    warn("variable \$$1 doesn't exist. Pls check that you have it defined in the <global> tag.") if (!defined $var);    
+    warn("\nvariable \$$1 doesn't exist. Pls check that you have it defined in the <global> tag.") if (!defined $var);    
     $string=~s/\$$1/$var/;
   }
   return $string;
@@ -879,55 +752,6 @@ sub _search_array_by{
         }
     }
     return undef;
-}
-
-
-=head2 _autoload_methods
-
-This subroutine is usually invoked at the very beginning line of
-constructor, to set subroutine names for getter and setters.
-
-SYNOPSIS
-
-  sub new{
-    my ($class, @args) = @_;
-    my $self = $class->SUPER::new(@args);
-
-    $self->_autoload_methods([qw(dbhost dbname dbuser dbpass)]); # Don't add if unnecessary.
-
-    # Then, say
-
-    my ($dbhost) = $self->_rearrange([qw(DBHOST)], @args);
-    $self->dbhost($dbhost);
-
-    return $self;
-  }
-
-=cut
-
-sub _autoload_methods {
-    my ($self, $arg) = @_;
-    if(defined $arg && ref($arg) eq 'ARRAY'){
-#        $self->{_autoload_methods} = $arg;
-        push @{$self->{_autoload_methods}}, @{$arg};
-
-        # equally explicitly declare the subs !!!
-        use subs @{$self->{_autoload_methods}};
-    }
-    return $self->{_autoload_methods};
-}
-
-sub AUTOLOAD{
-    return if our $AUTOLOAD =~ /::DESTROY$/;
-    my ($self, $arg) = @_;
-    my $field = $AUTOLOAD;
-    $field =~ /::([\w\d]+)$/;
-    if($self->_autoload_methods && grep /$1/, @{$self->_autoload_methods}){
-        $self->{$field} = $arg if defined $arg;
-        return $self->{$field};
-    }else{
-        $self->throw("Can't find the method '$field'");
-    }
 }
 
 1;
