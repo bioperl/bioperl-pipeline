@@ -1,0 +1,126 @@
+<!--
+data_handling_setup.xml
+
+Cared for by Shawn Hoon <shawnh@fugu-sg.org>
+
+This XML File contains this list of modules that allows retrieval of objects
+from a variety of ways. There are two ways of specifying modules. 
+
+1) DBAdaptor
+  This is used when u want to connect to a database specifying the database
+  specific parameters like :
+    -dbname
+    -driver
+    -host
+    -user
+    -password
+    -module
+  Included in this file are the bioperl_db, ensembl_db and GFD_db. You will   
+  need to add more copies as you of these dbadaptors as you wish if you have
+  for example have two ensembl dbs.
+  If you have your own database and adaptor module written you may also add your
+  own.
+  
+2) StreamAdaptor
+  This is used when you don't need to specify the aforementioned parameters.
+  Instead all you have to specify is the module name and any arguments are 
+  passed in through the IOHandlers which are the method calls that you want
+  to execute from this module.
+  Currently supported DBs include:
+  GFF ( connects to a  sequence annotation database adaptor,dsn are specified in IOHandler)
+  Flat Files (uses the suite of Bio::Index::* modules)
+  Dynamic Retrieval (uses the suite of web retrival modules in Bio::DB::*)
+  
+Feel free to contact us at bioperl-pipeline@bioperl.org if you have any doubts or suggestions.
+
+-->
+
+<!--bioperl db -->
+ <dbadaptor id="1">
+    <dbname>your_bioperl_db</dbname>
+    <driver>mysql</driver>
+    <host>localhost</host>
+    <user>root</user>
+    <password></password>
+    <module>Bio::DB::BioSQL::DBAdaptor</module>
+  </dbadaptor>
+<!--ensembl db -->
+  <dbadaptor id="2">
+    <dbname>your_ensembl_db</dbname>
+    <driver>mysql</driver>
+    <host>localhost</host>
+    <user>root</user>
+    <password></password>
+    <module>Bio::EnsEMBL::DBSQL::DBAdaptor</module>
+  </dbadaptor>
+
+<!--GFD -->
+  <dbadaptor id="3">
+    <dbname>your_GFD_db</dbname>
+    <driver>mysql</driver>
+    <host>localhost</host>
+    <user>root</user>
+    <password></password>
+    <module>Bio::GFD::SQL::DBAdaptor</module>
+  </dbadaptor>
+
+<!-- GFF -->
+  <streamadaptor id="4">
+    <module>Bio::DB::GFF</module>
+  </streamadaptor>
+   
+<!-- Flat File db -->
+  <streamadaptor id="5">
+    <module>Bio::DB::Fasta</module>
+  </streamadaptor>
+  <streamadaptor id="6">
+    <module>Bio::Index::Fasta</module>
+  </streamadaptor>
+  <streamadaptor id="7">
+    <module>Bio::Index::EMBL</module>
+  </streamadaptor>
+  <streamadaptor id="8">
+    <module>Bio::Index::GenBank</module>
+  </streamadaptor>
+  <streamadaptor id="9">
+    <module>Bio::Index::SwissPfam</module>
+  </streamadaptor>
+  <streamadaptor id="10">
+    <module>Bio::Index::Swissprot</module>
+  </streamadaptor>
+  <streamadaptor id="11">
+    <module>Bio::Index::Blast</module>
+  </streamadaptor>
+
+<!-- Dynamic Retrieval -->
+  <streamadaptor id="12">
+    <module>Bio::DB::EMBL</module>
+  </streamadaptor>
+  <streamadaptor id="13">
+    <module>Bio::DB::SwissProt</module>
+  </streamadaptor>
+  <streamadaptor id="14">
+    <module>Bio::DB::GenBank</module>
+  </streamadaptor>
+  <streamadaptor id="15">
+    <module>Bio::DB::GenPept</module>
+  </streamadaptor>
+  <streamadaptor id="16">
+    <module>Bio::DB::RefSeq</module>
+  </streamadaptor>
+  <streamadaptor id="17">
+    <module>Bio::DB::XEMBL</module>
+  </streamadaptor>
+  <streamadaptor id="18">
+    <module>Bio::DB::GDB</module>
+  </streamadaptor>
+  <streamadaptor id="19">
+    <module>Bio::DB::BioFetch</module>
+  </streamadaptor>
+  <streamadaptor id="20">
+    <module>Bio::DB::Registry</module>
+  </streamadaptor>
+
+
+
+
