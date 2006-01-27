@@ -68,7 +68,7 @@ use Bio::SeqIO;
 use Bio::Root::Root;
 use Bio::Pipeline::DataType;
 use Bio::Pipeline::RunnableI;
-use Bio::Tools::Run::Hmmpfam;
+use Bio::Tools::Run::Hmmer;
 
 @ISA = qw(Bio::Pipeline::RunnableI);
 
@@ -141,16 +141,16 @@ sub run {
   my $factory;
   my $db_file = $self->analysis->db_file;
   my @params = $self->parse_params($self->analysis->analysis_parameters);
-  push @params, ("DB"=> $db_file);
-  $factory = Bio::Tools::Run::Hmmpfam->new(@params);
+  push @params, ("hmm"=> $db_file,"program"=> 'hmmpfam');
+  $factory = Bio::Tools::Run::Hmmer->new(@params);
   my $program_file = $self->analysis->program_file;
   $factory->executable($program_file) if $program_file;
 
   my $searchio;
   eval {
-    $searchio = $factory->predict_protein_features($seq);
+    $searchio = $factory->run($seq);
   };
-	$self->throw("Problems running predict_protein_featuers due to $@") if $@;
+	$self->throw("Problems running due to $@") if $@;
   my @feat;
   while(my $result = $searchio->next_result){
     while(my $hit = $result->next_hit){
