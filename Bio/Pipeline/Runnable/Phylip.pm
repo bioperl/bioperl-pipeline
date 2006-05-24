@@ -149,10 +149,10 @@ END
   my $phylip = $module->new(@params);
   my $runner;
   if($program=~/ProtDist/i){
-      $runner = "create_distance_matrix";
+      $runner = "run";
   }
   elsif($program=~/ProtPars/i || $program=~/Neighbor/i){
-      $runner = "create_tree";
+      $runner = "run";
   }
   elsif($program=~/SeqBoot/i || $program=~/Consense/i){
       $runner = "run";
@@ -173,6 +173,7 @@ END
   else {
        $self->throw("No input supplied");
   }
+  return 0 unless(-e $input);
   my $output; 
   eval {
       $output = $phylip->$runner($input);
