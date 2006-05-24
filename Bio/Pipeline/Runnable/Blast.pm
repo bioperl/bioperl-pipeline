@@ -317,6 +317,8 @@ sub run {
                 $hsp->add_tag_value('analysis_parameters',$self->analysis->analysis_parameters);
                 $hsp->add_tag_value('analysis_program',$self->analysis->program);
                 $hsp->add_tag_value('analysis_db',$self->analysis->db);
+                $hsp->add_tag_value('description',$hit->description);
+                $hsp->add_tag_value('num_ident',$hsp->{'_num_identical'});
                 push @output,$hsp;
             }
           }
