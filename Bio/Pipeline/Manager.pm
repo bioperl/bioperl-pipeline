@@ -483,7 +483,7 @@ sub _create_new_job {
             }
 
            elsif($action eq "WAITFORALL"){
-              if (_check_all_jobs_complete($job)&& !_next_job_created($job, $rule)){
+              if ($self->_check_all_jobs_complete($job)&& !$self->_next_job_created($job, $rule)){
                $self->debug("Analysis " .$job->analysis->logic_name ." finished.\n
                                Creating next job\n");
                my $new_job = $job->create_next_job($next_analysis);
