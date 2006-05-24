@@ -183,8 +183,15 @@ sub _format_input_arguments {
   return @args;                                                                                                                                     
 }  
 
-#Function : loads an object
-#Args     : module name, method name, and arguments
+=head2 _load_obj
+    
+  Title    : _load_obj
+  Function : loads an object
+  Example  : $io->_load_obj("Bio::DB::Fasta","new");
+  Returns  : the object
+  Args     : module name, method name, and arguments
+        
+=cut   
 
 sub _load_obj {
     my ($self,$module,$method,@args) = @_;
