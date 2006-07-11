@@ -228,7 +228,7 @@ sub run {
   # the binary parameters
   my @params = $self->parse_params($analysis->analysis_parameters) 
       if $analysis->analysis_parameters;
-  push @params, ('output'=>$result_dir) if $result_dir;
+  push @params, ('O'=>$result_dir) if $result_dir;
   $fasta_obj = Bio::Tools::Run::Alignment::StandAloneFasta->new(@params);
 
   my $program = $analysis->program || 'fasta34';
@@ -255,10 +255,10 @@ sub run {
   
   $fasta_obj->database($analysis->db_file);
   
-  $fasta_report = $fasta_obj->$program($seq1);
+  $fasta_report = $fasta_obj->run($seq1);
   
   # change this to be system independent!!
-  system("cp ". $fasta_obj->o ." $newreport");
+  system("cp ". $fasta_obj->O ." $newreport");
   my $searchio = Bio::SearchIO->new ('-format' => 'fasta',
 				     '-file'   => $newreport);
   my @output;
