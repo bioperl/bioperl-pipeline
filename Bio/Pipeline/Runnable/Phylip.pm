@@ -149,10 +149,10 @@ END
   my $phylip = $module->new(@params);
   my $runner;
   if($program=~/ProtDist/i){
-      $runner = "run";
+      $runner = "create_distance_matrix";
   }
   elsif($program=~/ProtPars/i || $program=~/Neighbor/i){
-      $runner = "run";
+      $runner = "create_tree";
   }
   elsif($program=~/SeqBoot/i || $program=~/Consense/i){
       $runner = "run";
