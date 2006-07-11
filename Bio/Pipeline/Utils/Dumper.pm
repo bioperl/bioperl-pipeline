@@ -291,8 +291,9 @@ sub dump{
 }
 
 sub _print {
-    my ($self) = shift;
+    my ($self,$string) = @_;
     my $fh = $self->_fh;
+    print $fh $string,"\n";
     $fh->flush;
 }
 1;

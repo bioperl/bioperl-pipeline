@@ -768,7 +768,7 @@ EOF
     $self->flush && $self->remove_lock;
 }
 
-    
+1;    
 =head2 pipeline_time
 
 A getter/setter

@@ -394,7 +394,7 @@ sub set_program_version_if_needed {
    if (!$self->program_version) {
     my $program = $self->program;
     my $string;
-    $string = $string || `$program -v 2>&1 `;
+    $string = $string || `$program --version 2>&1 `;
     #parse data format of decimal digits
     $string =~ /(\d+\/\d+\/\d+)|(\d+\.\d+)/;
     if($1){

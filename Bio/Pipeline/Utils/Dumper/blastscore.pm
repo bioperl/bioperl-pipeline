@@ -161,14 +161,13 @@ sub dump {
     my $outfile = $self->file;
     my $format = $self->format;
     foreach my $hit(@hit){
-        $hit->isa("Bio::Search::Hit::HitI") || $self->throw("Not a Bio::Search::Hit::HitI object!");
-        if($self->_include($hit)){
-            my ($hsp) = $hit->hsps;
-            if($format =~/gff/){
-                $self->_print($hsp->query->gff_string."\n");
-                $self->_print($hsp->subject->gff_string."\n");
-            }
-            elsif($format=~/tribe/){
+    	    $hit->isa("Bio::Search::Hit::GenericHit") || $self->throw("Not a Bio::Search::Hit::GenericHit object!");
+	    if($self->_include($hit)){
+               my ($hsp) = $hit->hsps;
+               if($format =~/gff/){
+                  $self->_print($hsp->query->gff_string."\n");
+                  $self->_print($hsp->subject->gff_string."\n");
+               } elsif($format=~/tribe/){
                 my $sig = $hit->significance;
                 $sig =~s/^e-/1e-/g;
                 my $expect = sprintf("%e",$sig);
@@ -179,11 +178,10 @@ sub dump {
                 my $first=(split("e-",$expect))[0];
                 my $second=(split("e-",$expect))[1];
                 $self->_print(join("\t",$hsp->feature1->seq_id,$hsp->feature2->seq_id,int($first),int($second)),"\n");
-            }
-            else {
+              } else {
               $self->_print($hsp->feature1->seq_id."\t".$hsp->feature2->seq_id."\t".$hit->significance."\n");
-            }
-        }
+              }
+           } 
     }
 }
 
