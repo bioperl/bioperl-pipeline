@@ -76,12 +76,31 @@ sub datatypes {
 
   my ($self) = @_;
   my $dt = Bio::Pipeline::DataType->new('-match'=>0);
-
+  my $dti = Bio::Pipeline::DataType->new('-object_type'=>'Bio::Search::HSP::GenericHSP','reftype'=>'ARRAY');
   my %dts;
 
   $dts{datatypes} = $dt;
+  $dts{input} = $dti;
   return %dts;
 
+}
+
+=head2 input
+
+ Title   :   seq1
+ Usage   :   $self->seq1($seq)
+ Function:   get/set for query sequence
+ Returns :
+ Args    :
+
+=cut
+
+sub input{
+    my ($self,$seq) = @_;
+    if (defined($seq)){
+        $self->{'_input'} = $seq;
+    }
+    return $self->{'_input'};
 }
 
 =head2 blastdir 
@@ -118,21 +137,27 @@ sub run {
   my $analysis = $self->analysis;
   $self->throw("Analysis not set") unless $self->analysis->isa("Bio::Pipeline::Analysis");
   my $factory;
-  my $file;
-
+  my $input;
   my @params = $self->parse_params($analysis->analysis_parameters);
-  my $blastdir = $self->blastdir  || $self->throw("Need the location of the blast directory");
-  $file = "/tmp/blast_out.".time().rand(1000); 
-  system("echo $blastdir/* | xargs cat > $file");
-  push @params, ("scorefile"=>$file);
-
+  if( $self->blastdir ) {
+  	my $blastdir = $self->blastdir ;
+	$input = "/tmp/blast_out.".time().rand(1000);
+  	system("echo $blastdir/* | xargs cat > $input");
+  	push @params, ("blastfile"=>$input);
+  } elsif( $self->input ) {
+ 	$input=$self->input;
+		
+  } else {
+	$self->throw("No inputs for TribeMCL\n");
+  }
+  
   $factory = Bio::Tools::Run::TribeMCL->new(@params);
 
   my @clusters;
   eval {
-      @clusters = $factory->run();
+      @clusters = $factory->run($input);
   };
-  unlink $file;
+  unlink $input if($self->blastdir);
   if($err = $@){
       $self->throw("Problems running TribeMCL for \n[$err]\n");
   }
