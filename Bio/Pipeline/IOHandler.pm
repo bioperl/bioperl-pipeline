@@ -709,6 +709,10 @@ sub _format_output_args {
          my $ioh = $self->adaptor->fetch_by_dbID($1);
          $value = $ioh->fetch_input(Bio::Pipeline::Input->new(-name=>"DUMMY"));
         }
+	# get the dbadapter
+	elsif($keyword=~/DBADAPTOR(\d+)/){
+        	$value=$self->adaptor->fetch_by_dbID($1);
+        }
         elsif($keyword eq 'UNTRANSFORMED_INPUTOBJ'){
 	        my @values;
 	        foreach my $in (@{$input}){
