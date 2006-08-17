@@ -167,6 +167,7 @@ sub fetch_transformer_by_analysis_iohandler {
       defined $trans_id || next;
       my $trans= $self->db->get_TransformerAdaptor->fetch_by_dbID($trans_id);
       $trans || next;
+      $trans->rank($rank);
       push @trans,$trans;
     }
     return \@trans if $#trans >= 0;
