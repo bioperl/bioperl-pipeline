@@ -3,6 +3,8 @@
 # Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Blast
 # originally written by Michele Clamp  <michele@sanger.ac.uk>
 # Written in BioPipe by Jason Stajich <jason@bioperl.org>
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 # Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 # and Jason Stajich
 # You may distribute this module under the same terms as perl itself
@@ -64,6 +66,8 @@ The runnable currently returns the following output types:
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Fasta
 originally written by Michele Clamp, michele@sanger.ac.uk.
 Written in BioPipe by Jason Stajich, jason@bioperl.org.
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
 
 =head1 APPENDIX

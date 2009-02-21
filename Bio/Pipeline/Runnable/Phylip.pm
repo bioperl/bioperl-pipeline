@@ -1,3 +1,5 @@
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 # Cared for by Shawn Hoon <shawnh@fugu-sg.org>
 #
 # Copyright Shawn Hoon

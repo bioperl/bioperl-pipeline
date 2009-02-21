@@ -3,6 +3,8 @@
 # Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genewise
 # originally written by Michele Clamp  <michele@sanger.ac.uk>
 # Written in BioPipe by Fugu student intern Low Yik Jin
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 # Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #
@@ -33,6 +35,17 @@ of the Bioperl mailing lists.  Your participation is much appreciated.
 
   bioperl-l@bio.perl.org
 
+=head2 Support 
+ 
+Please direct usage questions or support issues to the mailing list:
+  
+L<bioperl-l@bioperl.org>
+  
+rather than to the module maintainer directly. Many experienced and 
+reponsive experts will be able look at the problem and quickly 
+address it. Please include a thorough description of the problem 
+with code and data examples if at all possible.
+
 =head2 Reporting Bugs
 
 Report bugs to the Bioperl bug tracking system to help us keep track
@@ -47,6 +60,8 @@ or the web:
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Genewise
 originally written by Michele Clamp, michele@sanger.ac.uk.
 
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
 
 Describe contact details here

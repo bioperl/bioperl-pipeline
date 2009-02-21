@@ -3,6 +3,8 @@
 # Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::BatchSubmission
 # originally written by Laura Clarke <lec@sanger.ac.uk>
 #
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 # Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 # You may distribute this module under the same terms as perl itself
 #
@@ -53,6 +55,8 @@ the job to, and the name of the job.
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::BatchSubmission
 originally written by Laura Clarke <lec@sanger.ac.uk>
 
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 
 =head1 CONTACT

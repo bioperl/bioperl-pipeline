@@ -1,5 +1,7 @@
 # Runnable for CpGReport which is available in EMBOSS
 #
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 # Cared for by Juguang Xiao <juguang@fugu-sg.org>
 #
 # You may distribute this module under the same terms as perl itself

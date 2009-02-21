@@ -3,6 +3,8 @@
 # Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Sim4
 # originally written by Michele Clamp <michele@sanger.ac.uk> 
 # Written in BioPipe by Shawn Hoon <shawnh@fugu-sg.org>
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 # Cared for by the Fugu Informatics team (fuguteam@fugu-sg.org)
 #
 # You may distribute this module under the same terms as perl itself
@@ -51,6 +53,8 @@ binary wrapper
 Based on the EnsEMBL module Bio::EnsEMBL::Pipeline::Runnable::Sim4
 Originally written by Michele Clamp, michele@sanger.ac.uk.
 Written in BioPipe by Shawn Hoon, shawnh@fugu-sg.org.
+# Please direct questions and support issues to <bioperl-l@bioperl.org> 
+#
 Cared for by the Fugu Informatics team, fuguteam@fugu-sg.org.
 
 =head1 APPENDIX
